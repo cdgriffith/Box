@@ -115,3 +115,19 @@ class TestReuseBox(unittest.TestCase):
         assert cns.list("Waaaa", [1]) == [1]
         repr(cns)
 
+    def test_protested_box(self):
+        my_box = Box(a=3)
+        try:
+            my_box.to_dict = 'test'
+        except AttributeError:
+            pass
+        else:
+            raise AttributeError("Should not be able to set 'to_dict'")
+
+    def test_bad_args(self):
+        try:
+            Box('123', '432')
+        except TypeError:
+            pass
+        else:
+            raise AssertionError("Shouldn't have worked")

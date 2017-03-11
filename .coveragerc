@@ -9,3 +9,4 @@ omit =
     */*.egg-info/*
 exclude_lines =
     pragma: no cover
+    raise err
