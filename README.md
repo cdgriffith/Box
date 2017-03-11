@@ -53,10 +53,14 @@ and all sub objects back into a regular dictionary.
 ```python
 # Will only convert outermost object
 dict(my_box)
-# {'owner': 'Mr. Powers', 'affiliates': <Box: {'Vanessa': 'Sexy', 'Dr Evil': 'Not groovy', 'Scott Evil': "Doesn't want to take over family business"}>, 'credits': <Box: {'Austin Powers': 'Mike Myers', 'Vanessa Kensington': 'Elizabeth Hurley'}>}
+# {'owner': 'Mr. Powers', 'affiliates': <Box: {'Vanessa': 'Sexy', 
+# 'Dr Evil': 'Not groovy', 'Scott Evil': "Doesn't want to take over family business"}>, 
+# 'credits': <Box: {'Austin Powers': 'Mike Myers', 'Vanessa Kensington': 'Elizabeth Hurley'}>}
 
 my_box.to_dict()
-# {'owner': 'Mr. Powers', 'affiliates': {'Vanessa': 'Sexy', 'Dr Evil': 'Not groovy', 'Scott Evil': "Doesn't want to take over family business"}, 'credits': {'Austin Powers': 'Mike Myers', 'Vanessa Kensington': 'Elizabeth Hurley'}}
+# {'owner': 'Mr. Powers', 'affiliates': {'Vanessa': 'Sexy', 
+# 'Dr Evil': 'Not groovy', 'Scott Evil': "Doesn't want to take over family business"}, 
+# 'credits': {'Austin Powers': 'Mike Myers', 'Vanessa Kensington': 'Elizabeth Hurley'}}
 ```
 
 This module was pulled from my other project, reusables, so it has support for
@@ -101,8 +105,8 @@ Bunch is similar in functionality, but does not work recursively.
 
 **EasyDict**
 
-Both str and repr print a dictionary look alike, box makes it clear in repr 
-that it is a unique object. Does not have a way to make sub items recursively 
+EasyDicts `str` and `repr` print a dictionary look alike, `Box` makes it clear in repr 
+that it is a unique object. EasyDict not have a way to make sub items recursively 
 back to dictionary. 
 
 **addict**

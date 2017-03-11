@@ -13,5 +13,5 @@ python:
 install:
     - pip install -r requirements-test.txt
     - pip install coveralls
-script: pytest --cov=box test/
+script: PYTHONPATH=. py.test --cov=box test/
 after_success: coveralls
