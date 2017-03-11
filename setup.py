@@ -46,16 +46,14 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Natural Language :: English',
-        'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Topic :: Utilities',
         'Topic :: Software Development',
-        'Topic :: Software Development :: Libraries :: Python Modules',
-        'Topic :: Documentation :: Sphinx'
+        'Topic :: Software Development :: Libraries :: Python Modules'
         ],
     extras_require={
         'testing': ["pytest", "coverage >= 3.6", "tox", "pytest-cov"],
