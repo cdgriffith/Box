@@ -31,7 +31,7 @@ my_box.credits = {'Austin Powers': "Mike Myers", "Vanessa Kensington": "Elizabet
 ## Install 
 
 ```
-pip install boxing
+pip install python-box
 ```
 
 (Don't see a box package, but alas, can't claim the name for some reason.)

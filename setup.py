@@ -19,7 +19,7 @@ with open("README.md", "r") as readme_file:
     long_description = readme_file.read()
 
 setup(
-    name='boxing',
+    name='python-box',
     version=attrs['version'],
     url='https://github.com/cdgriffith/Box',
     license='MIT',
