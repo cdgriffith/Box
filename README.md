@@ -34,6 +34,64 @@ my_box.credits = {'Austin Powers': "Mike Myers", "Vanessa Kensington": "Elizabet
 pip install box
 ```
 
+Box is tested on python 2.6+, 3.3+ and PyPy2, and should work on other 
+interpreters as well. If  it does not install with this command, please
+open a ticket with the error you are experiencing!
+
+## Overview
+
+This module provides two main classes `Box` and `ConfigBox`. 
+They are designed to be easy drop in replacements for dictionaries, 
+with the latter having tools for dealing with config files. 
+
+`Box` is designed to transparently act as a dictionary, thanks to Python's
+duck typing capabilities, but add dot notation access like classes do. Any sub
+dictionaries or ones set after initiation will be automatically converted to 
+a `Box` object. You can always run `.to_dict()` on it to return the object 
+and all sub objects back into a regular dictionary. 
+
+```python
+# Will only convert outermost object
+dict(my_box)
+# {'owner': 'Mr. Powers', 'affiliates': <Box: {'Vanessa': 'Sexy', 'Dr Evil': 'Not groovy', 'Scott Evil': "Doesn't want to take over family business"}>, 'credits': <Box: {'Austin Powers': 'Mike Myers', 'Vanessa Kensington': 'Elizabeth Hurley'}>}
+
+my_box.to_dict()
+# {'owner': 'Mr. Powers', 'affiliates': {'Vanessa': 'Sexy', 'Dr Evil': 'Not groovy', 'Scott Evil': "Doesn't want to take over family business"}, 'credits': {'Austin Powers': 'Mike Myers', 'Vanessa Kensington': 'Elizabeth Hurley'}}
+```
+
+This module was pulled from my other project, reusables, so it has support for
+a `ConfigBox`.
+
+test_config.ini
+```ini
+[General]
+example=A regular string
+
+[Section 2]
+my_bool=yes
+anint=234
+exampleList=234,123,234,543
+floatly=4.4
+```
+
+With the combination of reusables and ConfigBox you can easily read python 
+config values into python types. It supports `list`, `bool`, `int` and `float`.
+
+```python
+import reusables
+from box import ConfigBox
+
+config = ConfigBox(reusables.config_dict("test_config.ini"))
+# <ConfigBox: {'General': {'example': 'A regular string'},
+# 'Examples': {'my_bool': 'yes', 'anint': '234', 'examplelist': '234,123,234,543', 'floatly': '4.4'}}>
+
+config.Examples.list('examplelist')
+# ['234', '123', '234', '543']
+
+config.Examples.float('floatly')
+# 4.4
+```
+
 
 ## Competition
 
