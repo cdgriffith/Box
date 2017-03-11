@@ -15,7 +15,7 @@ with open(os.path.join(root, "box.py"), "r") as reuse_file:
 
 attrs = dict(re.findall(r"__([a-z]+)__ *= *['\"](.+)['\"]", reuse_content))
 
-with open("README.md", "r") as readme_file:
+with open("README.rst", "r") as readme_file:
     long_description = readme_file.read()
 
 setup(
