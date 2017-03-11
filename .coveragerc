@@ -1,0 +1,12 @@
+[report]
+omit =
+    */python?.?/*
+    */site-packages/nose/*
+    */test/*
+    */pypy/*
+    */nose/*
+    */.*/*
+    */*.egg-info/*
+exclude_lines =
+    pragma: no cover
+    raise err
