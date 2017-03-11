@@ -19,7 +19,7 @@ with open("README.md", "r") as readme_file:
     long_description = readme_file.read()
 
 setup(
-    name='box',
+    name='boxing',
     version=attrs['version'],
     url='https://github.com/cdgriffith/Box',
     license='MIT',
@@ -27,7 +27,7 @@ setup(
     tests_require=["pytest", "coverage >= 3.6", "tox", "pytest-cov"],
     install_requires=[],
     author_email='chris@cdgriffith.com',
-    description='Commonly Consumed Code Commodities',
+    description='Python dictionaries with recursive dot notation access',
     long_description=long_description,
     scripts=['box.py'],
     py_modules=['box'],

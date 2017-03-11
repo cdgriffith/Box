@@ -1,6 +1,6 @@
 # Box
 
-Python dictionaries with dot notation access. 
+Python dictionaries with recursive dot notation access.
 
 ```python
 from box import Box
@@ -31,8 +31,10 @@ my_box.credits = {'Austin Powers': "Mike Myers", "Vanessa Kensington": "Elizabet
 ## Install 
 
 ```
-pip install box
+pip install boxing
 ```
+
+(Don't see a box package, but alas, can't claim the name for some reason.)
 
 Box is tested on python 2.6+, 3.3+ and PyPy2, and should work on other 
 interpreters as well. If  it does not install with this command, please
