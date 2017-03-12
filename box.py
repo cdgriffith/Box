@@ -17,14 +17,14 @@ except ImportError:
 if sys.version_info >= (3, 0):
     basestring = str
 
-__all__ = ['Box', 'ConfigBox', 'BlackBox']
+__all__ = ['Box', 'ConfigBox', 'LightBox']
 __author__ = "Chris Griffith"
 __version__ = "2.0.0"
 
 
-class Box(dict):
+class LightBox(dict):
     """
-    Box container.
+    LightBox container.
     Allows access to attributes by either class dot notation or item reference.
 
     All valid:
@@ -94,7 +94,7 @@ class Box(dict):
             object.__delattr__(self, item)
 
     def __repr__(self):
-        return "<Box: {0}>".format(str(self.to_dict()))
+        return "<LightBox: {0}>".format(str(self.to_dict()))
 
     def __str__(self):
         return str(self.to_dict())
@@ -113,7 +113,7 @@ class Box(dict):
         in_dict = in_dict if in_dict else self
         out_dict = dict()
         for k, v in in_dict.items():
-            if isinstance(v, Box):
+            if isinstance(v, LightBox):
                 v = v.to_dict()
             out_dict[k] = v
         return out_dict
@@ -132,24 +132,23 @@ def tree_view(dictionary, level=0, sep="|  "):
                    else "") for k, v in dictionary.items()])
 
 
-def _recursive_create(self, iterable, include_lists=False, box_class=Box):
+def _recursive_create(self, iterable, include_lists=False, box_class=LightBox):
     for k, v in iterable:
         if isinstance(v, dict):
             v = box_class(v)
         if include_lists and isinstance(v, list):
-            new_list = BoxList()
-            for item in v:
-                new_list.append(box_class(item) if isinstance(item, dict) else item)
-            v = new_list
+            v = BoxList(v)
         setattr(self, k, v)
 
 
-class BlackBox(Box):
+class Box(LightBox):
     """
-    Same as box, but also goes into lists and makes dicts within into BlackBoxes.
+    Same as LightBox, 
+    but also goes into lists and makes dicts within into Boxes.
 
-    The lists are turned into BoxLists so that they can also intercept incoming items and turn
-    them into BlackBoxes.
+    The lists are turned into BoxLists
+    so that they can also intercept incoming items and turn
+    them into Boxes.
 
     """
 
@@ -158,15 +157,18 @@ class BlackBox(Box):
             if isinstance(args[0], basestring):
                 raise ValueError("Cannot extrapolate Box from string")
             if isinstance(args[0], Mapping):
-                _recursive_create(self, args[0].items(), include_lists=True, box_class=BlackBox)
+                _recursive_create(self, args[0].items(),
+                                  include_lists=True, box_class=Box)
             elif isinstance(args[0], Iterable):
-                _recursive_create(self, args[0], include_lists=True, box_class=BlackBox)
+                _recursive_create(self, args[0],
+                                  include_lists=True, box_class=Box)
             else:
                 raise ValueError("First argument must be mapping or iterable")
         elif args:
             raise TypeError("Box expected at most 1 argument, "
                             "got {0}".format(len(args)))
-        _recursive_create(self, kwargs.items(), include_lists=True, box_class=BlackBox)
+        _recursive_create(self, kwargs.items(),
+                          include_lists=True, box_class=Box)
 
     def __setattr__(self, key, value):
 
@@ -177,7 +179,8 @@ class BlackBox(Box):
         if isinstance(value, list):
             new_list = BoxList()
             for item in value:
-                new_list.append(BlackBox(item) if isinstance(item, dict) else item)
+                new_list.append(Box(item) if
+                                isinstance(item, dict) else item)
             value = new_list
 
         try:
@@ -191,7 +194,7 @@ class BlackBox(Box):
             object.__setattr__(self, key, value)
 
     def __repr__(self):
-        return "<BlackBox: {0}>".format(str(self.to_dict()))
+        return "<Box: {0}>".format(str(self.to_dict()))
 
     def to_dict(self, in_dict=None):
         """
@@ -204,29 +207,50 @@ class BlackBox(Box):
         in_dict = in_dict if in_dict else self
         out_dict = dict()
         for k, v in in_dict.items():
-            if isinstance(v, Box):
+            if isinstance(v, LightBox):
                 v = v.to_dict()
-            if isinstance(v, list):
+            elif isinstance(v, list):
                 new_list = []
                 for item in v:
-                    new_list.append(item.to_dict() if isinstance(item, Box) else item)
+                    if isinstance(item, LightBox):
+                        new_list.append(item.to_dict())
+                    elif isinstance(item, BoxList):
+                        new_list.append(_recursive_box_list_reversal(item))
+                    else:
+                        new_list.append(item)
                 v = new_list
             out_dict[k] = v
         return out_dict
 
 
+def _recursive_box_list_reversal(in_list):
+    new_list = []
+    for item in in_list:
+        if isinstance(item, Box):
+            new_list.append(Box.to_dict(item))
+        elif isinstance(item, LightBox):
+            new_list.append(LightBox.to_dict(item))
+        elif isinstance(item, BoxList):
+            new_list.append(_recursive_box_list_reversal(item))
+        else:
+            new_list.append(item)
+    return new_list
+
+
 class BoxList(list):
 
-    __box_class__ = BlackBox
+    __box_class__ = Box
+
+    def __init__(self, iterable=None):
+        if iterable:
+            for x in iterable:
+                self.append(x)
 
     def append(self, p_object):
         if isinstance(p_object, dict):
             p_object = self.__box_class__(p_object)
         if isinstance(p_object, list):
-            new_list = BoxList()
-            for item in p_object:
-                new_list.append(self.__box_class__(item) if isinstance(item, dict) else item)
-            p_object = new_list
+            p_object = BoxList(p_object)
         return super(BoxList, self).append(p_object)
 
     def extend(self, iterable):
@@ -237,10 +261,7 @@ class BoxList(list):
         if isinstance(p_object, dict):
             p_object = self.__box_class__(p_object)
         if isinstance(p_object, list):
-            new_list = BoxList()
-            for item in p_object:
-                new_list.append(self.__box_class__(item) if isinstance(item, dict) else item)
-            p_object = new_list
+            p_object = BoxList()
         return super(BoxList, self).insert(index, p_object)
 
     def __repr__(self):
@@ -249,11 +270,12 @@ class BoxList(list):
     def __str__(self):
         temp = []
         for x in self:
-            temp.append(x.to_dict() if isinstance(x, self.__box_class__) else x)
+            temp.append(x.to_dict() if
+                        isinstance(x, self.__box_class__) else x)
         return str(temp)
 
 
-class ConfigBox(Box):
+class ConfigBox(LightBox):
     """
     Modified box object to add object transforms.
 
