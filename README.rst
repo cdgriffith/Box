@@ -1,5 +1,4 @@
-Box
-===
+.. image:: box_log.png
 
 Python dictionaries with recursive dot notation access.
 
