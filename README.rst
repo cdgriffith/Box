@@ -1,4 +1,4 @@
-.. image:: box_log.png
+.. image:: https://raw.githubusercontent.com/cdgriffith/Box/development/box_logo.png
 
 Python dictionaries with recursive dot notation access.
 
