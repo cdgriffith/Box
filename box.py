@@ -79,10 +79,7 @@ class LightBox(dict):
         try:
             object.__getattribute__(self, key)
         except AttributeError:
-            try:
-                self[key] = value
-            except Exception:
-                raise AttributeError(key)
+            self[key] = value
         else:
             object.__setattr__(self, key, value)
 
@@ -216,10 +213,7 @@ class Box(LightBox):
         try:
             object.__getattribute__(self, key)
         except AttributeError:
-            try:
-                self[key] = value
-            except Exception:
-                raise AttributeError(key)
+            self[key] = value
         else:
             object.__setattr__(self, key, value)
 

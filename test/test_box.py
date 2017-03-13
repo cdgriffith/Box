@@ -134,6 +134,22 @@ class TestReuseBox(unittest.TestCase):
         else:
             raise AttributeError("Should not be able to delete 'to_dict'")
 
+    def test_protected_lightbox_methods(self):
+        my_box = LightBox(a=3)
+        try:
+            my_box.to_dict = 'test'
+        except AttributeError:
+            pass
+        else:
+            raise AttributeError("Should not be able to set 'to_dict'")
+
+        try:
+            del my_box.to_json
+        except AttributeError:
+            pass
+        else:
+            raise AttributeError("Should not be able to delete 'to_dict'")
+
     def test_bad_args(self):
         try:
             Box('123', '432')
@@ -147,6 +163,15 @@ class TestReuseBox(unittest.TestCase):
         b = Box(data=2, count=5)
         c = Box({'data': 2, 'count': 1}, count=5)
         d = Box([('data', 2), ('count', 5)])
+        e = Box({'a': [{'item': 3}, {'item': []}]})
+        assert e.a[1].item == []
+        assert a == b == c == d
+
+    def test_lightbox_inits(self):
+        a = LightBox({'data': 2, 'count': 5})
+        b = LightBox(data=2, count=5)
+        c = LightBox({'data': 2, 'count': 1}, count=5)
+        d = LightBox([('data', 2), ('count', 5)])
 
         assert a == b == c == d
 
@@ -207,7 +232,12 @@ class TestReuseBox(unittest.TestCase):
         a = Box(test_dict)
         assert yaml.load(a.to_yaml()) == test_dict
 
-        a.to_json("test_yaml_file")
+    def test_to_yaml_file(self):
+        test_dict = {'key1': 'value1',
+                     "Key 2": {"Key 3": "Value 3",
+                               "Key4": {"Key5": "Value5"}}}
+        a = Box(test_dict)
+        a.to_yaml("test_yaml_file")
         with open("test_yaml_file") as f:
             data = yaml.load(f)
             assert data == test_dict
@@ -221,3 +251,6 @@ class TestReuseBox(unittest.TestCase):
         assert repr(new_list).startswith("<BoxList:")
         for x in new_list.to_list():
             assert not isinstance(x, (BoxList, Box, LightBox))
+        new_list.insert(0, {'test': 5})
+        assert new_list[0].test == 5
+        assert isinstance(str(new_list), str)
