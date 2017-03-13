@@ -60,10 +60,7 @@ class LightBox(dict):
         _recursive_create(self, kwargs.items())
 
     def __contains__(self, item):
-        try:
-            return dict.__contains__(self, item) or hasattr(self, item)
-        except Exception:
-            return False
+        return dict.__contains__(self, item) or hasattr(self, item)
 
     def __getattr__(self, item):
         try:
@@ -109,7 +106,7 @@ class LightBox(dict):
         return str(self.to_dict())
 
     def __call__(self, *args, **kwargs):
-        return tuple(self.values())
+        return tuple(sorted(self.keys()))
 
     def to_dict(self, in_dict=None):
         """
@@ -137,8 +134,9 @@ class LightBox(dict):
         :return: string of JSON or return of `json.dump`
         """
         if filename:
-            return json.dump(self.to_dict(), filename, indent=indent,
-                             **json_kwargs)
+            with open(filename, 'w') as f:
+                return json.dump(self.to_dict(), f, indent=indent,
+                                 **json_kwargs)
         else:
             return json.dumps(self.to_dict(), indent=indent, **json_kwargs)
 
