@@ -7,6 +7,7 @@ Improved dictionary management. Inspired by
 javascript style referencing, as it's one of the few things they got right.
 """
 import sys
+import json
 
 try:
     from collections.abc import Mapping, Iterable
@@ -14,10 +15,18 @@ except ImportError:
     Mapping = dict
     Iterable = (tuple, list)
 
+yaml_support = False
+
+try:
+    import yaml
+    yaml_support = True
+except ImportError:
+    yaml = None
+
 if sys.version_info >= (3, 0):
     basestring = str
 
-__all__ = ['Box', 'ConfigBox', 'LightBox']
+__all__ = ['Box', 'ConfigBox', 'LightBox', 'BoxList']
 __author__ = "Chris Griffith"
 __version__ = "2.0.0"
 
@@ -33,7 +42,7 @@ class LightBox(dict):
         - box['spam'].eggs
     """
 
-    _protected_keys = dir({}) + ['to_dict', 'tree_view']
+    _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml']
 
     def __init__(self, *args, **kwargs):
         if len(args) == 1:
@@ -118,9 +127,39 @@ class LightBox(dict):
             out_dict[k] = v
         return out_dict
 
+    def to_json(self, filename=None, indent=4, **json_kwargs):
+        """
+        Transform the Box object into a JSON string. 
+        
+        :param filename: If provided will save to file
+        :param indent: Automatic formatting by indent size in spaces
+        :param json_kwargs: additional arguments to pass to json.dump(s)
+        :return: string of JSON or return of `json.dump`
+        """
+        if filename:
+            return json.dump(self.to_dict(), filename, indent=indent,
+                             **json_kwargs)
+        else:
+            return json.dumps(self.to_dict(), indent=indent, **json_kwargs)
+
     def tree_view(self, sep="    "):
         base = self.to_dict()
         return tree_view(base, sep=sep)
+
+    if yaml_support:
+        def to_yaml(self, filename=None, **yaml_kwargs):
+            """
+            Transform the Box object into a YAML string. 
+            
+            :param filename:  If provided will save to file
+            :param yaml_kwargs: additional arguments to pass to yaml.dump
+            :return: string of YAML or return of `yaml.dump`
+            """
+            if filename:
+                with open(filename, 'w') as f:
+                    return yaml.dump(self.to_dict(), f, **yaml_kwargs)
+            else:
+                return yaml.dump(self.to_dict(), **yaml_kwargs)
 
 
 def tree_view(dictionary, level=0, sep="|  "):
@@ -212,29 +251,15 @@ class Box(LightBox):
             elif isinstance(v, list):
                 new_list = []
                 for item in v:
-                    if isinstance(item, LightBox):
+                    if isinstance(item, (Box, LightBox)):
                         new_list.append(item.to_dict())
                     elif isinstance(item, BoxList):
-                        new_list.append(_recursive_box_list_reversal(item))
+                        new_list.append(item.to_list())
                     else:
                         new_list.append(item)
                 v = new_list
             out_dict[k] = v
         return out_dict
-
-
-def _recursive_box_list_reversal(in_list):
-    new_list = []
-    for item in in_list:
-        if isinstance(item, Box):
-            new_list.append(Box.to_dict(item))
-        elif isinstance(item, LightBox):
-            new_list.append(LightBox.to_dict(item))
-        elif isinstance(item, BoxList):
-            new_list.append(_recursive_box_list_reversal(item))
-        else:
-            new_list.append(item)
-    return new_list
 
 
 class BoxList(list):
@@ -273,6 +298,17 @@ class BoxList(list):
             temp.append(x.to_dict() if
                         isinstance(x, self.__box_class__) else x)
         return str(temp)
+
+    def to_list(self):
+        new_list = []
+        for x in self:
+            if isinstance(x, (Box, LightBox)):
+                new_list.append(x.to_dict())
+            elif isinstance(x, BoxList):
+                new_list.append(x.to_list())
+            else:
+                new_list.append(x)
+        return new_list
 
 
 class ConfigBox(LightBox):
