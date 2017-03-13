@@ -46,7 +46,7 @@ class TestReuseBox(unittest.TestCase):
         assert box['Key 2'].new_thing == "test"
         box['Key 2'].new_thing += "2"
         assert box['Key 2'].new_thing == "test2"
-        assert box['Key 2'].to_dict()['new_thing'] == "test2", box['Key 2'].to_dict()
+        assert box['Key 2'].to_dict()['new_thing'] == "test2"
         assert box.to_dict()['Key 2']['new_thing'] == "test2"
         box.__setattr__('key1', 1)
         assert box['key1'] == 1
@@ -197,6 +197,28 @@ class TestReuseBox(unittest.TestCase):
         else:
             raise AssertionError("Should raise Type Error")
 
+    def test_bad_lightbox_inits(self):
+        try:
+            LightBox("testing")
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Should raise Value Error")
+
+        try:
+            LightBox(22)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Should raise Value Error")
+
+        try:
+            LightBox(22, 33)
+        except TypeError:
+            pass
+        else:
+            raise AssertionError("Should raise Type Error")
+
     def test_create_subdicts(self):
         a = Box({'data': 2, 'count': 5})
         a.brand_new = {'subdata': 1}
@@ -252,5 +274,8 @@ class TestReuseBox(unittest.TestCase):
         for x in new_list.to_list():
             assert not isinstance(x, (BoxList, Box, LightBox))
         new_list.insert(0, {'test': 5})
+        new_list.insert(1, ['a', 'b'])
         assert new_list[0].test == 5
         assert isinstance(str(new_list), str)
+        assert isinstance(new_list[1], BoxList)
+        assert not isinstance(new_list.to_list(), BoxList)

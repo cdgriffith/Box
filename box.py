@@ -64,12 +64,9 @@ class LightBox(dict):
 
     def __getattr__(self, item):
         try:
+            return self[item]
+        except KeyError:
             return object.__getattribute__(self, item)
-        except AttributeError:
-            try:
-                return self[item]
-            except KeyError:
-                raise AttributeError(item)
 
     def __setattr__(self, key, value):
         if key in self._protected_keys:
@@ -89,10 +86,8 @@ class LightBox(dict):
         try:
             object.__getattribute__(self, item)
         except AttributeError:
-            try:
-                del self[item]
-            except KeyError:
-                raise AttributeError(item)
+            del self[item]
+
         else:
             object.__delattr__(self, item)
 
