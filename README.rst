@@ -6,27 +6,57 @@ Python dictionaries with recursive dot notation access.
 
         from box import Box
 
-        my_box = Box({"owner": "Mr. Powers",
-                      "contents": ["blue crushed-velvet suit",
-                                   "frilly lace crava",
-                                   "gold medallion with peace symbol",
-                                   "Italian shoes",
-                                   "tie-dyed socks"],
-                      "affiliates": {
-                          "Vanessa": "Sexy",
-                          "Dr Evil": "Not groovy",
-                          "Scott Evil": "Doesn't want to take over family business"
-                      }})
+        my_box = Box(
+            {"owner": "Mr. Powers",
+             "contents": [{"qty": 1, "item": "blue crushed-velvet suit"},
+                          {"qty": 1, "item": "frilly lace crava"},
+                          {"qty": 1, "item": "gold medallion with peace symbol"},
+                          {"qty": 1, "item": "Italian shoes"},
+                          {"qty": 1, "item": "Swedish-made enlarger pump"},
+                          {"qty": 1, "item": "credit card receipt for Swedish-made enlarger pump"
+                                             ", signed Austin Powers."},
+                          {"qty": 1, "item": "warranty card for Swedish-made enlarger pump"
+                                             ", filled out by Austin Powers."},
+                          {"qty": 1, "item": "book, Swedish-Made Enlarger Pumps and Me"}],
+             "affiliates": {
+                 "Vanessa": "Sexy",
+                 "Dr Evil": "Not groovy",
+                 "Scott Evil": "Doesn't want to take over family business"}
+            })
 
         my_box.affiliates.Vanessa == my_box['affiliates']['Vanessa']
+
+        my_box.contents[0].item
+        'blue crushed-velvet suit'
+
+        # Here's something that no other library I know supports
+        my_box.contents.append({"qty": 1, "item": "tie-dyed socks"})
+        my_box.contents[-1].item
 
         my_box.funny_line = "They tried to steal my lucky charms!"
 
         my_box['funny_line']
-        # 'They tried to steal my luck charms!'
+        'They tried to steal my luck charms!'
 
         my_box.credits = {'Austin Powers': "Mike Myers", "Vanessa Kensington": "Elizabeth Hurley"}
         # <Box: {'Austin Powers': 'Mike Myers', 'Vanessa Kensington': 'Elizabeth Hurley'}>
+
+        my_box.to_yaml()  # .to_json() also available
+        # owner: Mr. Powers
+        # affiliates:
+        #   Dr Evil: Not groovy
+        #   Scott Evil: Doesn't want to take over family business
+        #   Vanessa: Sexy
+        # contents:
+        # - item: blue crushed-velvet suit
+        #   qty: 1
+        # - item: frilly lace crava
+        #   qty: 1
+        # - item: gold medallion with peace symbol
+        #   qty: 1
+        # - item: Italian shoes
+        #   qty: 1
+        # ...
 
 
 Install
@@ -46,8 +76,7 @@ open a ticket with the error you are experiencing!
 Overview
 --------
 
-This module provides two main classes `Box` and `ConfigBox`. 
-They are designed to be easy drop in replacements for dictionaries, 
+`Box` is designed to be easy drop in replacements for dictionaries,
 with the latter having tools for dealing with config files. 
 
 `Box` is designed to transparently act as a dictionary, thanks to Python's
@@ -59,20 +88,110 @@ and all sub objects back into a regular dictionary.
 
 .. code:: python
 
+        del my_box.contents # Lets keep this short
+
+        my_box.to_dict()
+        {'affiliates': {'Dr Evil': 'Not groovy',
+                'Scott Evil': "Doesn't want to take over family business",
+                'Vanessa': 'Sexy'},
+         'owner': 'Mr. Powers'}
+
         # Will only convert outermost object
         dict(my_box)
         # {'owner': 'Mr. Powers', 'affiliates': <Box: {'Vanessa': 'Sexy',
         # 'Dr Evil': 'Not groovy', 'Scott Evil': "Doesn't want to take over family business"}>,
         # 'credits': <Box: {'Austin Powers': 'Mike Myers', 'Vanessa Kensington': 'Elizabeth Hurley'}>}
 
-        my_box.to_dict()
-        # {'owner': 'Mr. Powers', 'affiliates': {'Vanessa': 'Sexy',
-        # 'Dr Evil': 'Not groovy', 'Scott Evil': "Doesn't want to take over family business"},
-        # 'credits': {'Austin Powers': 'Mike Myers', 'Vanessa Kensington': 'Elizabeth Hurley'}}
 
+Box
+~~~
+
+`Box` can be instantiated the same ways as `dict`
+
+.. code:: python
+
+        Box({'data': 2, 'count': 5})
+        Box(data=2, count=5)
+        Box({'data': 2, 'count': 1}, count=5)
+        Box([('data', 2), ('count', 5)])
+
+        # All will create
+        # <Box: {'data': 2, 'count': 5}>
+
+.. code:: python
+
+In addition to all the functions of a dictionary it also has:
+
+**to_dict**
+
+Return the Box object and all sub Box and BoxList objects into regular dicts and list
+
+
+.. code:: python
+
+        my_box.to_dict()
+        {'owner': 'Mr. Powers',
+         'affiliates': {'Vanessa': 'Sexy',
+                        'Dr Evil': 'Not groovy',
+                        'Scott Evil': "Doesn't want to take over family business"}}
+
+
+**to_json**
+
+Turn the Box object into a JSON string, write it to file if filename specified
+
+
+.. code:: python
+
+        my_box.to_json()
+        {
+            "owner": "Mr. Powers",
+            "affiliates": {
+                "Vanessa": "Sexy",
+                "Dr Evil": "Not groovy",
+                "Scott Evil": "Doesn't want to take over family business"
+            }
+        }
+
+
+**to_yaml**
+
+Only available if `PyYAML` is installed (not automatically installed via pip or `setup.py`)
+
+Turn the Box object into a YAML string, write it to file if filename specified
+
+.. code::
+
+        my_box.to_yaml())
+        affiliates:
+          Dr Evil: Not groovy
+          Scott Evil: Doesn't want to take over family business
+          Vanessa: Sexy
+        owner: Mr. Powers
+
+
+LightBox
+~~~~~~~~
+
+`LightBox` is the original code from `reusables.Namespace` that does not
+examine lists, but only converts dictionary objects.
+
+.. code:: python
+
+        from box import LightBox
+
+        light_box = LightBox({'my_list': [{'item': 1}, {'item': 2}])
+
+        light_box.my_list
+        [{'item': 1}, {'item': 2}]
+
+
+ConfigBox
+~~~~~~~~~
 
 This module was pulled from my other project, reusables, so it has support for
-a `ConfigBox`.
+a `ConfigBox`. It is based on top of `LightBox` as there are no lists of dicts
+to dive into in a configuration file.
 
 test_config.ini
 
@@ -119,12 +238,14 @@ Does not work recursively.
 
 EasyDict not have a way to make sub items recursively back into a regular dictionary.
 
+Adding new dicts to lists in the dictionary does not make them into EasyDicts.
+
 Both EasyDicts `str` and `repr` print a dictionary look alike, `Box` makes it clear in repr
 that it is a unique object.
 
 **addict**
 
-Is a default dictionary, as in it will never fail on lookup.
-It also goes into lists and makes those into sub objects as.
+Adding new dicts to lists in the dictionary does not make them into `addict.Dict`s.
 
-
+Is a default dictionary, as in it will never fail on lookup. Is totally a copy cat that
+started ten months after `reusables.Namespace` ;-)

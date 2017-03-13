@@ -142,33 +142,26 @@ class LightBox(dict):
         else:
             return json.dumps(self.to_dict(), indent=indent, **json_kwargs)
 
-    def tree_view(self, sep="    "):
-        base = self.to_dict()
-        return tree_view(base, sep=sep)
-
     if yaml_support:
-        def to_yaml(self, filename=None, **yaml_kwargs):
+        def to_yaml(self, filename=None, default_flow_style=False,
+                    **yaml_kwargs):
             """
             Transform the Box object into a YAML string. 
             
             :param filename:  If provided will save to file
             :param yaml_kwargs: additional arguments to pass to yaml.dump
+            :param default_flow_style: False will recursively dump dicts
             :return: string of YAML or return of `yaml.dump`
             """
             if filename:
                 with open(filename, 'w') as f:
-                    return yaml.dump(self.to_dict(), f, **yaml_kwargs)
+                    return yaml.dump(self.to_dict(), f,
+                                     default_flow_style=default_flow_style,
+                                     **yaml_kwargs)
             else:
-                return yaml.dump(self.to_dict(), **yaml_kwargs)
-
-
-def tree_view(dictionary, level=0, sep="|  "):
-    """
-    View a dictionary as a tree.
-    """
-    return "".join(["{0}{1}\n{2}".format(sep * level, k,
-                   tree_view(v, level + 1, sep=sep) if isinstance(v, dict)
-                   else "") for k, v in dictionary.items()])
+                return yaml.dump(self.to_dict(),
+                                 default_flow_style=default_flow_style,
+                                 **yaml_kwargs)
 
 
 def _recursive_create(self, iterable, include_lists=False, box_class=LightBox):
