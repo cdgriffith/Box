@@ -11,12 +11,11 @@ Python dictionaries with recursive dot notation access.
              "contents": [{"qty": 1, "item": "blue crushed-velvet suit"},
                           {"qty": 1, "item": "frilly lace crava"},
                           {"qty": 1, "item": "gold medallion with peace symbol"},
-                          {"qty": 1, "item": "Italian shoes"},
                           {"qty": 1, "item": "Swedish-made enlarger pump"},
-                          {"qty": 1, "item": "credit card receipt for Swedish-made enlarger pump"
-                                             ", signed Austin Powers."},
-                          {"qty": 1, "item": "warranty card for Swedish-made enlarger pump"
-                                             ", filled out by Austin Powers."},
+                          {"qty": 1, "item": "credit card receipt for Swedish-made enlarger pump, "
+                                             "signed Austin Powers."},
+                          {"qty": 1, "item": "warranty card for Swedish-made enlarger pump, "
+                                             "filled out by Austin Powers."},
                           {"qty": 1, "item": "book, Swedish-Made Enlarger Pumps and Me"}],
              "affiliates": {
                  "Vanessa": "Sexy",
@@ -29,9 +28,11 @@ Python dictionaries with recursive dot notation access.
         my_box.contents[0].item
         'blue crushed-velvet suit'
 
-        # Here's something that no other library I know supports
+        # Here's something that no other library supports (that I know of)
+        # Automatic creation of Boxes in sub-lists
         my_box.contents.append({"qty": 1, "item": "tie-dyed socks"})
         my_box.contents[-1].item
+        'tie-dyed socks'
 
         my_box.funny_line = "They tried to steal my lucky charms!"
 
@@ -53,8 +54,6 @@ Python dictionaries with recursive dot notation access.
         # - item: frilly lace crava
         #   qty: 1
         # - item: gold medallion with peace symbol
-        #   qty: 1
-        # - item: Italian shoes
         #   qty: 1
         # ...
 
@@ -91,16 +90,18 @@ and all sub objects back into a regular dictionary.
         del my_box.contents # Lets keep this short
 
         my_box.to_dict()
-        {'affiliates': {'Dr Evil': 'Not groovy',
-                'Scott Evil': "Doesn't want to take over family business",
-                'Vanessa': 'Sexy'},
+        {'affiliates':
+                {'Dr Evil': 'Not groovy',
+                 'Scott Evil': "Doesn't want to take over family business",
+                 'Vanessa': 'Sexy'},
          'owner': 'Mr. Powers'}
 
         # Will only convert outermost object
         dict(my_box)
-        # {'owner': 'Mr. Powers', 'affiliates': <Box: {'Vanessa': 'Sexy',
-        # 'Dr Evil': 'Not groovy', 'Scott Evil': "Doesn't want to take over family business"}>,
-        # 'credits': <Box: {'Austin Powers': 'Mike Myers', 'Vanessa Kensington': 'Elizabeth Hurley'}>}
+        # {'owner': 'Mr. Powers',
+        #  'affiliates': <Box: {'Vanessa': 'Sexy',
+        #                      'Dr Evil': 'Not groovy',
+        #                      'Scott Evil': "Doesn't want to take over family business"}>}}
 
 
 Box
@@ -119,8 +120,6 @@ Box
         # <Box: {'data': 2, 'count': 5}>
 
 .. code:: python
-
-In addition to all the functions of a dictionary it also has:
 
 **to_dict**
 
@@ -162,7 +161,7 @@ Turn the Box object into a YAML string, write it to file if filename specified
 
 .. code::
 
-        my_box.to_yaml())
+        my_box.to_yaml()
         affiliates:
           Dr Evil: Not groovy
           Scott Evil: Doesn't want to take over family business
@@ -232,20 +231,16 @@ Similar Libraries
 
 **Bunch**
 
-Does not work recursively.
+* Does not work recursively.
 
 **EasyDict**
 
-EasyDict not have a way to make sub items recursively back into a regular dictionary.
-
-Adding new dicts to lists in the dictionary does not make them into EasyDicts.
-
-Both EasyDicts `str` and `repr` print a dictionary look alike, `Box` makes it clear in repr
-that it is a unique object.
+* EasyDict not have a way to make sub items recursively back into a regular dictionary.
+* Adding new dicts to lists in the dictionary does not make them into EasyDicts.
+* Both EasyDicts `str` and `repr` print a dictionary look alike, `Box` makes it clear in repr that it is a unique object.
 
 **addict**
 
-Adding new dicts to lists in the dictionary does not make them into `addict.Dict`s.
-
-Is a default dictionary, as in it will never fail on lookup. Is totally a copy cat that
-started ten months after `reusables.Namespace` ;-)
+* Adding new dicts to lists in the dictionary does not make them into `addict.Dict`s.
+* Is a default dictionary, as in it will never fail on lookup.
+* Is a copy cat that started ten months after `reusables.Namespace` ;-)
