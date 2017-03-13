@@ -228,16 +228,8 @@ class Box(LightBox):
         for k, v in in_dict.items():
             if isinstance(v, LightBox):
                 v = v.to_dict()
-            elif isinstance(v, list):
-                new_list = []
-                for item in v:
-                    if isinstance(item, (Box, LightBox)):
-                        new_list.append(item.to_dict())
-                    elif isinstance(item, BoxList):
-                        new_list.append(item.to_list())
-                    else:
-                        new_list.append(item)
-                v = new_list
+            elif isinstance(v, BoxList):
+                v = v.to_list()
             out_dict[k] = v
         return out_dict
 

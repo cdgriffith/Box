@@ -65,7 +65,7 @@ Python dictionaries with recursive dot notation access.
 Install
 -------
 
- |BuildStatus| |CoverageStatus|
+|BuildStatus| |CoverageStatus|
 
 .. code:: bash
 

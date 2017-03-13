@@ -275,6 +275,7 @@ class TestReuseBox(unittest.TestCase):
             assert not isinstance(x, (BoxList, Box, LightBox))
         new_list.insert(0, {'test': 5})
         new_list.insert(1, ['a', 'b'])
+        new_list.append('x')
         assert new_list[0].test == 5
         assert isinstance(str(new_list), str)
         assert isinstance(new_list[1], BoxList)
