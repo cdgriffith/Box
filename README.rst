@@ -1,4 +1,4 @@
-.. image:: https://raw.githubusercontent.com/cdgriffith/Box/development/box_logo.png
+|Box| |BuildStatus| |CoverageStatus|
 
 Python dictionaries with recursive dot notation access.
 
@@ -244,3 +244,17 @@ Similar Libraries
 * Adding new dicts to lists in the dictionary does not make them into `addict.Dict`s.
 * Is a default dictionary, as in it will never fail on lookup.
 * Is a copy cat that started ten months after `reusables.Namespace` ;-)
+
+
+License
+-------
+
+MIT License, Copyright (c) 2017 Chris Griffith. See LICENSE file.
+
+
+.. |Box| image:: https://raw.githubusercontent.com/cdgriffith/Box/development/box_logo.png
+   :target: https://github.com/cdgriffith/Box
+.. |BuildStatus| image:: https://travis-ci.org/cdgriffith/Box.png?branch=master
+   :target: https://travis-ci.org/cdgriffith/Box
+.. |CoverageStatus| image:: https://img.shields.io/coveralls/cdgriffith/Box/master.svg?maxAge=2592000
+   :target: https://coveralls.io/r/cdgriffith/Box?branch=master
