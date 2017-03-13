@@ -13,4 +13,4 @@ exclude_lines =
     except ImportError
     yaml = none
     object.__setattr
-    obkect.__delattr
+    object.__delattr
