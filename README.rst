@@ -113,7 +113,7 @@ and all sub objects back into a regular dictionary.
 Box
 ~~~
 
-`Box` can be instantiated the same ways as `dict`
+`Box` can be instantiated the same ways as `dict`.
 
 .. code:: python
 
@@ -125,11 +125,26 @@ Box
         # All will create
         # <Box: {'data': 2, 'count': 5}>
 
+`Box` is a subclass of `dict` which overrides some base functionality to make
+sure everything stored in the dict can be accessed as an attribute or key value.
+
+.. code:: python
+
+      small_box = Box({'data': 2, 'count': 5})
+      small_box.data == small_box['data'] == getattr(small_box, 'data')
+
+Any time a list or dict is added to a `Box`, it is converted into a `BoxList`
+or `Box` respectively.
+
+`Box` includes helper functions to transform it back into `dict`,
+and into `JSON` or `YAML` strings.
+
 .. code:: python
 
 **to_dict**
 
-Return the Box object and all sub Box and BoxList objects into regular dicts and list
+Return the `Box` object and all sub `Box` and `BoxList`
+objects into regular dicts and list.
 
 
 .. code:: python
@@ -143,8 +158,15 @@ Return the Box object and all sub Box and BoxList objects into regular dicts and
 
 **to_json**
 
-Turn the Box object into a JSON string, write it to file if filename specified
+Turn the `Box` object into a `JSON` string, write it to file if filename specified.::
 
+   to_json(filename=None, indent=4, **json_kwargs)
+       Transform the Box object into a JSON string.
+
+       :param filename: If provided will save to file
+       :param indent: Automatic formatting by indent size in spaces
+       :param json_kwargs: additional arguments to pass to json.dump(s)
+       :return: string of JSON or return of `json.dump`
 
 .. code:: python
 
@@ -161,9 +183,16 @@ Turn the Box object into a JSON string, write it to file if filename specified
 
 **to_yaml**
 
-Only available if `PyYAML` is installed (not automatically installed via pip or `setup.py`)
+Only available if `PyYAML` is installed (not automatically installed via pip or `setup.py`)::
 
-Turn the Box object into a YAML string, write it to file if filename specified
+   to_yaml(filename=None, default_flow_style=False, **yaml_kwargs) method of box.Box instance
+       Transform the Box object into a YAML string.
+
+       :param filename:  If provided will save to file
+       :param yaml_kwargs: additional arguments to pass to yaml.dump
+       :param default_flow_style: False will recursively dump dicts
+       :return: string of YAML or return of `yaml.dump`
+
 
 .. code::
 
@@ -173,6 +202,35 @@ Turn the Box object into a YAML string, write it to file if filename specified
           Scott Evil: Doesn't want to take over family business
           Vanessa: Sexy
         owner: Mr. Powers
+
+BoxList
+~~~~~~~
+
+To make sure all items added to lists in the box are also converted, all lists
+are covered into `BoxList`. It's possible to
+initiate these directly and use them just like a `Box`.
+
+.. code:: python
+
+      from box import BoxList
+
+      my_boxlist = BoxList({'item': x} for x in range(10))
+      #  <BoxList: [<Box: {'item': 0}>, <Box: {'item': 1}>, ...
+
+      my_boxlist[5].item
+      5
+
+
+**to_list**
+
+Transform a `BoxList` and all components back into regular `list` and `dict` items.
+
+.. code:: python
+
+      my_boxlist.to_list()
+      # [{'item': 0},
+      #  {'item': 1},
+      #  ...
 
 
 LightBox
@@ -247,7 +305,7 @@ Similar Libraries
 
 **addict**
 
-* Adding new dicts to lists in the dictionary does not make them into `addict.Dict`s.
+* Adding new dicts to lists in the dictionary does not make them into `addict.Dict`.
 * Is a default dictionary, as in it will never fail on lookup.
 * Is a copy cat that started ten months after `reusables.Namespace` ;-)
 
