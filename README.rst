@@ -71,12 +71,12 @@ Install
 
         pip install python-box
 
-
-(Don't see a box package, but alas, can't claim the name for some reason.)
-
 Box is tested on python 2.6+, 3.3+ and PyPy2, and should work on other 
 interpreters as well. If  it does not install with this command, please
 open a ticket with the error you are experiencing!
+
+If you want to be able to use the `to_yaml` functionality make sure to
+install `PyYAML` as well.
 
 Overview
 --------
@@ -109,6 +109,10 @@ and all sub objects back into a regular dictionary.
         #                      'Dr Evil': 'Not groovy',
         #                      'Scott Evil': "Doesn't want to take over family business"}>}}
 
+
+`Box` was originally named `Namespaces` in the `reusables` project, created
+over three years ago. `LightBox` is the direct dependant of `Namespace`, and
+should operate as a near drop in replacement if you are switching over.
 
 Box
 ~~~
@@ -236,8 +240,7 @@ Transform a `BoxList` and all components back into regular `list` and `dict` ite
 LightBox
 ~~~~~~~~
 
-`LightBox` is the original code from `reusables.Namespace` that does not
-examine lists, but only converts dictionary objects.
+`LightBox` does not examine lists, but only converts dictionary objects.
 
 .. code:: python
 
@@ -252,7 +255,7 @@ examine lists, but only converts dictionary objects.
 ConfigBox
 ~~~~~~~~~
 
-This module was pulled from my other project, reusables, so it has support for
+This module has support for
 a `ConfigBox`. It is based on top of `LightBox` as there are no lists of dicts
 to dive into in a configuration file.
 
@@ -270,7 +273,7 @@ test_config.ini
         floatly=4.4
 
 
-With the combination of reusables and ConfigBox you can easily read python 
+With the combination of `reusables` and `ConfigBox` you can easily read python
 config values into python types. It supports `list`, `bool`, `int` and `float`.
 
 .. code:: python
