@@ -158,7 +158,7 @@ objects into regular dicts and list.
 
 **to_json**
 
-Turn the `Box` object into a `JSON` string, write it to file if filename specified.::
+Available on all systems that support the default `json` library.::
 
    to_json(filename=None, indent=4, **json_kwargs)
        Transform the Box object into a JSON string.
@@ -185,12 +185,12 @@ Turn the `Box` object into a `JSON` string, write it to file if filename specifi
 
 Only available if `PyYAML` is installed (not automatically installed via pip or `setup.py`)::
 
-   to_yaml(filename=None, default_flow_style=False, **yaml_kwargs) method of box.Box instance
+   to_yaml(filename=None, default_flow_style=False, **yaml_kwargs)
        Transform the Box object into a YAML string.
 
        :param filename:  If provided will save to file
-       :param yaml_kwargs: additional arguments to pass to yaml.dump
        :param default_flow_style: False will recursively dump dicts
+       :param yaml_kwargs: additional arguments to pass to yaml.dump
        :return: string of YAML or return of `yaml.dump`
 
 

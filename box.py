@@ -139,8 +139,8 @@ class LightBox(dict):
             Transform the Box object into a YAML string. 
             
             :param filename:  If provided will save to file
-            :param yaml_kwargs: additional arguments to pass to yaml.dump
             :param default_flow_style: False will recursively dump dicts
+            :param yaml_kwargs: additional arguments to pass to yaml.dump
             :return: string of YAML or return of `yaml.dump`
             """
             if filename:
