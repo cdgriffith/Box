@@ -143,8 +143,6 @@ or `Box` respectively.
 `Box` includes helper functions to transform it back into `dict`,
 and into `JSON` or `YAML` strings.
 
-.. code:: python
-
 **to_dict**
 
 Return the `Box` object and all sub `Box` and `BoxList`
