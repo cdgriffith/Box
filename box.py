@@ -29,7 +29,7 @@ if sys.version_info >= (3, 0):
 
 __all__ = ['Box', 'ConfigBox', 'LightBox', 'BoxList']
 __author__ = "Chris Griffith"
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 
 class LightBox(dict):

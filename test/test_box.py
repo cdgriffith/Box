@@ -283,10 +283,12 @@ class TestReuseBox(unittest.TestCase):
 
     def test_dir(self):
         test_dict = {'key1': 'value1',
+                     'not$allowed': 'fine_value',
                      "Key 2": {"Key 3": "Value 3",
                                "Key4": {"Key5": "Value5"}}}
         a = Box(test_dict)
         assert 'key1' in dir(a)
+        assert 'not$allowed' not in dir(a)
         assert 'Key4' in a['Key 2']
         for item in ('to_yaml', 'to_dict', 'to_json'):
             assert item in dir(a)
@@ -315,12 +317,16 @@ class TestReuseBox(unittest.TestCase):
         assert a.testkey == 66
 
         b = LightBox(test_dict)
+        b.update([('asdf', 'fdsa')])
+        b.update(testkey=66)
         b.update({'key1': {'new': 5}, 'Key 2': {"add_key": 6}})
 
         assert b.key1.new == 5
         assert b['Key 2'].add_key == 6
         assert "Key5" in b['Key 2'].Key4
         assert isinstance(b.key1, LightBox)
+        assert b.asdf == 'fdsa'
+        assert b.testkey == 66
 
     def test_set_default(self):
         test_dict = {'key1': 'value1',
@@ -330,6 +336,7 @@ class TestReuseBox(unittest.TestCase):
 
         new = a.setdefault("key3", {'item': 2})
         new_list = a.setdefault("lister", [{'gah': 7}])
+        assert a.setdefault("key1", False) == 'value1'
 
         assert new == Box(item=2)
         assert new_list == BoxList([{'gah': 7}])
@@ -341,6 +348,7 @@ class TestReuseBox(unittest.TestCase):
         new = b.setdefault("key3", {'item': 2})
         new_list = b.setdefault("lister", [{'gah': 7}])
 
+        assert b.setdefault("key1", False) == 'value1'
         assert new == Box(item=2)
         assert new_list == [{'gah': 7}]
         assert b.key3.item == 2
