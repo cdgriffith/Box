@@ -235,7 +235,10 @@ class Box(LightBox):
 
 
 class BoxList(list):
-
+    """
+    Drop in replacement of list, that converts added objects to Box or BoxList
+    objects as necessary. 
+    """
     __box_class__ = Box
 
     def __init__(self, iterable=None):
@@ -246,7 +249,7 @@ class BoxList(list):
     def append(self, p_object):
         if isinstance(p_object, dict):
             p_object = self.__box_class__(p_object)
-        if isinstance(p_object, list):
+        elif isinstance(p_object, list):
             p_object = BoxList(p_object)
         return super(BoxList, self).append(p_object)
 
@@ -257,7 +260,7 @@ class BoxList(list):
     def insert(self, index, p_object):
         if isinstance(p_object, dict):
             p_object = self.__box_class__(p_object)
-        if isinstance(p_object, list):
+        elif isinstance(p_object, list):
             p_object = BoxList()
         return super(BoxList, self).insert(index, p_object)
 

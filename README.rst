@@ -304,13 +304,13 @@ Similar Libraries
 
 * EasyDict not have a way to make sub items recursively back into a regular dictionary.
 * Adding new dicts to lists in the dictionary does not make them into EasyDicts.
-* Both EasyDicts `str` and `repr` print a dictionary look alike, `Box` makes it clear in repr that it is a unique object.
+* Both EasyDicts `str` and `repr` print a dictionary look alike, `Box` makes it clear in repr that it is a Box object.
 
 **addict**
 
-* Adding new dicts to lists in the dictionary does not make them into `addict.Dict`.
+* Adding new dicts or lists does not make them into `addict.Dict` objects.
 * Is a default dictionary, as in it will never fail on lookup.
-* Is a copy cat that started ten months after `reusables.Namespace` ;-)
+* Both EasyDicts `str` and `repr` print a dictionary look alike, `Box` makes it clear in repr that it is a Box object.
 
 
 License
