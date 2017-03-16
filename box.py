@@ -110,13 +110,15 @@ class LightBox(dict):
 
         out = dir(dict) + ['to_dict', 'to_json']
         # Only show items accessible by dot notation
-        for x in self.keys():
-            if " " not in x and not x[0].isnumeric() and x not in builtins:
-                for letter in x:
+        for key in self.keys():
+            if (" " not in key and
+                    key[0] not in string.digits and
+                    key not in builtins):
+                for letter in key:
                     if letter not in allowed:
                         break
                 else:
-                    out.append(x)
+                    out.append(key)
 
         if yaml_support:
             out.append('to_yaml')
