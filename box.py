@@ -262,14 +262,10 @@ class BoxList(list):
         return super(BoxList, self).insert(index, p_object)
 
     def __repr__(self):
-        return "<BoxList: {0}>".format(list(self))
+        return "<BoxList: {0}>".format(self.to_list())
 
     def __str__(self):
-        temp = []
-        for x in self:
-            temp.append(x.to_dict() if
-                        isinstance(x, self.__box_class__) else x)
-        return str(temp)
+        return str(self.to_list())
 
     def to_list(self):
         new_list = []
