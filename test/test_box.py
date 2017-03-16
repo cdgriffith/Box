@@ -280,3 +280,69 @@ class TestReuseBox(unittest.TestCase):
         assert isinstance(str(new_list), str)
         assert isinstance(new_list[1], BoxList)
         assert not isinstance(new_list.to_list(), BoxList)
+
+    def test_dir(self):
+        test_dict = {'key1': 'value1',
+                     "Key 2": {"Key 3": "Value 3",
+                               "Key4": {"Key5": "Value5"}}}
+        a = Box(test_dict)
+        assert 'key1' in dir(a)
+        assert 'Key4' in a['Key 2']
+        for item in ('to_yaml', 'to_dict', 'to_json'):
+            assert item in dir(a)
+
+        b = ConfigBox(test_dict)
+
+        for item in ('to_yaml', 'to_dict', 'to_json', 'int', 'list', 'float'):
+            assert item in dir(b)
+
+    def test_update(self):
+        test_dict = {'key1': 'value1',
+                     "Key 2": {"Key 3": "Value 3",
+                               "Key4": {"Key5": "Value5"}}}
+        a = Box(test_dict)
+        a.update({'key1': {'new': 5}, 'Key 2': {"add_key": 6},
+                  'lister': ['a']})
+        a.update([('asdf', 'fdsa')])
+        a.update(testkey=66)
+
+        assert a.key1.new == 5
+        assert a['Key 2'].add_key == 6
+        assert "Key5" in a['Key 2'].Key4
+        assert isinstance(a.key1, Box)
+        assert isinstance(a.lister, BoxList)
+        assert a.asdf == 'fdsa'
+        assert a.testkey == 66
+
+        b = LightBox(test_dict)
+        b.update({'key1': {'new': 5}, 'Key 2': {"add_key": 6}})
+
+        assert b.key1.new == 5
+        assert b['Key 2'].add_key == 6
+        assert "Key5" in b['Key 2'].Key4
+        assert isinstance(b.key1, LightBox)
+
+    def test_set_default(self):
+        test_dict = {'key1': 'value1',
+                     "Key 2": {"Key 3": "Value 3",
+                               "Key4": {"Key5": "Value5"}}}
+        a = Box(test_dict)
+
+        new = a.setdefault("key3", {'item': 2})
+        new_list = a.setdefault("lister", [{'gah': 7}])
+
+        assert new == Box(item=2)
+        assert new_list == BoxList([{'gah': 7}])
+        assert a.key3.item == 2
+        assert a.lister[0].gah == 7
+
+        b = LightBox(test_dict)
+
+        new = b.setdefault("key3", {'item': 2})
+        new_list = b.setdefault("lister", [{'gah': 7}])
+
+        assert new == Box(item=2)
+        assert new_list == [{'gah': 7}]
+        assert b.key3.item == 2
+        assert b.lister[0]["gah"] == 7
+        assert not isinstance(b.lister, BoxList)

@@ -1,3 +1,9 @@
+Version 2.1.0
+=============
+
+* Adding `.update` and `.set_default` functionality
+* Adding `dir` support
+
 Version 2.0.0
 =============
 

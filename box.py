@@ -6,6 +6,7 @@
 Improved dictionary management. Inspired by
 javascript style referencing, as it's one of the few things they got right.
 """
+import string
 import sys
 import json
 
@@ -98,7 +99,49 @@ class LightBox(dict):
         return str(self.to_dict())
 
     def __call__(self, *args, **kwargs):
+        """ Return keys as a tuple"""
         return tuple(sorted(self.keys()))
+
+    def __dir__(self):
+        builtins = ("True", "False", "None", "if", "elif", "else", "for",
+                    "in", "not", "is", "def", "class", "return", "yield",
+                    "except", "while", "raise")
+        allowed = string.ascii_letters + string.digits + "_"
+
+        out = dir(dict) + ['to_dict', 'to_json']
+        # Only show items accessible by dot notation
+        for x in self.keys():
+            if " " not in x and not x[0].isnumeric() and x not in builtins:
+                for letter in x:
+                    if letter not in allowed:
+                        break
+                else:
+                    out.append(x)
+
+        if yaml_support:
+            out.append('to_yaml')
+        return out
+
+    def update(self, item=None, **kwargs):
+        if not item:
+            item = kwargs
+        iter_over = item.items() if hasattr(item, 'items') else item
+        for k, v in iter_over:
+            if isinstance(v, dict):
+                v = Box(v)
+                if k in self and isinstance(self[k], dict):
+                    self[k].update(v)
+                    continue
+            self.__setattr__(k, v)
+
+    def setdefault(self, item, default=None):
+        if item in self:
+            return self[item]
+
+        if isinstance(default, dict):
+            default = Box(default)
+        self[item] = default
+        return default
 
     def to_dict(self, in_dict=None):
         """
@@ -233,6 +276,31 @@ class Box(LightBox):
             out_dict[k] = v
         return out_dict
 
+    def update(self, item=None, **kwargs):
+        if not item:
+            item = kwargs
+        iter_over = item.items() if hasattr(item, 'items') else item
+        for k, v in iter_over:
+            if isinstance(v, dict):
+                v = Box(v)
+                if k in self and isinstance(self[k], dict):
+                    self[k].update(v)
+                    continue
+            elif isinstance(v, list):
+                v = BoxList(v)
+            self.__setattr__(k, v)
+
+    def setdefault(self, item, default=None):
+        if item in self:
+            return self[item]
+        
+        if isinstance(default, dict):
+            default = Box(default)
+        elif isinstance(default, list):
+            default = BoxList(default)
+        self[item] = default
+        return default
+
 
 class BoxList(list):
     """
@@ -296,8 +364,8 @@ class ConfigBox(LightBox):
 
     """
 
-    _protected_keys = dir({}) + ['to_dict', 'tree_view',
-                                 'bool', 'int', 'float', 'list', 'getboolean',
+    _protected_keys = dir({}) + ['to_dict', 'bool', 'int', 'float',
+                                 'list', 'getboolean', 'to_json', 'to_yaml',
                                  'getfloat', 'getint']
 
     def __getattr__(self, item):
@@ -307,6 +375,11 @@ class ConfigBox(LightBox):
             return super(ConfigBox, self).__getattr__(item)
         except AttributeError:
             return super(ConfigBox, self).__getattr__(item.lower())
+
+    def __dir__(self):
+        return super(ConfigBox, self).__dir__() + ['bool', 'int', 'float',
+                                                   'list', 'getboolean',
+                                                   'getfloat', 'getint']
 
     def bool(self, item, default=None):
         """ Return value of key as a boolean

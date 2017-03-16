@@ -2,4 +2,4 @@ pytest
 coverage >= 3.6
 tox
 pytest-cov
-pyyaml
+PyYAML
