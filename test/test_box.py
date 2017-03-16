@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 import unittest
+import json
 
-from box import Box, ConfigBox
+import yaml
+
+from box import Box, ConfigBox, LightBox, BoxList
 
 
 class TestReuseBox(unittest.TestCase):
@@ -22,6 +25,15 @@ class TestReuseBox(unittest.TestCase):
         assert "'key1': 'value1'" in str(box)
         assert repr(box).startswith("<Box:")
 
+    def test_light_box(self):
+        test_dict = {'key1': 'value1',
+                     'alist': [{'a': 1}],
+                     "Key 2": {"Key 3": "Value 3",
+                               "Key4": {"Key5": "Value5"}}}
+        box = LightBox(**test_dict)
+        assert repr(box).startswith("<LightBox:")
+        assert not isinstance(box.alist, BoxList)
+
     def test_box_modifiy_at_depth(self):
         test_dict = {'key1': 'value1',
                      "Key 2": {"Key 3": "Value 3",
@@ -34,7 +46,7 @@ class TestReuseBox(unittest.TestCase):
         assert box['Key 2'].new_thing == "test"
         box['Key 2'].new_thing += "2"
         assert box['Key 2'].new_thing == "test2"
-        assert box['Key 2'].to_dict()['new_thing'] == "test2", box['Key 2'].to_dict()
+        assert box['Key 2'].to_dict()['new_thing'] == "test2"
         assert box.to_dict()['Key 2']['new_thing'] == "test2"
         box.__setattr__('key1', 1)
         assert box['key1'] == 1
@@ -53,15 +65,6 @@ class TestReuseBox(unittest.TestCase):
             pass
         else:
             raise AssertionError("Should not find 'hello' in the test dict")
-
-    def test_box_tree(self):
-        test_dict = {'key1': 'value1',
-                     "Key 2": {"Key 3": "Value 3",
-                               "Key4": {"Key5": "Value5"}}}
-        box = Box(**test_dict)
-        result = box.tree_view(sep="    ")
-        assert result.startswith("key1\n") or result.startswith("Key 2\n")
-        assert "Key4" in result and "    Value5\n" not in result
 
     def test_box_from_dict(self):
         ns = Box({"k1": "v1", "k2": {"k3": "v2"}})
@@ -115,7 +118,7 @@ class TestReuseBox(unittest.TestCase):
         assert cns.list("Waaaa", [1]) == [1]
         repr(cns)
 
-    def test_protested_box(self):
+    def test_protected_box_methods(self):
         my_box = Box(a=3)
         try:
             my_box.to_dict = 'test'
@@ -124,6 +127,29 @@ class TestReuseBox(unittest.TestCase):
         else:
             raise AttributeError("Should not be able to set 'to_dict'")
 
+        try:
+            del my_box.to_json
+        except AttributeError:
+            pass
+        else:
+            raise AttributeError("Should not be able to delete 'to_dict'")
+
+    def test_protected_lightbox_methods(self):
+        my_box = LightBox(a=3)
+        try:
+            my_box.to_dict = 'test'
+        except AttributeError:
+            pass
+        else:
+            raise AttributeError("Should not be able to set 'to_dict'")
+
+        try:
+            del my_box.to_json
+        except AttributeError:
+            pass
+        else:
+            raise AttributeError("Should not be able to delete 'to_dict'")
+
     def test_bad_args(self):
         try:
             Box('123', '432')
@@ -131,3 +157,126 @@ class TestReuseBox(unittest.TestCase):
             pass
         else:
             raise AssertionError("Shouldn't have worked")
+
+    def test_box_inits(self):
+        a = Box({'data': 2, 'count': 5})
+        b = Box(data=2, count=5)
+        c = Box({'data': 2, 'count': 1}, count=5)
+        d = Box([('data', 2), ('count', 5)])
+        e = Box({'a': [{'item': 3}, {'item': []}]})
+        assert e.a[1].item == []
+        assert a == b == c == d
+
+    def test_lightbox_inits(self):
+        a = LightBox({'data': 2, 'count': 5})
+        b = LightBox(data=2, count=5)
+        c = LightBox({'data': 2, 'count': 1}, count=5)
+        d = LightBox([('data', 2), ('count', 5)])
+
+        assert a == b == c == d
+
+    def test_bad_inits(self):
+        try:
+            Box("testing")
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Should raise Value Error")
+
+        try:
+            Box(22)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Should raise Value Error")
+
+        try:
+            Box(22, 33)
+        except TypeError:
+            pass
+        else:
+            raise AssertionError("Should raise Type Error")
+
+    def test_bad_lightbox_inits(self):
+        try:
+            LightBox("testing")
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Should raise Value Error")
+
+        try:
+            LightBox(22)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Should raise Value Error")
+
+        try:
+            LightBox(22, 33)
+        except TypeError:
+            pass
+        else:
+            raise AssertionError("Should raise Type Error")
+
+    def test_create_subdicts(self):
+        a = Box({'data': 2, 'count': 5})
+        a.brand_new = {'subdata': 1}
+        assert a.brand_new.subdata == 1
+        a.new_list = [{'sub_list_item': 1}]
+        assert a.new_list[0].sub_list_item == 1
+        assert isinstance(a.new_list, BoxList)
+        a.new_list2 = [[{'sub_list_item': 2}]]
+        assert a.new_list2[0][0].sub_list_item == 2
+        b = a.to_dict()
+        assert not isinstance(b['new_list'], BoxList)
+
+    def test_callable(self):
+        a = Box({'data': 2, 'count': 5})
+        assert a() == ('count', 'data')
+
+    def test_to_json(self):
+        test_dict = {'key1': 'value1',
+                     "Key 2": {"Key 3": "Value 3",
+                               "Key4": {"Key5": "Value5"}}}
+        a = Box(test_dict)
+        assert json.loads(a.to_json(indent=0)) == test_dict
+
+        a.to_json("test_json_file")
+        with open("test_json_file") as f:
+            data = json.load(f)
+            assert data == test_dict
+
+    def test_to_yaml(self):
+        test_dict = {'key1': 'value1',
+                     "Key 2": {"Key 3": "Value 3",
+                               "Key4": {"Key5": "Value5"}}}
+        a = Box(test_dict)
+        assert yaml.load(a.to_yaml()) == test_dict
+
+    def test_to_yaml_file(self):
+        test_dict = {'key1': 'value1',
+                     "Key 2": {"Key 3": "Value 3",
+                               "Key4": {"Key5": "Value5"}}}
+        a = Box(test_dict)
+        a.to_yaml("test_yaml_file")
+        with open("test_yaml_file") as f:
+            data = yaml.load(f)
+            assert data == test_dict
+
+    def test_boxlist(self):
+        new_list = BoxList({'item': x} for x in range(0, 10))
+        new_list.extend([{'item': 22}])
+        assert new_list[-1].item == 22
+        new_list.append([{'bad_item': 33}])
+        assert new_list[-1][0].bad_item == 33
+        assert repr(new_list).startswith("<BoxList:")
+        for x in new_list.to_list():
+            assert not isinstance(x, (BoxList, Box, LightBox))
+        new_list.insert(0, {'test': 5})
+        new_list.insert(1, ['a', 'b'])
+        new_list.append('x')
+        assert new_list[0].test == 5
+        assert isinstance(str(new_list), str)
+        assert isinstance(new_list[1], BoxList)
+        assert not isinstance(new_list.to_list(), BoxList)

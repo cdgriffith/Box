@@ -10,3 +10,7 @@ omit =
 exclude_lines =
     pragma: no cover
     raise err
+    except ImportError
+    yaml = none
+    object.__setattr
+    object.__delattr
