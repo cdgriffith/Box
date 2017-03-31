@@ -22,7 +22,11 @@ try:
     import yaml
     yaml_support = True
 except ImportError:
-    yaml = None
+    try:
+        import ruamel.yaml as yaml
+        yaml_support = True
+    except ImportError:
+        yaml = None
 
 if sys.version_info >= (3, 0):
     basestring = str
