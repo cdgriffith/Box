@@ -330,6 +330,15 @@ class TestReuseBox(unittest.TestCase):
         assert b.asdf == 'fdsa'
         assert b.testkey == 66
 
+    def test_auto_attr(self):
+        test_dict = {'key1': 'value1',
+                     "Key 2": {"Key 3": "Value 3",
+                               "Key4": {"Key5": "Value5"}}}
+        a = Box(test_dict, default_box=True)
+        assert a.a.a.a.a == Box()
+        a.b.b = 4
+        assert a.b.b == 4
+
     def test_set_default(self):
         test_dict = {'key1': 'value1',
                      "Key 2": {"Key 3": "Value 3",

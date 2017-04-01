@@ -36,6 +36,10 @@ __author__ = "Chris Griffith"
 __version__ = "2.2.0"
 
 
+class BoxError(Exception):
+    """ Non standard dictionary exceptions"""
+
+
 class LightBox(dict):
     """
     LightBox container.
@@ -216,6 +220,36 @@ def _recursive_create(self, iterable, include_lists=False, box_class=LightBox):
         setattr(self, k, v)
 
 
+def _safe_attr(attr):
+    """Convert a string into something that is accessible as an attribute"""
+    bad = ("if", "elif", "else", "for",
+           "in", "not", "is", "def", "class", "return", "yield",
+           "except", "while", "raise")
+    allowed = string.ascii_letters + string.digits + "_"
+
+    if attr in bad:
+        attr = "x{}".format(attr)
+
+    if hasattr(attr, 'casefold'):
+        attr = attr.casefold()
+    else:
+        attr = attr.lower()
+    attr = attr.replace(" ", "_")
+
+    try:
+        int(attr[0])
+    except ValueError:
+        pass
+    else:
+        attr = "x{}".format(attr)
+
+    out = ""
+    for character in attr:
+        if character in allowed:
+            out += character
+    return out
+
+
 class Box(LightBox):
     """
     Same as LightBox,
@@ -227,11 +261,12 @@ class Box(LightBox):
     """
 
     def __init__(self, *args, **kwargs):
-        self._box_config = {'auto_attr': False,
-                            'auto_default': None,
+        self._box_config = {'default': False,
+                            'default_attr': Box,
                             'converted': [],
-                            'auto_space': False,
-                            'auto_space_keys': []}
+                            'auto_fix': False,
+                            'frozen': False,
+                            'heritage': None}
         if len(args) == 1:
             if isinstance(args[0], basestring):
                 raise ValueError("Cannot extrapolate Box from string")
@@ -247,16 +282,21 @@ class Box(LightBox):
             raise TypeError("Box expected at most 1 argument, "
                             "got {0}".format(len(args)))
         # Remove box arguments from kwargs
-        if 'box_auto_attr' in kwargs:
-            self._box_config['auto_attr'] = kwargs.pop('box_auto_attr')
-            try:
-                self._box_config['auto_default'] = kwargs.pop(
-                    'box_auto_attr_default')
-            except (KeyError, AttributeError):
-                self._box_config['auto_default'] = Box
-
+        self._box_config['default'] = kwargs.pop('default_box', False)
+        self._box_config['default_attr'] = kwargs.pop('default_box_attr', Box)
+        freeze = kwargs.pop('frozen_box', False)
+        self._box_config['auto_fix'] = kwargs.pop('conversion_box', False)
+        self._box_config['heritage'] = kwargs.pop('__box_heritage', None)
         for k, v in kwargs.items():
             setattr(self, k, v)
+
+        # Freeze after setting initial items or it doesn't work
+        self._box_config['frozen'] = freeze
+
+    def __hash__(self):
+        if self._box_config['frozen']:
+            return hash("boxhash{}".format(self.to_json(indent=None)))
+        raise TypeError("unhashable type: 'Box'")
 
     def __getitem__(self, item):
         try:
@@ -265,20 +305,23 @@ class Box(LightBox):
             try:
                 value = object.__getattribute__(self, item)
             except AttributeError as err:
+                for k in self.keys():
+                    if item == _safe_attr(k):
+                        return super(Box, self).__getitem__(k)
                 if item == '_box_config':
-                    raise TypeError('_box_config key must exist')
-                auto_attr = self._box_config['auto_attr']
-                auto_default = self._box_config['auto_default']
-                if auto_attr:
-                    if isinstance(auto_default, type):
-                        if auto_default.__name__ == 'Box':
+                    raise BoxError('_box_config key must exist')
+                default_value = self._box_config['default_attr']
+                if self._box_config['default']:
+                    if isinstance(default_value, type):
+                        if default_value.__name__ == 'Box':
                             return Box(
-                                box_auto_attr=auto_attr,
-                                box_auto_attr_default=auto_default)
-                        return auto_default()
-                    elif hasattr(auto_default, 'copy'):
-                        return auto_default.copy()
-                    return auto_default
+                                default_box=self._box_config['default'],
+                                default_box_attr=default_value,
+                                __box_heritage=(self, item))
+                        return default_value()
+                    elif hasattr(default_value, 'copy'):
+                        return default_value.copy()
+                    return default_value
                 raise err
             else:
                 return self.__convert_and_store(item, value)
@@ -290,28 +333,41 @@ class Box(LightBox):
     def __convert_and_store(self, item, value):
         if item in self._box_config['converted']:
             return value
-        auto_attr = self._box_config['auto_attr']
-        auto_default = self._box_config['auto_default']
+        auto_attr = self._box_config['default']
+        auto_default = self._box_config['default_attr']
         if isinstance(value, dict) and not isinstance(value, Box):
-            value = Box(value, box_auto_attr=auto_attr,
-                        box_auto_attr_default=auto_default)
+            value = Box(value, default_box=auto_attr,
+                        default_box_attr=auto_default,
+                        __box_heritage=(self, item))
             self.__setattr__(item, value)
         elif isinstance(value, list):
-            value = BoxList(value, box_auto_attr=auto_attr,
-                            box_auto_attr_default=auto_default)
+            value = BoxList(value, default_box=auto_attr,
+                            default_box_attr=auto_default,
+                            __box_heritage=(self, item))
             self.__setattr__(item, value)
         self._box_config['converted'].append(item)
         return value
+
+    def __create_lineage(self):
+        if self._box_config['heritage']:
+            past, item = self._box_config['heritage']
+            past[item] = self
+            self._box_config['heritage'] = None
 
     def __getattr__(self, item):
         return self.__getitem__(item)
 
     def __setitem__(self, key, value):
+        if key != "_box_config" and self._box_config['frozen']:
+            raise BoxError('Box is frozen')
         if key in self._protected_keys or key == '_box_config':
             raise AttributeError("Key name '{0}' is protected".format(key))
         super(Box, self).__setitem__(key, value)
+        self.__create_lineage()
 
     def __setattr__(self, key, value):
+        if key != "_box_config" and self._box_config['frozen']:
+            raise BoxError('Box is frozen')
         if key in self._protected_keys:
             raise AttributeError("Key name '{0}' is protected".format(key))
         if key == '_box_config':
@@ -322,6 +378,19 @@ class Box(LightBox):
             self[key] = value
         else:
             object.__setattr__(self, key, value)
+        self.__create_lineage()
+
+    def __delitem__(self, key):
+        if self._box_config['frozen']:
+            raise BoxError('Box is frozen')
+        super(Box, self).__delitem__(key)
+
+    def __delattr__(self, item):
+        if self._box_config['frozen']:
+            raise BoxError('Box is frozen')
+        if item == '_box_config':
+            raise ValueError("'_box_config' is protected")
+        super(Box, self).__delattr__(item)
 
     def __repr__(self):
         return "<Box: {0}>".format(str(self.to_dict()))

@@ -2,7 +2,11 @@ Version 2.2.0
 =============
 
 * Adding support for `ruamel.yaml` (Thanks to Alexandre Decan)
-#TODO add lots of info because of big changes
+* Adding `BoxError` exception for custom errors
+* Adding default object abilities with `default_box` and `default_box_attr` kwargs
+* Adding `frozen_box` kwarg
+* Changing how the Box object works, to conversion on extraction
+
 
 Version 2.1.0
 =============
