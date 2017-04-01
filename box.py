@@ -258,15 +258,22 @@ class Box(LightBox):
     The lists are turned into BoxLists
     so that they can also intercept incoming items and turn
     them into Boxes.
+    
+    :param default_box: Similar to defaultdict, return a default value
+    :param default_box_attr: Specify the default replacement. 
+        WARNING: If this is not the default 'Box', it will not be recursive
+    :param frozen_box: After creation, the box cannot be modified
+    :param conversion_box: Check for near matching keys as attributes
     """
 
     def __init__(self, *args, **kwargs):
-        self._box_config = {'default': False,
+        self._box_config = {'converted': [],
+                            'heritage': None,
+                            'default': False,
                             'default_attr': Box,
-                            'converted': [],
                             'auto_fix': False,
-                            'frozen': False,
-                            'heritage': None}
+                            'frozen': False
+                            }
         if len(args) == 1:
             if isinstance(args[0], basestring):
                 raise ValueError("Cannot extrapolate Box from string")
@@ -288,7 +295,7 @@ class Box(LightBox):
         self._box_config['auto_fix'] = kwargs.pop('conversion_box', False)
         self._box_config['heritage'] = kwargs.pop('__box_heritage', None)
         for k, v in kwargs.items():
-            setattr(self, k, v)
+            self.__setitem__(k, v)
 
         # Freeze after setting initial items or it doesn't work
         self._box_config['frozen'] = freeze
@@ -305,9 +312,10 @@ class Box(LightBox):
             try:
                 value = object.__getattribute__(self, item)
             except AttributeError as err:
-                for k in self.keys():
-                    if item == _safe_attr(k):
-                        return super(Box, self).__getitem__(k)
+                if self._box_config['auto_fix']:
+                    for k in self.keys():
+                        if item == _safe_attr(k):
+                            return super(Box, self).__getitem__(k)
                 if item == '_box_config':
                     raise BoxError('_box_config key must exist')
                 default_value = self._box_config['default_attr']
@@ -360,8 +368,6 @@ class Box(LightBox):
     def __setitem__(self, key, value):
         if key != "_box_config" and self._box_config['frozen']:
             raise BoxError('Box is frozen')
-        if key in self._protected_keys or key == '_box_config':
-            raise AttributeError("Key name '{0}' is protected".format(key))
         super(Box, self).__setitem__(key, value)
         self.__create_lineage()
 
