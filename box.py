@@ -134,10 +134,12 @@ class LightBox(dict):
         iter_over = item.items() if hasattr(item, 'items') else item
         for k, v in iter_over:
             if isinstance(v, dict):
-                v = Box(v)
+                v = self.__class__(v)
                 if k in self and isinstance(self[k], dict):
                     self[k].update(v)
                     continue
+            if isinstance(v, list) and self.__class__.__name__ == 'Box':
+                v = BoxList(v)
             self.__setattr__(k, v)
 
     def setdefault(self, item, default=None):
@@ -145,7 +147,9 @@ class LightBox(dict):
             return self[item]
 
         if isinstance(default, dict):
-            default = Box(default)
+            default = self.__class__(default)
+        if isinstance(default, list) and self.__class__.__name__ == 'Box':
+            default = BoxList(default)
         self[item] = default
         return default
 
@@ -223,7 +227,11 @@ class Box(LightBox):
     """
 
     def __init__(self, *args, **kwargs):
-        self._box_config = {'auto_attr': False, 'auto_default': None, 'converted': []}
+        self._box_config = {'auto_attr': False,
+                            'auto_default': None,
+                            'converted': [],
+                            'auto_space': False,
+                            'auto_space_keys': []}
         if len(args) == 1:
             if isinstance(args[0], basestring):
                 raise ValueError("Cannot extrapolate Box from string")
@@ -238,51 +246,27 @@ class Box(LightBox):
         elif args:
             raise TypeError("Box expected at most 1 argument, "
                             "got {0}".format(len(args)))
+        # Remove box arguments from kwargs
         if 'box_auto_attr' in kwargs:
             self._box_config['auto_attr'] = kwargs.pop('box_auto_attr')
             try:
-                self._box_config['auto_default'] = kwargs.pop('box_auto_attr_default')
+                self._box_config['auto_default'] = kwargs.pop(
+                    'box_auto_attr_default')
             except (KeyError, AttributeError):
                 self._box_config['auto_default'] = Box
+
         for k, v in kwargs.items():
             setattr(self, k, v)
-
-    def items(self):
-        items = super(Box, self).items()
-        return [(k, v) for (k, v) in items if k != "_box_config"]
-
-    def keys(self):
-        keys = list(super(Box, self).keys())
-        if "_box_config" in keys:
-            keys.remove('_box_config')
-        return keys
-
-    def values(self):
-        return [v for k, v in self.items() if k != "_box_config"]
-
-    def popitem(self):
-        item = super(Box, self).popitem()
-        if item[0] == '_box_config':
-            self[item[0]] = item[1]
-            item = super(Box, self).popitem()
-        return item
-
-    def __len__(self):
-        return super(Box, self).__len__() - 1
-
-    def __iter__(self):
-        for k in self.keys():
-            yield k
 
     def __getitem__(self, item):
         try:
             value = super(Box, self).__getitem__(item)
         except KeyError:
-            if item == '_box_config':
-                raise ValueError("Something went terribly wrong")
             try:
                 value = object.__getattribute__(self, item)
             except AttributeError as err:
+                if item == '_box_config':
+                    raise TypeError('_box_config key must exist')
                 auto_attr = self._box_config['auto_attr']
                 auto_default = self._box_config['auto_default']
                 if auto_attr:
@@ -321,6 +305,11 @@ class Box(LightBox):
 
     def __getattr__(self, item):
         return self.__getitem__(item)
+
+    def __setitem__(self, key, value):
+        if key in self._protected_keys or key == '_box_config':
+            raise AttributeError("Key name '{0}' is protected".format(key))
+        super(Box, self).__setitem__(key, value)
 
     def __setattr__(self, key, value):
         if key in self._protected_keys:
