@@ -223,36 +223,110 @@ class Box(LightBox):
     """
 
     def __init__(self, *args, **kwargs):
+        self._box_config = {'auto_attr': False, 'auto_default': None, 'converted': []}
         if len(args) == 1:
             if isinstance(args[0], basestring):
                 raise ValueError("Cannot extrapolate Box from string")
             if isinstance(args[0], Mapping):
-                _recursive_create(self, args[0].items(),
-                                  include_lists=True, box_class=Box)
+                for k, v in args[0].items():
+                    setattr(self, k, v)
             elif isinstance(args[0], Iterable):
-                _recursive_create(self, args[0],
-                                  include_lists=True, box_class=Box)
+                for k, v in args[0]:
+                    setattr(self, k, v)
             else:
                 raise ValueError("First argument must be mapping or iterable")
         elif args:
             raise TypeError("Box expected at most 1 argument, "
                             "got {0}".format(len(args)))
-        _recursive_create(self, kwargs.items(),
-                          include_lists=True, box_class=Box)
+        if 'box_auto_attr' in kwargs:
+            self._box_config['auto_attr'] = kwargs.pop('box_auto_attr')
+            try:
+                self._box_config['auto_default'] = kwargs.pop('box_auto_attr_default')
+            except (KeyError, AttributeError):
+                self._box_config['auto_default'] = Box
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    def items(self):
+        items = super(Box, self).items()
+        return [(k, v) for (k, v) in items if k != "_box_config"]
+
+    def keys(self):
+        keys = list(super(Box, self).keys())
+        if "_box_config" in keys:
+            keys.remove('_box_config')
+        return keys
+
+    def values(self):
+        return [v for k, v in self.items() if k != "_box_config"]
+
+    def popitem(self):
+        item = super(Box, self).popitem()
+        if item[0] == '_box_config':
+            self[item[0]] = item[1]
+            item = super(Box, self).popitem()
+        return item
+
+    def __len__(self):
+        return super(Box, self).__len__() - 1
+
+    def __iter__(self):
+        for k in self.keys():
+            yield k
+
+    def __getitem__(self, item):
+        try:
+            value = super(Box, self).__getitem__(item)
+        except KeyError:
+            if item == '_box_config':
+                raise ValueError("Something went terribly wrong")
+            try:
+                value = object.__getattribute__(self, item)
+            except AttributeError as err:
+                auto_attr = self._box_config['auto_attr']
+                auto_default = self._box_config['auto_default']
+                if auto_attr:
+                    if isinstance(auto_default, type):
+                        if auto_default.__name__ == 'Box':
+                            return Box(
+                                box_auto_attr=auto_attr,
+                                box_auto_attr_default=auto_default)
+                        return auto_default()
+                    elif hasattr(auto_default, 'copy'):
+                        return auto_default.copy()
+                    return auto_default
+                raise err
+            else:
+                return self.__convert_and_store(item, value)
+        else:
+            if item == '_box_config':
+                return value
+            return self.__convert_and_store(item, value)
+
+    def __convert_and_store(self, item, value):
+        if item in self._box_config['converted']:
+            return value
+        auto_attr = self._box_config['auto_attr']
+        auto_default = self._box_config['auto_default']
+        if isinstance(value, dict) and not isinstance(value, Box):
+            value = Box(value, box_auto_attr=auto_attr,
+                        box_auto_attr_default=auto_default)
+            self.__setattr__(item, value)
+        elif isinstance(value, list):
+            value = BoxList(value, box_auto_attr=auto_attr,
+                            box_auto_attr_default=auto_default)
+            self.__setattr__(item, value)
+        self._box_config['converted'].append(item)
+        return value
+
+    def __getattr__(self, item):
+        return self.__getitem__(item)
 
     def __setattr__(self, key, value):
-
         if key in self._protected_keys:
             raise AttributeError("Key name '{0}' is protected".format(key))
-        if isinstance(value, dict):
-            value = self.__class__(**value)
-        if isinstance(value, list):
-            new_list = BoxList()
-            for item in value:
-                new_list.append(Box(item) if
-                                isinstance(item, dict) else item)
-            value = new_list
-
+        if key == '_box_config':
+            return object.__setattr__(self, key, value)
         try:
             object.__getattribute__(self, key)
         except AttributeError:
@@ -281,47 +355,23 @@ class Box(LightBox):
             out_dict[k] = v
         return out_dict
 
-    def update(self, item=None, **kwargs):
-        if not item:
-            item = kwargs
-        iter_over = item.items() if hasattr(item, 'items') else item
-        for k, v in iter_over:
-            if isinstance(v, dict):
-                v = Box(v)
-                if k in self and isinstance(self[k], dict):
-                    self[k].update(v)
-                    continue
-            elif isinstance(v, list):
-                v = BoxList(v)
-            self.__setattr__(k, v)
-
-    def setdefault(self, item, default=None):
-        if item in self:
-            return self[item]
-
-        if isinstance(default, dict):
-            default = Box(default)
-        elif isinstance(default, list):
-            default = BoxList(default)
-        self[item] = default
-        return default
-
 
 class BoxList(list):
     """
     Drop in replacement of list, that converts added objects to Box or BoxList
     objects as necessary. 
     """
-    __box_class__ = Box
 
-    def __init__(self, iterable=None):
+    def __init__(self, iterable=None, box_class=Box, **box_options):
+        self.box_class = box_class
+        self.box_options = box_options
         if iterable:
             for x in iterable:
                 self.append(x)
 
     def append(self, p_object):
         if isinstance(p_object, dict):
-            p_object = self.__box_class__(p_object)
+            p_object = self.box_class(p_object, **self.box_options)
         elif isinstance(p_object, list):
             p_object = BoxList(p_object)
         return super(BoxList, self).append(p_object)
@@ -332,7 +382,7 @@ class BoxList(list):
 
     def insert(self, index, p_object):
         if isinstance(p_object, dict):
-            p_object = self.__box_class__(p_object)
+            p_object = self.box_class(p_object, **self.box_options)
         elif isinstance(p_object, list):
             p_object = BoxList()
         return super(BoxList, self).insert(index, p_object)

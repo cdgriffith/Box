@@ -42,6 +42,8 @@ class TestReuseBox(unittest.TestCase):
         box = Box(**test_dict)
         assert 'key1' in box
         assert 'key2' not in box
+        print(box)
+        print(box['Key 2'])
         box['Key 2'].new_thing = "test"
         assert box['Key 2'].new_thing == "test"
         box['Key 2'].new_thing += "2"
