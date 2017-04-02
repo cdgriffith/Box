@@ -31,9 +31,9 @@ except ImportError:
 if sys.version_info >= (3, 0):
     basestring = str
 
-__all__ = ['Box', 'ConfigBox', 'LightBox', 'BoxList']
-__author__ = "Chris Griffith"
-__version__ = "2.2.0"
+__all__ = ['Box', 'ConfigBox', 'LightBox', 'BoxList', 'BoxError']
+__author__ = 'Chris Griffith'
+__version__ = '3.0.0'
 
 
 class BoxError(Exception):
@@ -56,16 +56,16 @@ class LightBox(dict):
     def __init__(self, *args, **kwargs):
         if len(args) == 1:
             if isinstance(args[0], basestring):
-                raise ValueError("Cannot extrapolate Box from string")
+                raise ValueError('Cannot extrapolate Box from string')
             if isinstance(args[0], Mapping):
                 _recursive_create(self, args[0].items())
             elif isinstance(args[0], Iterable):
                 _recursive_create(self, args[0])
             else:
-                raise ValueError("First argument must be mapping or iterable")
+                raise ValueError('First argument must be mapping or iterable')
         elif args:
-            raise TypeError("Box expected at most 1 argument, "
-                            "got {0}".format(len(args)))
+            raise TypeError('Box expected at most 1 argument, '
+                            'got {0}'.format(len(args)))
         _recursive_create(self, kwargs.items())
 
     def __contains__(self, item):
@@ -101,7 +101,7 @@ class LightBox(dict):
             object.__delattr__(self, item)
 
     def __repr__(self):
-        return "<LightBox: {0}>".format(str(self.to_dict()))
+        return '<LightBox: {0}>'.format(str(self.to_dict()))
 
     def __str__(self):
         return str(self.to_dict())
@@ -111,15 +111,15 @@ class LightBox(dict):
         return tuple(sorted(self.keys()))
 
     def __dir__(self):
-        builtins = ("True", "False", "None", "if", "elif", "else", "for",
-                    "in", "not", "is", "def", "class", "return", "yield",
-                    "except", "while", "raise")
-        allowed = string.ascii_letters + string.digits + "_"
+        builtins = ('True', 'False', 'None', 'if', 'elif', 'else', 'for',
+                    'in', 'not', 'is', 'def', 'class', 'return', 'yield',
+                    'except', 'while', 'raise')
+        allowed = string.ascii_letters + string.digits + '_'
 
         out = dir(dict) + ['to_dict', 'to_json']
         # Only show items accessible by dot notation
         for key in self.keys():
-            if (" " not in key and
+            if (' ' not in key and
                     key[0] not in string.digits and
                     key not in builtins):
                 for letter in key:
@@ -222,28 +222,28 @@ def _recursive_create(self, iterable, include_lists=False, box_class=LightBox):
 
 def _safe_attr(attr):
     """Convert a string into something that is accessible as an attribute"""
-    bad = ("if", "elif", "else", "for",
-           "in", "not", "is", "def", "class", "return", "yield",
-           "except", "while", "raise")
-    allowed = string.ascii_letters + string.digits + "_"
+    bad = ('if', 'elif', 'else', 'for',
+           'in', 'not', 'is', 'def', 'class', 'return', 'yield',
+           'except', 'while', 'raise')
+    allowed = string.ascii_letters + string.digits + '_'
 
     if attr in bad:
-        attr = "x{}".format(attr)
+        attr = 'x{}'.format(attr)
 
     if hasattr(attr, 'casefold'):
         attr = attr.casefold()
     else:
         attr = attr.lower()
-    attr = attr.replace(" ", "_")
+    attr = attr.replace(' ', '_')
 
     try:
         int(attr[0])
     except ValueError:
         pass
     else:
-        attr = "x{}".format(attr)
+        attr = 'x{}'.format(attr)
 
-    out = ""
+    out = ''
     for character in attr:
         if character in allowed:
             out += character
@@ -276,7 +276,7 @@ class Box(LightBox):
                             }
         if len(args) == 1:
             if isinstance(args[0], basestring):
-                raise ValueError("Cannot extrapolate Box from string")
+                raise ValueError('Cannot extrapolate Box from string')
             if isinstance(args[0], Mapping):
                 for k, v in args[0].items():
                     setattr(self, k, v)
@@ -284,10 +284,10 @@ class Box(LightBox):
                 for k, v in args[0]:
                     setattr(self, k, v)
             else:
-                raise ValueError("First argument must be mapping or iterable")
+                raise ValueError('First argument must be mapping or iterable')
         elif args:
-            raise TypeError("Box expected at most 1 argument, "
-                            "got {0}".format(len(args)))
+            raise TypeError('Box expected at most 1 argument, '
+                            'got {0}'.format(len(args)))
         # Remove box arguments from kwargs
         self._box_config['default'] = kwargs.pop('default_box', False)
         self._box_config['default_attr'] = kwargs.pop('default_box_attr', Box)
@@ -302,7 +302,7 @@ class Box(LightBox):
 
     def __hash__(self):
         if self._box_config['frozen']:
-            return hash("boxhash{}".format(self.to_json(indent=None)))
+            return hash('boxhash{}'.format(self.to_json(indent=None)))
         raise TypeError("unhashable type: 'Box'")
 
     def __getitem__(self, item):
@@ -366,13 +366,13 @@ class Box(LightBox):
         return self.__getitem__(item)
 
     def __setitem__(self, key, value):
-        if key != "_box_config" and self._box_config['frozen']:
+        if key != '_box_config' and self._box_config['frozen']:
             raise BoxError('Box is frozen')
         super(Box, self).__setitem__(key, value)
         self.__create_lineage()
 
     def __setattr__(self, key, value):
-        if key != "_box_config" and self._box_config['frozen']:
+        if key != '_box_config' and self._box_config['frozen']:
             raise BoxError('Box is frozen')
         if key in self._protected_keys:
             raise AttributeError("Key name '{0}' is protected".format(key))
@@ -395,11 +395,11 @@ class Box(LightBox):
         if self._box_config['frozen']:
             raise BoxError('Box is frozen')
         if item == '_box_config':
-            raise ValueError("'_box_config' is protected")
+            raise ValueError('"_box_config" is protected')
         super(Box, self).__delattr__(item)
 
     def __repr__(self):
-        return "<Box: {0}>".format(str(self.to_dict()))
+        return '<Box: {0}>'.format(str(self.to_dict()))
 
     def to_dict(self, in_dict=None):
         """
@@ -569,7 +569,7 @@ class ConfigBox(LightBox):
                 return default
             raise err
         if strip:
-            item = item.lstrip("[").rstrip("]")
+            item = item.lstrip('[').rstrip(']')
         out = [x.strip() if strip else x for x in item.split(spliter)]
         if mod:
             return list(map(mod, out))
@@ -587,4 +587,4 @@ class ConfigBox(LightBox):
         return self.float(item, default)
 
     def __repr__(self):
-        return "<ConfigBox: {0}>".format(str(self.to_dict()))
+        return '<ConfigBox: {0}>'.format(str(self.to_dict()))
