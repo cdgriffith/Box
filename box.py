@@ -22,14 +22,18 @@ try:
     import yaml
     yaml_support = True
 except ImportError:
-    yaml = None
+    try:
+        import ruamel.yaml as yaml
+        yaml_support = True
+    except ImportError:
+        yaml = None
 
 if sys.version_info >= (3, 0):
     basestring = str
 
 __all__ = ['Box', 'ConfigBox', 'LightBox', 'BoxList']
 __author__ = "Chris Griffith"
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 
 
 class LightBox(dict):
@@ -163,8 +167,8 @@ class LightBox(dict):
 
     def to_json(self, filename=None, indent=4, **json_kwargs):
         """
-        Transform the Box object into a JSON string. 
-        
+        Transform the Box object into a JSON string.
+
         :param filename: If provided will save to file
         :param indent: Automatic formatting by indent size in spaces
         :param json_kwargs: additional arguments to pass to json.dump(s)
@@ -181,8 +185,8 @@ class LightBox(dict):
         def to_yaml(self, filename=None, default_flow_style=False,
                     **yaml_kwargs):
             """
-            Transform the Box object into a YAML string. 
-            
+            Transform the Box object into a YAML string.
+
             :param filename:  If provided will save to file
             :param default_flow_style: False will recursively dump dicts
             :param yaml_kwargs: additional arguments to pass to yaml.dump
@@ -210,13 +214,12 @@ def _recursive_create(self, iterable, include_lists=False, box_class=LightBox):
 
 class Box(LightBox):
     """
-    Same as LightBox, 
+    Same as LightBox,
     but also goes into lists and makes dicts within into Boxes.
 
     The lists are turned into BoxLists
     so that they can also intercept incoming items and turn
     them into Boxes.
-
     """
 
     def __init__(self, *args, **kwargs):
@@ -295,7 +298,7 @@ class Box(LightBox):
     def setdefault(self, item, default=None):
         if item in self:
             return self[item]
-        
+
         if isinstance(default, dict):
             default = Box(default)
         elif isinstance(default, list):
@@ -307,7 +310,7 @@ class Box(LightBox):
 class BoxList(list):
     """
     Drop in replacement of list, that converts added objects to Box or BoxList
-    objects as necessary. 
+    objects as necessary.
     """
     __box_class__ = Box
 
@@ -363,7 +366,6 @@ class ConfigBox(LightBox):
     cns.bool('my_bool') # True
     cns.int('my_int') # 5
     cns.list('my_list', mod=lambda x: int(x)) # [5, 4, 3, 3, 2]
-
     """
 
     _protected_keys = dir({}) + ['to_dict', 'bool', 'int', 'float',

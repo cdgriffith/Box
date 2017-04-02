@@ -1,3 +1,9 @@
+Version 2.2.0
+=============
+
+* Adding support for `ruamel.yaml` (Thanks to Alexandre Decan)
+* Adding Contributing and Authors files
+
 Version 2.1.0
 =============
 

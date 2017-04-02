@@ -3,7 +3,10 @@
 import unittest
 import json
 
-import yaml
+try:
+    import yaml
+except ImportError:
+    import ruamel.yaml as yaml
 
 from box import Box, ConfigBox, LightBox, BoxList
 
@@ -72,8 +75,7 @@ class TestReuseBox(unittest.TestCase):
 
     def test_box_from_bad_dict(self):
         try:
-            ns = Box('{"k1": "v1", '
-                                               '"k2": {"k3": "v2"}}')
+            Box('{"k1": "v1", "k2": {"k3": "v2"}}')
         except ValueError:
             assert True
         else:
