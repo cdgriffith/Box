@@ -423,7 +423,7 @@ class Box(LightBox):
 class BoxList(list):
     """
     Drop in replacement of list, that converts added objects to Box or BoxList
-    objects as necessary. 
+    objects as necessary.
     """
 
     def __init__(self, iterable=None, box_class=Box, **box_options):
