@@ -310,7 +310,7 @@ class Box(LightBox):
 class BoxList(list):
     """
     Drop in replacement of list, that converts added objects to Box or BoxList
-    objects as necessary. 
+    objects as necessary.
     """
     __box_class__ = Box
 
