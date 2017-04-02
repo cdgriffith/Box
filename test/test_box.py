@@ -3,7 +3,10 @@
 import unittest
 import json
 
-import yaml
+try:
+    import yaml
+except ImportError:
+    import ruamel.yaml as yaml
 
 from box import Box, ConfigBox, LightBox, BoxList
 

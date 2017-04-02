@@ -185,7 +185,7 @@ Available on all systems that support the default `json` library.::
 
 **to_yaml**
 
-Only available if `PyYAML` is installed (not automatically installed via pip or `setup.py`)::
+Only available if `PyYAML` or `ruamel.yaml` is installed (not automatically installed via pip or `setup.py`)::
 
    to_yaml(filename=None, default_flow_style=False, **yaml_kwargs)
        Transform the Box object into a YAML string.
