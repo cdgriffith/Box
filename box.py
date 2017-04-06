@@ -189,6 +189,29 @@ class LightBox(dict):
         else:
             return json.dumps(self.to_dict(), indent=indent, **json_kwargs)
 
+    @classmethod
+    def from_json(cls, json_string=None, filename=None, **json_kwargs):
+        """
+        Transform a json object string into a Box object. If the incoming
+        json is a list, you must use BoxList.from_json. 
+        
+        :param json_string: string to pass to `json.loads`
+        :param filename: filename to open and pass to `json.load`
+        :param json_kwargs: additional keyword arguments to pass along
+        :return: Box object from json data
+        """
+        if filename:
+            with open(filename, 'r') as f:
+                data = json.load(f, **json_kwargs)
+        elif json_string:
+            data = json.loads(json_string, **json_kwargs)
+        else:
+            raise BoxError('from_json requires a string or filename')
+        if not isinstance(data, dict):
+            raise BoxError('json data not retruned as a dictionary, '
+                           'but rather a {}'.format(type(data).__name__))
+        return cls(data)
+
     if yaml_support:
         def to_yaml(self, filename=None, default_flow_style=False,
                     **yaml_kwargs):
