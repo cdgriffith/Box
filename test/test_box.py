@@ -409,7 +409,7 @@ class TestReuseBox(unittest.TestCase):
         try:
             Box.from_json(json_string="[1]")
         except BoxError as err:
-            assert 'list' in str(err)
+            assert 'dict' in str(err)
         else:
             raise AssertionError("Box creation should have failed")
 
@@ -424,14 +424,63 @@ class TestReuseBox(unittest.TestCase):
         try:
             Box.from_yaml('lol')
         except BoxError as err:
-            assert 'str' in str(err)
+            assert 'dict' in str(err)
         else:
             raise AssertionError("Box creation should have failed")
 
     def test_conversion_box(self):
         test_dict = {'key1': 'value1',
                      "Key 2": {"Key 3": "Value 3",
-                               "Key4": {"Key5": "Value5"}}}
+                               "Key4": {"Key5": "Value5"}},
+                     3: 'howdy',
+                     'not': 'true',
+                     (3, 4): 'test'
+                     }
         bx = Box(test_dict, conversion_box=True)
-        print(bx.key_2)
         assert bx.key_2.key_3 == "Value 3"
+        assert bx.x3 == 'howdy'
+        assert bx.xnot == 'true'
+        try:
+            getattr(bx, "(3, 4)")
+        except AttributeError:
+            pass
+        else:
+            raise AssertionError("Should have failed")
+
+    def test_frozen(self):
+        test_dict = {'key1': 'value1',
+                     "Key 2": {"Key 3": "Value 3",
+                               "Key4": {"Key5": "Value5"}},
+                     3: 'howdy',
+                     'not': 'true',
+                     (3, 4): 'test'
+                     }
+        bx = Box(test_dict, frozen_box=True)
+        try:
+            bx.new = 3
+        except BoxError as err:
+            print(err)
+        else:
+            raise AssertionError("It's supposed to be frozen")
+        assert hash(bx)
+
+        bx2 = Box(test_dict)
+        try:
+            hash(bx2)
+        except TypeError:
+            pass
+        else:
+            raise AssertionError("Non frozen can't be hashed")
+
+    def config(self):
+        test_dict = {'key1': 'value1',
+                     "Key 2": {"Key 3": "Value 3",
+                               "Key4": {"Key5": "Value5"}},
+                     3: 'howdy',
+                     'not': 'true',
+                     (3, 4): 'test',
+                     '_box_config': True
+                     }
+        bx = Box(test_dict)
+        assert bx['_box_config'] is True
+        assert isinstance(bx._box_config, dict)

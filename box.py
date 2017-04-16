@@ -9,6 +9,7 @@ javascript style referencing, as it's one of the few things they got right.
 import string
 import sys
 import json
+from uuid import uuid4
 
 try:
     from collections.abc import Mapping, Iterable
@@ -208,8 +209,7 @@ class LightBox(dict):
         else:
             raise BoxError('from_json requires a string or filename')
         if not isinstance(data, dict):
-            raise BoxError('json data not returned as a dictionary, '
-                           'but rather a {}'.format(type(data).__name__))
+            raise BoxError('json data not returned as a dictionary')
         return cls(data)
 
     if yaml_support:
@@ -251,35 +251,30 @@ class LightBox(dict):
             else:
                 raise BoxError('from_yaml requires a string or filename')
             if not isinstance(data, dict):
-                raise BoxError('yaml data not returned as a dictionary, '
-                               'but rather a {}'.format(type(data).__name__))
+                raise BoxError('yaml data not returned as a dictionary')
             return cls(data)
 
 
-def _recursive_create(self, iterable, include_lists=False, box_class=LightBox):
+def _recursive_create(self, iterable):
     for k, v in iterable:
         if isinstance(v, dict):
-            v = box_class(v)
-        if include_lists and isinstance(v, list):
-            v = BoxList(v)
-        setattr(self, k, v)
+            v = LightBox(v)
+        self[k] = v
+        try:
+            setattr(self, k, v)
+        except TypeError:
+            pass
 
 
 def _safe_attr(attr):
     """Convert a string into something that is accessible as an attribute"""
-    bad = ('if', 'elif', 'else', 'for',
+    bad = ('if', 'elif', 'else', 'for', 'from', 'as', 'import',
            'in', 'not', 'is', 'def', 'class', 'return', 'yield',
            'except', 'while', 'raise')
     allowed = string.ascii_letters + string.digits + '_'
 
-    if attr in bad:
-        attr = 'x{}'.format(attr)
-
-    if hasattr(attr, 'casefold'):
-        attr = attr.casefold()
-    else:
-        attr = attr.lower()
-    attr = attr.replace(' ', '_')
+    if isinstance(attr, (int, float)):
+        attr = str(attr)
 
     try:
         int(attr[0])
@@ -287,6 +282,15 @@ def _safe_attr(attr):
         pass
     else:
         attr = 'x{}'.format(attr)
+
+    if attr in bad:
+        attr = 'x{}'.format(attr)
+
+    if not isinstance(attr, str):
+        return
+
+    attr = attr.casefold() if hasattr(attr, 'casefold') else attr.lower()
+    attr = attr.replace(' ', '_')
 
     out = ''
     for character in attr:
@@ -317,17 +321,26 @@ class Box(LightBox):
                             'default_box': False,
                             'default_box_attr': Box,
                             'conversion_box': False,
-                            'frozen_box': False
+                            'frozen_box': False,
+                            'hash': None
                             }
         if len(args) == 1:
             if isinstance(args[0], basestring):
                 raise ValueError('Cannot extrapolate Box from string')
             if isinstance(args[0], Mapping):
                 for k, v in args[0].items():
-                    setattr(self, k, v)
+                    self[k] = v
+                    try:
+                        setattr(self, k, v)
+                    except TypeError:
+                        pass
             elif isinstance(args[0], Iterable):
                 for k, v in args[0]:
-                    setattr(self, k, v)
+                    self[k] = v
+                    try:
+                        setattr(self, k, v)
+                    except TypeError:
+                        pass
             else:
                 raise ValueError('First argument must be mapping or iterable')
         elif args:
@@ -349,7 +362,9 @@ class Box(LightBox):
 
     def __hash__(self):
         if self._box_config['frozen_box']:
-            return hash('boxhash{}'.format(self.to_json(indent=None)))
+            if not self._box_config['hash']:
+                self._box_config['hash'] = hash(uuid4().hex)
+            return self._box_config['hash']
         raise TypeError("unhashable type: 'Box'")
 
     def __getitem__(self, item):
@@ -359,7 +374,7 @@ class Box(LightBox):
             try:
                 value = object.__getattribute__(self, item)
             except AttributeError as err:
-                if self._box_config['conversion_box']:
+                if self._box_config['conversion_box'] and item is not None:
                     for k in self.keys():
                         if item == _safe_attr(k):
                             return self.__getitem__(k)
@@ -387,6 +402,7 @@ class Box(LightBox):
         config = self._box_config.copy()
         del config['__box_heritage']
         del config['converted']
+        del config['hash']
         return config
 
     def __convert_and_store(self, item, value):
