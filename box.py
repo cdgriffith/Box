@@ -460,7 +460,7 @@ class Box(LightBox):
         if self._box_config['frozen_box']:
             raise BoxError('Box is frozen')
         if item == '_box_config':
-            raise ValueError('"_box_config" is protected')
+            raise BoxError('"_box_config" is protected')
         super(Box, self).__delattr__(item)
 
     def __repr__(self):

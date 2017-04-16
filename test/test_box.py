@@ -14,13 +14,23 @@ from box import Box, ConfigBox, LightBox, BoxList, BoxError
 
 test_root = os.path.abspath(os.path.dirname(__file__))
 
+test_dict = {'key1': 'value1',
+             'alist': [{'a': 1}],
+             "Key 2": {"Key 3": "Value 3",
+                       "Key4": {"Key5": "Value5"}}}
+
+extended_test_dict = {
+             3: 'howdy',
+             'not': 'true',
+             (3, 4): 'test',
+             '_box_config': True
+             }
+extended_test_dict.update(test_dict)
+
 
 class TestReuseBox(unittest.TestCase):
 
     def test_box(self):
-        test_dict = {'key1': 'value1',
-                     "Key 2": {"Key 3": "Value 3",
-                               "Key4": {"Key5": "Value5"}}}
         box = Box(**test_dict)
         assert box.key1 == test_dict['key1']
         assert dict(getattr(box, 'Key 2')) == test_dict['Key 2']
@@ -31,21 +41,15 @@ class TestReuseBox(unittest.TestCase):
         assert isinstance(box['Key 2'].Key4, Box)
         assert "'key1': 'value1'" in str(box)
         assert repr(box).startswith("<Box:")
+        box2 = Box([((3, 4), "A")])
+        assert box2[(3, 4)] == "A"
 
     def test_light_box(self):
-        test_dict = {'key1': 'value1',
-                     'alist': [{'a': 1}],
-                     "Key 2": {"Key 3": "Value 3",
-                               "Key4": {"Key5": "Value5"}}}
         box = LightBox(**test_dict)
         assert repr(box).startswith("<LightBox:")
         assert not isinstance(box.alist, BoxList)
 
     def test_box_modifiy_at_depth(self):
-        test_dict = {'key1': 'value1',
-                     "Key 2": {"Key 3": "Value 3",
-                               "Key4": {"Key5": "Value5"}}}
-
         box = Box(**test_dict)
         assert 'key1' in box
         assert 'key2' not in box
@@ -63,10 +67,6 @@ class TestReuseBox(unittest.TestCase):
         assert 'key1' not in box
 
     def test_error_box(self):
-        test_dict = {'key1': 'value1',
-                     "Key 2": {"Key 3": "Value 3",
-                               "Key4": {"Key5": "Value5"}}}
-
         box = Box(**test_dict)
         try:
             getattr(box, 'hello')
@@ -244,9 +244,6 @@ class TestReuseBox(unittest.TestCase):
         assert a() == ('count', 'data')
 
     def test_to_json(self):
-        test_dict = {'key1': 'value1',
-                     "Key 2": {"Key 3": "Value 3",
-                               "Key4": {"Key5": "Value5"}}}
         a = Box(test_dict)
         assert json.loads(a.to_json(indent=0)) == test_dict
 
@@ -256,16 +253,10 @@ class TestReuseBox(unittest.TestCase):
             assert data == test_dict
 
     def test_to_yaml(self):
-        test_dict = {'key1': 'value1',
-                     "Key 2": {"Key 3": "Value 3",
-                               "Key4": {"Key5": "Value5"}}}
         a = Box(test_dict)
         assert yaml.load(a.to_yaml()) == test_dict
 
     def test_to_yaml_file(self):
-        test_dict = {'key1': 'value1',
-                     "Key 2": {"Key 3": "Value 3",
-                               "Key4": {"Key5": "Value5"}}}
         a = Box(test_dict)
         a.to_yaml("test_yaml_file")
         with open("test_yaml_file") as f:
@@ -462,6 +453,21 @@ class TestReuseBox(unittest.TestCase):
             print(err)
         else:
             raise AssertionError("It's supposed to be frozen")
+
+        try:
+            bx['new'] = 3
+        except BoxError as err:
+            print(err)
+        else:
+            raise AssertionError("It's supposed to be frozen")
+
+        try:
+            del bx['not']
+        except BoxError as err:
+            print(err)
+        else:
+            raise AssertionError("It's supposed to be frozen")
+
         assert hash(bx)
 
         bx2 = Box(test_dict)
@@ -484,3 +490,16 @@ class TestReuseBox(unittest.TestCase):
         bx = Box(test_dict)
         assert bx['_box_config'] is True
         assert isinstance(bx._box_config, dict)
+        try:
+            del bx._box_config
+        except BoxError:
+            pass
+        else:
+            raise AttributeError("You can't delete that!")
+
+    def test_default_box(self):
+        bx = Box(test_dict, default_box=True, default_box_attr={'hi': 'there'})
+        assert bx.key_88 == {'hi': 'there'}
+
+        bx2 = Box(test_dict, default_box=True, default_box_attr=LightBox)
+        assert isinstance(bx2.key_77, LightBox)
