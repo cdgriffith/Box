@@ -10,7 +10,7 @@ try:
 except ImportError:
     import ruamel.yaml as yaml
 
-from box import Box, ConfigBox, LightBox, BoxList
+from box import Box, ConfigBox, LightBox, BoxList, BoxError
 
 test_root = os.path.abspath(os.path.dirname(__file__))
 
@@ -398,3 +398,40 @@ class TestReuseBox(unittest.TestCase):
         assert isinstance(bx, Box)
         assert bx.key1 == 'value1'
 
+    def test_bad_from_json(self):
+        try:
+            Box.from_json()
+        except BoxError as err:
+            assert 'requires' in str(err)
+        else:
+            raise AssertionError("Box creation should have failed")
+
+        try:
+            Box.from_json(json_string="[1]")
+        except BoxError as err:
+            assert 'list' in str(err)
+        else:
+            raise AssertionError("Box creation should have failed")
+
+    def test_bad_from_yaml(self):
+        try:
+            Box.from_yaml()
+        except BoxError as err:
+            assert 'requires' in str(err)
+        else:
+            raise AssertionError("Box creation should have failed")
+
+        try:
+            Box.from_yaml('lol')
+        except BoxError as err:
+            assert 'str' in str(err)
+        else:
+            raise AssertionError("Box creation should have failed")
+
+    def test_conversion_box(self):
+        test_dict = {'key1': 'value1',
+                     "Key 2": {"Key 3": "Value 3",
+                               "Key4": {"Key5": "Value5"}}}
+        bx = Box(test_dict, conversion_box=True)
+        print(bx.key_2)
+        assert bx.key_2.key_3 == "Value 3"
