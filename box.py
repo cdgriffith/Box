@@ -209,7 +209,8 @@ class LightBox(dict):
         else:
             raise BoxError('from_json requires a string or filename')
         if not isinstance(data, dict):
-            raise BoxError('json data not returned as a dictionary')
+            raise BoxError('json data not returned as a dictionary, '
+                           'but rather a {0}'.format(type(data).__name__))
         return cls(data)
 
     if yaml_support:
@@ -251,7 +252,8 @@ class LightBox(dict):
             else:
                 raise BoxError('from_yaml requires a string or filename')
             if not isinstance(data, dict):
-                raise BoxError('yaml data not returned as a dictionary')
+                raise BoxError('yaml data not returned as a dictionary'
+                               'but rather a {0}'.format(type(data).__name__))
             return cls(data)
 
 
@@ -281,10 +283,10 @@ def _safe_attr(attr):
     except ValueError:
         pass
     else:
-        attr = 'x{}'.format(attr)
+        attr = 'x{0}'.format(attr)
 
     if attr in bad:
-        attr = 'x{}'.format(attr)
+        attr = 'x{0}'.format(attr)
 
     if not isinstance(attr, str):
         return
