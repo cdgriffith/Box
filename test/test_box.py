@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
+# Test files gathered from json.org and yaml.org
 import unittest
 import json
+import os
 
 try:
     import yaml
@@ -9,6 +11,8 @@ except ImportError:
     import ruamel.yaml as yaml
 
 from box import Box, ConfigBox, LightBox, BoxList
+
+test_root = os.path.abspath(os.path.dirname(__file__))
 
 
 class TestReuseBox(unittest.TestCase):
@@ -367,3 +371,30 @@ class TestReuseBox(unittest.TestCase):
         assert b.key3.item == 2
         assert b.lister[0]["gah"] == 7
         assert not isinstance(b.lister, BoxList)
+
+    def test_from_json_file(self):
+        bx = Box.from_json(filename=os.path.join(test_root, "json_file.json"))
+        assert isinstance(bx, Box)
+        assert bx.widget.window.height == 500
+
+    def test_from_yaml_file(self):
+        bx = Box.from_yaml(filename=os.path.join(test_root, "yaml_file.yaml"))
+        assert isinstance(bx, Box)
+        assert bx.total == 4443.52
+
+    def test_from_json(self):
+        test_dict = {'key1': 'value1',
+                     "Key 2": {"Key 3": "Value 3",
+                               "Key4": {"Key5": "Value5"}}}
+        bx = Box.from_json(json.dumps(test_dict))
+        assert isinstance(bx, Box)
+        assert bx.key1 == 'value1'
+
+    def test_from_yaml(self):
+        test_dict = {'key1': 'value1',
+                     "Key 2": {"Key 3": "Value 3",
+                               "Key4": {"Key5": "Value5"}}}
+        bx = Box.from_yaml(yaml.dump(test_dict))
+        assert isinstance(bx, Box)
+        assert bx.key1 == 'value1'
+

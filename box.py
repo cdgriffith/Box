@@ -208,7 +208,7 @@ class LightBox(dict):
         else:
             raise BoxError('from_json requires a string or filename')
         if not isinstance(data, dict):
-            raise BoxError('json data not retruned as a dictionary, '
+            raise BoxError('json data not returned as a dictionary, '
                            'but rather a {}'.format(type(data).__name__))
         return cls(data)
 
@@ -225,13 +225,30 @@ class LightBox(dict):
             """
             if filename:
                 with open(filename, 'w') as f:
-                    return yaml.dump(self.to_dict(), f,
+                    return yaml.dump(self.to_dict(), stream=f,
                                      default_flow_style=default_flow_style,
                                      **yaml_kwargs)
             else:
                 return yaml.dump(self.to_dict(),
                                  default_flow_style=default_flow_style,
                                  **yaml_kwargs)
+
+        @classmethod
+        def from_yaml(cls, yaml_string=None, filename=None, **yaml_kwargs):
+            """
+            Transform a yaml object string into a Box object.
+    
+            :param yaml_string: string to pass to `yaml.load`
+            :param filename: filename to open and pass to `yaml.load`
+            :param yaml_kwargs: additional keyword arguments to pass along
+            :return: Box object from yaml data
+            """
+            if filename:
+                with open(filename, 'r') as f:
+                    data = yaml.load(f, **yaml_kwargs)
+            else:
+                data = yaml.load(yaml_string, **yaml_kwargs)
+            return cls(data)
 
 
 def _recursive_create(self, iterable, include_lists=False, box_class=LightBox):
