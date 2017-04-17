@@ -434,7 +434,7 @@ class TestReuseBox(unittest.TestCase):
         assert bx.key_2.key_3 == "Value 3"
         assert bx.x3 == 'howdy'
         assert bx.xnot == 'true'
-
+        assert bx.x3_4 == 'test'
         try:
             getattr(bx, "(3, 4)")
         except AttributeError:
@@ -489,7 +489,7 @@ class TestReuseBox(unittest.TestCase):
         else:
             raise AssertionError("Non frozen can't be hashed")
 
-    def config(self):
+    def test_config(self):
         test_dict = {'key1': 'value1',
                      "Key 2": {"Key 3": "Value 3",
                                "Key4": {"Key5": "Value5"}},

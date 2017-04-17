@@ -269,28 +269,13 @@ def _recursive_create(self, iterable):
 
 
 def _safe_attr(attr):
-    """Convert a string into something that is accessible as an attribute"""
+    """Convert a key into something that is accessible as an attribute"""
     bad = ('if', 'elif', 'else', 'for', 'from', 'as', 'import',
            'in', 'not', 'is', 'def', 'class', 'return', 'yield',
            'except', 'while', 'raise')
     allowed = string.ascii_letters + string.digits + '_'
 
-    if isinstance(attr, (int, float)):
-        attr = str(attr)
-
-    try:
-        int(attr[0])
-    except ValueError:
-        pass
-    else:
-        attr = 'x{0}'.format(attr)
-
-    if attr in bad:
-        attr = 'x{0}'.format(attr)
-
-    if not isinstance(attr, str):
-        return
-
+    attr = str(attr)
     attr = attr.casefold() if hasattr(attr, 'casefold') else attr.lower()
     attr = attr.replace(' ', '_')
 
@@ -298,6 +283,17 @@ def _safe_attr(attr):
     for character in attr:
         if character in allowed:
             out += character
+
+    try:
+        int(out[0])
+    except (ValueError, IndexError):
+        pass
+    else:
+        out = 'x{0}'.format(out)
+
+    if out in bad:
+        out = 'x{0}'.format(out)
+
     return out
 
 
