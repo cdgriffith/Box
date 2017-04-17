@@ -513,3 +513,22 @@ class TestReuseBox(unittest.TestCase):
 
         bx3 = Box(default_box=True, default_box_attr=3)
         assert bx3.hello == 3
+
+    def test_camel_killer_box(self):
+        td = extended_test_dict.copy()
+        td['CamelCase'] = 'Item'
+        td['321CamelCaseFever!'] = 'Safe'
+
+        kill_box = Box(td, camel_killer_box=True)
+        assert kill_box.camel_case == 'Item'
+        assert kill_box['321_camel_case_fever!'] == 'Safe'
+
+        con_kill_box = Box(td, conversion_box=True, camel_killer_box=True)
+        assert con_kill_box.camel_case == 'Item'
+        assert con_kill_box.x321_camel_case_fever == 'Safe'
+
+
+
+
+
+

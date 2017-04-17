@@ -5,6 +5,7 @@ Version 3.0.0
 * Adding `frozen_box` kwarg
 * Adding `BoxError` exception for custom errors
 * Adding `conversion_box` to automatically try to find matching attributes
+* Adding `camel_killer_box` that converts CamelCaseKeys to camel_case_keys
 * Changing how the Box object works, to conversion on extraction
 * Removing `__call__` for compatibly with django and to make more like dict object
 

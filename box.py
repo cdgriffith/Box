@@ -10,6 +10,7 @@ import string
 import sys
 import json
 from uuid import uuid4
+import re
 
 try:
     from collections.abc import Mapping, Iterable
@@ -264,7 +265,7 @@ def _recursive_create(self, iterable):
             pass
 
 
-def _safe_attr(attr):
+def _safe_attr(attr, camel_killer=False):
     """Convert a key into something that is accessible as an attribute"""
     bad = ('if', 'elif', 'else', 'for', 'from', 'as', 'import',
            'in', 'not', 'is', 'def', 'class', 'return', 'yield',
@@ -272,6 +273,9 @@ def _safe_attr(attr):
     allowed = string.ascii_letters + string.digits + '_'
 
     attr = str(attr)
+    if camel_killer:
+        attr = _camel_killer(attr)
+
     attr = attr.casefold() if hasattr(attr, 'casefold') else attr.lower()
     attr = attr.replace(' ', '_')
 
@@ -292,6 +296,20 @@ def _safe_attr(attr):
 
     return out
 
+first_cap_re = re.compile('(.)([A-Z][a-z]+)')
+all_cap_re = re.compile('([a-z0-9])([A-Z])')
+
+
+def _camel_killer(attr):
+    """
+    CamelKiller, qu'est-ce que c'est?
+    
+    Taken from http://stackoverflow.com/a/1176023/3244542
+    """
+    s1 = first_cap_re.sub(r'\1_\2', str(attr))
+    s2 = all_cap_re.sub(r'\1_\2', s1)
+    return s2.casefold() if hasattr(s2, 'casefold') else s2.lower()
+
 
 class Box(LightBox):
     """
@@ -310,14 +328,16 @@ class Box(LightBox):
     """
 
     def __init__(self, *args, **kwargs):
-        self._box_config = {'converted': [],
-                            '__box_heritage': None,
-                            'default_box': False,
-                            'default_box_attr': Box,
-                            'conversion_box': False,
-                            'frozen_box': False,
-                            'hash': None
-                            }
+        self._box_config = {
+            'converted': [],
+            '__box_heritage': kwargs.pop('__box_heritage', None),
+            'default_box': kwargs.pop('default_box', False),
+            'default_box_attr': kwargs.pop('default_box_attr', Box),
+            'conversion_box': kwargs.pop('conversion_box', False),
+            'frozen_box': False,
+            'hash': None,
+            'camel_killer_box': kwargs.pop('camel_killer_box', False)
+            }
         if len(args) == 1:
             if isinstance(args[0], basestring):
                 raise ValueError('Cannot extrapolate Box from string')
@@ -345,14 +365,8 @@ class Box(LightBox):
             raise TypeError('Box expected at most 1 argument, '
                             'got {0}'.format(len(args)))
 
-        # Remove box arguments from kwargs
-        self._box_config['default_box'] = kwargs.pop('default_box', False)
-        self._box_config['default_box_attr'] = \
-            kwargs.pop('default_box_attr', Box)
         freeze = kwargs.pop('frozen_box', False)
-        self._box_config['conversion_box'] =\
-            kwargs.pop('conversion_box', False)
-        self._box_config['__box_heritage'] = kwargs.pop('__box_heritage', None)
+
         for k, v in kwargs.items():
             self.__setitem__(k, v)
 
@@ -375,10 +389,15 @@ class Box(LightBox):
             except AttributeError as err:
                 if item == '_box_config':
                     raise BoxError('_box_config key must exist')
+                kill_camel = self._box_config.get('camel_killer_box', False)
                 if (self._box_config.get('conversion_box', False) and
-                            item is not None):
+                        item is not None):
                     for k in self.keys():
-                        if item == _safe_attr(k):
+                        if item == _safe_attr(k, camel_killer=kill_camel):
+                            return self.__getitem__(k)
+                if kill_camel:
+                    for k in self.keys():
+                        if item == _camel_killer(k):
                             return self.__getitem__(k)
                 default_value = self._box_config['default_box_attr']
                 if self._box_config['default_box']:
