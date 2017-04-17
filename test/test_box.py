@@ -241,10 +241,6 @@ class TestReuseBox(unittest.TestCase):
         b = a.to_dict()
         assert not isinstance(b['new_list'], BoxList)
 
-    def test_callable(self):
-        a = Box({'data': 2, 'count': 5})
-        assert a() == ('count', 'data')
-
     def test_to_json(self):
         a = Box(test_dict)
         assert json.loads(a.to_json(indent=0)) == test_dict

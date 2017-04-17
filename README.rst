@@ -34,10 +34,6 @@ Python dictionaries with recursive dot notation access.
         my_box.contents[-1].item
         'tie-dyed socks'
 
-        # Box object is callable, and returns a tuple of available keys
-        my_box()
-        ('owner', 'contents', 'affiliates')
-
         my_box.funny_line = "They tried to steal my lucky charms!"
 
         my_box['funny_line']

@@ -107,10 +107,6 @@ class LightBox(dict):
     def __str__(self):
         return str(self.to_dict())
 
-    def __call__(self, *args, **kwargs):
-        """ Return keys as a tuple"""
-        return tuple(sorted(self.keys()))
-
     def __dir__(self):
         builtins = ('True', 'False', 'None', 'if', 'elif', 'else', 'for',
                     'in', 'not', 'is', 'def', 'class', 'return', 'yield',

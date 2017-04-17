@@ -6,6 +6,7 @@ Version 3.0.0
 * Adding `BoxError` exception for custom errors
 * Adding `conversion_box` to automatically try to find matching attributes
 * Changing how the Box object works, to conversion on extraction
+* Removing `__call__` for compatibly with django and to make more like dict object
 
 Version 2.2.0
 =============
