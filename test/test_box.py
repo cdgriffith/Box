@@ -527,8 +527,13 @@ class TestReuseBox(unittest.TestCase):
         assert con_kill_box.camel_case == 'Item'
         assert con_kill_box.x321_camel_case_fever == 'Safe'
 
+    def test_property_box(self):
+        td = test_dict.copy()
+        td['inner'] = {'CamelCase': 'Item'}
 
-
-
-
-
+        from box import PropertyBox
+        pbox = PropertyBox(td, camel_killer_box=True)
+        assert isinstance(pbox.inner, PropertyBox)
+        assert pbox.inner.camel_case == 'Item'
+        assert json.loads(pbox.json)['inner']['CamelCase'] == 'Item'
+        assert yaml.load(pbox.yaml)['inner']['CamelCase'] == 'Item'

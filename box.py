@@ -33,7 +33,8 @@ except ImportError:
 if sys.version_info >= (3, 0):
     basestring = str
 
-__all__ = ['Box', 'ConfigBox', 'LightBox', 'BoxList', 'BoxError']
+__all__ = ['Box', 'ConfigBox', 'LightBox', 'BoxList', 'PropertyBox',
+           'BoxError']
 __author__ = 'Chris Griffith'
 __version__ = '3.0.0'
 
@@ -140,7 +141,8 @@ class LightBox(dict):
                 if k in self and isinstance(self[k], dict):
                     self[k].update(v)
                     continue
-            if isinstance(v, list) and self.__class__.__name__ == 'Box':
+            if (isinstance(v, list) and self.__class__.__name__ not in
+                    ('LightBox', 'ConfigBox')):
                 v = BoxList(v)
             self.__setattr__(k, v)
 
@@ -150,7 +152,8 @@ class LightBox(dict):
 
         if isinstance(default, dict):
             default = self.__class__(default)
-        if isinstance(default, list) and self.__class__.__name__ == 'Box':
+        if (isinstance(default, list) and self.__class__.__name__ not in
+                ('LightBox', 'ConfigBox')):
             default = BoxList(default)
         self[item] = default
         return default
@@ -332,7 +335,7 @@ class Box(LightBox):
             'converted': [],
             '__box_heritage': kwargs.pop('__box_heritage', None),
             'default_box': kwargs.pop('default_box', False),
-            'default_box_attr': kwargs.pop('default_box_attr', Box),
+            'default_box_attr': kwargs.pop('default_box_attr', self.__class__),
             'conversion_box': kwargs.pop('conversion_box', False),
             'frozen_box': False,
             'hash': None,
@@ -403,8 +406,8 @@ class Box(LightBox):
                 if self._box_config['default_box']:
                     if isinstance(default_value, type):
                         if default_value.__name__ == 'Box':
-                            return Box(__box_heritage=(self, item),
-                                       **self.__box_config())
+                            return self.__class__(__box_heritage=(self, item),
+                                                  **self.__box_config())
                         return default_value()
                     elif hasattr(default_value, 'copy'):
                         return default_value.copy()
@@ -428,11 +431,12 @@ class Box(LightBox):
         if item in self._box_config['converted']:
             return value
         if isinstance(value, dict) and not isinstance(value, Box):
-            value = Box(value, __box_heritage=(self, item),
-                        **self.__box_config())
+            value = self.__class__(value, __box_heritage=(self, item),
+                                   **self.__box_config())
             self.__setattr__(item, value)
         elif isinstance(value, list):
             value = BoxList(value, __box_heritage=(self, item),
+                            box_class=self.__class__,
                             **self.__box_config())
             self.__setattr__(item, value)
         self._box_config['converted'].append(item)
@@ -670,3 +674,21 @@ class ConfigBox(LightBox):
 
     def __repr__(self):
         return '<ConfigBox: {0}>'.format(str(self.to_dict()))
+
+
+class PropertyBox(Box):
+    """ Access json and yaml as properties """
+    _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml',
+                                 'json', 'yaml']
+
+    @property
+    def json(self):
+        return self.to_json()
+
+    if yaml_support:
+        @property
+        def yaml(self):
+            return self.to_yaml()
+
+    def __repr__(self):
+        return '<PropertyBox: {0}>'.format(str(self.to_dict()))
