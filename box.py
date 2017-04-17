@@ -54,7 +54,8 @@ class LightBox(dict):
         - box['spam'].eggs
     """
 
-    _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml']
+    _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml',
+                                 'from_yaml', 'from_json']
 
     def __init__(self, *args, **kwargs):
         if len(args) == 1:
@@ -679,7 +680,12 @@ class ConfigBox(LightBox):
 class PropertyBox(Box):
     """ Access json and yaml as properties """
     _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml',
-                                 'json', 'yaml']
+                                 'json', 'yaml', 'from_yaml', 'from_json',
+                                 'dict']
+
+    @property
+    def dict(self):
+        return self.to_dict()
 
     @property
     def json(self):

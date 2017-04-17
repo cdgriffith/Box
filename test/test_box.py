@@ -537,3 +537,6 @@ class TestReuseBox(unittest.TestCase):
         assert pbox.inner.camel_case == 'Item'
         assert json.loads(pbox.json)['inner']['CamelCase'] == 'Item'
         assert yaml.load(pbox.yaml)['inner']['CamelCase'] == 'Item'
+        assert repr(pbox['inner']).startswith('<PropertyBox')
+        assert not isinstance(pbox.dict, Box)
+        assert pbox.dict['inner']['CamelCase'] == 'Item'
