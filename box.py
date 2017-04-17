@@ -332,6 +332,8 @@ class Box(LightBox):
             if isinstance(args[0], Mapping):
                 for k, v in args[0].items():
                     self[k] = v
+                    if k == "_box_config":
+                        continue
                     try:
                         setattr(self, k, v)
                     except (TypeError, AttributeError):
@@ -339,6 +341,8 @@ class Box(LightBox):
             elif isinstance(args[0], Iterable):
                 for k, v in args[0]:
                     self[k] = v
+                    if k == "_box_config":
+                        continue
                     try:
                         setattr(self, k, v)
                     except (TypeError, AttributeError):
@@ -444,12 +448,7 @@ class Box(LightBox):
         if key in self._protected_keys:
             raise AttributeError("Key name '{0}' is protected".format(key))
         if key == '_box_config':
-            try:
-                hasattr(self, '_box_config')
-            except BoxError:
-                return object.__setattr__(self, key, value)
-            else:
-                raise AttributeError('_box_config is a protected attribute')
+            return object.__setattr__(self, key, value)
         try:
             object.__getattribute__(self, key)
         except AttributeError:
