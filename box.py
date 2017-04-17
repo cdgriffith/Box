@@ -334,20 +334,21 @@ class Box(LightBox):
                     self[k] = v
                     try:
                         setattr(self, k, v)
-                    except TypeError:
+                    except (TypeError, AttributeError):
                         pass
             elif isinstance(args[0], Iterable):
                 for k, v in args[0]:
                     self[k] = v
                     try:
                         setattr(self, k, v)
-                    except TypeError:
+                    except (TypeError, AttributeError):
                         pass
             else:
                 raise ValueError('First argument must be mapping or iterable')
         elif args:
             raise TypeError('Box expected at most 1 argument, '
                             'got {0}'.format(len(args)))
+
         # Remove box arguments from kwargs
         self._box_config['default_box'] = kwargs.pop('default_box', False)
         self._box_config['default_box_attr'] = \
@@ -376,12 +377,13 @@ class Box(LightBox):
             try:
                 value = object.__getattribute__(self, item)
             except AttributeError as err:
-                if self._box_config['conversion_box'] and item is not None:
+                if item == '_box_config':
+                    raise BoxError('_box_config key must exist')
+                if (self._box_config.get('conversion_box', False) and
+                            item is not None):
                     for k in self.keys():
                         if item == _safe_attr(k):
                             return self.__getitem__(k)
-                if item == '_box_config':
-                    raise BoxError('_box_config key must exist')
                 default_value = self._box_config['default_box_attr']
                 if self._box_config['default_box']:
                     if isinstance(default_value, type):
@@ -442,7 +444,12 @@ class Box(LightBox):
         if key in self._protected_keys:
             raise AttributeError("Key name '{0}' is protected".format(key))
         if key == '_box_config':
-            return object.__setattr__(self, key, value)
+            try:
+                hasattr(self, '_box_config')
+            except BoxError:
+                return object.__setattr__(self, key, value)
+            else:
+                raise AttributeError('_box_config is a protected attribute')
         try:
             object.__getattribute__(self, key)
         except AttributeError:

@@ -48,6 +48,8 @@ class TestReuseBox(unittest.TestCase):
         box = LightBox(**test_dict)
         assert repr(box).startswith("<LightBox:")
         assert not isinstance(box.alist, BoxList)
+        box2 = LightBox([((3, 4), "A")])
+        assert box2[(3, 4)] == "A"
 
     def test_box_modifiy_at_depth(self):
         box = Box(**test_dict)
@@ -425,12 +427,14 @@ class TestReuseBox(unittest.TestCase):
                                "Key4": {"Key5": "Value5"}},
                      3: 'howdy',
                      'not': 'true',
-                     (3, 4): 'test'
+                     (3, 4): 'test',
+                     False: 'tree'
                      }
         bx = Box(test_dict, conversion_box=True)
         assert bx.key_2.key_3 == "Value 3"
         assert bx.x3 == 'howdy'
         assert bx.xnot == 'true'
+
         try:
             getattr(bx, "(3, 4)")
         except AttributeError:
@@ -468,6 +472,13 @@ class TestReuseBox(unittest.TestCase):
         else:
             raise AssertionError("It's supposed to be frozen")
 
+        try:
+            delattr(bx, "key1")
+        except BoxError as err:
+            print(err)
+        else:
+            raise AssertionError("It's supposed to be frozen")
+
         assert hash(bx)
 
         bx2 = Box(test_dict)
@@ -491,7 +502,7 @@ class TestReuseBox(unittest.TestCase):
         assert bx['_box_config'] is True
         assert isinstance(bx._box_config, dict)
         try:
-            del bx._box_config
+            delattr(bx, '_box_config')
         except BoxError:
             pass
         else:
@@ -503,3 +514,6 @@ class TestReuseBox(unittest.TestCase):
 
         bx2 = Box(test_dict, default_box=True, default_box_attr=LightBox)
         assert isinstance(bx2.key_77, LightBox)
+
+        bx3 = Box(default_box=True, default_box_attr=3)
+        assert bx3.hello == 3
