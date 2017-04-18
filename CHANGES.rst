@@ -2,11 +2,13 @@ Version 3.0.0
 =============
 
 * Adding default object abilities with `default_box` and `default_box_attr` kwargs
-* Adding `frozen_box` kwarg
+* Adding `frozen_box` option
 * Adding `BoxError` exception for custom errors
 * Adding `conversion_box` to automatically try to find matching attributes
 * Adding `camel_killer_box` that converts CamelCaseKeys to camel_case_keys
 * Adding `PropertyBox` that has `json` and `yaml` properties that map to default `to_json()` and `to_yaml()`
+* Adding `box_it_up` property that will make sure all boxes are created and populated like previous version
+* Adding `modify_tuples_box` option to recreate tuples with Boxes instead of dicts
 * Changing how the Box object works, to conversion on extraction
 * Removing `__call__` for compatibly with django and to make more like dict object
 

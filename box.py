@@ -40,6 +40,13 @@ __all__ = ['Box', 'ConfigBox', 'LightBox', 'BoxList', 'PropertyBox',
 __author__ = 'Chris Griffith'
 __version__ = '3.0.0'
 
+unallowed_attribs = ('if', 'elif', 'else', 'for', 'from', 'as', 'import',
+                     'in', 'not', 'is', 'def', 'class', 'return', 'yield',
+                     'except', 'while', 'raise')
+
+box_params = ('default_box', 'default_box_attr', 'conversion_box',
+              'frozen_box', 'camel_killer_box')
+
 
 class BoxError(Exception):
     """ Non standard dictionary exceptions"""
@@ -64,15 +71,25 @@ class LightBox(dict):
             if isinstance(args[0], basestring):
                 raise ValueError('Cannot extrapolate Box from string')
             if isinstance(args[0], Mapping):
-                _recursive_create(self, args[0].items())
+                self.__recursive_create(args[0].items())
             elif isinstance(args[0], Iterable):
-                _recursive_create(self, args[0])
+                self.__recursive_create(args[0])
             else:
                 raise ValueError('First argument must be mapping or iterable')
         elif args:
             raise TypeError('Box expected at most 1 argument, '
                             'got {0}'.format(len(args)))
-        _recursive_create(self, kwargs.items())
+        self.__recursive_create(kwargs.items())
+
+    def __recursive_create(self, iterable):
+        for k, v in iterable:
+            if isinstance(v, dict):
+                v = LightBox(v)
+            self[k] = v
+            try:
+                setattr(self, k, v)
+            except TypeError:
+                pass
 
     def __contains__(self, item):
         return dict.__contains__(self, item) or hasattr(self, item)
@@ -113,9 +130,6 @@ class LightBox(dict):
         return str(self.to_dict())
 
     def __dir__(self):
-        builtins = ('True', 'False', 'None', 'if', 'elif', 'else', 'for',
-                    'in', 'not', 'is', 'def', 'class', 'return', 'yield',
-                    'except', 'while', 'raise')
         allowed = string.ascii_letters + string.digits + '_'
 
         out = dir(dict) + ['to_dict', 'to_json']
@@ -123,7 +137,7 @@ class LightBox(dict):
         for key in self.keys():
             if (' ' not in key and
                     key[0] not in string.digits and
-                    key not in builtins):
+                    key not in unallowed_attribs):
                 for letter in key:
                     if letter not in allowed:
                         break
@@ -184,10 +198,13 @@ class LightBox(dict):
 
         :param filename: If provided will save to file
         :param indent: Automatic formatting by indent size in spaces
+        :param encoding: File encoding
+        :param errors: How to handle encoding errors 
         :param json_kwargs: additional arguments to pass to json.dump(s)
         :return: string of JSON or return of `json.dump`
         """
-        json_dump = json.dumps(self.to_dict(), indent=indent, **json_kwargs)
+        json_dump = json.dumps(self.to_dict(), indent=indent,
+                               ensure_ascii=False, **json_kwargs)
         if filename:
             with open(filename, 'w', encoding=encoding, errors=errors) as f:
                 f.write(json_dump if sys.version_info >= (3, 0) else
@@ -197,30 +214,36 @@ class LightBox(dict):
 
     @classmethod
     def from_json(cls, json_string=None, filename=None,
-                  encoding="utf-8", errors="strict", **json_kwargs):
+                  encoding="utf-8", errors="strict", **kwargs):
         """
         Transform a json object string into a Box object. If the incoming
         json is a list, you must use BoxList.from_json. 
         
-        By default json expects the file to be in utf-8, you will have to 
-        specify `encoding=` if characters do not map properly. 
+        You can pass in 
         
         :param json_string: string to pass to `json.loads`
         :param filename: filename to open and pass to `json.load`
-        :param json_kwargs: additional keyword arguments to pass along
+        :param encoding: File encoding
+        :param errors: How to handle encoding errors 
+        :param kwargs: parameters to pass to `Box()` or `json.loads`
         :return: Box object from json data
         """
+        bx_args = {}
+        for arg in kwargs.copy():
+            if arg in box_params:
+                bx_args[arg] = kwargs.pop(arg)
+
         if filename:
             with open(filename, 'r', encoding=encoding, errors=errors) as f:
-                data = json.load(f, **json_kwargs)
+                data = json.load(f, **kwargs)
         elif json_string:
-            data = json.loads(json_string, **json_kwargs)
+            data = json.loads(json_string, **kwargs)
         else:
             raise BoxError('from_json requires a string or filename')
         if not isinstance(data, dict):
             raise BoxError('json data not returned as a dictionary, '
                            'but rather a {0}'.format(type(data).__name__))
-        return cls(data)
+        return cls(data, **bx_args)
 
     if yaml_support:
         def to_yaml(self, filename=None, default_flow_style=False,
@@ -231,11 +254,14 @@ class LightBox(dict):
 
             :param filename:  If provided will save to file
             :param default_flow_style: False will recursively dump dicts
+            :param encoding: File encoding
+            :param errors: How to handle encoding errors 
             :param yaml_kwargs: additional arguments to pass to yaml.dump
             :return: string of YAML or return of `yaml.dump`
             """
             if filename:
-                with open(filename, 'w', encoding=encoding, errors=errors) as f:
+                with open(filename, 'w',
+                          encoding=encoding, errors=errors) as f:
                     yaml.dump(self.to_dict(), stream=f,
                               default_flow_style=default_flow_style,
                               **yaml_kwargs)
@@ -247,44 +273,38 @@ class LightBox(dict):
         @classmethod
         def from_yaml(cls, yaml_string=None, filename=None,
                       encoding="utf-8", errors="strict",
-                      **yaml_kwargs):
+                      **kwargs):
             """
             Transform a yaml object string into a Box object.
     
             :param yaml_string: string to pass to `yaml.load`
             :param filename: filename to open and pass to `yaml.load`
-            :param yaml_kwargs: additional keyword arguments to pass along
+            :param encoding: File encoding
+            :param errors: How to handle encoding errors 
+            :param kwargs: parameters to pass to `Box()` or `yaml.load`
             :return: Box object from yaml data
             """
+            bx_args = {}
+            for arg in kwargs.copy():
+                if arg in box_params:
+                    bx_args[arg] = kwargs.pop(arg)
+
             if filename:
-                with open(filename, 'r', encoding=encoding, errors=errors) as f:
-                    data = yaml.load(f, **yaml_kwargs)
+                with open(filename, 'r',
+                          encoding=encoding, errors=errors) as f:
+                    data = yaml.load(f, **kwargs)
             elif yaml_string:
-                data = yaml.load(yaml_string, **yaml_kwargs)
+                data = yaml.load(yaml_string, **kwargs)
             else:
                 raise BoxError('from_yaml requires a string or filename')
             if not isinstance(data, dict):
                 raise BoxError('yaml data not returned as a dictionary'
                                'but rather a {0}'.format(type(data).__name__))
-            return cls(data)
-
-
-def _recursive_create(self, iterable):
-    for k, v in iterable:
-        if isinstance(v, dict):
-            v = LightBox(v)
-        self[k] = v
-        try:
-            setattr(self, k, v)
-        except TypeError:
-            pass
+            return cls(data, **bx_args)
 
 
 def _safe_attr(attr, camel_killer=False):
     """Convert a key into something that is accessible as an attribute"""
-    bad = ('if', 'elif', 'else', 'for', 'from', 'as', 'import',
-           'in', 'not', 'is', 'def', 'class', 'return', 'yield',
-           'except', 'while', 'raise')
     allowed = string.ascii_letters + string.digits + '_'
 
     attr = str(attr)
@@ -306,7 +326,7 @@ def _safe_attr(attr, camel_killer=False):
     else:
         out = 'x{0}'.format(out)
 
-    if out in bad:
+    if out in unallowed_attribs:
         out = 'x{0}'.format(out)
 
     return out
@@ -326,6 +346,17 @@ def _camel_killer(attr):
     return s2.casefold() if hasattr(s2, 'casefold') else s2.lower()
 
 
+def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
+    out_list = []
+    for i in iterable:
+        if isinstance(i, dict):
+            out_list.append(box_class(i, **kwargs))
+        elif isinstance(i, list) or (recreate_tuples and isinstance(i, tuple)):
+            out_list.extend(_recursive_tuples(i, box_class,
+                                                 recreate_tuples, **kwargs))
+    return tuple(out_list)
+
+
 class Box(LightBox):
     """
     Same as LightBox,
@@ -339,7 +370,9 @@ class Box(LightBox):
     :param default_box_attr: Specify the default replacement. 
         WARNING: If this is not the default 'Box', it will not be recursive
     :param frozen_box: After creation, the box cannot be modified
+    :param camel_killer_box: Convert CamelCase to snake_case
     :param conversion_box: Check for near matching keys as attributes
+    :param modify_tuples_box: Recreate incoming tuples with dicts into Boxes
     """
 
     def __init__(self, *args, **kwargs):
@@ -349,9 +382,11 @@ class Box(LightBox):
             'default_box': kwargs.pop('default_box', False),
             'default_box_attr': kwargs.pop('default_box_attr', self.__class__),
             'conversion_box': kwargs.pop('conversion_box', False),
-            'frozen_box': False,
+            'frozen_box': kwargs.pop('frozen_box', False),
             'hash': None,
-            'camel_killer_box': kwargs.pop('camel_killer_box', False)
+            'created': False,
+            'camel_killer_box': kwargs.pop('camel_killer_box', False),
+            'modify_tuples_box': kwargs.pop('modify_tuples_box', False)
             }
         if len(args) == 1:
             if isinstance(args[0], basestring):
@@ -380,20 +415,44 @@ class Box(LightBox):
             raise TypeError('Box expected at most 1 argument, '
                             'got {0}'.format(len(args)))
 
-        freeze = kwargs.pop('frozen_box', False)
-
+        box_it = kwargs.pop('box_it_up', False)
         for k, v in kwargs.items():
             self.__setitem__(k, v)
 
-        # Freeze after setting initial items or it doesn't work
-        self._box_config['frozen_box'] = freeze
+        if self._box_config['frozen_box'] or box_it:
+            self.box_it_up()
+
+        self._box_config['created'] = True
+
+    def box_it_up(self):
+        for k in self:
+            if hasattr(self[k], '_box_it_up'):
+                self[k].box_it_up()
 
     def __hash__(self):
         if self._box_config['frozen_box']:
             if not self._box_config['hash']:
-                self._box_config['hash'] = hash(uuid4().hex)
+                hashing = hash(uuid4().hex)
+                for item in self.items():
+                    hashing ^= hash(item)
+                self._box_config['hash'] = hashing
             return self._box_config['hash']
         raise TypeError("unhashable type: 'Box'")
+
+    def __dir__(self):
+        items = set(super(Box, self).__dir__())
+        kill_camel = self._box_config['camel_killer_box']
+        for key in self.keys():
+            if key not in items:
+                if self._box_config['conversion_box']:
+                    key = _safe_attr(key, camel_killer=kill_camel)
+                    if key:
+                        items.add(key)
+                elif kill_camel:
+                    key = _camel_killer(key)
+                    if key:
+                        items.add(key)
+        return list(items)
 
     def __getitem__(self, item):
         try:
@@ -405,8 +464,7 @@ class Box(LightBox):
                 if item == '_box_config':
                     raise BoxError('_box_config key must exist')
                 kill_camel = self._box_config.get('camel_killer_box', False)
-                if (self._box_config.get('conversion_box', False) and
-                        item is not None):
+                if self._box_config.get('conversion_box', False) and item:
                     for k in self.keys():
                         if item == _safe_attr(k, camel_killer=kill_camel):
                             return self.__getitem__(k)
@@ -437,6 +495,7 @@ class Box(LightBox):
         del config['__box_heritage']
         del config['converted']
         del config['hash']
+        del config['created']
         return config
 
     def __convert_and_store(self, item, value):
@@ -447,9 +506,24 @@ class Box(LightBox):
                                    **self.__box_config())
             self.__setattr__(item, value)
         elif isinstance(value, list):
-            value = BoxList(value, __box_heritage=(self, item),
-                            box_class=self.__class__,
-                            **self.__box_config())
+            if self._box_config['frozen_box']:
+                value = _recursive_tuples(value, self.__class__,
+                                          recreate_tuples=self._box_config[
+                                              'modify_tuples_box'],
+                                          __box_heritage=(self, item),
+                                          **self.__box_config())
+            else:
+                value = BoxList(value, __box_heritage=(self, item),
+                                box_class=self.__class__,
+                                **self.__box_config())
+
+            self.__setattr__(item, value)
+        elif (self._box_config['modify_tuples_box'] and
+                isinstance(value, tuple)):
+            value = _recursive_tuples(value, self.__class__,
+                                      recreate_tuples=True,
+                                      __box_heritage=(self, item),
+                                      **self.__box_config())
             self.__setattr__(item, value)
         self._box_config['converted'].add(item)
         return value
@@ -464,13 +538,15 @@ class Box(LightBox):
         return self.__getitem__(item)
 
     def __setitem__(self, key, value):
-        if key != '_box_config' and self._box_config['frozen_box']:
+        if (key != '_box_config' and self._box_config['created'] and
+                self._box_config['frozen_box']):
             raise BoxError('Box is frozen')
         super(Box, self).__setitem__(key, value)
         self.__create_lineage()
 
     def __setattr__(self, key, value):
-        if key != '_box_config' and self._box_config['frozen_box']:
+        if (key != '_box_config' and self._box_config['frozen_box'] and
+                self._box_config['created']):
             raise BoxError('Box is frozen')
         if key in self._protected_keys:
             raise AttributeError("Key name '{0}' is protected".format(key))
@@ -565,6 +641,17 @@ class BoxList(list):
             else:
                 new_list.append(x)
         return new_list
+
+    def from_json(self):
+        pass
+
+    def from_yaml(self):
+        pass
+
+    def box_it_up(self):
+        for v in self:
+            if hasattr(v, '_box_it_up'):
+                v.box_it_up()
 
 
 class ConfigBox(LightBox):
