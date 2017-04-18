@@ -32,6 +32,8 @@ except ImportError:
 
 if sys.version_info >= (3, 0):
     basestring = str
+else:
+    from io import open
 
 __all__ = ['Box', 'ConfigBox', 'LightBox', 'BoxList', 'PropertyBox',
            'BoxError']
@@ -175,7 +177,8 @@ class LightBox(dict):
             out_dict[k] = v
         return out_dict
 
-    def to_json(self, filename=None, indent=4, **json_kwargs):
+    def to_json(self, filename=None, indent=4,
+                encoding="utf-8", errors="strict", **json_kwargs):
         """
         Transform the Box object into a JSON string.
 
@@ -184,18 +187,23 @@ class LightBox(dict):
         :param json_kwargs: additional arguments to pass to json.dump(s)
         :return: string of JSON or return of `json.dump`
         """
+        json_dump = json.dumps(self.to_dict(), indent=indent, **json_kwargs)
         if filename:
-            with open(filename, 'w') as f:
-                return json.dump(self.to_dict(), f, indent=indent,
-                                 **json_kwargs)
+            with open(filename, 'w', encoding=encoding, errors=errors) as f:
+                f.write(json_dump if sys.version_info >= (3, 0) else
+                        json_dump.decode("utf-8"))
         else:
-            return json.dumps(self.to_dict(), indent=indent, **json_kwargs)
+            return json_dump
 
     @classmethod
-    def from_json(cls, json_string=None, filename=None, **json_kwargs):
+    def from_json(cls, json_string=None, filename=None,
+                  encoding="utf-8", errors="strict", **json_kwargs):
         """
         Transform a json object string into a Box object. If the incoming
         json is a list, you must use BoxList.from_json. 
+        
+        By default json expects the file to be in utf-8, you will have to 
+        specify `encoding=` if characters do not map properly. 
         
         :param json_string: string to pass to `json.loads`
         :param filename: filename to open and pass to `json.load`
@@ -203,7 +211,7 @@ class LightBox(dict):
         :return: Box object from json data
         """
         if filename:
-            with open(filename, 'r') as f:
+            with open(filename, 'r', encoding=encoding, errors=errors) as f:
                 data = json.load(f, **json_kwargs)
         elif json_string:
             data = json.loads(json_string, **json_kwargs)
@@ -216,6 +224,7 @@ class LightBox(dict):
 
     if yaml_support:
         def to_yaml(self, filename=None, default_flow_style=False,
+                    encoding="utf-8", errors="strict",
                     **yaml_kwargs):
             """
             Transform the Box object into a YAML string.
@@ -226,17 +235,19 @@ class LightBox(dict):
             :return: string of YAML or return of `yaml.dump`
             """
             if filename:
-                with open(filename, 'w') as f:
-                    return yaml.dump(self.to_dict(), stream=f,
-                                     default_flow_style=default_flow_style,
-                                     **yaml_kwargs)
+                with open(filename, 'w', encoding=encoding, errors=errors) as f:
+                    yaml.dump(self.to_dict(), stream=f,
+                              default_flow_style=default_flow_style,
+                              **yaml_kwargs)
             else:
                 return yaml.dump(self.to_dict(),
                                  default_flow_style=default_flow_style,
                                  **yaml_kwargs)
 
         @classmethod
-        def from_yaml(cls, yaml_string=None, filename=None, **yaml_kwargs):
+        def from_yaml(cls, yaml_string=None, filename=None,
+                      encoding="utf-8", errors="strict",
+                      **yaml_kwargs):
             """
             Transform a yaml object string into a Box object.
     
@@ -246,7 +257,7 @@ class LightBox(dict):
             :return: Box object from yaml data
             """
             if filename:
-                with open(filename, 'r') as f:
+                with open(filename, 'r', encoding=encoding, errors=errors) as f:
                     data = yaml.load(f, **yaml_kwargs)
             elif yaml_string:
                 data = yaml.load(yaml_string, **yaml_kwargs)
@@ -333,7 +344,7 @@ class Box(LightBox):
 
     def __init__(self, *args, **kwargs):
         self._box_config = {
-            'converted': [],
+            'converted': set(),
             '__box_heritage': kwargs.pop('__box_heritage', None),
             'default_box': kwargs.pop('default_box', False),
             'default_box_attr': kwargs.pop('default_box_attr', self.__class__),
@@ -440,7 +451,7 @@ class Box(LightBox):
                             box_class=self.__class__,
                             **self.__box_config())
             self.__setattr__(item, value)
-        self._box_config['converted'].append(item)
+        self._box_config['converted'].add(item)
         return value
 
     def __create_lineage(self):

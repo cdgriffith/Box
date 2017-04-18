@@ -41,8 +41,9 @@ class TestReuseBox(unittest.TestCase):
         assert isinstance(box['Key 2'].Key4, Box)
         assert "'key1': 'value1'" in str(box)
         assert repr(box).startswith("<Box:")
-        box2 = Box([((3, 4), "A")])
+        box2 = Box([((3, 4), "A"), ("_box_config", 'test')])
         assert box2[(3, 4)] == "A"
+        assert box2['_box_config'] == 'test'
 
     def test_light_box(self):
         box = LightBox(**test_dict)
