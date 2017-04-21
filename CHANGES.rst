@@ -2,6 +2,7 @@ Version 3.0.0
 =============
 
 * Adding default object abilities with `default_box` and `default_box_attr` kwargs
+* Adding `from_json` and `from_yaml` functions to both `Box` and `BoxList`
 * Adding `frozen_box` option
 * Adding `BoxError` exception for custom errors
 * Adding `conversion_box` to automatically try to find matching attributes
@@ -9,8 +10,10 @@ Version 3.0.0
 * Adding `PropertyBox` that has `json` and `yaml` properties that map to default `to_json()` and `to_yaml()`
 * Adding `box_it_up` property that will make sure all boxes are created and populated like previous version
 * Adding `modify_tuples_box` option to recreate tuples with Boxes instead of dicts
+* Adding `to_json` and `to_yaml` for `BoxList`
 * Changing how the Box object works, to conversion on extraction
 * Removing `__call__` for compatibly with django and to make more like dict object
+* Removing official support for 2.6, even though may continue to work into foreseeable future
 
 Version 2.2.0
 =============

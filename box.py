@@ -52,6 +52,119 @@ class BoxError(Exception):
     """ Non standard dictionary exceptions"""
 
 
+# Abstract converter functions for use in any Box class
+
+def to_json(obj, filename=None, indent=4,
+            encoding="utf-8", errors="strict", **json_kwargs):
+    json_dump = json.dumps(obj, indent=indent,
+                           ensure_ascii=False, **json_kwargs)
+    if filename:
+        with open(filename, 'w', encoding=encoding, errors=errors) as f:
+            f.write(json_dump if sys.version_info >= (3, 0) else
+                    json_dump.decode("utf-8"))
+    else:
+        return json_dump
+
+
+def from_json(json_string=None, filename=None,
+              encoding="utf-8", errors="strict", **kwargs):
+    if filename:
+        with open(filename, 'r', encoding=encoding, errors=errors) as f:
+            data = json.load(f, **kwargs)
+    elif json_string:
+        data = json.loads(json_string, **kwargs)
+    else:
+        raise BoxError('from_json requires a string or filename')
+    return data
+
+
+def to_yaml(obj, filename=None, default_flow_style=False,
+            encoding="utf-8", errors="strict",
+            **yaml_kwargs):
+    if filename:
+        with open(filename, 'w',
+                  encoding=encoding, errors=errors) as f:
+            yaml.dump(obj, stream=f,
+                      default_flow_style=default_flow_style,
+                      **yaml_kwargs)
+    else:
+        return yaml.dump(obj,
+                         default_flow_style=default_flow_style,
+                         **yaml_kwargs)
+
+
+def from_yaml(yaml_string=None, filename=None,
+              encoding="utf-8", errors="strict",
+              **kwargs):
+    if filename:
+        with open(filename, 'r',
+                  encoding=encoding, errors=errors) as f:
+            data = yaml.load(f, **kwargs)
+    elif yaml_string:
+        data = yaml.load(yaml_string, **kwargs)
+    else:
+        raise BoxError('from_yaml requires a string or filename')
+    return data
+
+# Helper functions
+
+
+def _safe_attr(attr, camel_killer=False):
+    """Convert a key into something that is accessible as an attribute"""
+    allowed = string.ascii_letters + string.digits + '_'
+
+    attr = str(attr)
+    if camel_killer:
+        attr = _camel_killer(attr)
+
+    attr = attr.casefold() if hasattr(attr, 'casefold') else attr.lower()
+    attr = attr.replace(' ', '_')
+
+    out = ''
+    for character in attr:
+        if character in allowed:
+            out += character
+
+    try:
+        int(out[0])
+    except (ValueError, IndexError):
+        pass
+    else:
+        out = 'x{0}'.format(out)
+
+    if out in unallowed_attribs:
+        out = 'x{0}'.format(out)
+
+    return re.sub('_+', '_', out)
+
+
+first_cap_re = re.compile('(.)([A-Z][a-z]+)')
+all_cap_re = re.compile('([a-z0-9])([A-Z])')
+
+
+def _camel_killer(attr):
+    """
+    CamelKiller, qu'est-ce que c'est?
+
+    Taken from http://stackoverflow.com/a/1176023/3244542
+    """
+    s1 = first_cap_re.sub(r'\1_\2', str(attr))
+    s2 = all_cap_re.sub(r'\1_\2', s1)
+    return re.sub('_+', '_', s2.casefold() if hasattr(s2, 'casefold') else
+    s2.lower())
+
+
+def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
+    out_list = []
+    for i in iterable:
+        if isinstance(i, dict):
+            out_list.append(box_class(i, **kwargs))
+        elif isinstance(i, list) or (recreate_tuples and isinstance(i, tuple)):
+            out_list.extend(_recursive_tuples(i, box_class,
+                                              recreate_tuples, **kwargs))
+    return tuple(out_list)
+
+
 class LightBox(dict):
     """
     LightBox container.
@@ -154,6 +267,8 @@ class LightBox(dict):
         iter_over = item.items() if hasattr(item, 'items') else item
         for k, v in iter_over:
             if isinstance(v, dict):
+                # Box objects must be created in case they are already
+                # in the `converted` box_config set
                 v = self.__class__(v)
                 if k in self and isinstance(self[k], dict):
                     self[k].update(v)
@@ -175,17 +290,15 @@ class LightBox(dict):
         self[item] = default
         return default
 
-    def to_dict(self, in_dict=None):
+    def to_dict(self):
         """
         Turn the Box and sub Boxes back into a native
         python dictionary.
 
-        :param in_dict: Do not use, for self recursion
         :return: python dictionary of this Box
         """
-        in_dict = in_dict if in_dict else self
         out_dict = dict()
-        for k, v in in_dict.items():
+        for k, v in self.items():
             if isinstance(v, LightBox):
                 v = v.to_dict()
             out_dict[k] = v
@@ -203,14 +316,8 @@ class LightBox(dict):
         :param json_kwargs: additional arguments to pass to json.dump(s)
         :return: string of JSON or return of `json.dump`
         """
-        json_dump = json.dumps(self.to_dict(), indent=indent,
-                               ensure_ascii=False, **json_kwargs)
-        if filename:
-            with open(filename, 'w', encoding=encoding, errors=errors) as f:
-                f.write(json_dump if sys.version_info >= (3, 0) else
-                        json_dump.decode("utf-8"))
-        else:
-            return json_dump
+        return to_json(self.to_dict(), filename=filename, indent=indent,
+                       encoding=encoding, errors=errors, **json_kwargs)
 
     @classmethod
     def from_json(cls, json_string=None, filename=None,
@@ -218,8 +325,6 @@ class LightBox(dict):
         """
         Transform a json object string into a Box object. If the incoming
         json is a list, you must use BoxList.from_json. 
-        
-        You can pass in 
         
         :param json_string: string to pass to `json.loads`
         :param filename: filename to open and pass to `json.load`
@@ -233,13 +338,9 @@ class LightBox(dict):
             if arg in box_params:
                 bx_args[arg] = kwargs.pop(arg)
 
-        if filename:
-            with open(filename, 'r', encoding=encoding, errors=errors) as f:
-                data = json.load(f, **kwargs)
-        elif json_string:
-            data = json.loads(json_string, **kwargs)
-        else:
-            raise BoxError('from_json requires a string or filename')
+        data = from_json(json_string, filename=filename,
+                         encoding=encoding, errors=errors, **kwargs)
+
         if not isinstance(data, dict):
             raise BoxError('json data not returned as a dictionary, '
                            'but rather a {0}'.format(type(data).__name__))
@@ -259,16 +360,9 @@ class LightBox(dict):
             :param yaml_kwargs: additional arguments to pass to yaml.dump
             :return: string of YAML or return of `yaml.dump`
             """
-            if filename:
-                with open(filename, 'w',
-                          encoding=encoding, errors=errors) as f:
-                    yaml.dump(self.to_dict(), stream=f,
-                              default_flow_style=default_flow_style,
-                              **yaml_kwargs)
-            else:
-                return yaml.dump(self.to_dict(),
-                                 default_flow_style=default_flow_style,
-                                 **yaml_kwargs)
+            return to_yaml(self.to_dict(), filename=filename,
+                           default_flow_style=default_flow_style,
+                           encoding=encoding, errors=errors, **yaml_kwargs)
 
         @classmethod
         def from_yaml(cls, yaml_string=None, filename=None,
@@ -289,72 +383,14 @@ class LightBox(dict):
                 if arg in box_params:
                     bx_args[arg] = kwargs.pop(arg)
 
-            if filename:
-                with open(filename, 'r',
-                          encoding=encoding, errors=errors) as f:
-                    data = yaml.load(f, **kwargs)
-            elif yaml_string:
-                data = yaml.load(yaml_string, **kwargs)
-            else:
-                raise BoxError('from_yaml requires a string or filename')
+            data = from_yaml(yaml_string=yaml_string, filename=filename,
+                             encoding=encoding, errors=errors, **kwargs)
             if not isinstance(data, dict):
                 raise BoxError('yaml data not returned as a dictionary'
                                'but rather a {0}'.format(type(data).__name__))
             return cls(data, **bx_args)
 
 
-def _safe_attr(attr, camel_killer=False):
-    """Convert a key into something that is accessible as an attribute"""
-    allowed = string.ascii_letters + string.digits + '_'
-
-    attr = str(attr)
-    if camel_killer:
-        attr = _camel_killer(attr)
-
-    attr = attr.casefold() if hasattr(attr, 'casefold') else attr.lower()
-    attr = attr.replace(' ', '_')
-
-    out = ''
-    for character in attr:
-        if character in allowed:
-            out += character
-
-    try:
-        int(out[0])
-    except (ValueError, IndexError):
-        pass
-    else:
-        out = 'x{0}'.format(out)
-
-    if out in unallowed_attribs:
-        out = 'x{0}'.format(out)
-
-    return out
-
-first_cap_re = re.compile('(.)([A-Z][a-z]+)')
-all_cap_re = re.compile('([a-z0-9])([A-Z])')
-
-
-def _camel_killer(attr):
-    """
-    CamelKiller, qu'est-ce que c'est?
-    
-    Taken from http://stackoverflow.com/a/1176023/3244542
-    """
-    s1 = first_cap_re.sub(r'\1_\2', str(attr))
-    s2 = all_cap_re.sub(r'\1_\2', s1)
-    return s2.casefold() if hasattr(s2, 'casefold') else s2.lower()
-
-
-def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
-    out_list = []
-    for i in iterable:
-        if isinstance(i, dict):
-            out_list.append(box_class(i, **kwargs))
-        elif isinstance(i, list) or (recreate_tuples and isinstance(i, tuple)):
-            out_list.extend(_recursive_tuples(i, box_class,
-                                                 recreate_tuples, **kwargs))
-    return tuple(out_list)
 
 
 class Box(LightBox):
@@ -377,14 +413,16 @@ class Box(LightBox):
 
     def __init__(self, *args, **kwargs):
         self._box_config = {
-            'converted': set(),
+            # Internal use only
+            '__converted': set(),
             '__box_heritage': kwargs.pop('__box_heritage', None),
+            '__hash': None,
+            '__created': False,
+            # Can be changed by user after box creation
             'default_box': kwargs.pop('default_box', False),
             'default_box_attr': kwargs.pop('default_box_attr', self.__class__),
             'conversion_box': kwargs.pop('conversion_box', False),
             'frozen_box': kwargs.pop('frozen_box', False),
-            'hash': None,
-            'created': False,
             'camel_killer_box': kwargs.pop('camel_killer_box', False),
             'modify_tuples_box': kwargs.pop('modify_tuples_box', False)
             }
@@ -396,19 +434,11 @@ class Box(LightBox):
                     self[k] = v
                     if k == "_box_config":
                         continue
-                    try:
-                        setattr(self, k, v)
-                    except (TypeError, AttributeError):
-                        pass
             elif isinstance(args[0], Iterable):
                 for k, v in args[0]:
                     self[k] = v
                     if k == "_box_config":
                         continue
-                    try:
-                        setattr(self, k, v)
-                    except (TypeError, AttributeError):
-                        pass
             else:
                 raise ValueError('First argument must be mapping or iterable')
         elif args:
@@ -417,26 +447,26 @@ class Box(LightBox):
 
         box_it = kwargs.pop('box_it_up', False)
         for k, v in kwargs.items():
-            self.__setitem__(k, v)
+            self[k] = v
 
         if self._box_config['frozen_box'] or box_it:
             self.box_it_up()
 
-        self._box_config['created'] = True
+        self._box_config['__created'] = True
 
     def box_it_up(self):
         for k in self:
-            if hasattr(self[k], '_box_it_up'):
+            if hasattr(self[k], 'box_it_up'):
                 self[k].box_it_up()
 
     def __hash__(self):
         if self._box_config['frozen_box']:
-            if not self._box_config['hash']:
+            if not self._box_config['__hash']:
                 hashing = hash(uuid4().hex)
                 for item in self.items():
                     hashing ^= hash(item)
-                self._box_config['hash'] = hashing
-            return self._box_config['hash']
+                self._box_config['__hash'] = hashing
+            return self._box_config['__hash']
         raise TypeError("unhashable type: 'Box'")
 
     def __dir__(self):
@@ -493,13 +523,13 @@ class Box(LightBox):
     def __box_config(self):
         config = self._box_config.copy()
         del config['__box_heritage']
-        del config['converted']
-        del config['hash']
-        del config['created']
+        del config['__converted']
+        del config['__hash']
+        del config['__created']
         return config
 
     def __convert_and_store(self, item, value):
-        if item in self._box_config['converted']:
+        if item in self._box_config['__converted']:
             return value
         if isinstance(value, dict) and not isinstance(value, Box):
             value = self.__class__(value, __box_heritage=(self, item),
@@ -525,7 +555,7 @@ class Box(LightBox):
                                       __box_heritage=(self, item),
                                       **self.__box_config())
             self.__setattr__(item, value)
-        self._box_config['converted'].add(item)
+        self._box_config['__converted'].add(item)
         return value
 
     def __create_lineage(self):
@@ -538,7 +568,7 @@ class Box(LightBox):
         return self.__getitem__(item)
 
     def __setitem__(self, key, value):
-        if (key != '_box_config' and self._box_config['created'] and
+        if (key != '_box_config' and self._box_config['__created'] and
                 self._box_config['frozen_box']):
             raise BoxError('Box is frozen')
         super(Box, self).__setitem__(key, value)
@@ -546,7 +576,7 @@ class Box(LightBox):
 
     def __setattr__(self, key, value):
         if (key != '_box_config' and self._box_config['frozen_box'] and
-                self._box_config['created']):
+                self._box_config['__created']):
             raise BoxError('Box is frozen')
         if key in self._protected_keys:
             raise AttributeError("Key name '{0}' is protected".format(key))
@@ -575,20 +605,18 @@ class Box(LightBox):
     def __repr__(self):
         return '<Box: {0}>'.format(str(self.to_dict()))
 
-    def to_dict(self, in_dict=None):
+    def to_dict(self):
         """
         Turn the Box and sub Boxes back into a native
         python dictionary.
 
-        :param in_dict: Do not use, for self recursion
         :return: python dictionary of this Box
         """
-        in_dict = in_dict if in_dict else self
         out_dict = dict()
-        for k, v in in_dict.items():
-            if isinstance(v, LightBox):
+        for k, v in self.items():
+            if hasattr(v, 'to_dict'):
                 v = v.to_dict()
-            elif isinstance(v, BoxList):
+            elif hasattr(v, 'to_list'):
                 v = v.to_list()
             out_dict[k] = v
         return out_dict
@@ -642,15 +670,95 @@ class BoxList(list):
                 new_list.append(x)
         return new_list
 
-    def from_json(self):
-        pass
+    def to_json(self, filename=None, indent=4,
+                encoding="utf-8", errors="strict", **json_kwargs):
+        """
+        Transform the Box object into a JSON string.
 
-    def from_yaml(self):
-        pass
+        :param filename: If provided will save to file
+        :param indent: Automatic formatting by indent size in spaces
+        :param encoding: File encoding
+        :param errors: How to handle encoding errors 
+        :param json_kwargs: additional arguments to pass to json.dump(s)
+        :return: string of JSON or return of `json.dump`
+        """
+        return to_json(self.to_list(), filename=filename, indent=indent,
+                       encoding=encoding, errors=errors, **json_kwargs)
+
+    @classmethod
+    def from_json(cls, json_string=None, filename=None,
+                  encoding="utf-8", errors="strict", **kwargs):
+        """
+        Transform a json object string into a Box object. If the incoming
+        json is a list, you must use BoxList.from_json. 
+
+        :param json_string: string to pass to `json.loads`
+        :param filename: filename to open and pass to `json.load`
+        :param encoding: File encoding
+        :param errors: How to handle encoding errors 
+        :param kwargs: parameters to pass to `Box()` or `json.loads`
+        :return: Box object from json data
+        """
+        bx_args = {}
+        for arg in kwargs.copy():
+            if arg in box_params:
+                bx_args[arg] = kwargs.pop(arg)
+
+        data = from_json(json_string, filename=filename,
+                         encoding=encoding, errors=errors, **kwargs)
+
+        if not isinstance(data, list):
+            raise BoxError('json data not returned as a list, '
+                           'but rather a {0}'.format(type(data).__name__))
+        return cls(data, **bx_args)
+
+    if yaml_support:
+        def to_yaml(self, filename=None, default_flow_style=False,
+                    encoding="utf-8", errors="strict",
+                    **yaml_kwargs):
+            """
+            Transform the Box object into a YAML string.
+
+            :param filename:  If provided will save to file
+            :param default_flow_style: False will recursively dump dicts
+            :param encoding: File encoding
+            :param errors: How to handle encoding errors 
+            :param yaml_kwargs: additional arguments to pass to yaml.dump
+            :return: string of YAML or return of `yaml.dump`
+            """
+            return to_yaml(self.to_list(), filename=filename,
+                           default_flow_style=default_flow_style,
+                           encoding=encoding, errors=errors, **yaml_kwargs)
+
+        @classmethod
+        def from_yaml(cls, yaml_string=None, filename=None,
+                      encoding="utf-8", errors="strict",
+                      **kwargs):
+            """
+            Transform a yaml object string into a Box object.
+
+            :param yaml_string: string to pass to `yaml.load`
+            :param filename: filename to open and pass to `yaml.load`
+            :param encoding: File encoding
+            :param errors: How to handle encoding errors 
+            :param kwargs: parameters to pass to `Box()` or `yaml.load`
+            :return: Box object from yaml data
+            """
+            bx_args = {}
+            for arg in kwargs.copy():
+                if arg in box_params:
+                    bx_args[arg] = kwargs.pop(arg)
+
+            data = from_yaml(yaml_string=yaml_string, filename=filename,
+                             encoding=encoding, errors=errors, **kwargs)
+            if not isinstance(data, list):
+                raise BoxError('yaml data not returned as a list'
+                               'but rather a {0}'.format(type(data).__name__))
+            return cls(data, **bx_args)
 
     def box_it_up(self):
         for v in self:
-            if hasattr(v, '_box_it_up'):
+            if hasattr(v, 'box_it_up'):
                 v.box_it_up()
 
 
