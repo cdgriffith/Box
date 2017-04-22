@@ -550,3 +550,36 @@ class TestReuseBox(unittest.TestCase):
         assert repr(pbox['inner']).startswith('<PropertyBox')
         assert not isinstance(pbox.dict, Box)
         assert pbox.dict['inner']['CamelCase'] == 'Item'
+
+    def test_hearthstone_data(self):
+        hearth = Box.from_json(filename=os.path.join(test_root,
+                                                     "hearthstone_cards.json"),
+                               conversion_box=True,
+                               camel_killer_box=True,
+                               default_box=False)
+        assert hearth.the_jade_lotus
+
+        try:
+            hearth._bad_value
+        except AttributeError:
+            pass
+        else:
+            raise AssertionError("Should not exist")
+
+        try:
+            hearth.the_jade_lotus._bad_value
+        except AttributeError:
+            pass
+        else:
+            raise AssertionError("Should not exist")
+
+        assert hearth._Box__box_config() == hearth.the_jade_lotus._Box__box_config(), "{} != {}".format(hearth._Box__box_config(), hearth.the_jade_lotus._Box__box_config())
+
+
+
+
+
+
+
+
+

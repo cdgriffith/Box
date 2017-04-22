@@ -3,3 +3,5 @@ coverage >= 3.6
 tox
 pytest-cov
 PyYAML
+addict
+dotmap

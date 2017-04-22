@@ -391,8 +391,6 @@ class LightBox(dict):
             return cls(data, **bx_args)
 
 
-
-
 class Box(LightBox):
     """
     Same as LightBox,
@@ -411,7 +409,9 @@ class Box(LightBox):
     :param modify_tuples_box: Recreate incoming tuples with dicts into Boxes
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, default_box=False, conversion_box=True,
+                 frozen_box=False, camel_killer_box=False,
+                 modify_tuples_box=False, **kwargs):
         self._box_config = {
             # Internal use only
             '__converted': set(),
@@ -419,12 +419,12 @@ class Box(LightBox):
             '__hash': None,
             '__created': False,
             # Can be changed by user after box creation
-            'default_box': kwargs.pop('default_box', False),
+            'default_box': default_box,
             'default_box_attr': kwargs.pop('default_box_attr', self.__class__),
-            'conversion_box': kwargs.pop('conversion_box', False),
-            'frozen_box': kwargs.pop('frozen_box', False),
-            'camel_killer_box': kwargs.pop('camel_killer_box', False),
-            'modify_tuples_box': kwargs.pop('modify_tuples_box', False)
+            'conversion_box': conversion_box,
+            'frozen_box': frozen_box,
+            'camel_killer_box': camel_killer_box,
+            'modify_tuples_box': modify_tuples_box
             }
         if len(args) == 1:
             if isinstance(args[0], basestring):
@@ -617,13 +617,13 @@ class Box(LightBox):
 
         :return: python dictionary of this Box
         """
-        out_dict = dict()
-        for k, v in self.items():
+
+        out_dict = dict(self)
+        for k, v in out_dict.items():
             if hasattr(v, 'to_dict'):
-                v = v.to_dict()
+                out_dict[k] = v.to_dict()
             elif hasattr(v, 'to_list'):
-                v = v.to_list()
-            out_dict[k] = v
+                out_dict[k] = v.to_list()
         return out_dict
 
 
@@ -678,7 +678,7 @@ class BoxList(list):
     def to_json(self, filename=None, indent=4,
                 encoding="utf-8", errors="strict", **json_kwargs):
         """
-        Transform the Box object into a JSON string.
+        Transform the BoxList object into a JSON string.
 
         :param filename: If provided will save to file
         :param indent: Automatic formatting by indent size in spaces
@@ -694,15 +694,15 @@ class BoxList(list):
     def from_json(cls, json_string=None, filename=None,
                   encoding="utf-8", errors="strict", **kwargs):
         """
-        Transform a json object string into a Box object. If the incoming
-        json is a list, you must use BoxList.from_json. 
+        Transform a json object string into a BoxList object. If the incoming
+        json is a dict, you must use Box.from_json. 
 
         :param json_string: string to pass to `json.loads`
         :param filename: filename to open and pass to `json.load`
         :param encoding: File encoding
         :param errors: How to handle encoding errors 
         :param kwargs: parameters to pass to `Box()` or `json.loads`
-        :return: Box object from json data
+        :return: BoxList object from json data
         """
         bx_args = {}
         for arg in kwargs.copy():
@@ -722,7 +722,7 @@ class BoxList(list):
                     encoding="utf-8", errors="strict",
                     **yaml_kwargs):
             """
-            Transform the Box object into a YAML string.
+            Transform the BoxList object into a YAML string.
 
             :param filename:  If provided will save to file
             :param default_flow_style: False will recursively dump dicts
@@ -740,14 +740,14 @@ class BoxList(list):
                       encoding="utf-8", errors="strict",
                       **kwargs):
             """
-            Transform a yaml object string into a Box object.
+            Transform a yaml object string into a BoxList object.
 
             :param yaml_string: string to pass to `yaml.load`
             :param filename: filename to open and pass to `yaml.load`
             :param encoding: File encoding
             :param errors: How to handle encoding errors 
-            :param kwargs: parameters to pass to `Box()` or `yaml.load`
-            :return: Box object from yaml data
+            :param kwargs: parameters to pass to `BoxList()` or `yaml.load`
+            :return: BoxList object from yaml data
             """
             bx_args = {}
             for arg in kwargs.copy():
