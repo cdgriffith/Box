@@ -315,3 +315,10 @@ MIT License, Copyright (c) 2017 Chris Griffith. See LICENSE file.
    :target: https://travis-ci.org/cdgriffith/Box
 .. |CoverageStatus| image:: https://img.shields.io/coveralls/cdgriffith/Box/master.svg?maxAge=2592000
    :target: https://coveralls.io/r/cdgriffith/Box?branch=master
+
+
+.. toctree::
+   :maxdepth: 2
+
+   box
+   changelog

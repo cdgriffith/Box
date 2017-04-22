@@ -455,6 +455,11 @@ class Box(LightBox):
         self._box_config['__created'] = True
 
     def box_it_up(self):
+        """
+        Perform value lookup for all items in current dictionary, 
+        generating all sub Box objects, while also running `box_it_up` on
+        anoy of those sub box objects.
+        """
         for k in self:
             if hasattr(self[k], 'box_it_up'):
                 self[k].box_it_up()

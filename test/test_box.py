@@ -246,10 +246,15 @@ class TestReuseBox(unittest.TestCase):
         a = Box(test_dict)
         assert json.loads(a.to_json(indent=0)) == test_dict
 
-        a.to_json("test_json_file")
-        with open("test_json_file") as f:
-            data = json.load(f)
-            assert data == test_dict
+        json_path = os.path.join(test_root, "test_json_file")
+
+        try:
+            a.to_json(json_path)
+            with open(json_path) as f:
+                data = json.load(f)
+                assert data == test_dict
+        finally:
+            os.unlink(json_path)
 
     def test_to_yaml(self):
         a = Box(test_dict)
@@ -257,10 +262,14 @@ class TestReuseBox(unittest.TestCase):
 
     def test_to_yaml_file(self):
         a = Box(test_dict)
-        a.to_yaml("test_yaml_file")
-        with open("test_yaml_file") as f:
-            data = yaml.load(f)
-            assert data == test_dict
+        yaml_path = os.path.join(test_root, "test_yaml_file")
+        try:
+            a.to_yaml(yaml_path)
+            with open(yaml_path) as f:
+                data = yaml.load(f)
+                assert data == test_dict
+        finally:
+            os.unlink(yaml_path)
 
     def test_boxlist(self):
         new_list = BoxList({'item': x} for x in range(0, 10))
