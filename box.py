@@ -113,7 +113,11 @@ def _safe_attr(attr, camel_killer=False):
     """Convert a key into something that is accessible as an attribute"""
     allowed = string.ascii_letters + string.digits + '_'
 
-    attr = str(attr)
+    try:
+        attr = str(attr)
+    except UnicodeEncodeError:
+        attr = attr.encode(encoding="utf-8", errors="ignore")
+
     if camel_killer:
         attr = _camel_killer(attr)
 
@@ -148,10 +152,15 @@ def _camel_killer(attr):
 
     Taken from http://stackoverflow.com/a/1176023/3244542
     """
-    s1 = first_cap_re.sub(r'\1_\2', str(attr))
+    try:
+        attr = str(attr)
+    except UnicodeEncodeError:
+        attr = attr.encode(encoding="utf-8", errors="ignore")
+
+    s1 = first_cap_re.sub(r'\1_\2', attr)
     s2 = all_cap_re.sub(r'\1_\2', s1)
     return re.sub('_+', '_', s2.casefold() if hasattr(s2, 'casefold') else
-    s2.lower())
+                  s2.lower())
 
 
 def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
@@ -409,9 +418,7 @@ class Box(LightBox):
     :param modify_tuples_box: Recreate incoming tuples with dicts into Boxes
     """
 
-    def __init__(self, *args, default_box=False, conversion_box=True,
-                 frozen_box=False, camel_killer_box=False,
-                 modify_tuples_box=False, **kwargs):
+    def __init__(self, *args, **kwargs):
         self._box_config = {
             # Internal use only
             '__converted': set(),
@@ -419,12 +426,12 @@ class Box(LightBox):
             '__hash': None,
             '__created': False,
             # Can be changed by user after box creation
-            'default_box': default_box,
+            'default_box': kwargs.pop('default_box', False),
             'default_box_attr': kwargs.pop('default_box_attr', self.__class__),
-            'conversion_box': conversion_box,
-            'frozen_box': frozen_box,
-            'camel_killer_box': camel_killer_box,
-            'modify_tuples_box': modify_tuples_box
+            'conversion_box': kwargs.pop('conversion_box', False),
+            'frozen_box': kwargs.pop('frozen_box', False),
+            'camel_killer_box': kwargs.pop('camel_killer_box', False),
+            'modify_tuples_box': kwargs.pop('modify_tuples_box', False)
             }
         if len(args) == 1:
             if isinstance(args[0], basestring):
