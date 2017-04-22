@@ -16,7 +16,7 @@ Version 3.0.0
 * Adding `to_json` and `to_yaml` for `BoxList`
 * Changing how the Box object works, to conversion on extraction
 * Removing `__call__` for compatibly with django and to make more like dict object
-* Removing official support for 2.6, even though may continue to work into foreseeable future
+* Removing support for python 2.6
 
 Version 2.2.0
 -------------
