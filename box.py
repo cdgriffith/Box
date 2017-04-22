@@ -596,7 +596,7 @@ class Box(LightBox):
             return object.__setattr__(self, key, value)
         try:
             object.__getattribute__(self, key)
-        except AttributeError:
+        except (AttributeError, UnicodeEncodeError):
             self[key] = value
         else:
             object.__setattr__(self, key, value)

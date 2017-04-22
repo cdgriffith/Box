@@ -111,7 +111,6 @@ if __name__ == '__main__':
     lookup(dt)
     lookup(dt)
     lookup(dt)
-
     """
     addict lookups
     lookup took 0.00214 seconds
