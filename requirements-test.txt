@@ -6,3 +6,4 @@ PyYAML
 addict
 dotmap
 reusables
+memory_profiler

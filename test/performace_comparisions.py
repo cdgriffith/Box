@@ -5,6 +5,7 @@ from box import Box
 from addict import Dict
 from dotmap import DotMap
 from reusables import time_it
+from memory_profiler import profile
 
 
 if sys.version_info < (3, 0):
@@ -79,7 +80,63 @@ def dict_insert(dt):
         dt["new {}".format(i)] = {'a': i}
 
 
+@profile()
+def memory_test():
+    ad = load_addict()
+    dm = load_dotmap()
+    bx = load_box()
+    dt = load_dict()
+
+    lookup(ad)
+    lookup(ad)
+
+    lookup(dm)
+    lookup(dm)
+
+    lookup(bx)
+    lookup(bx)
+
+    lookup(dt)
+    lookup(dt)
+
+    addict_insert(ad)
+    dotmap_insert(dm)
+    box_insert(bx)
+    dict_insert(dt)
+
+
 if __name__ == '__main__':
+    memory_test()
+    """
+        Line #    Mem usage    Increment   Line Contents
+    ================================================
+        85     28.9 MiB      0.0 MiB   @profile()
+        86                             def memory_test():
+        87     41.9 MiB     13.0 MiB       ad = load_addict()
+        88     57.1 MiB     15.2 MiB       dm = load_dotmap()
+        89     64.5 MiB      7.4 MiB       bx = load_box()
+        90     74.6 MiB     10.1 MiB       dt = load_dict()
+        91                             
+        92     74.6 MiB      0.0 MiB       lookup(ad)
+        93     74.6 MiB      0.0 MiB       lookup(ad)
+        94                             
+        95     74.6 MiB      0.0 MiB       lookup(dm)
+        96     74.6 MiB      0.0 MiB       lookup(dm)
+        97                             
+        98     75.6 MiB      1.0 MiB       lookup(bx)
+        99     75.6 MiB      0.0 MiB       lookup(bx)
+       100                             
+       101     75.6 MiB      0.0 MiB       lookup(dt)
+       102     75.6 MiB      0.0 MiB       lookup(dt)
+       103                             
+       104     76.0 MiB      0.3 MiB       addict_insert(ad)
+       105     76.6 MiB      0.6 MiB       dotmap_insert(dm)
+       106     76.8 MiB      0.2 MiB       box_insert(bx)
+       107     76.9 MiB      0.2 MiB       dict_insert(dt)
+   
+    """
+
+    print("Python {}\n".format(sys.version.split(" ")[0]))
 
     ad = load_addict()
     dm = load_dotmap()

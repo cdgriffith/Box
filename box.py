@@ -45,7 +45,7 @@ unallowed_attribs = ('if', 'elif', 'else', 'for', 'from', 'as', 'import',
                      'except', 'while', 'raise')
 
 box_params = ('default_box', 'default_box_attr', 'conversion_box',
-              'frozen_box', 'camel_killer_box')
+              'frozen_box', 'camel_killer_box', 'box_it_up')
 
 
 class BoxError(Exception):
