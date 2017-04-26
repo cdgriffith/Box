@@ -1,4 +1,4 @@
-|Box|
+|BoxImage|
 
 Python dictionaries with recursive dot notation access.
 
@@ -61,7 +61,7 @@ Python dictionaries with recursive dot notation access.
 Install
 -------
 
-|BuildStatus| |CoverageStatus|
+|BuildStatus| |CoverageStatus| |License| |PyPi| |DocStatus|
 
 .. code:: bash
 
@@ -309,16 +309,15 @@ License
 MIT License, Copyright (c) 2017 Chris Griffith. See LICENSE file.
 
 
-.. |Box| image:: https://raw.githubusercontent.com/cdgriffith/Box/development/box_logo.png
+.. |BoxImage| image:: https://raw.githubusercontent.com/cdgriffith/Box/development/box_logo.png
    :target: https://github.com/cdgriffith/Box
 .. |BuildStatus| image:: https://travis-ci.org/cdgriffith/Box.png?branch=master
    :target: https://travis-ci.org/cdgriffith/Box
 .. |CoverageStatus| image:: https://img.shields.io/coveralls/cdgriffith/Box/master.svg?maxAge=2592000
    :target: https://coveralls.io/r/cdgriffith/Box?branch=master
-
-
-.. toctree::
-   :maxdepth: 2
-
-   box
-   changelog
+.. |DocStatus| image:: https://readthedocs.org/projects/box/badge/?version=latest
+   :target: http://box.readthedocs.org/en/latest/index.html
+.. |PyPi| image:: https://img.shields.io/pypi/v/python-box.svg?maxAge=2592000
+   :target: https://pypi.python.org/pypi/python-box/
+.. |License| image:: https://img.shields.io/pypi/l/python-box.svg
+   :target: https://pypi.python.org/pypi/python-box/

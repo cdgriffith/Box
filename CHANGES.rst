@@ -1,8 +1,8 @@
 Changelog
-=========
+---------
 
 Version 3.0.0
--------------
+~~~~~~~~~~~~~
 
 * Adding default object abilities with `default_box` and `default_box_attr` kwargs
 * Adding `from_json` and `from_yaml` functions to both `Box` and `BoxList`
@@ -19,19 +19,19 @@ Version 3.0.0
 * Removing support for python 2.6
 
 Version 2.2.0
--------------
+~~~~~~~~~~~~~
 
 * Adding support for `ruamel.yaml` (Thanks to Alexandre Decan)
 * Adding Contributing and Authors files
 
 Version 2.1.0
--------------
+~~~~~~~~~~~~~
 
 * Adding `.update` and `.set_default` functionality
 * Adding `dir` support
 
 Version 2.0.0
--------------
+~~~~~~~~~~~~~
 
 * Adding `BoxList` to allow for `Box`es to be recursively added to lists as well
 * Adding `to_json` and `to_yaml` functions
@@ -41,7 +41,7 @@ Version 2.0.0
 
 
 Version 1.0.0
--------------
+~~~~~~~~~~~~~
 
 * Initial release, copy from `reusables.Namespace`
 * Original creation, 2\13\2014

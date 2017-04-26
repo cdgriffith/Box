@@ -26,8 +26,26 @@ project_root = os.path.abspath(os.path.join(
     os.path.dirname(__file__), os.pardir, os.pardir))
 sys.path.insert(0, project_root)
 
-shutil.copy(os.path.join(project_root, "README.rst"), "index.rst")
-shutil.copy(os.path.join(project_root, "CHANGES.rst"), "changelog.rst")
+readme_file = os.path.join(project_root, "README.rst")
+changes_file = os.path.join(project_root, "CHANGES.rst")
+
+shutil.copy(readme_file, "index.rst")
+
+internals = """
+
+Box Internals
+-------------
+
+.. automodule:: box
+   :members:
+   :undoc-members:
+
+"""
+
+
+with open("index.rst", "a") as index, open(changes_file) as changes:
+    index.write(internals)
+    index.write(changes.read())
 
 with open(os.path.join(project_root, "box.py"), "r") as box_file:
     box_content = box_file.read()
