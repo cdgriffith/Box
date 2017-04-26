@@ -555,6 +555,28 @@ class TestReuseBox(unittest.TestCase):
         assert not isinstance(pbox.dict, Box)
         assert pbox.dict['inner']['CamelCase'] == 'Item'
 
+    def test_box_list_to_json(self):
+        bl = BoxList([{'item': 1, 'CamelBad': 2}])
+        assert json.loads(bl.to_json())[0]['item'] == 1
+
+    def test_box_list_from_json(self):
+        alist = [{'item': 1}, {'CamelBad': 2}]
+        json_list = json.dumps(alist)
+        bl = BoxList.from_json(json_list, camel_killer_box=True)
+        assert bl[0].item == 1
+        assert bl[1].camel_bad == 2
+
+    def test_box_list_to_yaml(self):
+        bl = BoxList([{'item': 1, 'CamelBad': 2}])
+        assert yaml.load(bl.to_yaml())[0]['item'] == 1
+
+    def test_box_list_from_yaml(self):
+        alist = [{'item': 1}, {'CamelBad': 2}]
+        yaml_list = yaml.dump(alist)
+        bl = BoxList.from_yaml(yaml_list, camel_killer_box=True)
+        assert bl[0].item == 1
+        assert bl[1].camel_bad == 2
+
     def test_hearthstone_data(self):
         hearth = Box.from_json(filename=os.path.join(test_root,
                                                      "hearthstone_cards.json"),

@@ -47,7 +47,7 @@ Python dictionaries with recursive dot notation access.
          # 'Lone Starr'
 
 Install
--------
+=======
 
 |BuildStatus| |CoverageStatus| |License| |PyPi| |DocStatus|
 
@@ -63,7 +63,7 @@ If you want to be able to use the `to_yaml` functionality make sure to
 install `PyYAML` or `ruamel.yaml` as well.
 
 Overview
---------
+========
 
 `Box` is designed to be an easy drop in transparently replacements for
 dictionaries, thanks to Python's
@@ -87,7 +87,7 @@ and all sub objects back into a regular dictionary.
                     {'imdb': 'nm0000597', 'name': 'Bill Pullman', 'role': 'Lone Starr'}]}
 
 Box
-~~~
+---
 
 `Box` can be instantiated the same ways as `dict`.
 
@@ -135,7 +135,8 @@ that adds automagic attribute access for keys that could not normally be attribu
          # KeyError: 'personal_thoughts'
 
 
-#### Frozen Box
+Frozen Box
+~~~~~~~~~~
 
 Want to show off your box without worrying about others messing it up? Freeze it!
 
@@ -160,7 +161,8 @@ It's hashing ability is the same as the humble `tuple`, it will not be hashable
 if it has mutable objects. Speaking of `tuple`, that's what all the lists
 becomes now.
 
-#### Default Box
+Default Box
+~~~~~~~~~~~
 
 It's boxes all the way down.
 
@@ -195,7 +197,7 @@ lastly, will just use the provided item as is.
 
 
 BoxList
-~~~~~~~
+-------
 
 To make sure all items added to lists in the box are also converted, all lists
 are covered into `BoxList`. It's possible to
@@ -225,7 +227,7 @@ Transform a `BoxList` and all components back into regular `list` and `dict` ite
 
 
 LightBox
-~~~~~~~~
+--------
 
 `LightBox` does not examine lists, but only converts dictionary objects.
 
@@ -240,7 +242,7 @@ LightBox
 
 
 ConfigBox
-~~~~~~~~~
+---------
 
 This module has support for
 a `ConfigBox`. It is based on top of `LightBox` as there are no lists of dicts
@@ -282,7 +284,7 @@ config values into python types. It supports `list`, `bool`, `int` and `float`.
 
 
 License
--------
+=======
 
 MIT License, Copyright (c) 2017 Chris Griffith. See LICENSE file.
 
