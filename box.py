@@ -11,6 +11,7 @@ import sys
 import json
 from uuid import uuid4
 import re
+import collections
 
 try:
     from collections.abc import Mapping, Iterable
@@ -170,6 +171,8 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
         elif isinstance(i, list) or (recreate_tuples and isinstance(i, tuple)):
             out_list.extend(_recursive_tuples(i, box_class,
                                               recreate_tuples, **kwargs))
+        else:
+            out_list.append(i)
     return tuple(out_list)
 
 
@@ -501,7 +504,7 @@ class Box(LightBox):
         except KeyError as err:
             default_value = self._box_config['default_box_attr']
             if self._box_config['default_box']:
-                if isinstance(default_value, type):
+                if isinstance(default_value, collections.Callable):
                     if default_value.__name__ == 'Box':
                         return self.__class__(__box_heritage=(self, item),
                                               **self.__box_config())

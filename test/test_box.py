@@ -454,9 +454,13 @@ class TestReuseBox(unittest.TestCase):
                                "Key4": {"Key5": "Value5"}},
                      3: 'howdy',
                      'not': 'true',
-                     (3, 4): 'test'
+                     (3, 4): 'test',
+                     'alist': ['a', 'b', 'c']
                      }
         bx = Box(test_dict, frozen_box=True)
+
+        assert isinstance(bx.alist, tuple)
+        assert bx.alist[0] == 'a'
         try:
             bx.new = 3
         except BoxError as err:

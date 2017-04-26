@@ -55,9 +55,9 @@ Install
 
         pip install python-box
 
-Box is tested on python 2.6+, 3.3+ and PyPy2, and should work on other 
-interpreters as well. If  it does not install with this command, please
-open a ticket with the error you are experiencing!
+Box is tested on python 2.7, 3.3+ and PyPy2.
+If it does not install with this command, please
+open a github issue with the error you are experiencing!
 
 If you want to be able to use the `to_yaml` functionality make sure to
 install `PyYAML` or `ruamel.yaml` as well.
@@ -86,12 +86,6 @@ and all sub objects back into a regular dictionary.
                     {'imdb': 'nm0001548', 'name': 'Rick Moranis', 'role': 'Dark Helmet'},
                     {'imdb': 'nm0000597', 'name': 'Bill Pullman', 'role': 'Lone Starr'}]}
 
-
-
-`Box` was originally named `Namespaces` in the `reusables` project, created
-over three years ago. `LightBox` is the direct dependant of `Namespace`, and
-should operate as a near drop in replacement if you are switching over.
-
 Box
 ~~~
 
@@ -115,10 +109,16 @@ sure everything stored in the dict can be accessed as an attribute or key value.
       small_box = Box({'data': 2, 'count': 5})
       small_box.data == small_box['data'] == getattr(small_box, 'data')
 
-Any time a list or dict is added to a `Box`, it is converted into a `BoxList`
-or `Box` respectively.
+All dicts (and lists) added to a `Box` will be converted on lookup to a `Box` (or `BoxList`),
+allowing for recursive dot notation access.
 
-#### Automagic Attribute Access
+`Box` also includes helper functions to transform it back into a `dict`,
+as well as into `JSON` or `YAML` strings or files.
+
+#### Conversion Box
+
+By default, Box is now a `conversion_box` (can be disabled with `Box(conversion_box=False)`
+that adds automagic attribute access for keys that could not normally be attributes.
 
 .. code:: python
 
@@ -135,70 +135,64 @@ or `Box` respectively.
          # KeyError: 'personal_thoughts'
 
 
-`Box` includes helper functions to transform it back into `dict`,
-and into `JSON` or `YAML` strings.
+#### Frozen Box
 
-**to_dict**
-
-Return the `Box` object and all sub `Box` and `BoxList`
-objects into regular dicts and list.
-
+Want to show off your box without worrying about others messing it up? Freeze it!
 
 .. code:: python
 
-        my_box.to_dict()
-        {'owner': 'Mr. Powers',
-         'affiliates': {'Vanessa': 'Sexy',
-                        'Dr Evil': 'Not groovy',
-                        'Scott Evil': "Doesn't want to take over family business"}}
+      frigid = Box(data={'Python': 'Rocks', 'inferior': ['java', 'cobol']}, frozen_box=True)
+
+      frigid.data.Python = "Stinks"
+      # box.BoxError: Box is frozen
+
+      frigid.data.Python
+      # 'Rocks'
+
+      hash(frigid)
+      # 4021666719083772260
+
+      frigid.data.inferior
+      # ('java', 'cobol')
 
 
-**to_json**
+It's hashing ability is the same as the humble `tuple`, it will not be hashable
+if it has mutable objects. Speaking of `tuple`, that's what all the lists
+becomes now.
 
-Available on all systems that support the default `json` library.::
+#### Default Box
 
-   to_json(filename=None, indent=4, **json_kwargs)
-       Transform the Box object into a JSON string.
-
-       :param filename: If provided will save to file
-       :param indent: Automatic formatting by indent size in spaces
-       :param json_kwargs: additional arguments to pass to json.dump(s)
-       :return: string of JSON or return of `json.dump`
+It's boxes all the way down.
 
 .. code:: python
 
-        my_box.to_json()
-        {
-            "owner": "Mr. Powers",
-            "affiliates": {
-                "Vanessa": "Sexy",
-                "Dr Evil": "Not groovy",
-                "Scott Evil": "Doesn't want to take over family business"
-            }
-        }
+      empty_box = Box(default_box=True)
+
+      empty_box.a.b.c.d.e.f.g
+      # <Box: {}>
+
+      empty_box.a.b.c.d.e.f.g = "h"
+      empty_box
+      # <Box: {'a': {'b': {'c': {'d': {'e': {'f': {'g': 'h'}}}}}}}>
+
+Unless you want it to be something else.
+
+.. code:: python
+
+      evil_box = Box(default_box=True, default_box_attr="Something Something Something Dark Side")
+
+      evil_box.not_defined
+      # 'Something Something Something Dark Side'
+
+      # Keep in mind it will no longer be possible to go down multiple levels
+      evil_box.not_defined.something_else
+      # AttributeError: 'str' object has no attribute 'something_else'
+
+`default_box_attr` will first check if it is callable, and will call the object
+if it is, otherwise it will see if has the `copy` attribute and will call that,
+lastly, will just use the provided item as is.
 
 
-**to_yaml**
-
-Only available if `PyYAML` or `ruamel.yaml` is installed (not automatically installed via pip or `setup.py`)::
-
-   to_yaml(filename=None, default_flow_style=False, **yaml_kwargs)
-       Transform the Box object into a YAML string.
-
-       :param filename:  If provided will save to file
-       :param default_flow_style: False will recursively dump dicts
-       :param yaml_kwargs: additional arguments to pass to yaml.dump
-       :return: string of YAML or return of `yaml.dump`
-
-
-.. code::
-
-        my_box.to_yaml()
-        affiliates:
-          Dr Evil: Not groovy
-          Scott Evil: Doesn't want to take over family business
-          Vanessa: Sexy
-        owner: Mr. Powers
 
 BoxList
 ~~~~~~~
