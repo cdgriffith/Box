@@ -121,7 +121,6 @@ def _safe_attr(attr, camel_killer=False):
     if camel_killer:
         attr = _camel_killer(attr)
 
-    attr = attr.casefold() if hasattr(attr, 'casefold') else attr.lower()
     attr = attr.replace(' ', '_')
 
     out = ''
@@ -428,7 +427,7 @@ class Box(LightBox):
             # Can be changed by user after box creation
             'default_box': kwargs.pop('default_box', False),
             'default_box_attr': kwargs.pop('default_box_attr', self.__class__),
-            'conversion_box': kwargs.pop('conversion_box', False),
+            'conversion_box': kwargs.pop('conversion_box', True),
             'frozen_box': kwargs.pop('frozen_box', False),
             'camel_killer_box': kwargs.pop('camel_killer_box', False),
             'modify_tuples_box': kwargs.pop('modify_tuples_box', False)
@@ -499,37 +498,19 @@ class Box(LightBox):
     def __getitem__(self, item):
         try:
             value = super(Box, self).__getitem__(item)
-        except KeyError:
-            try:
-                value = object.__getattribute__(self, item)
-            except AttributeError as err:
-                if item == '_box_config':
-                    raise BoxError('_box_config key must exist')
-                kill_camel = self._box_config.get('camel_killer_box', False)
-                if self._box_config.get('conversion_box', False) and item:
-                    for k in self.keys():
-                        if item == _safe_attr(k, camel_killer=kill_camel):
-                            return self.__getitem__(k)
-                if kill_camel:
-                    for k in self.keys():
-                        if item == _camel_killer(k):
-                            return self.__getitem__(k)
-                default_value = self._box_config['default_box_attr']
-                if self._box_config['default_box']:
-                    if isinstance(default_value, type):
-                        if default_value.__name__ == 'Box':
-                            return self.__class__(__box_heritage=(self, item),
-                                                  **self.__box_config())
-                        return default_value()
-                    elif hasattr(default_value, 'copy'):
-                        return default_value.copy()
-                    return default_value
-                raise err
-            else:
-                return self.__convert_and_store(item, value)
+        except KeyError as err:
+            default_value = self._box_config['default_box_attr']
+            if self._box_config['default_box']:
+                if isinstance(default_value, type):
+                    if default_value.__name__ == 'Box':
+                        return self.__class__(__box_heritage=(self, item),
+                                              **self.__box_config())
+                    return default_value()
+                elif hasattr(default_value, 'copy'):
+                    return default_value.copy()
+                return default_value
+            raise err
         else:
-            if item == '_box_config':
-                return value
             return self.__convert_and_store(item, value)
 
     def __box_config(self):
@@ -546,8 +527,8 @@ class Box(LightBox):
         if isinstance(value, dict) and not isinstance(value, Box):
             value = self.__class__(value, __box_heritage=(self, item),
                                    **self.__box_config())
-            self.__setattr__(item, value)
-        elif isinstance(value, list):
+            self[item] = value
+        elif isinstance(value, list) and not isinstance(value, BoxList):
             if self._box_config['frozen_box']:
                 value = _recursive_tuples(value, self.__class__,
                                           recreate_tuples=self._box_config[
@@ -558,26 +539,48 @@ class Box(LightBox):
                 value = BoxList(value, __box_heritage=(self, item),
                                 box_class=self.__class__,
                                 **self.__box_config())
-
-            self.__setattr__(item, value)
+            self[item] = value
         elif (self._box_config['modify_tuples_box'] and
                 isinstance(value, tuple)):
             value = _recursive_tuples(value, self.__class__,
                                       recreate_tuples=True,
                                       __box_heritage=(self, item),
                                       **self.__box_config())
-            self.__setattr__(item, value)
+            self[item] = value
         self._box_config['__converted'].add(item)
         return value
 
     def __create_lineage(self):
-        if self._box_config['__box_heritage']:
+        if (self._box_config['__box_heritage'] and
+                self._box_config['__created']):
             past, item = self._box_config['__box_heritage']
-            past[item] = self
+            if not past[item]:
+                past[item] = self
             self._box_config['__box_heritage'] = None
 
     def __getattr__(self, item):
-        return self.__getitem__(item)
+        try:
+            value = super(Box, self).__getattr__(item)
+        except AttributeError as err:
+            try:
+                return self.__getitem__(item)
+            except KeyError:
+                if item == '_box_config':
+                    raise BoxError('_box_config key must exist')
+                kill_camel = self._box_config.get('camel_killer_box', False)
+                if self._box_config.get('conversion_box', False) and item:
+                    for k in self.keys():
+                        if item == _safe_attr(k, camel_killer=kill_camel):
+                            return self.__getitem__(k)
+                if kill_camel:
+                    for k in self.keys():
+                        if item == _camel_killer(k):
+                            return self.__getitem__(k)
+            raise err
+        else:
+            if item == '_box_config':
+                return value
+            return self.__convert_and_store(item, value)
 
     def __setitem__(self, key, value):
         if (key != '_box_config' and self._box_config['__created'] and
@@ -597,7 +600,16 @@ class Box(LightBox):
         try:
             object.__getattribute__(self, key)
         except (AttributeError, UnicodeEncodeError):
-            self[key] = value
+            if key not in self.keys() and self._box_config['conversion_box']:
+                for each_key in self:
+                    if key == _safe_attr(each_key,
+                                         self._box_config['camel_killer_box']):
+                        self[each_key] = value
+                        break
+                else:
+                    self[key] = value
+            else:
+                self[key] = value
         else:
             object.__setattr__(self, key, value)
         self.__create_lineage()
@@ -652,7 +664,7 @@ class BoxList(list):
             p_object = self.box_class(p_object, **self.box_options)
         elif isinstance(p_object, list):
             p_object = BoxList(p_object)
-        return super(BoxList, self).append(p_object)
+        super(BoxList, self).append(p_object)
 
     def extend(self, iterable):
         for item in iterable:
@@ -663,7 +675,7 @@ class BoxList(list):
             p_object = self.box_class(p_object, **self.box_options)
         elif isinstance(p_object, list):
             p_object = BoxList()
-        return super(BoxList, self).insert(index, p_object)
+        super(BoxList, self).insert(index, p_object)
 
     def __repr__(self):
         return "<BoxList: {0}>".format(self.to_list())

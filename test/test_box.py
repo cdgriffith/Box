@@ -437,7 +437,7 @@ class TestReuseBox(unittest.TestCase):
                      False: 'tree'
                      }
         bx = Box(test_dict, conversion_box=True)
-        assert bx.key_2.key_3 == "Value 3"
+        assert bx.Key_2.Key_3 == "Value 3"
         assert bx.x3 == 'howdy'
         assert bx.xnot == 'true'
         assert bx.x3_4 == 'test'
@@ -531,7 +531,7 @@ class TestReuseBox(unittest.TestCase):
 
         kill_box = Box(td, camel_killer_box=True)
         assert kill_box.camel_case == 'Item'
-        assert kill_box['321_camel_case_fever!'] == 'Safe'
+        assert kill_box['321CamelCaseFever!'] == 'Safe'
 
         con_kill_box = Box(td, conversion_box=True, camel_killer_box=True)
         assert con_kill_box.camel_case == 'Item'
@@ -575,11 +575,43 @@ class TestReuseBox(unittest.TestCase):
 
         assert hearth._Box__box_config() == hearth.the_jade_lotus._Box__box_config(), "{} != {}".format(hearth._Box__box_config(), hearth.the_jade_lotus._Box__box_config())
 
+    def test_spaceballs(self):
 
+        movie_data = {
+            "movies": {
+                "Spaceballs": {
+                    "imdb_stars": 7.1,
+                    "rating": "PG",
+                    "length": 96,
+                    "Director": "Mel Brooks",
+                    "Stars": [{"name": "Mel Brooks", "imdb": "nm0000316",
+                               "role": "President Skroob"},
+                              {"name": "John Candy", "imdb": "nm0001006",
+                               "role": "Barf"},
+                              {"name": "Rick Moranis", "imdb": "nm0001548",
+                               "role": "Dark Helmet"}
+                              ]
+                },
+                "Robin Hood: Men in Tights": {
+                    "imdb_stars": 6.7,
+                    "rating": "PG-13",
+                    "length": 104,
+                    "Director": "Mel Brooks",
+                    "Stars": [
+                        {"name": "Cary Elwes", "imdb": "nm0000144",
+                         "role": "Robin Hood"},
+                        {"name": "Richard Lewis", "imdb": "nm0507659",
+                         "role": "Prince John"},
+                        {"name": "Roger Rees", "imdb": "nm0715953",
+                         "role": "Sheriff of Rottingham"},
+                        {"name": "Amy Yasbeck", "imdb": "nm0001865",
+                         "role": "Marian"}
+                    ]
+                }
+            }
+        }
 
+        my_box = Box(movie_data)
 
-
-
-
-
-
+        my_box.movies.Spaceballs.Stars.append({"name": "Bill Pullman", "imdb": "nm0000597", "role": "Lone Starr"})
+        assert my_box.movies.Spaceballs.Stars[-1].role == "Lone Starr"

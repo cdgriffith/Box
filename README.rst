@@ -4,59 +4,47 @@ Python dictionaries with recursive dot notation access.
 
 .. code:: python
 
-        from box import Box
+         from box import Box
 
-        my_box = Box(
-            {"owner": "Mr. Powers",
-             "contents": [{"qty": 1, "item": "blue crushed-velvet suit"},
-                          {"qty": 1, "item": "frilly lace crava"},
-                          {"qty": 1, "item": "gold medallion with peace symbol"},
-                          {"qty": 1, "item": "Swedish-made enlarger pump"},
-                          {"qty": 1, "item": "credit card receipt for Swedish-made enlarger pump, "
-                                             "signed Austin Powers."},
-                          {"qty": 1, "item": "warranty card for Swedish-made enlarger pump, "
-                                             "filled out by Austin Powers."},
-                          {"qty": 1, "item": "book, Swedish-Made Enlarger Pumps and Me"}],
-             "affiliates": {
-                 "Vanessa": "Sexy",
-                 "Dr Evil": "Not groovy",
-                 "Scott Evil": "Doesn't want to take over family business"}
-            })
+         movie_data = {
+           "movies": {
+             "Spaceballs": {
+               "imdb stars": 7.1,
+               "rating": "PG",
+               "length": 96,
+               "director": "Mel Brooks",
+               "stars": [{"name": "Mel Brooks", "imdb": "nm0000316", "role": "President Skroob"},
+                         {"name": "John Candy","imdb": "nm0001006", "role": "Barf"},
+                         {"name": "Rick Moranis", "imdb": "nm0001548", "role": "Dark Helmet"}
+               ]
+             },
+             "Robin Hood: Men in Tights": {
+               "imdb stars": 6.7,
+               "rating": "PG-13",
+               "length": 104,
+               "director": "Mel Brooks",
+               "stars": [
+                         {"name": "Cary Elwes", "imdb": "nm0000144", "role": "Robin Hood"},
+                         {"name": "Richard Lewis", "imdb": "nm0507659", "role": "Prince John"},
+                         {"name": "Roger Rees", "imdb": "nm0715953", "role": "Sheriff of Rottingham"},
+                         {"name": "Amy Yasbeck", "imdb": "nm0001865", "role": "Marian"}
+               ]
+             }
+           }
+         }
 
-        my_box.affiliates.Vanessa == my_box['affiliates']['Vanessa']
+         movie_box = Box(movie_data)
 
-        my_box.contents[0].item
-        'blue crushed-velvet suit'
+         movie_box.movies.Robin_Hood_Men_in_Tights.imdb_stars
+         # 6.7
 
-        # Here's something that no other library supports (that I know of)
-        # Automatic creation of Boxes in sub-lists
-        my_box.contents.append({"qty": 1, "item": "tie-dyed socks"})
-        my_box.contents[-1].item
-        'tie-dyed socks'
+         movie_box.movies.Spaceballs.stars[0].name
+         # 'Mel Brooks'
 
-        my_box.funny_line = "They tried to steal my lucky charms!"
-
-        my_box['funny_line']
-        'They tried to steal my luck charms!'
-
-        my_box.credits = {'Austin Powers': "Mike Myers", "Vanessa Kensington": "Elizabeth Hurley"}
-        # <Box: {'Austin Powers': 'Mike Myers', 'Vanessa Kensington': 'Elizabeth Hurley'}>
-
-        my_box.to_yaml()  # .to_json() also available
-        # owner: Mr. Powers
-        # affiliates:
-        #   Dr Evil: Not groovy
-        #   Scott Evil: Doesn't want to take over family business
-        #   Vanessa: Sexy
-        # contents:
-        # - item: blue crushed-velvet suit
-        #   qty: 1
-        # - item: frilly lace crava
-        #   qty: 1
-        # - item: gold medallion with peace symbol
-        #   qty: 1
-        # ...
-
+         # All new dict and lists added to a Box or BoxList object are converted
+         movie_box.movies.Spaceballs.stars.append({"name": "Bill Pullman", "imdb": "nm0000597", "role": "Lone Starr"})
+         movie_box.movies.Spaceballs.stars[-1].role
+         # 'Lone Starr'
 
 Install
 -------
@@ -72,16 +60,14 @@ interpreters as well. If  it does not install with this command, please
 open a ticket with the error you are experiencing!
 
 If you want to be able to use the `to_yaml` functionality make sure to
-install `PyYAML` as well.
+install `PyYAML` or `ruamel.yaml` as well.
 
 Overview
 --------
 
-`Box` is designed to be easy drop in replacements for dictionaries,
-with the latter having tools for dealing with config files. 
-
-`Box` is designed to transparently act as a dictionary, thanks to Python's
-duck typing capabilities, but add dot notation access like classes do. Any sub
+`Box` is designed to be an easy drop in transparently replacements for
+dictionaries, thanks to Python's
+duck typing capabilities, which adds dot notation access. Any sub
 dictionaries or ones set after initiation will be automatically converted to 
 a `Box` object. You can always run `.to_dict()` on it to return the object 
 and all sub objects back into a regular dictionary. 
@@ -89,21 +75,17 @@ and all sub objects back into a regular dictionary.
 
 .. code:: python
 
-        del my_box.contents # Lets keep this short
+         movie_box.movies.Spaceballs.to_dict()
+         {'director': 'Mel Brooks',
+          'imdb stars': 7.1,
+          'length': 96,
+          'personal thoughts': 'On second thought, it was hilarious!',
+          'rating': 'PG',
+          'stars': [{'imdb': 'nm0000316', 'name': 'Mel Brooks', 'role': 'President Skroob'},
+                    {'imdb': 'nm0001006', 'name': 'John Candy', 'role': 'Barf'},
+                    {'imdb': 'nm0001548', 'name': 'Rick Moranis', 'role': 'Dark Helmet'},
+                    {'imdb': 'nm0000597', 'name': 'Bill Pullman', 'role': 'Lone Starr'}]}
 
-        my_box.to_dict()
-        {'affiliates':
-                {'Dr Evil': 'Not groovy',
-                 'Scott Evil': "Doesn't want to take over family business",
-                 'Vanessa': 'Sexy'},
-         'owner': 'Mr. Powers'}
-
-        # Will only convert outermost object
-        dict(my_box)
-        # {'owner': 'Mr. Powers',
-        #  'affiliates': <Box: {'Vanessa': 'Sexy',
-        #                      'Dr Evil': 'Not groovy',
-        #                      'Scott Evil': "Doesn't want to take over family business"}>}}
 
 
 `Box` was originally named `Namespaces` in the `reusables` project, created
@@ -135,6 +117,23 @@ sure everything stored in the dict can be accessed as an attribute or key value.
 
 Any time a list or dict is added to a `Box`, it is converted into a `BoxList`
 or `Box` respectively.
+
+#### Automagic Attribute Access
+
+.. code:: python
+
+         movie_box.movies.Spaceballs["personal thoughts"] = "It was a good laugh"
+         movie_box.movies.Spaceballs.personal_thoughts
+         # 'It was a good laugh'
+
+         movie_box.movies.Spaceballs.personal_thoughts = "On second thought, it was hilarious!"
+         movie_box.movies.Spaceballs["personal thoughts"]
+         # 'On second thought, it was hilarious!'
+
+         # If a safe attribute matches a key exists, it will not create a new key
+         movie_box.movies.Spaceballs["personal_thoughts"]
+         # KeyError: 'personal_thoughts'
+
 
 `Box` includes helper functions to transform it back into `dict`,
 and into `JSON` or `YAML` strings.
@@ -286,21 +285,6 @@ config values into python types. It supports `list`, `bool`, `int` and `float`.
     # 4.4
 
 
-
-Similar Libraries
------------------
-
-**EasyDict**
-
-* EasyDict not have a way to make sub items recursively back into a regular dictionary.
-* Adding new dicts to lists in the dictionary does not make them into EasyDicts.
-* Both EasyDicts `str` and `repr` print a dictionary look alike, `Box` makes it clear in `repr` that it is a Box object.
-
-**addict**
-
-* Adding new dicts or lists does not make them into `addict.Dict` objects.
-* Is a default dictionary, as in it will never fail on lookup.
-* Both `addict.Dict`'s `str` and `repr` print a dictionary look alike, `Box` makes it clear in `repr` that it is a Box object.
 
 
 License
