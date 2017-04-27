@@ -189,9 +189,11 @@ Keys are modified in the following steps to make sure they are attribute safe:
 Note that these keys are not stored anywhere, and trying to modify them as an
 attribute will actually modify the underlying regular key's value.
 
->  If you have two keys that evaluate to the same attribute,
-   there is no way to discern between them,
-   only reference or update them via standard dictionary modification
+**Warning: duplicate attributes possible**
+
+If you have two keys that evaluate to the same attribute, such as "a!b" and "a?b" would become `.ab`,
+there is no way to discern between them,
+only reference or update them via standard dictionary modification.
 
 
 Frozen Box
@@ -253,8 +255,18 @@ Unless you want it to be something else.
 if it is, otherwise it will see if has the `copy` attribute and will call that,
 lastly, will just use the provided item as is.
 
-Camel
+Camel Killer Box
+~~~~~~~~~~~~~~~~
 
+Similar to how conversion box works, allow CamelCaseKeys to be found as
+snake_case_attributes.
+
+.. code:: python
+
+      cameled = Box(BadHabit="I just can't stop!", camel_killer_box=True)
+
+      cameled.bad_habit
+      #"I just can't stop!"
 
 
 BoxList

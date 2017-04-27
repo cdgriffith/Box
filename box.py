@@ -612,6 +612,7 @@ class Box(LightBox):
                         break
                 else:
                     self[key] = value
+            # TODO do the same for camel killer
             else:
                 self[key] = value
         else:
