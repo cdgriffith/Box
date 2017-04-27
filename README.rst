@@ -176,7 +176,7 @@ Keys are modified in the following steps to make sure they are attribute safe:
 1. Convert to string (Will encode as UTF-8 with errors ignored)
 2. Replaces any spaces with underscores
 3. Remove anything other than ascii letters, numbers or underscores
-4. If the first character is an integer, it will prepend a lowercase `x` to it
+4. If the first character is an integer, it will prepend a lowercase 'x' to it
 5. If the string is a built-in that cannot be used, it will prepend a lowercase 'x'
 6. Removes any duplicate underscores
 
@@ -266,7 +266,7 @@ snake_case_attributes.
       cameled = Box(BadHabit="I just can't stop!", camel_killer_box=True)
 
       cameled.bad_habit
-      #"I just can't stop!"
+      # "I just can't stop!"
 
 
 BoxList
@@ -284,7 +284,7 @@ initiate these directly and use them just like a `Box`.
       #  <BoxList: [<Box: {'item': 0}>, <Box: {'item': 1}>, ...
 
       my_boxlist[5].item
-      5
+      # 5
 
 
 **to_list**
@@ -352,8 +352,6 @@ config values into python types. It supports `list`, `bool`, `int` and `float`.
 
     config.Examples.float('floatly')
     # 4.4
-
-
 
 
 License
