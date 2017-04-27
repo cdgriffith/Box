@@ -115,8 +115,10 @@ allowing for recursive dot notation access.
 `Box` also includes helper functions to transform it back into a `dict`,
 as well as into `JSON` or `YAML` strings or files.
 
+Box's parameters
+~~~~~~~~~~~~~~~~
 
-.. table:: Box's arguments
+.. table::
    :widths: auto
 
    ================  ======= ====
@@ -129,6 +131,24 @@ as well as into `JSON` or `YAML` strings or files.
    camel_killer_box  False   CamelCaseKeys become attribute accessible like snake case (camel_case_keys)
    box_it_up         False   Recursively create all Boxes from the start (like previous versions)
    ================  ======= ====
+
+Box's functions
+~~~~~~~~~~~~~~~
+
+.. table::
+
+   ================  =======
+   Function Name     Description
+   ================  =======
+   to_dict           Recursively transform all Box (and BoxList) objects back into a dict (and lists)
+   to_json           Save Box object as a JSON string or write to a file with the `filename` parameter
+   to_yaml*          Save Box object as a YAML string or write to a file with the `filename` parameter
+   box_it_up         Recursively create all objects into Box and BoxList objects (to front-load operation)
+   from_json         Classmethod, Create a Box object from a JSON file or string (all Box parameters can be passed)
+   from_yaml*        Classmethod, Create a Box object from a YAML file or string (all Box parameters can be passed)
+   ================  =======
+
+/* Only available if `PyYaml` or `ruamel.yaml` is detected.
 
 
 Conversion Box
