@@ -47,13 +47,6 @@ class TestReuseBox(unittest.TestCase):
         assert box2[(3, 4)] == "A"
         assert box2['_box_config'] == 'test'
 
-    def test_light_box(self):
-        box = LightBox(**test_dict)
-        assert repr(box).startswith("<LightBox:")
-        assert not isinstance(box.alist, BoxList)
-        box2 = LightBox([((3, 4), "A")])
-        assert box2[(3, 4)] == "A"
-
     def test_box_modifiy_at_depth(self):
         box = Box(**test_dict)
         assert 'key1' in box
@@ -112,43 +105,27 @@ class TestReuseBox(unittest.TestCase):
              "l0": '4,5,6,7,8',
              "l1": '[2 3 4 5 6]'}
 
-        cns = ConfigBox(g)
-        assert cns.list("l1", spliter=" ") == ["2", "3", "4", "5", "6"]
-        assert cns.list("l0", mod=lambda x: int(x)) == [4, 5, 6, 7, 8]
-        assert not cns.bool("b0")
-        assert cns.bool("b1")
-        assert cns.bool("b2")
-        assert not cns.bool("b3")
-        assert cns.int("i0") == 34
-        assert cns.float("f0") == 5.5
-        assert cns.float("f1") == 3.333
-        assert cns.getboolean("b4"), cns.getboolean("b4")
-        assert cns.getfloat("f0") == 5.5
-        assert cns.getint("i0") == 34
-        assert cns.getint("Hello!", 5) == 5
-        assert cns.getfloat("Wooo", 4.4) == 4.4
-        assert cns.getboolean("huh", True) is True
-        assert cns.list("Waaaa", [1]) == [1]
-        repr(cns)
+        cns = ConfigBox(bb=g)
+        assert cns.bb.list("l1", spliter=" ") == ["2", "3", "4", "5", "6"]
+        assert cns.bb.list("l0", mod=lambda x: int(x)) == [4, 5, 6, 7, 8]
+        assert not cns.bb.bool("b0")
+        assert cns.bb.bool("b1")
+        assert cns.bb.bool("b2")
+        assert not cns.bb.bool("b3")
+        assert cns.bb.int("i0") == 34
+        assert cns.bb.float("f0") == 5.5
+        assert cns.bb.float("f1") == 3.333
+        assert cns.bb.getboolean("b4"), cns.bb.getboolean("b4")
+        assert cns.bb.getfloat("f0") == 5.5
+        assert cns.bb.getint("i0") == 34
+        assert cns.bb.getint("Hello!", 5) == 5
+        assert cns.bb.getfloat("Wooo", 4.4) == 4.4
+        assert cns.bb.getboolean("huh", True) is True
+        assert cns.bb.list("Waaaa", [1]) == [1]
+        assert repr(cns).startswith("<ConfigBox")
 
     def test_protected_box_methods(self):
         my_box = Box(a=3)
-        try:
-            my_box.to_dict = 'test'
-        except AttributeError:
-            pass
-        else:
-            raise AttributeError("Should not be able to set 'to_dict'")
-
-        try:
-            del my_box.to_json
-        except AttributeError:
-            pass
-        else:
-            raise AttributeError("Should not be able to delete 'to_dict'")
-
-    def test_protected_lightbox_methods(self):
-        my_box = LightBox(a=3)
         try:
             my_box.to_dict = 'test'
         except AttributeError:
@@ -180,14 +157,6 @@ class TestReuseBox(unittest.TestCase):
         assert e.a[1].item == []
         assert a == b == c == d
 
-    def test_lightbox_inits(self):
-        a = LightBox({'data': 2, 'count': 5})
-        b = LightBox(data=2, count=5)
-        c = LightBox({'data': 2, 'count': 1}, count=5)
-        d = LightBox([('data', 2), ('count', 5)])
-
-        assert a == b == c == d
-
     def test_bad_inits(self):
         try:
             Box("testing")
@@ -205,28 +174,6 @@ class TestReuseBox(unittest.TestCase):
 
         try:
             Box(22, 33)
-        except TypeError:
-            pass
-        else:
-            raise AssertionError("Should raise Type Error")
-
-    def test_bad_lightbox_inits(self):
-        try:
-            LightBox("testing")
-        except ValueError:
-            pass
-        else:
-            raise AssertionError("Should raise Value Error")
-
-        try:
-            LightBox(22)
-        except ValueError:
-            pass
-        else:
-            raise AssertionError("Should raise Value Error")
-
-        try:
-            LightBox(22, 33)
         except TypeError:
             pass
         else:
@@ -281,7 +228,7 @@ class TestReuseBox(unittest.TestCase):
         assert new_list[-1][0].bad_item == 33
         assert repr(new_list).startswith("<BoxList:")
         for x in new_list.to_list():
-            assert not isinstance(x, (BoxList, Box, LightBox))
+            assert not isinstance(x, (BoxList, Box))
         new_list.insert(0, {'test': 5})
         new_list.insert(1, ['a', 'b'])
         new_list.append('x')
@@ -329,18 +276,6 @@ class TestReuseBox(unittest.TestCase):
         assert a.asdf == 'fdsa'
         assert a.testkey == 66
 
-        b = LightBox(test_dict)
-        b.update([('asdf', 'fdsa')])
-        b.update(testkey=66)
-        b.update({'key1': {'new': 5}, 'Key 2': {"add_key": 6}})
-
-        assert b.key1.new == 5
-        assert b['Key 2'].add_key == 6
-        assert "Key5" in b['Key 2'].Key4
-        assert isinstance(b.key1, LightBox)
-        assert b.asdf == 'fdsa'
-        assert b.testkey == 66
-
     def test_auto_attr(self):
         test_dict = {'key1': 'value1',
                      "Key 2": {"Key 3": "Value 3",
@@ -364,18 +299,6 @@ class TestReuseBox(unittest.TestCase):
         assert new_list == BoxList([{'gah': 7}])
         assert a.key3.item == 2
         assert a.lister[0].gah == 7
-
-        b = LightBox(test_dict)
-
-        new = b.setdefault("key3", {'item': 2})
-        new_list = b.setdefault("lister", [{'gah': 7}])
-
-        assert b.setdefault("key1", False) == 'value1'
-        assert new == Box(item=2)
-        assert new_list == [{'gah': 7}]
-        assert b.key3.item == 2
-        assert b.lister[0]["gah"] == 7
-        assert not isinstance(b.lister, BoxList)
 
     def test_from_json_file(self):
         bx = Box.from_json(filename=os.path.join(test_root, "json_file.json"))
@@ -531,8 +454,8 @@ class TestReuseBox(unittest.TestCase):
         bx = Box(test_dict, default_box=True, default_box_attr={'hi': 'there'})
         assert bx.key_88 == {'hi': 'there'}
 
-        bx2 = Box(test_dict, default_box=True, default_box_attr=LightBox)
-        assert isinstance(bx2.key_77, LightBox)
+        bx2 = Box(test_dict, default_box=True, default_box_attr=Box)
+        assert isinstance(bx2.key_77, Box)
 
         bx3 = Box(default_box=True, default_box_attr=3)
         assert bx3.hello == 3
@@ -554,13 +477,12 @@ class TestReuseBox(unittest.TestCase):
         td = test_dict.copy()
         td['inner'] = {'CamelCase': 'Item'}
 
-        from box import PropertyBox
-        pbox = PropertyBox(td, camel_killer_box=True)
-        assert isinstance(pbox.inner, PropertyBox)
+        pbox = SBox(td, camel_killer_box=True)
+        assert isinstance(pbox.inner, SBox)
         assert pbox.inner.camel_case == 'Item'
         assert json.loads(pbox.json)['inner']['CamelCase'] == 'Item'
         assert yaml.load(pbox.yaml)['inner']['CamelCase'] == 'Item'
-        assert repr(pbox['inner']).startswith('<PropertyBox')
+        assert repr(pbox['inner']).startswith('<ShorthandBox')
         assert not isinstance(pbox.dict, Box)
         assert pbox.dict['inner']['CamelCase'] == 'Item'
 

@@ -180,13 +180,15 @@ Keys are modified in the following steps to make sure they are attribute safe:
 5. If the string is a built-in that cannot be used, it will prepend a lowercase 'x'
 6. Removes any duplicate underscores
 
+This does not change the case of any of the keys.
+
 .. code:: python
 
-         bx = Box({"321 Is a terrible key!": "yes, really"})
-         bx.x321_Is_a_terrible_key
+         bx = Box({"321 Is a terrible Key!": "yes, really"})
+         bx.x321_Is_a_terrible_Key
          # 'yes, really'
 
-Note that these keys are not stored anywhere, and trying to modify them as an
+These keys are not stored anywhere, and trying to modify them as an
 attribute will actually modify the underlying regular key's value.
 
 **Warning: duplicate attributes possible**
@@ -268,6 +270,9 @@ snake_case_attributes.
       cameled.bad_habit
       # "I just can't stop!"
 
+If this is used along side `conversion_box`, which is enabled by default,
+all attributes will only be accessible with lowercase letters.
+
 
 BoxList
 -------
@@ -298,28 +303,27 @@ Transform a `BoxList` and all components back into regular `list` and `dict` ite
       #  {'item': 1},
       #  ...
 
+SBox
+----
 
-LightBox
---------
-
-`LightBox` does not examine lists, but only converts dictionary objects.
+Shorthand Box, aka SBox for short(hand), has the properties `json`, `yaml` and
+`dict` for faster access than the regular `to_dict()` and so on.
 
 .. code:: python
 
-        from box import LightBox
+      from box import SBox
 
-        light_box = LightBox({'my_list': [{'item': 1}, {'item': 2}])
+      sb = SBox(test=True)
+      sb.json
+      # '{"test": true}'
 
-        light_box.my_list
-        [{'item': 1}, {'item': 2}]
-
+Note that in this case, `json` has no default indent, unlike `to_json`.
 
 ConfigBox
 ---------
 
-This module has support for
-a `ConfigBox`. It is based on top of `LightBox` as there are no lists of dicts
-to dive into in a configuration file.
+A Box with additional handling of string manipulation generally found in
+config files.
 
 test_config.ini
 
