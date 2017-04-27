@@ -364,7 +364,7 @@ License
 MIT License, Copyright (c) 2017 Chris Griffith. See LICENSE file.
 
 
-.. |BoxImage| image:: https://raw.githubusercontent.com/cdgriffith/Box/development/data/box_logo.png
+.. |BoxImage| image:: https://raw.githubusercontent.com/cdgriffith/Box/master/data/box_logo.png
    :target: https://github.com/cdgriffith/Box
 .. |BuildStatus| image:: https://travis-ci.org/cdgriffith/Box.png?branch=master
    :target: https://travis-ci.org/cdgriffith/Box
