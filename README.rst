@@ -115,7 +115,8 @@ allowing for recursive dot notation access.
 `Box` also includes helper functions to transform it back into a `dict`,
 as well as into `JSON` or `YAML` strings or files.
 
-#### Conversion Box
+Conversion Box
+~~~~~~~~~~~~~~
 
 By default, Box is now a `conversion_box` (can be disabled with `Box(conversion_box=False)`
 that adds automagic attribute access for keys that could not normally be attributes.
@@ -133,6 +134,30 @@ that adds automagic attribute access for keys that could not normally be attribu
          # If a safe attribute matches a key exists, it will not create a new key
          movie_box.movies.Spaceballs["personal_thoughts"]
          # KeyError: 'personal_thoughts'
+
+Keys are modified in the following steps to make sure they are attribute safe:
+
+1. Convert to string (Will encode as UTF-8 with errors ignored)
+2. Replaces any spaces with underscores
+3. Remove anything other than ascii letters, numbers or underscores
+4. If the first character is an integer, it will prepend a lowercase `x` to it
+5. If the string is a built-in that cannot be used, it will prepend a lowercase 'x'
+6. Removes any duplicate underscores
+
+.. code:: python
+
+         bx = Box({"321 Is a terrible key!": "yes, really"})
+         bx.x321_Is_a_terrible_key
+         # 'yes, really'
+
+Note that these keys are not stored anywhere, and trying to modify them as an
+attribute will actually modify the underlying regular key's value.
+
+.. warning::
+
+   If you have two keys that evaluate to the same attribute,
+   there is no way to discern between them,
+   only reference or update them via standard dictionary modification
 
 
 Frozen Box
@@ -164,7 +189,7 @@ becomes now.
 Default Box
 ~~~~~~~~~~~
 
-It's boxes all the way down.
+It's boxes all the way down. At least, when you specify `default_box=True` it can be.
 
 .. code:: python
 
@@ -193,6 +218,8 @@ Unless you want it to be something else.
 `default_box_attr` will first check if it is callable, and will call the object
 if it is, otherwise it will see if has the `copy` attribute and will call that,
 lastly, will just use the provided item as is.
+
+Camel
 
 
 
@@ -289,7 +316,7 @@ License
 MIT License, Copyright (c) 2017 Chris Griffith. See LICENSE file.
 
 
-.. |BoxImage| image:: https://raw.githubusercontent.com/cdgriffith/Box/development/box_logo.png
+.. |BoxImage| image:: https://raw.githubusercontent.com/cdgriffith/Box/development/data/box_logo.png
    :target: https://github.com/cdgriffith/Box
 .. |BuildStatus| image:: https://travis-ci.org/cdgriffith/Box.png?branch=master
    :target: https://travis-ci.org/cdgriffith/Box
