@@ -148,7 +148,7 @@ Box's functions
    from_yaml*        Classmethod, Create a Box object from a YAML file or string (all Box parameters can be passed)
    ================  =======
 
-/* Only available if `PyYaml` or `ruamel.yaml` is detected.
+\* Only available if `PyYaml` or `ruamel.yaml` is detected.
 
 
 Conversion Box
@@ -189,9 +189,7 @@ Keys are modified in the following steps to make sure they are attribute safe:
 Note that these keys are not stored anywhere, and trying to modify them as an
 attribute will actually modify the underlying regular key's value.
 
-.. warning::
-
-   If you have two keys that evaluate to the same attribute,
+>  If you have two keys that evaluate to the same attribute,
    there is no way to discern between them,
    only reference or update them via standard dictionary modification
 
