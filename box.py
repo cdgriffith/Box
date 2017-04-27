@@ -418,6 +418,7 @@ class Box(LightBox):
     :param camel_killer_box: Convert CamelCase to snake_case
     :param conversion_box: Check for near matching keys as attributes
     :param modify_tuples_box: Recreate incoming tuples with dicts into Boxes
+    :param box_it_up: Recursively create all Boxes from the start
     """
 
     def __init__(self, *args, **kwargs):

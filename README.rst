@@ -115,10 +115,26 @@ allowing for recursive dot notation access.
 `Box` also includes helper functions to transform it back into a `dict`,
 as well as into `JSON` or `YAML` strings or files.
 
+
+.. table:: Box's arguments
+   :widths: auto
+
+   ================  ======= ====
+   Keyword Argument  Default Description
+   ================  ======= ====
+   conversion_box    True    Automagically make keys with spaces attribute accessible
+   frozen_box        False   Make the box immutable, hashable (if all items are non-mutable)
+   default_box       False   Act like a recursive default dict
+   default_box_attr  Box     Can overwrite with a different (non-recursive) default attribute to return
+   camel_killer_box  False   CamelCaseKeys become attribute accessible like snake case (camel_case_keys)
+   box_it_up         False   Recursively create all Boxes from the start (like previous versions)
+   ================  ======= ====
+
+
 Conversion Box
 ~~~~~~~~~~~~~~
 
-By default, Box is now a `conversion_box` (can be disabled with `Box(conversion_box=False)`
+By default, Box is now a `conversion_box`
 that adds automagic attribute access for keys that could not normally be attributes.
 
 .. code:: python
