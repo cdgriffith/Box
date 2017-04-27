@@ -20,12 +20,13 @@ test_dict = {'key1': 'value1',
                        "Key4": {"Key5": "Value5"}}}
 
 extended_test_dict = {
-             3: 'howdy',
-             'not': 'true',
-             (3, 4): 'test',
-             '_box_config': True,
-             'tuples_galore': ({'item': 3}, ({'item': 4}, 5))
-             }
+    3: 'howdy',
+    'not': 'true',
+    (3, 4): 'test',
+    '_box_config': True,
+    'CamelCase': '21',
+    '321CamelCase': 321,
+    'tuples_galore': ({'item': 3}, ({'item': 4}, 5))}
 extended_test_dict.update(test_dict)
 
 
@@ -623,6 +624,15 @@ class TestReuseBox(unittest.TestCase):
         assert bx.tuples_galore[0].item == 3
         assert isinstance(bx.tuples_galore[0], Box)
         assert isinstance(bx.tuples_galore[1], tuple)
+
+    def test_box_set_attribs(self):
+        bx = Box(extended_test_dict, conversion_box=False, camel_killer_box=True)
+        bx.camel_case = {'new': 'item'}
+        assert bx['CamelCase'] == Box(new='item')
+
+        bx2 = Box(extended_test_dict)
+        bx2.Key_2 = 4
+        assert bx2["Key 2"] == 4
 
     def test_functional_hearthstone_data(self):
         hearth = Box.from_json(filename=os.path.join(test_root,
