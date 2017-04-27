@@ -10,8 +10,8 @@ try:
 except ImportError:
     import ruamel.yaml as yaml
 
-from box import Box, ConfigBox, LightBox, BoxList, BoxError
-
+import box
+from box import *
 test_root = os.path.abspath(os.path.dirname(__file__))
 
 test_dict = {'key1': 'value1',
@@ -23,7 +23,8 @@ extended_test_dict = {
              3: 'howdy',
              'not': 'true',
              (3, 4): 'test',
-             '_box_config': True
+             '_box_config': True,
+             'tuples_galore': ({'item': 3}, ({'item': 4}, 5))
              }
 extended_test_dict.update(test_dict)
 
@@ -291,14 +292,18 @@ class TestReuseBox(unittest.TestCase):
     def test_dir(self):
         test_dict = {'key1': 'value1',
                      'not$allowed': 'fine_value',
+                     'BigCamel': 'hi',
                      "Key 2": {"Key 3": "Value 3",
                                "Key4": {"Key5": "Value5"}}}
-        a = Box(test_dict)
+        a = Box(test_dict, camel_killer_box=True)
         assert 'key1' in dir(a)
         assert 'not$allowed' not in dir(a)
         assert 'Key4' in a['Key 2']
         for item in ('to_yaml', 'to_dict', 'to_json'):
             assert item in dir(a)
+
+        assert a.big_camel == 'hi'
+        assert 'big_camel' in dir(a)
 
         b = ConfigBox(test_dict)
 
@@ -393,9 +398,12 @@ class TestReuseBox(unittest.TestCase):
         test_dict = {'key1': 'value1',
                      "Key 2": {"Key 3": "Value 3",
                                "Key4": {"Key5": "Value5"}}}
-        bx = Box.from_yaml(yaml.dump(test_dict))
+        bx = Box.from_yaml(yaml.dump(test_dict),
+                           conversion_box=False,
+                           default_box=True)
         assert isinstance(bx, Box)
         assert bx.key1 == 'value1'
+        assert bx.Key_2 == Box()
 
     def test_bad_from_json(self):
         try:
@@ -533,7 +541,7 @@ class TestReuseBox(unittest.TestCase):
         td['CamelCase'] = 'Item'
         td['321CamelCaseFever!'] = 'Safe'
 
-        kill_box = Box(td, camel_killer_box=True)
+        kill_box = Box(td, camel_killer_box=True, conversion_box=False)
         assert kill_box.camel_case == 'Item'
         assert kill_box['321CamelCaseFever!'] == 'Safe'
 
@@ -566,6 +574,13 @@ class TestReuseBox(unittest.TestCase):
         assert bl[0].item == 1
         assert bl[1].camel_bad == 2
 
+        try:
+            BoxList.from_json(json.dumps({'a': 2}))
+        except BoxError:
+            pass
+        else:
+            raise AssertionError("Should have erred")
+
     def test_box_list_to_yaml(self):
         bl = BoxList([{'item': 1, 'CamelBad': 2}])
         assert yaml.load(bl.to_yaml())[0]['item'] == 1
@@ -577,7 +592,39 @@ class TestReuseBox(unittest.TestCase):
         assert bl[0].item == 1
         assert bl[1].camel_bad == 2
 
-    def test_hearthstone_data(self):
+        try:
+            BoxList.from_yaml(yaml.dump({'a': 2}))
+        except BoxError:
+            pass
+        else:
+            raise AssertionError("Should have erred")
+
+    def test_boxlist_box_it_up(self):
+        bxl = BoxList([extended_test_dict])
+        bxl.box_it_up()
+        assert "Key 3" in bxl[0].Key_2._box_config['__converted']
+
+    def test_recursive_tuples(self):
+        out = box._recursive_tuples(({'test': 'a'},
+                                     ({'second': 'b'}, {'third': 'c'}, ('fourth', ))),
+                                    Box, recreate_tuples=True)
+        print(out)
+        assert isinstance(out, tuple)
+        assert isinstance(out[0], Box)
+        assert out[0] == Box({'test': 'a'})
+        print(out[1])
+        assert isinstance(out[1], tuple)
+
+        assert isinstance(out[1][2], tuple)
+        assert out[1][0] == Box({'second': 'b'})
+
+    def test_box_modify_tuples(self):
+        bx = Box(extended_test_dict, modify_tuples_box=True)
+        assert bx.tuples_galore[0].item == 3
+        assert isinstance(bx.tuples_galore[0], Box)
+        assert isinstance(bx.tuples_galore[1], tuple)
+
+    def test_functional_hearthstone_data(self):
         hearth = Box.from_json(filename=os.path.join(test_root,
                                                      "hearthstone_cards.json"),
                                conversion_box=True,
@@ -601,7 +648,7 @@ class TestReuseBox(unittest.TestCase):
 
         assert hearth._Box__box_config() == hearth.the_jade_lotus._Box__box_config(), "{} != {}".format(hearth._Box__box_config(), hearth.the_jade_lotus._Box__box_config())
 
-    def test_spaceballs(self):
+    def test_functional_spaceballs(self):
 
         movie_data = {
             "movies": {
@@ -641,3 +688,4 @@ class TestReuseBox(unittest.TestCase):
 
         my_box.movies.Spaceballs.Stars.append({"name": "Bill Pullman", "imdb": "nm0000597", "role": "Lone Starr"})
         assert my_box.movies.Spaceballs.Stars[-1].role == "Lone Starr"
+

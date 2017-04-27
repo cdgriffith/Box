@@ -169,7 +169,7 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
         if isinstance(i, dict):
             out_list.append(box_class(i, **kwargs))
         elif isinstance(i, list) or (recreate_tuples and isinstance(i, tuple)):
-            out_list.extend(_recursive_tuples(i, box_class,
+            out_list.append(_recursive_tuples(i, box_class,
                                               recreate_tuples, **kwargs))
         else:
             out_list.append(i)
@@ -493,10 +493,11 @@ class Box(LightBox):
                     key = _safe_attr(key, camel_killer=kill_camel)
                     if key:
                         items.add(key)
-                elif kill_camel:
-                    key = _camel_killer(key)
-                    if key:
-                        items.add(key)
+            if kill_camel:
+                snake_key = _camel_killer(key)
+                if snake_key:
+                    items.remove(key)
+                    items.add(snake_key)
         return list(items)
 
     def __getitem__(self, item):
@@ -604,15 +605,22 @@ class Box(LightBox):
         try:
             object.__getattribute__(self, key)
         except (AttributeError, UnicodeEncodeError):
-            if key not in self.keys() and self._box_config['conversion_box']:
+            if (key not in self.keys() and
+                    (self._box_config['conversion_box'] or
+                     self._box_config['camel_killer_box'])):
                 for each_key in self:
-                    if key == _safe_attr(each_key,
-                                         self._box_config['camel_killer_box']):
-                        self[each_key] = value
-                        break
+                    if self._box_config['conversion_box']:
+                        if key == _safe_attr(
+                                each_key,
+                                self._box_config['camel_killer_box']):
+                            self[each_key] = value
+                            break
+                    elif self._box_config['camel_killer_box']:
+                        if key == _camel_killer(each_key):
+                            self[each_key] = value
+                            break
                 else:
                     self[key] = value
-            # TODO do the same for camel killer
             else:
                 self[key] = value
         else:
