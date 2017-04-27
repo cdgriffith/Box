@@ -3,8 +3,7 @@
 #
 # Copyright (c) 2017 - Chris Griffith - MIT License
 """
-Improved dictionary management. Inspired by
-javascript style referencing, as it's one of the few things they got right.
+Improved dictionary access through recursive dot notaion.
 """
 import string
 import sys
@@ -19,17 +18,16 @@ except ImportError:
     Mapping = dict
     Iterable = (tuple, list)
 
-yaml_support = False
+yaml_support = True
 
 try:
     import yaml
-    yaml_support = True
 except ImportError:
     try:
         import ruamel.yaml as yaml
-        yaml_support = True
     except ImportError:
         yaml = None
+        yaml_support = False
 
 if sys.version_info >= (3, 0):
     basestring = str
@@ -41,12 +39,15 @@ __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
 __author__ = 'Chris Griffith'
 __version__ = '3.0.0'
 
-unallowed_attribs = ('if', 'elif', 'else', 'for', 'from', 'as', 'import',
-                     'in', 'not', 'is', 'def', 'class', 'return', 'yield',
-                     'except', 'while', 'raise')
+ILLEGAL_ATTRIBUTES = ('if', 'elif', 'else', 'for', 'from', 'as', 'import',
+                      'in', 'not', 'is', 'def', 'class', 'return', 'yield',
+                      'except', 'while', 'raise')
 
-box_params = ('default_box', 'default_box_attr', 'conversion_box',
-              'frozen_box', 'camel_killer_box', 'box_it_up')
+BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
+                  'frozen_box', 'camel_killer_box', 'box_it_up')
+
+_first_cap_re = re.compile('(.)([A-Z][a-z]+)')
+_all_cap_re = re.compile('([a-z0-9])([A-Z])')
 
 
 class BoxError(Exception):
@@ -55,8 +56,8 @@ class BoxError(Exception):
 
 # Abstract converter functions for use in any Box class
 
-def to_json(obj, filename=None,
-            encoding="utf-8", errors="strict", **json_kwargs):
+def _to_json(obj, filename=None,
+             encoding="utf-8", errors="strict", **json_kwargs):
     json_dump = json.dumps(obj,
                            ensure_ascii=False, **json_kwargs)
     if filename:
@@ -67,8 +68,8 @@ def to_json(obj, filename=None,
         return json_dump
 
 
-def from_json(json_string=None, filename=None,
-              encoding="utf-8", errors="strict", **kwargs):
+def _from_json(json_string=None, filename=None,
+               encoding="utf-8", errors="strict", **kwargs):
     if filename:
         with open(filename, 'r', encoding=encoding, errors=errors) as f:
             data = json.load(f, **kwargs)
@@ -79,9 +80,9 @@ def from_json(json_string=None, filename=None,
     return data
 
 
-def to_yaml(obj, filename=None, default_flow_style=False,
-            encoding="utf-8", errors="strict",
-            **yaml_kwargs):
+def _to_yaml(obj, filename=None, default_flow_style=False,
+             encoding="utf-8", errors="strict",
+             **yaml_kwargs):
     if filename:
         with open(filename, 'w',
                   encoding=encoding, errors=errors) as f:
@@ -94,9 +95,9 @@ def to_yaml(obj, filename=None, default_flow_style=False,
                          **yaml_kwargs)
 
 
-def from_yaml(yaml_string=None, filename=None,
-              encoding="utf-8", errors="strict",
-              **kwargs):
+def _from_yaml(yaml_string=None, filename=None,
+               encoding="utf-8", errors="strict",
+               **kwargs):
     if filename:
         with open(filename, 'r',
                   encoding=encoding, errors=errors) as f:
@@ -110,14 +111,18 @@ def from_yaml(yaml_string=None, filename=None,
 # Helper functions
 
 
+def _safe_key(key):
+    try:
+        return str(key)
+    except UnicodeEncodeError:
+        return key.encode(encoding="utf-8", errors="ignore")
+
+
 def _safe_attr(attr, camel_killer=False):
     """Convert a key into something that is accessible as an attribute"""
     allowed = string.ascii_letters + string.digits + '_'
 
-    try:
-        attr = str(attr)
-    except UnicodeEncodeError:
-        attr = attr.encode(encoding="utf-8", errors="ignore")
+    attr = _safe_key(attr)
 
     if camel_killer:
         attr = _camel_killer(attr)
@@ -126,8 +131,8 @@ def _safe_attr(attr, camel_killer=False):
 
     out = ''
     for character in attr:
-        if character in allowed:
-            out += character
+        out += character if character in allowed else "_"
+    out = out.strip("_")
 
     try:
         int(out[0])
@@ -136,14 +141,10 @@ def _safe_attr(attr, camel_killer=False):
     else:
         out = 'x{0}'.format(out)
 
-    if out in unallowed_attribs:
+    if out in ILLEGAL_ATTRIBUTES:
         out = 'x{0}'.format(out)
 
     return re.sub('_+', '_', out)
-
-
-first_cap_re = re.compile('(.)([A-Z][a-z]+)')
-all_cap_re = re.compile('([a-z0-9])([A-Z])')
 
 
 def _camel_killer(attr):
@@ -157,8 +158,8 @@ def _camel_killer(attr):
     except UnicodeEncodeError:
         attr = attr.encode(encoding="utf-8", errors="ignore")
 
-    s1 = first_cap_re.sub(r'\1_\2', attr)
-    s2 = all_cap_re.sub(r'\1_\2', s1)
+    s1 = _first_cap_re.sub(r'\1_\2', attr)
+    s2 = _all_cap_re.sub(r'\1_\2', s1)
     return re.sub('_+', '_', s2.casefold() if hasattr(s2, 'casefold') else
                   s2.lower())
 
@@ -266,8 +267,9 @@ class Box(dict):
                                  'from_json', 'box_it_up'])
         # Only show items accessible by dot notation
         for key in self.keys():
+            key = _safe_key(key)
             if (' ' not in key and key[0] not in string.digits and
-                    key not in unallowed_attribs):
+                    key not in ILLEGAL_ATTRIBUTES):
                 for letter in key:
                     if letter not in allowed:
                         break
@@ -275,6 +277,7 @@ class Box(dict):
                     items.add(key)
 
         for key in self.keys():
+            key = _safe_key(key)
             if key not in items:
                 if self._box_config['conversion_box']:
                     key = _safe_attr(key, camel_killer=kill_camel)
@@ -504,8 +507,8 @@ class Box(dict):
         :param json_kwargs: additional arguments to pass to json.dump(s)
         :return: string of JSON or return of `json.dump`
         """
-        return to_json(self.to_dict(), filename=filename,
-                       encoding=encoding, errors=errors, **json_kwargs)
+        return _to_json(self.to_dict(), filename=filename,
+                        encoding=encoding, errors=errors, **json_kwargs)
 
     @classmethod
     def from_json(cls, json_string=None, filename=None,
@@ -523,11 +526,11 @@ class Box(dict):
         """
         bx_args = {}
         for arg in kwargs.copy():
-            if arg in box_params:
+            if arg in BOX_PARAMETERS:
                 bx_args[arg] = kwargs.pop(arg)
 
-        data = from_json(json_string, filename=filename,
-                         encoding=encoding, errors=errors, **kwargs)
+        data = _from_json(json_string, filename=filename,
+                          encoding=encoding, errors=errors, **kwargs)
 
         if not isinstance(data, dict):
             raise BoxError('json data not returned as a dictionary, '
@@ -548,9 +551,9 @@ class Box(dict):
             :param yaml_kwargs: additional arguments to pass to yaml.dump
             :return: string of YAML or return of `yaml.dump`
             """
-            return to_yaml(self.to_dict(), filename=filename,
-                           default_flow_style=default_flow_style,
-                           encoding=encoding, errors=errors, **yaml_kwargs)
+            return _to_yaml(self.to_dict(), filename=filename,
+                            default_flow_style=default_flow_style,
+                            encoding=encoding, errors=errors, **yaml_kwargs)
 
         @classmethod
         def from_yaml(cls, yaml_string=None, filename=None,
@@ -568,11 +571,11 @@ class Box(dict):
             """
             bx_args = {}
             for arg in kwargs.copy():
-                if arg in box_params:
+                if arg in BOX_PARAMETERS:
                     bx_args[arg] = kwargs.pop(arg)
 
-            data = from_yaml(yaml_string=yaml_string, filename=filename,
-                             encoding=encoding, errors=errors, **kwargs)
+            data = _from_yaml(yaml_string=yaml_string, filename=filename,
+                              encoding=encoding, errors=errors, **kwargs)
             if not isinstance(data, dict):
                 raise BoxError('yaml data not returned as a dictionary'
                                'but rather a {0}'.format(type(data).__name__))
@@ -638,8 +641,8 @@ class BoxList(list):
         :param json_kwargs: additional arguments to pass to json.dump(s)
         :return: string of JSON or return of `json.dump`
         """
-        return to_json(self.to_list(), filename=filename,
-                       encoding=encoding, errors=errors, **json_kwargs)
+        return _to_json(self.to_list(), filename=filename,
+                        encoding=encoding, errors=errors, **json_kwargs)
 
     @classmethod
     def from_json(cls, json_string=None, filename=None,
@@ -657,11 +660,11 @@ class BoxList(list):
         """
         bx_args = {}
         for arg in kwargs.copy():
-            if arg in box_params:
+            if arg in BOX_PARAMETERS:
                 bx_args[arg] = kwargs.pop(arg)
 
-        data = from_json(json_string, filename=filename,
-                         encoding=encoding, errors=errors, **kwargs)
+        data = _from_json(json_string, filename=filename,
+                          encoding=encoding, errors=errors, **kwargs)
 
         if not isinstance(data, list):
             raise BoxError('json data not returned as a list, '
@@ -682,9 +685,9 @@ class BoxList(list):
             :param yaml_kwargs: additional arguments to pass to yaml.dump
             :return: string of YAML or return of `yaml.dump`
             """
-            return to_yaml(self.to_list(), filename=filename,
-                           default_flow_style=default_flow_style,
-                           encoding=encoding, errors=errors, **yaml_kwargs)
+            return _to_yaml(self.to_list(), filename=filename,
+                            default_flow_style=default_flow_style,
+                            encoding=encoding, errors=errors, **yaml_kwargs)
 
         @classmethod
         def from_yaml(cls, yaml_string=None, filename=None,
@@ -702,11 +705,11 @@ class BoxList(list):
             """
             bx_args = {}
             for arg in kwargs.copy():
-                if arg in box_params:
+                if arg in BOX_PARAMETERS:
                     bx_args[arg] = kwargs.pop(arg)
 
-            data = from_yaml(yaml_string=yaml_string, filename=filename,
-                             encoding=encoding, errors=errors, **kwargs)
+            data = _from_yaml(yaml_string=yaml_string, filename=filename,
+                              encoding=encoding, errors=errors, **kwargs)
             if not isinstance(data, list):
                 raise BoxError('yaml data not returned as a list'
                                'but rather a {0}'.format(type(data).__name__))
