@@ -551,4 +551,7 @@ class TestBoxFunctional(unittest.TestCase):
 
         my_box.movies.Spaceballs.Stars.append({"name": "Bill Pullman", "imdb": "nm0000597", "role": "Lone Starr"})
         assert my_box.movies.Spaceballs.Stars[-1].role == "Lone Starr"
+        assert my_box.movies.Robin_Hood_Men_in_Tights.length == 104
+        my_box.movies.Robin_Hood_Men_in_Tights.Stars.pop(0)
+        assert my_box.movies.Robin_Hood_Men_in_Tights.Stars[0].name == "Richard Lewis"
 

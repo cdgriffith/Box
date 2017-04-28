@@ -16,7 +16,7 @@ Reporting Bugs
 - Please include sample code and traceback (or unexpected behavior)
   of the error you are experiencing.
 
-- Python version and Operating System.
+- Also include Python version and Operating System.
 
 Pull Requests
 -------------

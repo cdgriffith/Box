@@ -36,9 +36,9 @@ class TestBoxUnit(unittest.TestCase):
         out = box._recursive_tuples(({'test': 'a'},
                                      ({'second': 'b'},
                                       {'third': 'c'}, ('fourth',))),
-                                    Box, recreate_tuples=True)
+                                    dict, recreate_tuples=True)
         assert isinstance(out, tuple)
-        assert isinstance(out[0], Box)
+        assert isinstance(out[0], dict)
         assert out[0] == {'test': 'a'}
         assert isinstance(out[1], tuple)
         assert isinstance(out[1][2], tuple)
