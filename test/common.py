@@ -15,6 +15,8 @@ test_root = os.path.abspath(os.path.dirname(__file__))
 tmp_dir = os.path.join(test_root, "tmp")
 
 test_dict = {'key1': 'value1',
+             'not$allowed': 'fine_value',
+             'BigCamel': 'hi',
              'alist': [{'a': 1}],
              "Key 2": {"Key 3": "Value 3",
                        "Key4": {"Key5": "Value5"}}}
@@ -26,6 +28,7 @@ extended_test_dict = {
     '_box_config': True,
     'CamelCase': '21',
     '321CamelCase': 321,
+    False: 'tree',
     'tuples_galore': ({'item': 3}, ({'item': 4}, 5))}
 extended_test_dict.update(test_dict)
 
