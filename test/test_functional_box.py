@@ -182,8 +182,8 @@ class TestBoxFunctional(unittest.TestCase):
         a = Box(test_dict)
         assert json.loads(a.to_json(indent=0)) == test_dict
 
-        a.to_json(data_json_file)
-        with open(data_json_file) as f:
+        a.to_json(tmp_json_file)
+        with open(tmp_json_file) as f:
             data = json.load(f)
             assert data == test_dict
 
@@ -193,8 +193,8 @@ class TestBoxFunctional(unittest.TestCase):
 
     def test_to_yaml_file(self):
         a = Box(test_dict)
-        a.to_yaml(data_yaml_file)
-        with open(data_yaml_file) as f:
+        a.to_yaml(tmp_yaml_file)
+        with open(tmp_yaml_file) as f:
             data = yaml.load(f)
             assert data == test_dict
 
