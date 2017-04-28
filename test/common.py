@@ -1,6 +1,8 @@
 import unittest
 import json
 import os
+import shutil
+import sys
 
 try:
     import yaml
@@ -10,6 +12,7 @@ except ImportError:
 import box
 from box import *
 test_root = os.path.abspath(os.path.dirname(__file__))
+tmp_dir = os.path.join(test_root, "tmp")
 
 test_dict = {'key1': 'value1',
              'alist': [{'a': 1}],
@@ -26,4 +29,41 @@ extended_test_dict = {
     'tuples_galore': ({'item': 3}, ({'item': 4}, 5))}
 extended_test_dict.update(test_dict)
 
+data_json_file = os.path.join(test_root, "data", "json_file.json")
+data_yaml_file = os.path.join(test_root, "data", "yaml_file.yaml")
+data_hearthstone = os.path.join(test_root, "data", "hearthstone_cards.json")
 
+
+movie_data = {
+"movies": {
+    "Spaceballs": {
+        "imdb_stars": 7.1,
+        "rating": "PG",
+        "length": 96,
+        "Director": "Mel Brooks",
+        "Stars": [{"name": "Mel Brooks", "imdb": "nm0000316",
+                   "role": "President Skroob"},
+                  {"name": "John Candy", "imdb": "nm0001006",
+                   "role": "Barf"},
+                  {"name": "Rick Moranis", "imdb": "nm0001548",
+                   "role": "Dark Helmet"}
+                  ]
+    },
+    "Robin Hood: Men in Tights": {
+        "imdb_stars": 6.7,
+        "rating": "PG-13",
+        "length": 104,
+        "Director": "Mel Brooks",
+        "Stars": [
+            {"name": "Cary Elwes", "imdb": "nm0000144",
+             "role": "Robin Hood"},
+            {"name": "Richard Lewis", "imdb": "nm0507659",
+             "role": "Prince John"},
+            {"name": "Roger Rees", "imdb": "nm0715953",
+             "role": "Sheriff of Rottingham"},
+            {"name": "Amy Yasbeck", "imdb": "nm0001865",
+             "role": "Marian"}
+        ]
+    }
+}
+}

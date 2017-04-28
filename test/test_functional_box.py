@@ -11,6 +11,16 @@ except ImportError:
 
 class TestBoxFunctional(unittest.TestCase):
 
+    def setUp(self):
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        try:
+            os.mkdir(tmp_dir)
+        except OSError:
+            pass
+
+    def tearDown(self):
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
     def test_box(self):
         box = Box(**test_dict)
         assert box.key1 == test_dict['key1']
@@ -30,8 +40,6 @@ class TestBoxFunctional(unittest.TestCase):
         box = Box(**test_dict)
         assert 'key1' in box
         assert 'key2' not in box
-        print(box)
-        print(box['Key 2'])
         box['Key 2'].new_thing = "test"
         assert box['Key 2'].new_thing == "test"
         box['Key 2'].new_thing += "2"
@@ -174,15 +182,10 @@ class TestBoxFunctional(unittest.TestCase):
         a = Box(test_dict)
         assert json.loads(a.to_json(indent=0)) == test_dict
 
-        json_path = os.path.join(test_root, "test_json_file")
-
-        try:
-            a.to_json(json_path)
-            with open(json_path) as f:
-                data = json.load(f)
-                assert data == test_dict
-        finally:
-            os.unlink(json_path)
+        a.to_json(data_json_file)
+        with open(data_json_file) as f:
+            data = json.load(f)
+            assert data == test_dict
 
     def test_to_yaml(self):
         a = Box(test_dict)
@@ -190,14 +193,10 @@ class TestBoxFunctional(unittest.TestCase):
 
     def test_to_yaml_file(self):
         a = Box(test_dict)
-        yaml_path = os.path.join(test_root, "test_yaml_file")
-        try:
-            a.to_yaml(yaml_path)
-            with open(yaml_path) as f:
-                data = yaml.load(f)
-                assert data == test_dict
-        finally:
-            os.unlink(yaml_path)
+        a.to_yaml(data_yaml_file)
+        with open(data_yaml_file) as f:
+            data = yaml.load(f)
+            assert data == test_dict
 
     def test_boxlist(self):
         new_list = BoxList({'item': x} for x in range(0, 10))
@@ -280,12 +279,12 @@ class TestBoxFunctional(unittest.TestCase):
         assert a.lister[0].gah == 7
 
     def test_from_json_file(self):
-        bx = Box.from_json(filename=os.path.join(test_root, "json_file.json"))
+        bx = Box.from_json(filename=data_json_file)
         assert isinstance(bx, Box)
         assert bx.widget.window.height == 500
 
     def test_from_yaml_file(self):
-        bx = Box.from_yaml(filename=os.path.join(test_root, "yaml_file.yaml"))
+        bx = Box.from_yaml(filename=data_yaml_file)
         assert isinstance(bx, Box)
         assert bx.total == 4443.52
 
@@ -374,29 +373,29 @@ class TestBoxFunctional(unittest.TestCase):
         assert bx.alist[0] == 'a'
         try:
             bx.new = 3
-        except BoxError as err:
-            print(err)
+        except BoxError:
+            pass
         else:
             raise AssertionError("It's supposed to be frozen")
 
         try:
             bx['new'] = 3
-        except BoxError as err:
-            print(err)
+        except BoxError:
+            pass
         else:
             raise AssertionError("It's supposed to be frozen")
 
         try:
             del bx['not']
-        except BoxError as err:
-            print(err)
+        except BoxError:
+            pass
         else:
             raise AssertionError("It's supposed to be frozen")
 
         try:
             delattr(bx, "key1")
-        except BoxError as err:
-            print(err)
+        except BoxError:
+            pass
         else:
             raise AssertionError("It's supposed to be frozen")
 
@@ -506,20 +505,6 @@ class TestBoxFunctional(unittest.TestCase):
         bxl.box_it_up()
         assert "Key 3" in bxl[0].Key_2._box_config['__converted']
 
-    def test_recursive_tuples(self):
-        out = box._recursive_tuples(({'test': 'a'},
-                                     ({'second': 'b'}, {'third': 'c'}, ('fourth', ))),
-                                    Box, recreate_tuples=True)
-        print(out)
-        assert isinstance(out, tuple)
-        assert isinstance(out[0], Box)
-        assert out[0] == Box({'test': 'a'})
-        print(out[1])
-        assert isinstance(out[1], tuple)
-
-        assert isinstance(out[1][2], tuple)
-        assert out[1][0] == Box({'second': 'b'})
-
     def test_box_modify_tuples(self):
         bx = Box(extended_test_dict, modify_tuples_box=True)
         assert bx.tuples_galore[0].item == 3
@@ -536,8 +521,7 @@ class TestBoxFunctional(unittest.TestCase):
         assert bx2["Key 2"] == 4
 
     def test_functional_hearthstone_data(self):
-        hearth = Box.from_json(filename=os.path.join(test_root,
-                                                     "hearthstone_cards.json"),
+        hearth = Box.from_json(filename=data_hearthstone,
                                conversion_box=True,
                                camel_killer_box=True,
                                default_box=False)
@@ -560,41 +544,6 @@ class TestBoxFunctional(unittest.TestCase):
         assert hearth._Box__box_config() == hearth.the_jade_lotus._Box__box_config(), "{} != {}".format(hearth._Box__box_config(), hearth.the_jade_lotus._Box__box_config())
 
     def test_functional_spaceballs(self):
-
-        movie_data = {
-            "movies": {
-                "Spaceballs": {
-                    "imdb_stars": 7.1,
-                    "rating": "PG",
-                    "length": 96,
-                    "Director": "Mel Brooks",
-                    "Stars": [{"name": "Mel Brooks", "imdb": "nm0000316",
-                               "role": "President Skroob"},
-                              {"name": "John Candy", "imdb": "nm0001006",
-                               "role": "Barf"},
-                              {"name": "Rick Moranis", "imdb": "nm0001548",
-                               "role": "Dark Helmet"}
-                              ]
-                },
-                "Robin Hood: Men in Tights": {
-                    "imdb_stars": 6.7,
-                    "rating": "PG-13",
-                    "length": 104,
-                    "Director": "Mel Brooks",
-                    "Stars": [
-                        {"name": "Cary Elwes", "imdb": "nm0000144",
-                         "role": "Robin Hood"},
-                        {"name": "Richard Lewis", "imdb": "nm0507659",
-                         "role": "Prince John"},
-                        {"name": "Roger Rees", "imdb": "nm0715953",
-                         "role": "Sheriff of Rottingham"},
-                        {"name": "Amy Yasbeck", "imdb": "nm0001865",
-                         "role": "Marian"}
-                    ]
-                }
-            }
-        }
-
         my_box = Box(movie_data)
 
         my_box.movies.Spaceballs.Stars.append({"name": "Bill Pullman", "imdb": "nm0000597", "role": "Lone Starr"})
