@@ -1,3 +1,4 @@
+import os
 import sys
 import json
 
@@ -11,27 +12,30 @@ from memory_profiler import profile
 if sys.version_info < (3, 0):
     from io import open
 
+test_root = os.path.dirname(__file__)
+hearth = os.path.join(test_root, "data", "hearthstone_cards.json")
+
 
 @time_it(message="addict took {seconds:.5f} seconds to load")
 def load_addict():
-    with open("hearthstone_cards.json", encoding="utf-8") as f:
+    with open(hearth, encoding="utf-8") as f:
         return Dict(json.load(f))
 
 
 @time_it(message="DotMap took {seconds:.5f} seconds to load")
 def load_dotmap():
-    with open("hearthstone_cards.json", encoding="utf-8") as f:
+    with open(hearth, encoding="utf-8") as f:
         return DotMap(json.load(f))
 
 
 @time_it(message="Box    took {seconds:.5f} seconds to load")
 def load_box():
-    return Box.from_json(filename="hearthstone_cards.json", encoding="utf-8")
+    return Box.from_json(filename=hearth, encoding="utf-8")
 
 
 @time_it(message="dict   took {seconds:.5f} seconds to load")
 def load_dict():
-    with open("hearthstone_cards.json", encoding="utf-8") as f:
+    with open(hearth, encoding="utf-8") as f:
         return json.load(f)
 
 

@@ -15,3 +15,4 @@ Suggestions and bug reporting:
 - /u/Jumpy89
 - /u/can_dry
 - /u/spidyfan21
+- Casey Havenor (chavenor)
