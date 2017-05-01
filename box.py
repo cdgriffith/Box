@@ -198,10 +198,12 @@ class Box(dict):
                                  'from_yaml', 'from_json']
 
     def __init__(self, *args, **kwargs):
+        heritage = kwargs.pop('__box_heritage', None)
         self._box_config = {
             # Internal use only
             '__converted': set(),
-            '__box_heritage': kwargs.pop('__box_heritage', None),
+            '__box_heritage': heritage,
+            '__default_heritage': heritage,
             '__hash': None,
             '__created': False,
             # Can be changed by user after box creation
@@ -319,6 +321,7 @@ class Box(dict):
     def __box_config(self):
         config = self._box_config.copy()
         del config['__box_heritage']
+        del config['__default_heritage']
         del config['__converted']
         del config['__hash']
         del config['__created']
@@ -354,12 +357,12 @@ class Box(dict):
         return value
 
     def __create_lineage(self):
-        if (self._box_config['__box_heritage'] and
+        if (self._box_config['__default_heritage'] and
                 self._box_config['__created']):
-            past, item = self._box_config['__box_heritage']
+            past, item = self._box_config['__default_heritage']
             if not past[item]:
                 past[item] = self
-            self._box_config['__box_heritage'] = None
+            self._box_config['__default_heritage'] = None
 
     def __getattr__(self, item):
         try:
@@ -580,6 +583,20 @@ class Box(dict):
                 raise BoxError('yaml data not returned as a dictionary'
                                'but rather a {0}'.format(type(data).__name__))
             return cls(data, **bx_args)
+
+        @property
+        def box_collisions(self):
+            pass
+
+        @property
+        def box_heritage(self):
+            heritage = self._box_config['__box_heritage']
+            if heritage:
+                previous = heritage[0].box_heritage
+                if previous and isinstance(previous, str):
+                    return "{}.{}".format(previous, heritage[1])
+                return str(heritage[1])
+            return None
 
 
 class BoxList(list):
