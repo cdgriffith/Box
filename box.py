@@ -44,7 +44,7 @@ ILLEGAL_ATTRIBUTES = ('if', 'elif', 'else', 'for', 'from', 'as', 'import',
                       'except', 'while', 'raise')
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
-                  'frozen_box', 'camel_killer_box', 'box_it_up')
+                  'frozen_box', 'camel_killer_box', 'box_it_up', 'tracker_box')
 
 _first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 _all_cap_re = re.compile('([a-z0-9])([A-Z])')
@@ -204,6 +204,8 @@ class Box(dict):
             '__converted': set(),
             '__box_heritage': heritage,
             '__default_heritage': heritage,
+            '__track_history': [],
+            '__track_current_uuid': None,
             '__hash': None,
             '__created': False,
             # Can be changed by user after box creation
@@ -212,7 +214,8 @@ class Box(dict):
             'conversion_box': kwargs.pop('conversion_box', True),
             'frozen_box': kwargs.pop('frozen_box', False),
             'camel_killer_box': kwargs.pop('camel_killer_box', False),
-            'modify_tuples_box': kwargs.pop('modify_tuples_box', False)
+            'modify_tuples_box': kwargs.pop('modify_tuples_box', False),
+            'tracker_box': kwargs.pop('tracker_box', False)
             }
         if len(args) == 1:
             if isinstance(args[0], basestring):
@@ -319,15 +322,38 @@ class Box(dict):
             return self.__convert_and_store(item, value)
 
     def __box_config(self):
-        config = self._box_config.copy()
-        del config['__box_heritage']
-        del config['__default_heritage']
-        del config['__converted']
-        del config['__hash']
-        del config['__created']
-        return config
+        return {k: v for k, v in self._box_config.copy().items()
+                if not k.startswith("__")}
+
+    def box_track(self, pos=-1, uid=None):
+        if not self._box_config['tracker_box']:
+            raise BoxError("'tracker_box' is not enabled, no history saved")
+        if not self._box_config['__track_history']:
+            return []
+        if uid:
+            for tracker, item in self._box_config['__track_history']:
+                if tracker == uid:
+                    last = (tracker, item)
+                    break
+            else:
+                return []
+        else:
+            last = self._box_config['__track_history'][pos]
+            uid = last[0]
+        if isinstance(self[last[1]], Box):
+            return [last[1]] + self[last[1]].box_track(uid=uid)
+        return [last[1]]
 
     def __convert_and_store(self, item, value):
+        if self._box_config['tracker_box'] and self._box_config['__created']:
+            heritage = self._box_config['__box_heritage']
+            if heritage:
+                tracker = heritage[0]._box_config['__track_current_uuid']
+            else:
+                tracker = uuid4().hex
+            self._box_config['__track_current_uuid'] = tracker
+            self._box_config['__track_history'].append((tracker, item))
+
         if item in self._box_config['__converted']:
             return value
         if isinstance(value, dict) and not isinstance(value, Box):
@@ -593,10 +619,10 @@ class Box(dict):
             heritage = self._box_config['__box_heritage']
             if heritage:
                 previous = heritage[0].box_heritage
-                if previous and isinstance(previous, str):
-                    return "{}.{}".format(previous, heritage[1])
-                return str(heritage[1])
-            return None
+                if previous and isinstance(previous, list):
+                    return previous + [heritage[1]]
+                return [heritage[1]]
+            return []
 
 
 class BoxList(list):
