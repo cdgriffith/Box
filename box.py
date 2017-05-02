@@ -212,7 +212,8 @@ class Box(dict):
     """
 
     _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml',
-                                 'from_yaml', 'from_json']
+                                 'from_yaml', 'from_json', 'box_history',
+                                 'box_collisions']
 
     def __init__(self, *args, **kwargs):
         heritage = kwargs.pop('__box_heritage', None)
@@ -819,7 +820,8 @@ class ConfigBox(Box):
     _protected_keys = dir({}) + ['to_dict', 'bool', 'int', 'float',
                                  'list', 'getboolean', 'to_json', 'to_yaml',
                                  'getfloat', 'getint',
-                                 'from_json', 'from_yaml']
+                                 'from_json', 'from_yaml',
+                                 'box_history', 'box_collisions']
 
     def __getattr__(self, item):
         """Config file keys are stored in lower case, be a little more
@@ -932,7 +934,7 @@ class SBox(Box):
     """
     _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml',
                                  'json', 'yaml', 'from_yaml', 'from_json',
-                                 'dict']
+                                 'dict', 'box_history', 'box_collisions']
 
     @property
     def dict(self):
