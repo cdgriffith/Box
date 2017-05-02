@@ -11,6 +11,7 @@ import json
 from uuid import uuid4
 import re
 import collections
+from functools import wraps
 
 try:
     from collections.abc import Mapping, Iterable
@@ -177,6 +178,22 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
     return tuple(out_list)
 
 
+def _disable_tracking(func):
+    """
+    To both speed up and not polute the tracker history, disable
+    tracking for certain functions
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        assert isinstance(args[0], Box)
+        args[0]._box_config['__disable_track'] = True
+        try:
+            return func(*args, **kwargs)
+        finally:
+            args[0]._box_config['__disable_track'] = False
+    return wrapper
+
+
 class Box(dict):
     """
 
@@ -206,6 +223,7 @@ class Box(dict):
             '__default_heritage': heritage,
             '__track_history': [],
             '__track_current_uuid': None,
+            '__disable_track': False,
             '__hash': None,
             '__created': False,
             # Can be changed by user after box creation
@@ -245,16 +263,18 @@ class Box(dict):
 
         self._box_config['__created'] = True
 
+    @_disable_tracking
     def box_it_up(self):
         """
         Perform value lookup for all items in current dictionary, 
         generating all sub Box objects, while also running `box_it_up` on
-        anoy of those sub box objects.
+        any of those sub box objects.
         """
         for k in self:
             if hasattr(self[k], 'box_it_up'):
                 self[k].box_it_up()
 
+    @_disable_tracking
     def __hash__(self):
         if self._box_config['frozen_box']:
             if not self._box_config['__hash']:
@@ -265,6 +285,7 @@ class Box(dict):
             return self._box_config['__hash']
         raise TypeError("unhashable type: 'Box'")
 
+    @_disable_tracking
     def __dir__(self):
         allowed = string.ascii_letters + string.digits + '_'
         kill_camel = self._box_config['camel_killer_box']
@@ -325,7 +346,8 @@ class Box(dict):
         return {k: v for k, v in self._box_config.copy().items()
                 if not k.startswith("__")}
 
-    def box_track(self, pos=-1, uid=None):
+    @_disable_tracking
+    def box_history(self, pos=-1, uid=None):
         if not self._box_config['tracker_box']:
             raise BoxError("'tracker_box' is not enabled, no history saved")
         if not self._box_config['__track_history']:
@@ -341,18 +363,30 @@ class Box(dict):
             last = self._box_config['__track_history'][pos]
             uid = last[0]
         if isinstance(self[last[1]], Box):
-            return [last[1]] + self[last[1]].box_track(uid=uid)
+            return [last[1]] + self[last[1]].box_history(uid=uid)
         return [last[1]]
 
+    def __disabled_parent(self):
+        heritage = self._box_config['__box_heritage']
+        if not heritage:
+            return False
+        if heritage[0]._box_config['__disable_track']:
+            return True
+        return heritage[0]._Box__disabled_parent()
+
     def __convert_and_store(self, item, value):
-        if self._box_config['tracker_box'] and self._box_config['__created']:
+        if (self._box_config['tracker_box'] and self._box_config['__created']
+                and not self._box_config['__disable_track']):
             heritage = self._box_config['__box_heritage']
             if heritage:
                 tracker = heritage[0]._box_config['__track_current_uuid']
             else:
                 tracker = uuid4().hex
-            self._box_config['__track_current_uuid'] = tracker
-            self._box_config['__track_history'].append((tracker, item))
+            if not self.__disabled_parent():
+                self._box_config['__track_current_uuid'] = tracker
+                history = self._box_config['__track_history']
+                if not history or history[-1] != (tracker, item):
+                    history.append((tracker, item))
 
         if item in self._box_config['__converted']:
             return value
@@ -482,6 +516,7 @@ class Box(dict):
     def __str__(self):
         return str(self.to_dict())
 
+    @_disable_tracking
     def to_dict(self):
         """
         Turn the Box and sub Boxes back into a native
@@ -489,7 +524,6 @@ class Box(dict):
 
         :return: python dictionary of this Box
         """
-
         out_dict = dict(self)
         for k, v in out_dict.items():
             if hasattr(v, 'to_dict'):
@@ -610,19 +644,24 @@ class Box(dict):
                                'but rather a {0}'.format(type(data).__name__))
             return cls(data, **bx_args)
 
-        @property
-        def box_collisions(self):
-            pass
-
-        @property
-        def box_heritage(self):
-            heritage = self._box_config['__box_heritage']
-            if heritage:
-                previous = heritage[0].box_heritage
-                if previous and isinstance(previous, list):
-                    return previous + [heritage[1]]
-                return [heritage[1]]
-            return []
+    @property
+    def box_collisions(self):
+        converted_keys = set()
+        collisions = set()
+        kill_camel = self._box_config['camel_killer_box']
+        if self._box_config['conversion_box']:
+            for k in self.keys():
+                ck = _safe_attr(k, camel_killer=kill_camel)
+                if ck in converted_keys:
+                    collisions.add(ck)
+                converted_keys.add(ck)
+        elif kill_camel:
+            for k in self.keys():
+                ck = _camel_killer(k)
+                if ck in converted_keys:
+                    collisions.add(ck)
+                converted_keys.add(ck)
+        return list(collisions)
 
 
 class BoxList(list):

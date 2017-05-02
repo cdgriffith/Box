@@ -5,10 +5,7 @@ from __future__ import absolute_import
 
 import pytest
 
-try:
-    from common import *
-except ImportError:
-    from .common import *
+from test.common import *
 
 
 class TestBoxFunctional(unittest.TestCase):

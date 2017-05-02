@@ -2,10 +2,7 @@
 # -*- coding: UTF-8 -*-
 from __future__ import absolute_import
 
-try:
-    from common import *
-except ImportError:
-    from .common import *
+from test.common import *
 
 
 class TestBoxUnit(unittest.TestCase):
