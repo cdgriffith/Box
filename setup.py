@@ -5,7 +5,7 @@ from setuptools import setup
 import os
 import re
 
-# Fix for issues with nosetests, experienced on win7
+# Fix for issues with testing, experienced on win10
 import multiprocessing
 
 root = os.path.abspath(os.path.dirname(__file__))
@@ -37,7 +37,6 @@ setup(
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
