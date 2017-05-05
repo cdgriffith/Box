@@ -16,3 +16,5 @@ Suggestions and bug reporting:
 - /u/can_dry
 - /u/spidyfan21
 - Casey Havenor (chavenor)
+- wim glenn (wimglenn)
+- Vishwas B Sharma (csurfer)

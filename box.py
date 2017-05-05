@@ -217,11 +217,15 @@ class Box(dict):
                 raise ValueError('Cannot extrapolate Box from string')
             if isinstance(args[0], Mapping):
                 for k, v in args[0].items():
+                    if v is args[0]:
+                        v = self
                     self[k] = v
                     if k == "_box_config":
                         continue
             elif isinstance(args[0], Iterable):
                 for k, v in args[0]:
+                    if v is args[0]:
+                        v = self
                     self[k] = v
                     if k == "_box_config":
                         continue
@@ -233,6 +237,8 @@ class Box(dict):
 
         box_it = kwargs.pop('box_it_up', False)
         for k, v in kwargs.items():
+            if args and v is args[0]:
+                v = self
             self[k] = v
 
         if self._box_config['frozen_box'] or box_it:
@@ -317,12 +323,8 @@ class Box(dict):
             return self.__convert_and_store(item, value)
 
     def __box_config(self):
-        config = self._box_config.copy()
-        del config['__box_heritage']
-        del config['__converted']
-        del config['__hash']
-        del config['__created']
-        return config
+        return {k: v for k, v in self._box_config.items()
+                if not k.startswith("__")}
 
     def __convert_and_store(self, item, value):
         if item in self._box_config['__converted']:
@@ -463,7 +465,9 @@ class Box(dict):
 
         out_dict = dict(self)
         for k, v in out_dict.items():
-            if hasattr(v, 'to_dict'):
+            if v is self:
+                out_dict[k] = out_dict
+            elif hasattr(v, 'to_dict'):
                 out_dict[k] = v.to_dict()
             elif hasattr(v, 'to_list'):
                 out_dict[k] = v.to_list()
