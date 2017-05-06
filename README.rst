@@ -33,7 +33,9 @@ Python dictionaries with recursive dot notation access.
            }
          }
 
-         movie_box = Box(movie_data)
+         # Box is a conversion_box by default, but can be set to `False` to disable that behavior
+         movie_box = Box(movie_data, conversion_box=True)
+
 
          movie_box.movies.Robin_Hood_Men_in_Tights.imdb_stars
          # 6.7
@@ -68,9 +70,9 @@ Overview
 `Box` is designed to be an easy drop in transparently replacements for
 dictionaries, thanks to Python's
 duck typing capabilities, which adds dot notation access. Any sub
-dictionaries or ones set after initiation will be automatically converted to 
-a `Box` object. You can always run `.to_dict()` on it to return the object 
-and all sub objects back into a regular dictionary. 
+dictionaries or ones set after initiation will be automatically converted to
+a `Box` object. You can always run `.to_dict()` on it to return the object
+and all sub objects back into a regular dictionary.
 
 
 .. code:: python
@@ -183,6 +185,7 @@ Conversion Box
 
 By default, Box is now a `conversion_box`
 that adds automagic attribute access for keys that could not normally be attributes.
+It can of course be disabled with the keyword argument `conversion_box=False`.
 
 .. code:: python
 
