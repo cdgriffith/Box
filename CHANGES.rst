@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+Version 3.0.1
+~~~~~~~~~~~~~
+
+* Fixing first level recursion errors
+* Fixing spelling mistakes (thanks to John Benediktsson)
+
 Version 3.0.0
 ~~~~~~~~~~~~~
 

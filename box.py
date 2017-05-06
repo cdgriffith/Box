@@ -37,7 +37,7 @@ else:
 __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
            'BoxError']
 __author__ = 'Chris Griffith'
-__version__ = '3.0.0'
+__version__ = '3.0.1'
 
 ILLEGAL_ATTRIBUTES = ('if', 'elif', 'else', 'for', 'from', 'as', 'import',
                       'in', 'not', 'is', 'def', 'class', 'return', 'yield',

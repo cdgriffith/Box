@@ -19,3 +19,4 @@ Suggestions and bug reporting:
 - wim glenn (wimglenn)
 - Vishwas B Sharma (csurfer)
 - John Benediktsson (mrjbq7)
+- /u/delirious_lettuce
