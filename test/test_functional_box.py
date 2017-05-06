@@ -439,3 +439,14 @@ class TestBoxFunctional(unittest.TestCase):
         my_box.movies.Robin_Hood_Men_in_Tights.Stars.pop(0)
         assert my_box.movies.Robin_Hood_Men_in_Tights.Stars[
                    0].name == "Richard Lewis"
+
+    def test_recursion(self):
+        a = {}
+        a['a'] = a
+        bx = Box(a)
+        assert bx.a.a == bx.a
+        b = bx.a.a.a.to_dict()
+        assert str(b) == "{'a': {...}}"
+
+        with pytest.raises(ValueError):
+            bx.to_json()
