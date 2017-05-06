@@ -18,3 +18,4 @@ Suggestions and bug reporting:
 - Casey Havenor (chavenor)
 - wim glenn (wimglenn)
 - Vishwas B Sharma (csurfer)
+- John Benediktsson (mrjbq7)
