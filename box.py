@@ -3,7 +3,7 @@
 #
 # Copyright (c) 2017 - Chris Griffith - MIT License
 """
-Improved dictionary access through recursive dot notaion.
+Improved dictionary access through recursive dot notation.
 """
 import string
 import sys
@@ -51,7 +51,7 @@ _all_cap_re = re.compile('([a-z0-9])([A-Z])')
 
 
 class BoxError(Exception):
-    """ Non standard dictionary exceptions"""
+    """Non standard dictionary exceptions"""
 
 
 # Abstract converter functions for use in any Box class
@@ -250,7 +250,7 @@ class Box(dict):
         """
         Perform value lookup for all items in current dictionary, 
         generating all sub Box objects, while also running `box_it_up` on
-        anoy of those sub box objects.
+        any of those sub box objects.
         """
         for k in self:
             if hasattr(self[k], 'box_it_up'):
