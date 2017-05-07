@@ -33,8 +33,8 @@ Python dictionaries with recursive dot notation access.
            }
          }
 
-         # Box is a conversion_box by default, but can be set to `False` to disable that behavior
-         movie_box = Box(movie_data, conversion_box=True)
+         # Box is a conversion_box by default, pass in `conversion_box=False` to disable that behavior
+         movie_box = Box(movie_data)
 
 
          movie_box.movies.Robin_Hood_Men_in_Tights.imdb_stars
