@@ -224,8 +224,6 @@ class Box(dict):
                         continue
             elif isinstance(args[0], Iterable):
                 for k, v in args[0]:
-                    if v is args[0]:
-                        v = self
                     self[k] = v
                     if k == "_box_config":
                         continue
@@ -237,7 +235,7 @@ class Box(dict):
 
         box_it = kwargs.pop('box_it_up', False)
         for k, v in kwargs.items():
-            if args and v is args[0]:
+            if args and isinstance(args[0], Mapping) and v is args[0]:
                 v = self
             self[k] = v
 
@@ -595,6 +593,7 @@ class BoxList(list):
     def __init__(self, iterable=None, box_class=Box, **box_options):
         self.box_class = box_class
         self.box_options = box_options
+        self.box_org_ref = id(iterable)
         if iterable:
             for x in iterable:
                 self.append(x)
@@ -602,7 +601,8 @@ class BoxList(list):
     def append(self, p_object):
         if isinstance(p_object, dict):
             p_object = self.box_class(p_object, **self.box_options)
-        elif isinstance(p_object, list):
+        elif (isinstance(p_object, list) and not
+                id(p_object) == self.box_org_ref):
             p_object = BoxList(p_object)
         super(BoxList, self).append(p_object)
 
@@ -613,8 +613,9 @@ class BoxList(list):
     def insert(self, index, p_object):
         if isinstance(p_object, dict):
             p_object = self.box_class(p_object, **self.box_options)
-        elif isinstance(p_object, list):
-            p_object = BoxList()
+        elif (isinstance(p_object, list) and not
+                id(p_object) == self.box_org_ref):
+            p_object = BoxList(p_object)
         super(BoxList, self).insert(index, p_object)
 
     def __repr__(self):
@@ -626,7 +627,9 @@ class BoxList(list):
     def to_list(self):
         new_list = []
         for x in self:
-            if isinstance(x, Box):
+            if x is self:
+                new_list.append(new_list)
+            elif isinstance(x, Box):
                 new_list.append(x.to_dict())
             elif isinstance(x, BoxList):
                 new_list.append(x.to_list())

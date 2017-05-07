@@ -450,3 +450,9 @@ class TestBoxFunctional(unittest.TestCase):
 
         with pytest.raises(ValueError):
             bx.to_json()
+
+        l = []
+        l.append(l)
+        bl = BoxList(l)
+        assert bl == bl[0]
+        assert isinstance(bl.to_list(), list)
