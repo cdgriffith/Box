@@ -150,35 +150,34 @@ Box's parameters
 .. table::
    :widths: auto
 
-   ================  ======= ====
-   Keyword Argument  Default Description
-   ================  ======= ====
-   conversion_box    True    Automagically make keys with spaces attribute accessible
-   frozen_box        False   Make the box immutable, hashable (if all items are non-mutable)
-   default_box       False   Act like a recursive default dict
-   default_box_attr  Box     Can overwrite with a different (non-recursive) default attribute to return
-   camel_killer_box  False   CamelCaseKeys become attribute accessible like snake case (camel_case_keys)
-   box_it_up         False   Recursively create all Boxes from the start (like previous versions)
-   ================  ======= ====
+   ================ ======= ===========
+   Keyword Argument Default Description
+   ================ ======= ===========
+   conversion_box   True    Automagically make keys with spaces attribute accessible
+   frozen_box       False   Make the box immutable, hashable (if all items are non-mutable)
+   default_box      False   Act like a recursive default dict
+   default_box_attr Box     Can overwrite with a different (non-recursive) default attribute to return
+   camel_killer_box False   CamelCaseKeys become attribute accessible like snake case (camel_case_keys)
+   box_it_up        False   Recursively create all Boxes from the start (like previous versions)
+   ================ ======= ===========
 
 Box's functions
 ~~~~~~~~~~~~~~~
 
 .. table::
 
-   ================  =======
-   Function Name     Description
-   ================  =======
-   to_dict           Recursively transform all Box (and BoxList) objects back into a dict (and lists)
-   to_json           Save Box object as a JSON string or write to a file with the `filename` parameter
-   to_yaml*          Save Box object as a YAML string or write to a file with the `filename` parameter
-   box_it_up         Recursively create all objects into Box and BoxList objects (to front-load operation)
-   from_json         Classmethod, Create a Box object from a JSON file or string (all Box parameters can be passed)
-   from_yaml*        Classmethod, Create a Box object from a YAML file or string (all Box parameters can be passed)
-   ================  =======
+   ================ ===========
+   Function Name    Description
+   ================ ===========
+   to_dict          Recursively transform all Box (and BoxList) objects back into a dict (and lists)
+   to_json          Save Box object as a JSON string or write to a file with the `filename` parameter
+   to_yaml*         Save Box object as a YAML string or write to a file with the `filename` parameter
+   box_it_up        Recursively create all objects into Box and BoxList objects (to front-load operation)
+   from_json        Classmethod, Create a Box object from a JSON file or string (all Box parameters can be passed)
+   from_yaml*       Classmethod, Create a Box object from a YAML file or string (all Box parameters can be passed)
+   ================ ===========
 
 \* Only available if `PyYaml` or `ruamel.yaml` is detected.
-
 
 Conversion Box
 ~~~~~~~~~~~~~~
