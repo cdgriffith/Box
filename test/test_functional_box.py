@@ -439,3 +439,26 @@ class TestBoxFunctional(unittest.TestCase):
         my_box.movies.Robin_Hood_Men_in_Tights.Stars.pop(0)
         assert my_box.movies.Robin_Hood_Men_in_Tights.Stars[
                    0].name == "Richard Lewis"
+
+    def test_circular_references(self):
+        circular_dict = {}
+        circular_dict['a'] = circular_dict
+        bx = Box(circular_dict)
+        assert bx.a.a == bx.a
+        circular_dict_2 = bx.a.a.a.to_dict()
+        assert str(circular_dict_2) == "{'a': {...}}"
+
+        bx2 = Box(circular_dict, k=circular_dict)
+        assert bx2.k == bx2.a
+
+        with pytest.raises(ValueError):
+            bx.to_json()
+
+        circular_list = []
+        circular_list.append(circular_list)
+        bl = BoxList(circular_list)
+        assert bl == bl[0]
+        assert isinstance(bl[0], BoxList)
+        circular_list_2 = bl.to_list()
+        assert circular_list_2 == circular_list_2[0]
+        assert isinstance(circular_list_2, list)

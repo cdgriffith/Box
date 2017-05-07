@@ -1,6 +1,13 @@
 Changelog
 ---------
 
+Version 3.0.1
+~~~~~~~~~~~~~
+
+* Fixing first level recursion errors
+* Fixing spelling mistakes (thanks to John Benediktsson)
+* Fixing that list insert of lists did not use the original list but create an empty one
+
 Version 3.0.0
 ~~~~~~~~~~~~~
 

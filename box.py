@@ -3,7 +3,7 @@
 #
 # Copyright (c) 2017 - Chris Griffith - MIT License
 """
-Improved dictionary access through recursive dot notaion.
+Improved dictionary access through recursive dot notation.
 """
 import string
 import sys
@@ -37,7 +37,7 @@ else:
 __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
            'BoxError']
 __author__ = 'Chris Griffith'
-__version__ = '3.0.0'
+__version__ = '3.0.1'
 
 ILLEGAL_ATTRIBUTES = ('if', 'elif', 'else', 'for', 'from', 'as', 'import',
                       'in', 'not', 'is', 'def', 'class', 'return', 'yield',
@@ -51,7 +51,7 @@ _all_cap_re = re.compile('([a-z0-9])([A-Z])')
 
 
 class BoxError(Exception):
-    """ Non standard dictionary exceptions"""
+    """Non standard dictionary exceptions"""
 
 
 # Abstract converter functions for use in any Box class
@@ -183,9 +183,9 @@ class Box(dict):
     The lists are turned into BoxLists
     so that they can also intercept incoming items and turn
     them into Boxes.
-    
+
     :param default_box: Similar to defaultdict, return a default value
-    :param default_box_attr: Specify the default replacement. 
+    :param default_box_attr: Specify the default replacement.
         WARNING: If this is not the default 'Box', it will not be recursive
     :param frozen_box: After creation, the box cannot be modified
     :param camel_killer_box: Convert CamelCase to snake_case
@@ -217,6 +217,8 @@ class Box(dict):
                 raise ValueError('Cannot extrapolate Box from string')
             if isinstance(args[0], Mapping):
                 for k, v in args[0].items():
+                    if v is args[0]:
+                        v = self
                     self[k] = v
                     if k == "_box_config":
                         continue
@@ -233,6 +235,8 @@ class Box(dict):
 
         box_it = kwargs.pop('box_it_up', False)
         for k, v in kwargs.items():
+            if args and isinstance(args[0], Mapping) and v is args[0]:
+                v = self
             self[k] = v
 
         if self._box_config['frozen_box'] or box_it:
@@ -242,9 +246,9 @@ class Box(dict):
 
     def box_it_up(self):
         """
-        Perform value lookup for all items in current dictionary, 
+        Perform value lookup for all items in current dictionary,
         generating all sub Box objects, while also running `box_it_up` on
-        anoy of those sub box objects.
+        any of those sub box objects.
         """
         for k in self:
             if hasattr(self[k], 'box_it_up'):
@@ -317,12 +321,8 @@ class Box(dict):
             return self.__convert_and_store(item, value)
 
     def __box_config(self):
-        config = self._box_config.copy()
-        del config['__box_heritage']
-        del config['__converted']
-        del config['__hash']
-        del config['__created']
-        return config
+        return {k: v for k, v in self._box_config.items()
+                if not k.startswith("__")}
 
     def __convert_and_store(self, item, value):
         if item in self._box_config['__converted']:
@@ -463,7 +463,9 @@ class Box(dict):
 
         out_dict = dict(self)
         for k, v in out_dict.items():
-            if hasattr(v, 'to_dict'):
+            if v is self:
+                out_dict[k] = out_dict
+            elif hasattr(v, 'to_dict'):
                 out_dict[k] = v.to_dict()
             elif hasattr(v, 'to_list'):
                 out_dict[k] = v.to_list()
@@ -503,7 +505,7 @@ class Box(dict):
 
         :param filename: If provided will save to file
         :param encoding: File encoding
-        :param errors: How to handle encoding errors 
+        :param errors: How to handle encoding errors
         :param json_kwargs: additional arguments to pass to json.dump(s)
         :return: string of JSON or return of `json.dump`
         """
@@ -520,7 +522,7 @@ class Box(dict):
         :param json_string: string to pass to `json.loads`
         :param filename: filename to open and pass to `json.load`
         :param encoding: File encoding
-        :param errors: How to handle encoding errors 
+        :param errors: How to handle encoding errors
         :param kwargs: parameters to pass to `Box()` or `json.loads`
         :return: Box object from json data
         """
@@ -547,7 +549,7 @@ class Box(dict):
             :param filename:  If provided will save to file
             :param default_flow_style: False will recursively dump dicts
             :param encoding: File encoding
-            :param errors: How to handle encoding errors 
+            :param errors: How to handle encoding errors
             :param yaml_kwargs: additional arguments to pass to yaml.dump
             :return: string of YAML or return of `yaml.dump`
             """
@@ -565,7 +567,7 @@ class Box(dict):
             :param yaml_string: string to pass to `yaml.load`
             :param filename: filename to open and pass to `yaml.load`
             :param encoding: File encoding
-            :param errors: How to handle encoding errors 
+            :param errors: How to handle encoding errors
             :param kwargs: parameters to pass to `Box()` or `yaml.load`
             :return: Box object from yaml data
             """
@@ -591,6 +593,7 @@ class BoxList(list):
     def __init__(self, iterable=None, box_class=Box, **box_options):
         self.box_class = box_class
         self.box_options = box_options
+        self.box_org_ref = id(iterable)
         if iterable:
             for x in iterable:
                 self.append(x)
@@ -599,7 +602,8 @@ class BoxList(list):
         if isinstance(p_object, dict):
             p_object = self.box_class(p_object, **self.box_options)
         elif isinstance(p_object, list):
-            p_object = BoxList(p_object)
+            p_object = (self if id(p_object) == self.box_org_ref else
+                        BoxList(p_object))
         super(BoxList, self).append(p_object)
 
     def extend(self, iterable):
@@ -610,7 +614,8 @@ class BoxList(list):
         if isinstance(p_object, dict):
             p_object = self.box_class(p_object, **self.box_options)
         elif isinstance(p_object, list):
-            p_object = BoxList()
+            p_object = (self if id(p_object) == self.box_org_ref else
+                        BoxList(p_object))
         super(BoxList, self).insert(index, p_object)
 
     def __repr__(self):
@@ -622,7 +627,9 @@ class BoxList(list):
     def to_list(self):
         new_list = []
         for x in self:
-            if isinstance(x, Box):
+            if x is self:
+                new_list.append(new_list)
+            elif isinstance(x, Box):
                 new_list.append(x.to_dict())
             elif isinstance(x, BoxList):
                 new_list.append(x.to_list())
@@ -637,7 +644,7 @@ class BoxList(list):
 
         :param filename: If provided will save to file
         :param encoding: File encoding
-        :param errors: How to handle encoding errors 
+        :param errors: How to handle encoding errors
         :param json_kwargs: additional arguments to pass to json.dump(s)
         :return: string of JSON or return of `json.dump`
         """
@@ -649,12 +656,12 @@ class BoxList(list):
                   encoding="utf-8", errors="strict", **kwargs):
         """
         Transform a json object string into a BoxList object. If the incoming
-        json is a dict, you must use Box.from_json. 
+        json is a dict, you must use Box.from_json.
 
         :param json_string: string to pass to `json.loads`
         :param filename: filename to open and pass to `json.load`
         :param encoding: File encoding
-        :param errors: How to handle encoding errors 
+        :param errors: How to handle encoding errors
         :param kwargs: parameters to pass to `Box()` or `json.loads`
         :return: BoxList object from json data
         """
@@ -681,7 +688,7 @@ class BoxList(list):
             :param filename:  If provided will save to file
             :param default_flow_style: False will recursively dump dicts
             :param encoding: File encoding
-            :param errors: How to handle encoding errors 
+            :param errors: How to handle encoding errors
             :param yaml_kwargs: additional arguments to pass to yaml.dump
             :return: string of YAML or return of `yaml.dump`
             """
@@ -699,7 +706,7 @@ class BoxList(list):
             :param yaml_string: string to pass to `yaml.load`
             :param filename: filename to open and pass to `yaml.load`
             :param encoding: File encoding
-            :param errors: How to handle encoding errors 
+            :param errors: How to handle encoding errors
             :param kwargs: parameters to pass to `BoxList()` or `yaml.load`
             :return: BoxList object from yaml data
             """
@@ -844,9 +851,9 @@ class ConfigBox(Box):
 
 
 class SBox(Box):
-    """ 
+    """
     ShorthandBox (SBox) allows for
-    property access of `dict` `json` and `yaml` 
+    property access of `dict` `json` and `yaml`
     """
     _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml',
                                  'json', 'yaml', 'from_yaml', 'from_json',

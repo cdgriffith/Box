@@ -33,7 +33,9 @@ Python dictionaries with recursive dot notation access.
            }
          }
 
+         # Box is a conversion_box by default, pass in `conversion_box=False` to disable that behavior
          movie_box = Box(movie_data)
+
 
          movie_box.movies.Robin_Hood_Men_in_Tights.imdb_stars
          # 6.7
@@ -68,9 +70,9 @@ Overview
 `Box` is designed to be an easy drop in transparently replacements for
 dictionaries, thanks to Python's
 duck typing capabilities, which adds dot notation access. Any sub
-dictionaries or ones set after initiation will be automatically converted to 
-a `Box` object. You can always run `.to_dict()` on it to return the object 
-and all sub objects back into a regular dictionary. 
+dictionaries or ones set after initiation will be automatically converted to
+a `Box` object. You can always run `.to_dict()` on it to return the object
+and all sub objects back into a regular dictionary.
 
 
 .. code:: python
@@ -148,41 +150,41 @@ Box's parameters
 .. table::
    :widths: auto
 
-   ================  ======= ====
-   Keyword Argument  Default Description
-   ================  ======= ====
-   conversion_box    True    Automagically make keys with spaces attribute accessible
-   frozen_box        False   Make the box immutable, hashable (if all items are non-mutable)
-   default_box       False   Act like a recursive default dict
-   default_box_attr  Box     Can overwrite with a different (non-recursive) default attribute to return
-   camel_killer_box  False   CamelCaseKeys become attribute accessible like snake case (camel_case_keys)
-   box_it_up         False   Recursively create all Boxes from the start (like previous versions)
-   ================  ======= ====
+   ================ ======= ===========
+   Keyword Argument Default Description
+   ================ ======= ===========
+   conversion_box   True    Automagically make keys with spaces attribute accessible
+   frozen_box       False   Make the box immutable, hashable (if all items are non-mutable)
+   default_box      False   Act like a recursive default dict
+   default_box_attr Box     Can overwrite with a different (non-recursive) default attribute to return
+   camel_killer_box False   CamelCaseKeys become attribute accessible like snake case (camel_case_keys)
+   box_it_up        False   Recursively create all Boxes from the start (like previous versions)
+   ================ ======= ===========
 
 Box's functions
 ~~~~~~~~~~~~~~~
 
 .. table::
 
-   ================  =======
-   Function Name     Description
-   ================  =======
-   to_dict           Recursively transform all Box (and BoxList) objects back into a dict (and lists)
-   to_json           Save Box object as a JSON string or write to a file with the `filename` parameter
-   to_yaml*          Save Box object as a YAML string or write to a file with the `filename` parameter
-   box_it_up         Recursively create all objects into Box and BoxList objects (to front-load operation)
-   from_json         Classmethod, Create a Box object from a JSON file or string (all Box parameters can be passed)
-   from_yaml*        Classmethod, Create a Box object from a YAML file or string (all Box parameters can be passed)
-   ================  =======
+   ================ ===========
+   Function Name    Description
+   ================ ===========
+   to_dict          Recursively transform all Box (and BoxList) objects back into a dict (and lists)
+   to_json          Save Box object as a JSON string or write to a file with the `filename` parameter
+   to_yaml*         Save Box object as a YAML string or write to a file with the `filename` parameter
+   box_it_up        Recursively create all objects into Box and BoxList objects (to front-load operation)
+   from_json        Classmethod, Create a Box object from a JSON file or string (all Box parameters can be passed)
+   from_yaml*       Classmethod, Create a Box object from a YAML file or string (all Box parameters can be passed)
+   ================ ===========
 
 \* Only available if `PyYaml` or `ruamel.yaml` is detected.
-
 
 Conversion Box
 ~~~~~~~~~~~~~~
 
 By default, Box is now a `conversion_box`
 that adds automagic attribute access for keys that could not normally be attributes.
+It can of course be disabled with the keyword argument `conversion_box=False`.
 
 .. code:: python
 
