@@ -23,6 +23,8 @@ Pull Requests
 
 - Follow PEP8
 
+- Select to merge into `development` branch, NOT `master`
+
 - New features should have
     - Reasoning for addition in pull request
     - Docstring with code block example and parameters

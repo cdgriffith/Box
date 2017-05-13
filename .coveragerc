@@ -15,3 +15,4 @@ exclude_lines =
     object.__setattr
     object.__delattr
     raise BoxError\('_box_config key must exist'\)
+    if item == '__box_config'
