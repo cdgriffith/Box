@@ -6,6 +6,7 @@ reporting, all input is greatly appreciated!
 Code contributions:
 
 - Alexandre Decan (AlexandreDecan)
+- dhilipsiva (dhilipsiva)
 
 Suggestions and bug reporting:
 
