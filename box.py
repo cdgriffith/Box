@@ -514,7 +514,7 @@ class Box(dict):
                   encoding="utf-8", errors="strict", **kwargs):
         """
         Transform a json object string into a Box object. If the incoming
-        json is a list, you must use BoxList.from_json. 
+        json is a list, you must use BoxList.from_json.
 
         :param json_string: string to pass to `json.loads`
         :param filename: filename to open and pass to `json.load`
