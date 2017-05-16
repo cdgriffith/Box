@@ -11,6 +11,7 @@ import json
 from uuid import uuid4
 import re
 import collections
+from keyword import kwlist
 
 try:
     from collections.abc import Mapping, Iterable
@@ -38,10 +39,6 @@ __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
            'BoxError']
 __author__ = 'Chris Griffith'
 __version__ = '3.0.1'
-
-ILLEGAL_ATTRIBUTES = ('if', 'elif', 'else', 'for', 'from', 'as', 'import',
-                      'in', 'not', 'is', 'def', 'class', 'return', 'yield',
-                      'except', 'while', 'raise')
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box', 'box_it_up')
@@ -141,7 +138,7 @@ def _safe_attr(attr, camel_killer=False):
     else:
         out = 'x{0}'.format(out)
 
-    if out in ILLEGAL_ATTRIBUTES:
+    if out in kwlist:
         out = 'x{0}'.format(out)
 
     return re.sub('_+', '_', out)
@@ -273,7 +270,7 @@ class Box(dict):
         for key in self.keys():
             key = _safe_key(key)
             if (' ' not in key and key[0] not in string.digits and
-                    key not in ILLEGAL_ATTRIBUTES):
+                    key not in kwlist):
                 for letter in key:
                     if letter not in allowed:
                         break
@@ -517,7 +514,7 @@ class Box(dict):
                   encoding="utf-8", errors="strict", **kwargs):
         """
         Transform a json object string into a Box object. If the incoming
-        json is a list, you must use BoxList.from_json. 
+        json is a list, you must use BoxList.from_json.
 
         :param json_string: string to pass to `json.loads`
         :param filename: filename to open and pass to `json.load`
