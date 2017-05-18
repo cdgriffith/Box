@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 # Test files gathered from json.org and yaml.org
-from __future__ import absolute_import
+
 
 import pytest
 
@@ -68,7 +68,7 @@ class TestBoxFunctional(unittest.TestCase):
     def test_basic_box(self):
         a = Box(one=1, two=2, three=3)
         b = Box({'one': 1, 'two': 2, 'three': 3})
-        c = Box((zip(['one', 'two', 'three'], [1, 2, 3])))
+        c = Box((list(zip(['one', 'two', 'three'], [1, 2, 3]))))
         d = Box(([('two', 2), ('one', 1), ('three', 3)]))
         e = Box(({'three': 3, 'one': 1, 'two': 2}))
         assert a == b == c == d == e

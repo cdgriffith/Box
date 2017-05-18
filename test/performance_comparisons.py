@@ -120,36 +120,32 @@ if __name__ == '__main__':
         88     57.1 MiB     15.2 MiB       dm = load_dotmap()
         89     64.5 MiB      7.4 MiB       bx = load_box()
         90     74.6 MiB     10.1 MiB       dt = load_dict()
-        91                             
+        91
         92     74.6 MiB      0.0 MiB       lookup(ad)
         93     74.6 MiB      0.0 MiB       lookup(ad)
-        94                             
+        94
         95     74.6 MiB      0.0 MiB       lookup(dm)
         96     74.6 MiB      0.0 MiB       lookup(dm)
-        97                             
+        97
         98     75.6 MiB      1.0 MiB       lookup(bx)
         99     75.6 MiB      0.0 MiB       lookup(bx)
-       100                             
+       100
        101     75.6 MiB      0.0 MiB       lookup(dt)
        102     75.6 MiB      0.0 MiB       lookup(dt)
-       103                             
+       103
        104     76.0 MiB      0.3 MiB       addict_insert(ad)
        105     76.6 MiB      0.6 MiB       dotmap_insert(dm)
        106     76.8 MiB      0.2 MiB       box_insert(bx)
        107     76.9 MiB      0.2 MiB       dict_insert(dt)
-   
     """
-
     print("Python {}\n".format(sys.version.split(" ")[0]))
 
     ad = load_addict()
     dm = load_dotmap()
     bx = load_box()
     dt = load_dict()
-
     """
-    Python 3.6.0 
-    
+    Python 3.6.0   
     addict took 0.24437 seconds to load
     DotMap took 0.17551 seconds to load
     Box    took 0.06552 seconds to load
@@ -189,7 +185,6 @@ if __name__ == '__main__':
     lookup took 0.00023 seconds
     lookup took 0.00011 seconds
     lookup took 0.00011 seconds
-    
     """
     addict_to_dict(ad)
     dotmap_to_dict(dm)
