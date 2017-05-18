@@ -140,7 +140,7 @@ if __name__ == '__main__':
    
     """
 
-    print(("Python {}\n".format(sys.version.split(" ")[0])))
+    print("Python {}\n".format(sys.version.split(" ")[0]))
 
     ad = load_addict()
     dm = load_dotmap()
