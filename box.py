@@ -42,7 +42,7 @@ __author__ = 'Chris Griffith'
 __version__ = '3.0.1'
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
-                  'frozen_box', 'camel_killer_box', 'box_it_up', 'tracker_box')
+                  'frozen_box', 'camel_killer_box', 'box_it_up')
 
 _first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 _all_cap_re = re.compile('([a-z0-9])([A-Z])')
@@ -177,7 +177,7 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
 
 def _disable_tracking(func):
     """
-    To both speed up and not polute the tracker history, disable
+    To both speed up and not pollute the tracker history, disable
     tracking for certain functions
     """
     @wraps(func)
@@ -189,6 +189,9 @@ def _disable_tracking(func):
         finally:
             args[0]._box_config['__disable_track'] = False
     return wrapper
+
+
+
 
 
 class Box(dict):
@@ -213,15 +216,10 @@ class Box(dict):
                                  'box_collisions']
 
     def __init__(self, *args, **kwargs):
-        heritage = kwargs.pop('__box_heritage', None)
+
         self._box_config = {
             # Internal use only
             '__converted': set(),
-            '__box_heritage': heritage,
-            '__default_heritage': heritage,
-            '__track_history': [],
-            '__track_current_uuid': None,
-            '__disable_track': False,
             '__hash': None,
             '__created': False,
             # Can be changed by user after box creation
@@ -230,8 +228,7 @@ class Box(dict):
             'conversion_box': kwargs.pop('conversion_box', True),
             'frozen_box': kwargs.pop('frozen_box', False),
             'camel_killer_box': kwargs.pop('camel_killer_box', False),
-            'modify_tuples_box': kwargs.pop('modify_tuples_box', False),
-            'tracker_box': kwargs.pop('tracker_box', False)
+            'modify_tuples_box': kwargs.pop('modify_tuples_box', False)
             }
         if len(args) == 1:
             if isinstance(args[0], basestring):
@@ -334,8 +331,7 @@ class Box(dict):
             if self._box_config['default_box']:
                 if isinstance(default_value, collections.Callable):
                     if default_value.__name__ == 'Box':
-                        return self.__class__(__box_heritage=(self, item),
-                                              **self.__box_config())
+                        return self.__class__(**self.__box_config())
                     return default_value()
                 elif hasattr(default_value, 'copy'):
                     return default_value.copy()
@@ -348,83 +344,30 @@ class Box(dict):
         return {k: v for k, v in self._box_config.copy().items()
                 if not k.startswith("__")}
 
-    @_disable_tracking
-    def box_history(self, pos=-1, uid=None):
-        if not self._box_config['tracker_box']:
-            raise BoxError("'tracker_box' is not enabled, no history saved")
-        if not self._box_config['__track_history']:
-            return []
-        if uid:
-            for tracker, item in self._box_config['__track_history']:
-                if tracker == uid:
-                    last = (tracker, item)
-                    break
-            else:
-                return []
-        else:
-            last = self._box_config['__track_history'][pos]
-            uid = last[0]
-        if isinstance(self[last[1]], Box):
-            return [last[1]] + self[last[1]].box_history(uid=uid)
-        return [last[1]]
-
-    def __disabled_parent(self):
-        heritage = self._box_config['__box_heritage']
-        if not heritage:
-            return False
-        if heritage[0]._box_config['__disable_track']:
-            return True
-        return heritage[0]._Box__disabled_parent()
-
     def __convert_and_store(self, item, value):
-        if (self._box_config['tracker_box'] and self._box_config['__created']
-                and not self._box_config['__disable_track']):
-            heritage = self._box_config['__box_heritage']
-            if heritage:
-                tracker = heritage[0]._box_config['__track_current_uuid']
-            else:
-                tracker = uuid4().hex
-            if not self.__disabled_parent():
-                self._box_config['__track_current_uuid'] = tracker
-                history = self._box_config['__track_history']
-                if not history or history[-1] != (tracker, item):
-                    history.append((tracker, item))
-
         if item in self._box_config['__converted']:
             return value
         if isinstance(value, dict) and not isinstance(value, Box):
-            value = self.__class__(value, __box_heritage=(self, item),
-                                   **self.__box_config())
+            value = self.__class__(value, **self.__box_config())
             self[item] = value
         elif isinstance(value, list) and not isinstance(value, BoxList):
             if self._box_config['frozen_box']:
                 value = _recursive_tuples(value, self.__class__,
                                           recreate_tuples=self._box_config[
                                               'modify_tuples_box'],
-                                          __box_heritage=(self, item),
                                           **self.__box_config())
             else:
-                value = BoxList(value, __box_heritage=(self, item),
-                                box_class=self.__class__,
+                value = BoxList(value, box_class=self.__class__,
                                 **self.__box_config())
             self[item] = value
         elif (self._box_config['modify_tuples_box'] and
                 isinstance(value, tuple)):
             value = _recursive_tuples(value, self.__class__,
                                       recreate_tuples=True,
-                                      __box_heritage=(self, item),
                                       **self.__box_config())
             self[item] = value
         self._box_config['__converted'].add(item)
         return value
-
-    def __create_lineage(self):
-        if (self._box_config['__default_heritage'] and
-                self._box_config['__created']):
-            past, item = self._box_config['__default_heritage']
-            if not past[item]:
-                past[item] = self
-            self._box_config['__default_heritage'] = None
 
     def __getattr__(self, item):
         try:
@@ -458,7 +401,6 @@ class Box(dict):
                 self._box_config['frozen_box']):
             raise BoxError('Box is frozen')
         super(Box, self).__setitem__(key, value)
-        self.__create_lineage()
 
     def __setattr__(self, key, value):
         if (key != '_box_config' and self._box_config['frozen_box'] and
@@ -491,7 +433,6 @@ class Box(dict):
                 self[key] = value
         else:
             object.__setattr__(self, key, value)
-        self.__create_lineage()
 
     def __delitem__(self, key):
         if self._box_config['frozen_box']:
@@ -666,6 +607,124 @@ class Box(dict):
                     collisions.add(ck)
                 converted_keys.add(ck)
         return list(collisions)
+
+
+class TrackerBox(Box):
+
+    def __init__(self, *args, **kwargs):
+        heritage = kwargs.pop('__box_heritage', None)
+        super(TrackerBox, self).__init__(*args, **kwargs)
+        self._box_config.update({'__box_heritage': heritage,
+                                 '__default_heritage': heritage,
+                                 '__track_history': [],
+                                 '__track_current_uuid': None,
+                                 '__disable_track': False})
+
+    def __box_config(self):
+        return {k: v for k, v in self._box_config.copy().items()
+                if not k.startswith("__")}
+
+    @_disable_tracking
+    def box_history(self, pos=-1, uid=None):
+        if not self._box_config['__track_history']:
+            return []
+        if uid:
+            for tracker, item in self._box_config['__track_history']:
+                if tracker == uid:
+                    last = (tracker, item)
+                    break
+            else:
+                return []
+        else:
+            last = self._box_config['__track_history'][pos]
+            uid = last[0]
+        if isinstance(self[last[1]], Box):
+            return [last[1]] + self[last[1]].box_history(uid=uid)
+        return [last[1]]
+
+    def __getitem__(self, item):
+        try:
+            value = super(Box, self).__getitem__(item)
+        except KeyError as err:
+            if self._box_config['default_box']:
+                default_value = self._box_config['default_box_attr']
+                if isinstance(default_value, collections.Callable):
+                    if default_value.__name__ == 'Box':
+                        return self.__class__(__box_heritage=(self, item),
+                                              **self.__box_config())
+                    return default_value()
+                elif hasattr(default_value, 'copy'):
+                    return default_value.copy()
+                return default_value
+            raise err
+        else:
+            return self.__convert_and_store(item, value)
+
+    def __disabled_parent(self):
+        heritage = self._box_config['__box_heritage']
+        if not heritage:
+            return False
+        if heritage[0]._box_config['__disable_track']:
+            return True
+        return heritage[0]._TrackerBox__disabled_parent()
+
+    def __convert_and_store(self, item, value):
+        if (self._box_config.get('__created') and not
+                self._box_config['__disable_track']):
+            heritage = self._box_config['__box_heritage']
+            if heritage:
+                tracker = heritage[0]._box_config['__track_current_uuid']
+            else:
+                tracker = uuid4().hex
+            if not self.__disabled_parent():
+                self._box_config['__track_current_uuid'] = tracker
+                history = self._box_config['__track_history']
+                if not history or history[-1] != (tracker, item):
+                    history.append((tracker, item))
+
+        if item in self._box_config['__converted']:
+            return value
+        if isinstance(value, dict) and not isinstance(value, Box):
+            value = self.__class__(value, __box_heritage=(self, item),
+                                   **self.__box_config())
+            self[item] = value
+        elif isinstance(value, list) and not isinstance(value, BoxList):
+            if self._box_config['frozen_box']:
+                value = _recursive_tuples(value, self.__class__,
+                                          recreate_tuples=self._box_config[
+                                              'modify_tuples_box'],
+                                          __box_heritage=(self, item),
+                                          **self.__box_config())
+            else:
+                value = BoxList(value, __box_heritage=(self, item),
+                                box_class=self.__class__,
+                                **self.__box_config())
+            self[item] = value
+        elif (self._box_config['modify_tuples_box'] and
+                  isinstance(value, tuple)):
+            value = _recursive_tuples(value, self.__class__,
+                                      recreate_tuples=True,
+                                      __box_heritage=(self, item),
+                                      **self.__box_config())
+            self[item] = value
+        self._box_config['__converted'].add(item)
+        return value
+
+    def __create_lineage(self):
+        if (self._box_config.get('__default_heritage') and
+                self._box_config.get('__created')):
+            past, item = self._box_config['__default_heritage']
+            if not past[item]:
+                past[item] = self
+            self._box_config['__default_heritage'] = None
+
+    def __setitem__(self, key, value):
+        super(TrackerBox, self).__setitem__(key, value)
+        self.__create_lineage()
+
+    def __setattr__(self, key, value):
+        super(TrackerBox, self).__setattr__(key, value)
+        self.__create_lineage()
 
 
 class BoxList(list):
