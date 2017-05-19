@@ -220,6 +220,7 @@ class Box(dict):
         self._box_config = {
             # Internal use only
             '__converted': set(),
+            '__box_heritage': kwargs.pop('__box_heritage', None),
             '__hash': None,
             '__created': False,
             # Can be changed by user after box creation
@@ -331,7 +332,8 @@ class Box(dict):
             if self._box_config['default_box']:
                 if isinstance(default_value, collections.Callable):
                     if default_value.__name__ == 'Box':
-                        return self.__class__(**self.__box_config())
+                        return self.__class__(__box_heritage=(self, item),
+                                              **self.__box_config())
                     return default_value()
                 elif hasattr(default_value, 'copy'):
                     return default_value.copy()
@@ -348,26 +350,38 @@ class Box(dict):
         if item in self._box_config['__converted']:
             return value
         if isinstance(value, dict) and not isinstance(value, Box):
-            value = self.__class__(value, **self.__box_config())
+            value = self.__class__(value, __box_heritage=(self, item),
+                                   **self.__box_config())
             self[item] = value
         elif isinstance(value, list) and not isinstance(value, BoxList):
             if self._box_config['frozen_box']:
                 value = _recursive_tuples(value, self.__class__,
                                           recreate_tuples=self._box_config[
                                               'modify_tuples_box'],
+                                          __box_heritage=(self, item),
                                           **self.__box_config())
             else:
-                value = BoxList(value, box_class=self.__class__,
+                value = BoxList(value, __box_heritage=(self, item),
+                                box_class=self.__class__,
                                 **self.__box_config())
             self[item] = value
         elif (self._box_config['modify_tuples_box'] and
                 isinstance(value, tuple)):
             value = _recursive_tuples(value, self.__class__,
                                       recreate_tuples=True,
+                                      __box_heritage=(self, item),
                                       **self.__box_config())
             self[item] = value
         self._box_config['__converted'].add(item)
         return value
+
+    def __create_lineage(self):
+        if (self._box_config['__box_heritage'] and
+                self._box_config['__created']):
+            past, item = self._box_config['__box_heritage']
+            if not past[item]:
+                past[item] = self
+            self._box_config['__box_heritage'] = None
 
     def __getattr__(self, item):
         try:
@@ -401,6 +415,7 @@ class Box(dict):
                 self._box_config['frozen_box']):
             raise BoxError('Box is frozen')
         super(Box, self).__setitem__(key, value)
+        self.__create_lineage()
 
     def __setattr__(self, key, value):
         if (key != '_box_config' and self._box_config['frozen_box'] and
@@ -433,6 +448,7 @@ class Box(dict):
                 self[key] = value
         else:
             object.__setattr__(self, key, value)
+        self.__create_lineage()
 
     def __delitem__(self, key):
         if self._box_config['frozen_box']:
@@ -612,10 +628,9 @@ class Box(dict):
 class TrackerBox(Box):
 
     def __init__(self, *args, **kwargs):
-        heritage = kwargs.pop('__box_heritage', None)
         super(TrackerBox, self).__init__(*args, **kwargs)
-        self._box_config.update({'__box_heritage': heritage,
-                                 '__default_heritage': heritage,
+        track_heritage = self._box_config['__box_heritage']
+        self._box_config.update({'__tracker_heritage': track_heritage,
                                  '__track_history': [],
                                  '__track_current_uuid': None,
                                  '__disable_track': False})
@@ -661,7 +676,7 @@ class TrackerBox(Box):
             return self.__convert_and_store(item, value)
 
     def __disabled_parent(self):
-        heritage = self._box_config['__box_heritage']
+        heritage = self._box_config['__tracker_heritage']
         if not heritage:
             return False
         if heritage[0]._box_config['__disable_track']:
@@ -671,7 +686,7 @@ class TrackerBox(Box):
     def __convert_and_store(self, item, value):
         if (self._box_config.get('__created') and not
                 self._box_config['__disable_track']):
-            heritage = self._box_config['__box_heritage']
+            heritage = self._box_config['__tracker_heritage']
             if heritage:
                 tracker = heritage[0]._box_config['__track_current_uuid']
             else:
@@ -709,22 +724,6 @@ class TrackerBox(Box):
             self[item] = value
         self._box_config['__converted'].add(item)
         return value
-
-    def __create_lineage(self):
-        if (self._box_config.get('__default_heritage') and
-                self._box_config.get('__created')):
-            past, item = self._box_config['__default_heritage']
-            if not past[item]:
-                past[item] = self
-            self._box_config['__default_heritage'] = None
-
-    def __setitem__(self, key, value):
-        super(TrackerBox, self).__setitem__(key, value)
-        self.__create_lineage()
-
-    def __setattr__(self, key, value):
-        super(TrackerBox, self).__setattr__(key, value)
-        self.__create_lineage()
 
 
 class BoxList(list):
