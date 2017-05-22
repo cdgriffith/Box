@@ -182,16 +182,14 @@ def _disable_tracking(func):
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
-        assert isinstance(args[0], Box)
+        if not isinstance(args[0], TrackerBox):
+            return func(*args, **kwargs)
         args[0]._box_config['__disable_track'] = True
         try:
             return func(*args, **kwargs)
         finally:
             args[0]._box_config['__disable_track'] = False
     return wrapper
-
-
-
 
 
 class Box(dict):
