@@ -1,6 +1,13 @@
 Changelog
 ---------
 
+Version 3.1.0
+~~~~~~~~~~~~~
+
+* Adding copy and deepcopy support that with return a Box object
+* Adding support for customizable safe attr replacement
+* Fixing that a recursion loop could occur if `_box_config` was somehow removed
+
 Version 3.0.1
 ~~~~~~~~~~~~~
 

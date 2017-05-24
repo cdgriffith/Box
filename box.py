@@ -11,6 +11,7 @@ import json
 from uuid import uuid4
 import re
 import collections
+import copy
 from keyword import kwlist
 
 try:
@@ -38,7 +39,7 @@ else:
 __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
            'BoxError']
 __author__ = 'Chris Griffith'
-__version__ = '3.0.1'
+__version__ = '3.1.0'
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box', 'box_it_up')
@@ -115,7 +116,7 @@ def _safe_key(key):
         return key.encode(encoding="utf-8", errors="ignore")
 
 
-def _safe_attr(attr, camel_killer=False):
+def _safe_attr(attr, camel_killer=False, replacement_char='x'):
     """Convert a key into something that is accessible as an attribute"""
     allowed = string.ascii_letters + string.digits + '_'
 
@@ -136,10 +137,10 @@ def _safe_attr(attr, camel_killer=False):
     except (ValueError, IndexError):
         pass
     else:
-        out = 'x{0}'.format(out)
+        out = '{0}{1}'.format(replacement_char, out)
 
     if out in kwlist:
-        out = 'x{0}'.format(out)
+        out = '{0}{1}'.format(replacement_char, out)
 
     return re.sub('_+', '_', out)
 
@@ -205,6 +206,8 @@ class Box(dict):
             'default_box': kwargs.pop('default_box', False),
             'default_box_attr': kwargs.pop('default_box_attr', self.__class__),
             'conversion_box': kwargs.pop('conversion_box', True),
+            'conversion_box_replace_char':
+                kwargs.pop('conversion_box_replace_char', 'x'),
             'frozen_box': kwargs.pop('frozen_box', False),
             'camel_killer_box': kwargs.pop('camel_killer_box', False),
             'modify_tuples_box': kwargs.pop('modify_tuples_box', False)
@@ -281,7 +284,9 @@ class Box(dict):
             key = _safe_key(key)
             if key not in items:
                 if self._box_config['conversion_box']:
-                    key = _safe_attr(key, camel_killer=kill_camel)
+                    key = _safe_attr(key, camel_killer=kill_camel,
+                                     replacement_char=self._box_config[
+                                         'conversion_box_replace_char'])
                     if key:
                         items.add(key)
             if kill_camel:
@@ -299,10 +304,27 @@ class Box(dict):
     def __contains__(self, item):
         return dict.__contains__(self, item) or hasattr(self, item)
 
+    def copy(self):
+        return self.__class__(super(Box, self).copy())
+
+    def __copy__(self):
+        return self.__class__(super(Box, self).__copy__())
+
+    def __deepcopy__(self, memodict=None):
+        out = self.__class__()
+        if memodict is None:
+            memodict = {}
+        memodict[id(self)] = out
+        for k, v in self.items():
+            out[copy.deepcopy(k, memodict)] = copy.deepcopy(v, memodict)
+        return out
+
     def __getitem__(self, item):
         try:
             value = super(Box, self).__getitem__(item)
         except KeyError as err:
+            if item == '_box_config':
+                raise BoxError('_box_config key must exist')
             default_value = self._box_config['default_box_attr']
             if self._box_config['default_box']:
                 if isinstance(default_value, collections.Callable):
@@ -373,7 +395,9 @@ class Box(dict):
                 kill_camel = self._box_config.get('camel_killer_box', False)
                 if self._box_config.get('conversion_box', False) and item:
                     for k in self.keys():
-                        if item == _safe_attr(k, camel_killer=kill_camel):
+                        if item == _safe_attr(k, camel_killer=kill_camel,
+                                replacement_char=self._box_config[
+                                    'conversion_box_replace_char']):
                             return self.__getitem__(k)
                 if kill_camel:
                     for k in self.keys():
@@ -410,7 +434,9 @@ class Box(dict):
                     if self._box_config['conversion_box']:
                         if key == _safe_attr(
                                 each_key,
-                                self._box_config['camel_killer_box']):
+                                self._box_config['camel_killer_box'],
+                                replacement_char=self._box_config[
+                                    'conversion_box_replace_char']):
                             self[each_key] = value
                             break
                     elif self._box_config['camel_killer_box']:
