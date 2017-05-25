@@ -13,6 +13,7 @@ import re
 import collections
 import copy
 from keyword import kwlist
+import warnings
 
 try:
     from collections.abc import Mapping, Iterable
@@ -175,6 +176,31 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
     return tuple(out_list)
 
 
+def _conversion_checks(item, keys, box_config):
+    if box_config['conversion_box_errors'] != 'ignore':
+        key_list = [(k,
+                     _safe_attr(k, camel_killer=box_config['camel_killer_box'],
+                                replacement_char=box_config[
+                                'conversion_box_replace_char'])) for k in keys]
+        if len(key_list) > len(set(x[1] for x in key_list)):
+            seen = set()
+            dups = set()
+            for x in key_list:
+                if x[1] in seen:
+                    dups.add("{}({})".format(x[0], x[1]))
+                seen.add(x[1])
+            if box_config['conversion_box_errors'].startswith("warn"):
+                warnings.warn('Duplicate conversion attributes exist: {}'.format(dups))
+            else:
+                raise BoxError('Duplicate conversion attributes exist: {}'.format(dups))
+    # This way will be slower for warnings, as it will have double work
+    # But faster for the default 'ignore'
+    for k in keys:
+        if item == _safe_attr(k, camel_killer=box_config['camel_killer_box'],
+                          replacement_char=box_config['conversion_box_replace_char']):
+            return k
+
+
 class Box(dict):
     """
 
@@ -210,7 +236,9 @@ class Box(dict):
                 kwargs.pop('conversion_box_replace_char', 'x'),
             'frozen_box': kwargs.pop('frozen_box', False),
             'camel_killer_box': kwargs.pop('camel_killer_box', False),
-            'modify_tuples_box': kwargs.pop('modify_tuples_box', False)
+            'modify_tuples_box': kwargs.pop('modify_tuples_box', False),
+            'conversion_box_errors': kwargs.pop('conversion_box_errors',
+                                                'ignore')
             }
         if len(args) == 1:
             if isinstance(args[0], basestring):
@@ -392,13 +420,11 @@ class Box(dict):
             except KeyError:
                 if item == '_box_config':
                     raise BoxError('_box_config key must exist')
-                kill_camel = self._box_config.get('camel_killer_box', False)
-                if self._box_config.get('conversion_box', False) and item:
-                    for k in self.keys():
-                        if item == _safe_attr(k, camel_killer=kill_camel,
-                                replacement_char=self._box_config[
-                                    'conversion_box_replace_char']):
-                            return self.__getitem__(k)
+                kill_camel = self._box_config['camel_killer_box']
+                if self._box_config['conversion_box'] and item:
+                    k = _conversion_checks(item, self.keys(), self._box_config)
+                    if k:
+                        return self.__getitem__(k)
                 if kill_camel:
                     for k in self.keys():
                         if item == _camel_killer(k):
@@ -430,16 +456,12 @@ class Box(dict):
             if (key not in self.keys() and
                     (self._box_config['conversion_box'] or
                      self._box_config['camel_killer_box'])):
-                for each_key in self:
-                    if self._box_config['conversion_box']:
-                        if key == _safe_attr(
-                                each_key,
-                                self._box_config['camel_killer_box'],
-                                replacement_char=self._box_config[
-                                    'conversion_box_replace_char']):
-                            self[each_key] = value
-                            break
-                    elif self._box_config['camel_killer_box']:
+                if self._box_config['conversion_box']:
+                    k = _conversion_checks(key, self.keys(),
+                                           self._box_config)
+                    self[key if not k else k] = value
+                elif self._box_config['camel_killer_box']:
+                    for each_key in self:
                         if key == _camel_killer(each_key):
                             self[each_key] = value
                             break
