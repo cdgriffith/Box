@@ -1,3 +1,9 @@
+Version 2.2.1
+=============
+
+* Fixing BoxList `insert` of lists
+
+
 Version 2.2.0
 =============
 

@@ -33,7 +33,7 @@ if sys.version_info >= (3, 0):
 
 __all__ = ['Box', 'ConfigBox', 'LightBox', 'BoxList']
 __author__ = "Chris Griffith"
-__version__ = "2.2.0"
+__version__ = "2.2.1"
 
 
 class LightBox(dict):
@@ -334,7 +334,7 @@ class BoxList(list):
         if isinstance(p_object, dict):
             p_object = self.__box_class__(p_object)
         elif isinstance(p_object, list):
-            p_object = BoxList()
+            p_object = BoxList(p_object)
         return super(BoxList, self).insert(index, p_object)
 
     def __repr__(self):
