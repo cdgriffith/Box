@@ -113,7 +113,7 @@ def _safe_key(key):
     try:
         return str(key)
     except UnicodeEncodeError:
-        return key.encode(encoding="utf-8", errors="ignore")
+        return key.encode("utf-8", "ignore")
 
 
 def _safe_attr(attr, camel_killer=False, replacement_char='x'):
@@ -154,7 +154,7 @@ def _camel_killer(attr):
     try:
         attr = str(attr)
     except UnicodeEncodeError:
-        attr = attr.encode(encoding="utf-8", errors="ignore")
+        attr = attr.encode("utf-8", "ignore")
 
     s1 = _first_cap_re.sub(r'\1_\2', attr)
     s2 = _all_cap_re.sub(r'\1_\2', s1)
@@ -340,8 +340,8 @@ class Box(dict):
             return self.__convert_and_store(item, value)
 
     def __box_config(self):
-        return {k: v for k, v in self._box_config.items()
-                if not k.startswith("__")}
+        return dict([(k, v) for k, v in self._box_config.items()
+                     if not k.startswith("__")])
 
     def __convert_and_store(self, item, value):
         if item in self._box_config['__converted']:
