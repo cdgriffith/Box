@@ -193,14 +193,16 @@ def _conversion_checks(item, keys, box_config):
                     dups.add("{}({})".format(x[0], x[1]))
                 seen.add(x[1])
             if box_config['conversion_box_errors'].startswith("warn"):
-                warnings.warn('Duplicate conversion attributes exist: {}'.format(dups))
+                warnings.warn('Duplicate conversion attributes exist: '
+                              '{}'.format(dups))
             else:
-                raise BoxError('Duplicate conversion attributes exist: {}'.format(dups))
+                raise BoxError('Duplicate conversion attributes exist: '
+                               '{}'.format(dups))
     # This way will be slower for warnings, as it will have double work
     # But faster for the default 'ignore'
     for k in keys:
         if item == _safe_attr(k, camel_killer=box_config['camel_killer_box'],
-                          replacement_char=box_config['conversion_box_replace_char']):
+                   replacement_char=box_config['conversion_box_replace_char']):
             return k
 
 
