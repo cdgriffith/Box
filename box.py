@@ -16,7 +16,7 @@ from keyword import kwlist
 import warnings
 
 try:
-    from collections.abc import Mapping, Iterable
+    from collections import Iterable, Mapping
 except ImportError:
     Mapping = dict
     Iterable = (tuple, list)
@@ -68,10 +68,13 @@ def _to_json(obj, filename=None,
 
 
 def _from_json(json_string=None, filename=None,
-               encoding="utf-8", errors="strict", **kwargs):
+               encoding="utf-8", errors="strict", multiline=False, **kwargs):
     if filename:
         with open(filename, 'r', encoding=encoding, errors=errors) as f:
-            data = json.load(f, **kwargs)
+            if multiline:
+                data = [json.loads(line, **kwargs) for line in f]
+            else:
+                data = json.load(f, **kwargs)
     elif json_string:
         data = json.loads(json_string, **kwargs)
     else:
@@ -683,22 +686,31 @@ class BoxList(list):
         return new_list
 
     def to_json(self, filename=None,
-                encoding="utf-8", errors="strict", **json_kwargs):
+                encoding="utf-8", errors="strict",
+                multiline=False, **json_kwargs):
         """
         Transform the BoxList object into a JSON string.
 
         :param filename: If provided will save to file
         :param encoding: File encoding
         :param errors: How to handle encoding errors
+        :param multiline: Put each item in list onto it's own line
         :param json_kwargs: additional arguments to pass to json.dump(s)
         :return: string of JSON or return of `json.dump`
         """
-        return _to_json(self.to_list(), filename=filename,
-                        encoding=encoding, errors=errors, **json_kwargs)
+        if filename and multiline:
+            lines = [_to_json(item, filename=False, encoding=encoding,
+                              errors=errors, **json_kwargs) for item in self]
+            with open(filename, 'w', encoding=encoding, errors=errors) as f:
+                f.write("\n".join(lines).decode('utf-8') if
+                        sys.version_info < (3, 0) else "\n".join(lines))
+        else:
+            return _to_json(self.to_list(), filename=filename,
+                            encoding=encoding, errors=errors, **json_kwargs)
 
     @classmethod
-    def from_json(cls, json_string=None, filename=None,
-                  encoding="utf-8", errors="strict", **kwargs):
+    def from_json(cls, json_string=None, filename=None, encoding="utf-8",
+                  errors="strict", multiline=False, **kwargs):
         """
         Transform a json object string into a BoxList object. If the incoming
         json is a dict, you must use Box.from_json.
@@ -707,6 +719,7 @@ class BoxList(list):
         :param filename: filename to open and pass to `json.load`
         :param encoding: File encoding
         :param errors: How to handle encoding errors
+        :param multiline: One object per line
         :param kwargs: parameters to pass to `Box()` or `json.loads`
         :return: BoxList object from json data
         """
@@ -715,8 +728,8 @@ class BoxList(list):
             if arg in BOX_PARAMETERS:
                 bx_args[arg] = kwargs.pop(arg)
 
-        data = _from_json(json_string, filename=filename,
-                          encoding=encoding, errors=errors, **kwargs)
+        data = _from_json(json_string, filename=filename, encoding=encoding,
+                          errors=errors, multiline=multiline, **kwargs)
 
         if not isinstance(data, list):
             raise BoxError('json data not returned as a list, '

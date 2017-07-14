@@ -462,3 +462,22 @@ class TestBoxFunctional(unittest.TestCase):
         circular_list_2 = bl.to_list()
         assert circular_list_2 == circular_list_2[0]
         assert isinstance(circular_list_2, list)
+
+    def test_to_multiline(self):
+        a = BoxList([Box(a=1), Box(b=2), Box(three=5)])
+
+        a.to_json(tmp_json_file, multiline=True)
+        count = 0
+        with open(tmp_json_file) as f:
+            for line in f:
+                assert isinstance(json.loads(line), dict)
+                count += 1
+        assert count == 3
+
+    def test_from_multiline(self):
+        content = '{"a": 2}\n{"b": 3}'
+        with open(tmp_json_file, 'w') as f:
+            f.write(content)
+
+        a = BoxList.from_json(filename=tmp_json_file, multiline=True)
+        assert a[1].b == 3
