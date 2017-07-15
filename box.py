@@ -179,7 +179,7 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
     return tuple(out_list)
 
 
-def _conversion_checks(item, keys, box_config):
+def _conversion_checks(item, keys, box_config, check_only=False):
     if box_config['conversion_box_errors'] != 'ignore':
         key_list = [(k,
                      _safe_attr(k, camel_killer=box_config['camel_killer_box'],
@@ -198,6 +198,8 @@ def _conversion_checks(item, keys, box_config):
             else:
                 raise BoxError('Duplicate conversion attributes exist: '
                                '{}'.format(dups))
+    if check_only:
+        return
     # This way will be slower for warnings, as it will have double work
     # But faster for the default 'ignore'
     for k in keys:
@@ -272,7 +274,8 @@ class Box(dict):
                 v = self
             self[k] = v
 
-        if self._box_config['frozen_box'] or box_it:
+        if (self._box_config['frozen_box'] or box_it or
+           self._box_config['conversion_box_errors'] != 'ignore'):
             self.box_it_up()
 
         self._box_config['__created'] = True
@@ -284,6 +287,8 @@ class Box(dict):
         any of those sub box objects.
         """
         for k in self:
+            _conversion_checks(k, self.keys(), self._box_config,
+                               check_only=True)
             if hasattr(self[k], 'box_it_up'):
                 self[k].box_it_up()
 
@@ -444,6 +449,9 @@ class Box(dict):
         if (key != '_box_config' and self._box_config['__created'] and
                 self._box_config['frozen_box']):
             raise BoxError('Box is frozen')
+        if self._box_config['conversion_box']:
+            _conversion_checks(key, self.keys(), self._box_config,
+                               check_only=True)
         super(Box, self).__setitem__(key, value)
         self.__create_lineage()
 

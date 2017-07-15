@@ -8,7 +8,6 @@ python:
     - "3.5"
     - "3.6"
     - "3.7-dev"
-    - "pypy-5.8.0"
 install:
     - pip install -r requirements-test.txt
     - pip install coveralls
