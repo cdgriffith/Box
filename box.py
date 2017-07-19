@@ -77,7 +77,8 @@ def _from_json(json_string=None, filename=None,
     if filename:
         with open(filename, 'r', encoding=encoding, errors=errors) as f:
             if multiline:
-                data = [json.loads(line, **kwargs) for line in f]
+                data = [json.loads(line.strip(), **kwargs) for line in f
+                        if line.strip() and not line.strip().startswith("#")]
             else:
                 data = json.load(f, **kwargs)
     elif json_string:

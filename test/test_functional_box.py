@@ -477,7 +477,7 @@ class TestBoxFunctional(unittest.TestCase):
         assert count == 3
 
     def test_from_multiline(self):
-        content = '{"a": 2}\n{"b": 3}'
+        content = '{"a": 2}\n{"b": 3}\r\n \n'
         with open(tmp_json_file, 'w') as f:
             f.write(content)
 
@@ -532,9 +532,10 @@ class TestBoxFunctional(unittest.TestCase):
             my_box['g']
 
     def test_pickle(self):
+        pic_file = os.path.join(tmp_dir, 'test.p')
         bb = Box(movie_data, conversion_box=False)
-        pickle.dump(bb, open('/tmp/test.p', 'wb'))
-        loaded = pickle.load(open('/tmp/test.p', 'rb'))
+        pickle.dump(bb, open(pic_file, 'wb'))
+        loaded = pickle.load(open(pic_file, 'rb'))
         assert bb == loaded
         assert loaded._box_config['conversion_box'] is False
 
