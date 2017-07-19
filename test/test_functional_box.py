@@ -4,6 +4,8 @@
 from __future__ import absolute_import
 
 import pytest
+import pickle
+from box import *
 
 try:
     from common import *
@@ -528,3 +530,14 @@ class TestBoxFunctional(unittest.TestCase):
 
         with pytest.raises(BoxError):
             my_box['g']
+
+    def test_pickle(self):
+        bb = Box(movie_data, conversion_box=False)
+        pickle.dump(bb, open('/tmp/test.p', 'wb'))
+        loaded = pickle.load(open('/tmp/test.p', 'rb'))
+        assert bb == loaded
+        assert loaded._box_config['conversion_box'] is False
+
+    def test_conversion_dup_only(self):
+        with pytest.raises(BoxError):
+            Box(movie_data, conversion_box=False, box_duplicates='error')

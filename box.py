@@ -230,6 +230,25 @@ def _conversion_checks(item, keys, box_config, check_only=False,
             return k
 
 
+def _get_box_config(cls, kwargs):
+    return {
+            # Internal use only
+            '__converted': set(),
+            '__box_heritage': kwargs.pop('__box_heritage', None),
+            '__hash': None,
+            '__created': False,
+            # Can be changed by user after box creation
+            'default_box': kwargs.pop('default_box', False),
+            'default_box_attr': kwargs.pop('default_box_attr', cls),
+            'conversion_box': kwargs.pop('conversion_box', True),
+            'box_safe_prefix': kwargs.pop('box_safe_prefix', 'x'),
+            'frozen_box': kwargs.pop('frozen_box', False),
+            'camel_killer_box': kwargs.pop('camel_killer_box', False),
+            'modify_tuples_box': kwargs.pop('modify_tuples_box', False),
+            'box_duplicates': kwargs.pop('box_duplicates', 'ignore')
+            }
+
+
 class Box(dict):
     """
 
@@ -245,28 +264,28 @@ class Box(dict):
     :param conversion_box: Check for near matching keys as attributes
     :param modify_tuples_box: Recreate incoming tuples with dicts into Boxes
     :param box_it_up: Recursively create all Boxes from the start
+    :param box_safe_prefix: Conversion box prefix for unsafe attributes
+    :param box_duplicates: "ignore", "error" or "warn" when duplicates exists
+        in a conversion_box
     """
 
     _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml',
                                  'from_yaml', 'from_json']
 
+    def __new__(cls, *args, **kwargs):
+        """
+        Due to the way pickling works in python 3, we need to make sure
+        the box config is created as early as possible.
+        """
+        obj = super(Box, cls).__new__(cls, *args, **kwargs)
+        obj._box_config = _get_box_config(cls, kwargs)
+        return obj
+
     def __init__(self, *args, **kwargs):
-        self._box_config = {
-            # Internal use only
-            '__converted': set(),
-            '__box_heritage': kwargs.pop('__box_heritage', None),
-            '__hash': None,
-            '__created': False,
-            # Can be changed by user after box creation
-            'default_box': kwargs.pop('default_box', False),
-            'default_box_attr': kwargs.pop('default_box_attr', self.__class__),
-            'conversion_box': kwargs.pop('conversion_box', True),
-            'box_safe_prefix': kwargs.pop('box_safe_prefix', 'x'),
-            'frozen_box': kwargs.pop('frozen_box', False),
-            'camel_killer_box': kwargs.pop('camel_killer_box', False),
-            'modify_tuples_box': kwargs.pop('modify_tuples_box', False),
-            'box_duplicates': kwargs.pop('box_duplicates', 'ignore')
-            }
+        self._box_config = _get_box_config(self.__class__, kwargs)
+        if (not self._box_config['conversion_box'] and
+           self._box_config['box_duplicates'] != "ignore"):
+            raise BoxError('box_duplicates are only for conversion_boxes')
         if len(args) == 1:
             if isinstance(args[0], basestring):
                 raise ValueError('Cannot extrapolate Box from string')
@@ -376,12 +395,17 @@ class Box(dict):
             out[copy.deepcopy(k, memodict)] = copy.deepcopy(v, memodict)
         return out
 
+    def __setstate__(self, state):
+        self._box_config = state['_box_config']
+        self.__dict__.update()
+
     def __getitem__(self, item):
         try:
             value = super(Box, self).__getitem__(item)
         except KeyError as err:
             if item == '_box_config':
-                raise BoxError('_box_config key must exist')
+                raise BoxError('_box_config key must exist and does not. '
+                               'This is most likely a bug, please report.')
             default_value = self._box_config['default_box_attr']
             if self._box_config['default_box']:
                 if isinstance(default_value, collections.Callable):
