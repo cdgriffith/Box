@@ -4,6 +4,8 @@
 from __future__ import absolute_import
 
 import pytest
+import pickle
+from box import *
 
 from test.common import *
 
@@ -459,3 +461,81 @@ class TestBoxFunctional(unittest.TestCase):
         circular_list_2 = bl.to_list()
         assert circular_list_2 == circular_list_2[0]
         assert isinstance(circular_list_2, list)
+
+    def test_to_multiline(self):
+        a = BoxList([Box(a=1), Box(b=2), Box(three=5)])
+
+        a.to_json(tmp_json_file, multiline=True)
+        count = 0
+        with open(tmp_json_file) as f:
+            for line in f:
+                assert isinstance(json.loads(line), dict)
+                count += 1
+        assert count == 3
+
+    def test_from_multiline(self):
+        content = '{"a": 2}\n{"b": 3}\r\n \n'
+        with open(tmp_json_file, 'w') as f:
+            f.write(content)
+
+        a = BoxList.from_json(filename=tmp_json_file, multiline=True)
+        assert a[1].b == 3
+
+    def test_duplicate_errors(self):
+        with pytest.raises(BoxError) as err:
+            Box({"?a": 1, "!a": 3}, box_duplicates="error")
+        assert "Duplicate" in str(err)
+
+        Box({"?a": 1, "!a": 3}, box_duplicates="ignore")
+
+        with pytest.warns(UserWarning) as warning:
+            Box({"?a": 1, "!a": 3}, box_duplicates="warn")
+        assert warning[0].message.args[0].startswith("Duplicate")
+
+        my_box = Box({"?a": 1}, box_duplicates="error")
+        with pytest.raises(BoxError):
+            my_box['^a'] = 3
+
+    def test_copy(self):
+        my_box = Box(movie_data)
+        bb = my_box.copy()
+        assert my_box == bb
+        assert isinstance(bb, Box)
+
+        aa = copy.deepcopy(my_box)
+        assert my_box == aa
+        assert isinstance(aa, Box)
+
+        cc = my_box.__copy__()
+        assert my_box == cc
+        assert isinstance(cc, Box)
+
+    def test_custom_key_errors(self):
+        my_box = Box()
+
+        with pytest.raises(BoxKeyError):
+            my_box.g
+
+        with pytest.raises(AttributeError):
+            my_box.g
+
+        with pytest.raises(KeyError):
+            my_box['g']
+
+        with pytest.raises(BoxKeyError):
+            my_box['g']
+
+        with pytest.raises(BoxError):
+            my_box['g']
+
+    def test_pickle(self):
+        pic_file = os.path.join(tmp_dir, 'test.p')
+        bb = Box(movie_data, conversion_box=False)
+        pickle.dump(bb, open(pic_file, 'wb'))
+        loaded = pickle.load(open(pic_file, 'rb'))
+        assert bb == loaded
+        assert loaded._box_config['conversion_box'] is False
+
+    def test_conversion_dup_only(self):
+        with pytest.raises(BoxError):
+            Box(movie_data, conversion_box=False, box_duplicates='error')
