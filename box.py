@@ -38,7 +38,7 @@ else:
     from io import open
 
 __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
-           'BoxError']
+           'BoxError', 'BoxKeyError']
 __author__ = 'Chris Griffith'
 __version__ = '3.1.0'
 
@@ -54,7 +54,11 @@ class BoxError(Exception):
     """Non standard dictionary exceptions"""
 
 
+class BoxKeyError(BoxError, KeyError, AttributeError):
+    """Key does not exist"""
+
 # Abstract converter functions for use in any Box class
+
 
 def _to_json(obj, filename=None,
              encoding="utf-8", errors="strict", **json_kwargs):
@@ -342,15 +346,14 @@ class Box(dict):
         return dict.__contains__(self, item) or hasattr(self, item)
 
     def copy(self):
-        return self.__class__(super(Box, self).copy())
+        return self.__class__(super(self.__class__, self).copy())
 
     def __copy__(self):
-        return self.__class__(super(Box, self).__copy__())
+        return self.__class__(super(self.__class__, self).copy())
 
     def __deepcopy__(self, memodict=None):
         out = self.__class__()
-        if memodict is None:
-            memodict = {}
+        memodict = memodict or {}
         memodict[id(self)] = out
         for k, v in self.items():
             out[copy.deepcopy(k, memodict)] = copy.deepcopy(v, memodict)
@@ -372,7 +375,7 @@ class Box(dict):
                 elif hasattr(default_value, 'copy'):
                     return default_value.copy()
                 return default_value
-            raise err
+            raise BoxKeyError(str(err))
         else:
             return self.__convert_and_store(item, value)
 
@@ -438,7 +441,7 @@ class Box(dict):
                     for k in self.keys():
                         if item == _camel_killer(k):
                             return self.__getitem__(k)
-            raise err
+            raise BoxKeyError(str(err))
         else:
             if item == '_box_config':
                 return value

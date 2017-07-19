@@ -4,7 +4,6 @@
 from __future__ import absolute_import
 
 import pytest
-import copy
 
 try:
     from common import *
@@ -504,3 +503,25 @@ class TestBoxFunctional(unittest.TestCase):
         aa = copy.deepcopy(my_box)
         assert my_box == aa
         assert isinstance(aa, Box)
+
+        cc = my_box.__copy__()
+        assert my_box == cc
+        assert isinstance(cc, Box)
+
+    def test_custom_key_errors(self):
+        my_box = Box()
+
+        with pytest.raises(BoxKeyError):
+            my_box.g
+
+        with pytest.raises(AttributeError):
+            my_box.g
+
+        with pytest.raises(KeyError):
+            my_box['g']
+
+        with pytest.raises(BoxKeyError):
+            my_box['g']
+
+        with pytest.raises(BoxError):
+            my_box['g']
