@@ -13,16 +13,18 @@ Suggestions and bug reporting:
 
 - JiuLi Gao (gaojiuli)
 - Jürgen Hermann (jhermann)
-- /u/tilkau
-- /u/Jumpy89
-- /u/can_dry
-- /u/spidyfan21
+- tilkau [reddit]
+- Jumpy89 [reddit]
+- can_dry [reddit]
+- spidyfan21 [reddit]
 - Casey Havenor (chavenor)
 - wim glenn (wimglenn)
 - Vishwas B Sharma (csurfer)
 - John Benediktsson (mrjbq7)
-- /u/delirious_lettuce
+- delirious_lettuce [reddit]
 - Justin Iso (justiniso)
 - (crazyplum)
 - Christopher Toth (ctoth)
 - RickS (rshap91)
+- askvictor [Hacker News]
+- wouter bolsterlee (wbolster)
