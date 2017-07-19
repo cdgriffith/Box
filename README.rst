@@ -1,6 +1,6 @@
 |BoxImage|
 
-Python dictionaries with recursive dot notation access.
+Python dictionaries with advanced dot notation access.
 
 .. code:: python
 

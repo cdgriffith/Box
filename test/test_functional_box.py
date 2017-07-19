@@ -4,6 +4,7 @@
 from __future__ import absolute_import
 
 import pytest
+import copy
 
 try:
     from common import *
@@ -481,3 +482,25 @@ class TestBoxFunctional(unittest.TestCase):
 
         a = BoxList.from_json(filename=tmp_json_file, multiline=True)
         assert a[1].b == 3
+
+    def test_duplicate_errors(self):
+        try:
+            Box({"?a": 1, "!a": 3}, box_duplicates="error")
+        except BoxError as err:
+            assert "Duplicate" in str(err)
+
+        Box({"?a": 1, "!a": 3}, box_duplicates="ignore")
+
+        with pytest.warns(UserWarning) as warning:
+            Box({"?a": 1, "!a": 3}, box_duplicates="warn")
+        assert warning[0].message.args[0].startswith("Duplicate")
+
+    def test_copy(self):
+        my_box = Box(movie_data)
+        bb = my_box.copy()
+        assert my_box == bb
+        assert isinstance(bb, Box)
+
+        aa = copy.deepcopy(my_box)
+        assert my_box == aa
+        assert isinstance(aa, Box)

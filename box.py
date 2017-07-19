@@ -43,7 +43,8 @@ __author__ = 'Chris Griffith'
 __version__ = '3.1.0'
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
-                  'frozen_box', 'camel_killer_box', 'box_it_up')
+                  'frozen_box', 'camel_killer_box', 'box_it_up',
+                  'box_safe_prefix', 'box_duplicates')
 
 _first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 _all_cap_re = re.compile('([a-z0-9])([A-Z])')
@@ -180,11 +181,11 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
 
 
 def _conversion_checks(item, keys, box_config, check_only=False):
-    if box_config['conversion_box_errors'] != 'ignore':
+    if box_config['box_duplicates'] != 'ignore':
         key_list = [(k,
                      _safe_attr(k, camel_killer=box_config['camel_killer_box'],
                                 replacement_char=box_config[
-                                'conversion_box_replace_char'])) for k in keys]
+                                'box_safe_prefix'])) for k in keys]
         if len(key_list) > len(set(x[1] for x in key_list)):
             seen = set()
             dups = set()
@@ -192,7 +193,7 @@ def _conversion_checks(item, keys, box_config, check_only=False):
                 if x[1] in seen:
                     dups.add("{}({})".format(x[0], x[1]))
                 seen.add(x[1])
-            if box_config['conversion_box_errors'].startswith("warn"):
+            if box_config['box_duplicates'].startswith("warn"):
                 warnings.warn('Duplicate conversion attributes exist: '
                               '{}'.format(dups))
             else:
@@ -204,7 +205,7 @@ def _conversion_checks(item, keys, box_config, check_only=False):
     # But faster for the default 'ignore'
     for k in keys:
         if item == _safe_attr(k, camel_killer=box_config['camel_killer_box'],
-                   replacement_char=box_config['conversion_box_replace_char']):
+                              replacement_char=box_config['box_safe_prefix']):
             return k
 
 
@@ -239,13 +240,11 @@ class Box(dict):
             'default_box': kwargs.pop('default_box', False),
             'default_box_attr': kwargs.pop('default_box_attr', self.__class__),
             'conversion_box': kwargs.pop('conversion_box', True),
-            'conversion_box_replace_char':
-                kwargs.pop('conversion_box_replace_char', 'x'),
+            'box_safe_prefix': kwargs.pop('box_safe_prefix', 'x'),
             'frozen_box': kwargs.pop('frozen_box', False),
             'camel_killer_box': kwargs.pop('camel_killer_box', False),
             'modify_tuples_box': kwargs.pop('modify_tuples_box', False),
-            'conversion_box_errors': kwargs.pop('conversion_box_errors',
-                                                'ignore')
+            'box_duplicates': kwargs.pop('box_duplicates', 'ignore')
             }
         if len(args) == 1:
             if isinstance(args[0], basestring):
@@ -275,7 +274,7 @@ class Box(dict):
             self[k] = v
 
         if (self._box_config['frozen_box'] or box_it or
-           self._box_config['conversion_box_errors'] != 'ignore'):
+           self._box_config['box_duplicates'] != 'ignore'):
             self.box_it_up()
 
         self._box_config['__created'] = True
@@ -324,7 +323,7 @@ class Box(dict):
                 if self._box_config['conversion_box']:
                     key = _safe_attr(key, camel_killer=kill_camel,
                                      replacement_char=self._box_config[
-                                         'conversion_box_replace_char'])
+                                         'box_safe_prefix'])
                     if key:
                         items.add(key)
             if kill_camel:
