@@ -483,16 +483,19 @@ class TestBoxFunctional(unittest.TestCase):
         assert a[1].b == 3
 
     def test_duplicate_errors(self):
-        try:
+        with pytest.raises(BoxError) as err:
             Box({"?a": 1, "!a": 3}, box_duplicates="error")
-        except BoxError as err:
-            assert "Duplicate" in str(err)
+        assert "Duplicate" in str(err)
 
         Box({"?a": 1, "!a": 3}, box_duplicates="ignore")
 
         with pytest.warns(UserWarning) as warning:
             Box({"?a": 1, "!a": 3}, box_duplicates="warn")
         assert warning[0].message.args[0].startswith("Duplicate")
+
+        my_box = Box({"?a": 1}, box_duplicates="error")
+        with pytest.raises(BoxError):
+            my_box['^a'] = 3
 
     def test_copy(self):
         my_box = Box(movie_data)

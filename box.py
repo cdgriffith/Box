@@ -151,6 +151,9 @@ def _safe_attr(attr, camel_killer=False, replacement_char='x'):
     if out in kwlist:
         out = '{0}{1}'.format(replacement_char, out)
 
+    if out[0] not in (string.ascii_letters + "_"):
+        out = '{0}{1}'.format(replacement_char, out)
+
     return re.sub('_+', '_', out)
 
 
@@ -163,7 +166,7 @@ def _camel_killer(attr):
     try:
         attr = str(attr)
     except UnicodeEncodeError:
-        attr = attr = attr.encode("utf-8", "ignore")
+        attr = attr.encode("utf-8", "ignore")
 
     s1 = _first_cap_re.sub(r'\1_\2', attr)
     s2 = _all_cap_re.sub(r'\1_\2', s1)
@@ -184,8 +187,22 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
     return tuple(out_list)
 
 
-def _conversion_checks(item, keys, box_config, check_only=False):
+def _conversion_checks(item, keys, box_config, check_only=False,
+                       pre_check=False):
+    """
+    Internal use for checking if a duplicate safe attribute already exists
+
+    :param item: Item to see if a dup exists
+    :param keys: Keys to check against
+    :param box_config: Easier to pass in than ask for specfic items
+    :param check_only: Don't bother doing the conversion work
+    :param pre_check: Need to add the item to the list of keys to check
+    :return: the original unmodified key, if exists and not check_only
+    """
     if box_config['box_duplicates'] != 'ignore':
+        if pre_check:
+            keys = list(keys) + [item]
+
         key_list = [(k,
                      _safe_attr(k, camel_killer=box_config['camel_killer_box'],
                                 replacement_char=box_config['box_safe_prefix']
@@ -456,7 +473,7 @@ class Box(dict):
             raise BoxError('Box is frozen')
         if self._box_config['conversion_box']:
             _conversion_checks(key, self.keys(), self._box_config,
-                               check_only=True)
+                               check_only=True, pre_check=True)
         super(Box, self).__setitem__(key, value)
         self.__create_lineage()
 
