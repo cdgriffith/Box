@@ -7,6 +7,7 @@ Code contributions:
 
 - Alexandre Decan (AlexandreDecan)
 - dhilipsiva (dhilipsiva)
+- MAA (FooBarQuaxx)
 
 Suggestions and bug reporting:
 
@@ -21,3 +22,7 @@ Suggestions and bug reporting:
 - Vishwas B Sharma (csurfer)
 - John Benediktsson (mrjbq7)
 - /u/delirious_lettuce
+- Justin Iso (justiniso)
+- (crazyplum)
+- Christopher Toth (ctoth)
+- RickS (rshap91)

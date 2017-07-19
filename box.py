@@ -122,7 +122,7 @@ def _safe_key(key):
     try:
         return str(key)
     except UnicodeEncodeError:
-        return key.encode(encoding="utf-8", errors="ignore")
+        return key.encode("utf-8", "ignore")
 
 
 def _safe_attr(attr, camel_killer=False, replacement_char='x'):
@@ -163,7 +163,7 @@ def _camel_killer(attr):
     try:
         attr = str(attr)
     except UnicodeEncodeError:
-        attr = attr.encode(encoding="utf-8", errors="ignore")
+        attr = attr = attr.encode("utf-8", "ignore")
 
     s1 = _first_cap_re.sub(r'\1_\2', attr)
     s2 = _all_cap_re.sub(r'\1_\2', s1)
@@ -188,21 +188,21 @@ def _conversion_checks(item, keys, box_config, check_only=False):
     if box_config['box_duplicates'] != 'ignore':
         key_list = [(k,
                      _safe_attr(k, camel_killer=box_config['camel_killer_box'],
-                                replacement_char=box_config[
-                                'box_safe_prefix'])) for k in keys]
+                                replacement_char=box_config['box_safe_prefix']
+                                )) for k in keys]
         if len(key_list) > len(set(x[1] for x in key_list)):
             seen = set()
             dups = set()
             for x in key_list:
                 if x[1] in seen:
-                    dups.add("{}({})".format(x[0], x[1]))
+                    dups.add("{0}({1})".format(x[0], x[1]))
                 seen.add(x[1])
             if box_config['box_duplicates'].startswith("warn"):
                 warnings.warn('Duplicate conversion attributes exist: '
-                              '{}'.format(dups))
+                              '{0}'.format(dups))
             else:
                 raise BoxError('Duplicate conversion attributes exist: '
-                               '{}'.format(dups))
+                               '{0}'.format(dups))
     if check_only:
         return
     # This way will be slower for warnings, as it will have double work
@@ -380,8 +380,11 @@ class Box(dict):
             return self.__convert_and_store(item, value)
 
     def __box_config(self):
-        return {k: v for k, v in self._box_config.items()
-                if not k.startswith("__")}
+        out = {}
+        for k, v in self._box_config.items():
+            if not k.startswith("__"):
+                out[k] = v
+        return out
 
     def __convert_and_store(self, item, value):
         if item in self._box_config['__converted']:
