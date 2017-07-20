@@ -5,7 +5,6 @@ from __future__ import absolute_import
 
 import pytest
 import pickle
-from box import *
 
 try:
     from common import *
@@ -445,7 +444,7 @@ class TestBoxFunctional(unittest.TestCase):
     def test_circular_references(self):
         circular_dict = {}
         circular_dict['a'] = circular_dict
-        bx = Box(circular_dict)
+        bx = Box(circular_dict, box_it_up=True)
         assert bx.a.a == bx.a
         circular_dict_2 = bx.a.a.a.to_dict()
         assert str(circular_dict_2) == "{'a': {...}}"

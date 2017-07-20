@@ -3,7 +3,7 @@
 #
 # Copyright (c) 2017 - Chris Griffith - MIT License
 """
-Improved dictionary access through recursive dot notation.
+Improved dictionary access through dot notation with additional tools.
 """
 import string
 import sys
@@ -329,7 +329,7 @@ class Box(dict):
         for k in self:
             _conversion_checks(k, self.keys(), self._box_config,
                                check_only=True)
-            if hasattr(self[k], 'box_it_up'):
+            if self[k] is not self and hasattr(self[k], 'box_it_up'):
                 self[k].box_it_up()
 
     def __hash__(self):
@@ -398,7 +398,7 @@ class Box(dict):
 
     def __setstate__(self, state):
         self._box_config = state['_box_config']
-        self.__dict__.update()
+        self.__dict__.update(state)
 
     def __getitem__(self, item):
         try:
@@ -409,10 +409,10 @@ class Box(dict):
                                'This is most likely a bug, please report.')
             default_value = self._box_config['default_box_attr']
             if self._box_config['default_box']:
-                if isinstance(default_value, collections.Callable):
-                    if default_value.__name__ == 'Box':
-                        return self.__class__(__box_heritage=(self, item),
-                                              **self.__box_config())
+                if default_value is self.__class__:
+                    return self.__class__(__box_heritage=(self, item),
+                                          **self.__box_config())
+                elif isinstance(default_value, collections.Callable):
                     return default_value()
                 elif hasattr(default_value, 'copy'):
                     return default_value.copy()
@@ -423,7 +423,7 @@ class Box(dict):
 
     def __box_config(self):
         out = {}
-        for k, v in self._box_config.items():
+        for k, v in self._box_config.copy().items():
             if not k.startswith("__"):
                 out[k] = v
         return out
@@ -565,7 +565,6 @@ class Box(dict):
 
         :return: python dictionary of this Box
         """
-
         out_dict = dict(self)
         for k, v in out_dict.items():
             if v is self:
@@ -839,7 +838,7 @@ class BoxList(list):
 
     def box_it_up(self):
         for v in self:
-            if hasattr(v, 'box_it_up'):
+            if hasattr(v, 'box_it_up') and v is not self:
                 v.box_it_up()
 
 
