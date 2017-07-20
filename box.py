@@ -3,7 +3,7 @@
 #
 # Copyright (c) 2017 - Chris Griffith - MIT License
 """
-Improved dictionary access through recursive dot notation.
+Improved dictionary access through dot notation with additional tools.
 """
 import string
 import sys
@@ -38,7 +38,7 @@ if sys.version_info >= (3, 0):
 else:
     from io import open
 
-__all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
+__all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox', 'TrackerBox',
            'BoxError', 'BoxKeyError']
 __author__ = 'Chris Griffith'
 __version__ = '3.1.0'
@@ -187,6 +187,7 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
         else:
             out_list.append(i)
     return tuple(out_list)
+
 
 def _disable_tracking(func):
     """
@@ -337,7 +338,6 @@ class Box(dict):
 
         self._box_config['__created'] = True
 
-    @_disable_tracking
     def box_it_up(self):
         """
         Perform value lookup for all items in current dictionary,
@@ -347,10 +347,9 @@ class Box(dict):
         for k in self:
             _conversion_checks(k, self.keys(), self._box_config,
                                check_only=True)
-            if hasattr(self[k], 'box_it_up'):
+            if self[k] is not self and hasattr(self[k], 'box_it_up'):
                 self[k].box_it_up()
 
-    @_disable_tracking
     def __hash__(self):
         if self._box_config['frozen_box']:
             if not self._box_config['__hash']:
@@ -361,7 +360,6 @@ class Box(dict):
             return self._box_config['__hash']
         raise TypeError("unhashable type: 'Box'")
 
-    @_disable_tracking
     def __dir__(self):
         allowed = string.ascii_letters + string.digits + '_'
         kill_camel = self._box_config['camel_killer_box']
@@ -418,7 +416,7 @@ class Box(dict):
 
     def __setstate__(self, state):
         self._box_config = state['_box_config']
-        self.__dict__.update()
+        self.__dict__.update(state)
 
     def __getitem__(self, item):
         try:
@@ -429,17 +427,17 @@ class Box(dict):
                                'This is most likely a bug, please report.')
             default_value = self._box_config['default_box_attr']
             if self._box_config['default_box']:
-                if isinstance(default_value, collections.Callable):
-                    if default_value.__name__ == 'Box':
-                        return self.__class__(__box_heritage=(self, item),
-                                              **self.__box_config())
+                if default_value is self.__class__:
+                    return self.__class__(__box_heritage=(self, item),
+                                          **self.__box_config())
+                elif isinstance(default_value, collections.Callable):
                     return default_value()
                 elif hasattr(default_value, 'copy'):
                     return default_value.copy()
                 return default_value
             raise BoxKeyError(str(err))
         else:
-            return self.__convert_and_store(item, value)
+            return self._convert_and_store(item, value)
 
     def __box_config(self):
         out = {}
@@ -448,7 +446,7 @@ class Box(dict):
                 out[k] = v
         return out
 
-    def __convert_and_store(self, item, value):
+    def _convert_and_store(self, item, value):
         if item in self._box_config['__converted']:
             return value
         if isinstance(value, dict) and not isinstance(value, Box):
@@ -510,7 +508,7 @@ class Box(dict):
         else:
             if item == '_box_config':
                 return value
-            return self.__convert_and_store(item, value)
+            return self._convert_and_store(item, value)
 
     def __setitem__(self, key, value):
         if (key != '_box_config' and self._box_config['__created'] and
@@ -578,7 +576,6 @@ class Box(dict):
     def __str__(self):
         return str(self.to_dict())
 
-    @_disable_tracking
     def to_dict(self):
         """
         Turn the Box and sub Boxes back into a native
@@ -710,18 +707,20 @@ class Box(dict):
 
 
 class TrackerBox(Box):
+    """
+    TrackerBox is experimental, do not use in production!
 
+    Tracks items accessed within the box. Accessible by `.box_history()`.
+    """
+
+    @_disable_tracking
     def __init__(self, *args, **kwargs):
-        super(TrackerBox, self).__init__(*args, **kwargs)
+        super(TrackerBox, self).__init__(*args, box_it_up=True, **kwargs)
         track_heritage = self._box_config['__box_heritage']
         self._box_config.update({'__tracker_heritage': track_heritage,
                                  '__track_history': [],
                                  '__track_current_uuid': None,
                                  '__disable_track': False})
-
-    def __box_config(self):
-        return {k: v for k, v in self._box_config.copy().items()
-                if not k.startswith("__")}
 
     @_disable_tracking
     def box_history(self, pos=-1, uid=None):
@@ -741,24 +740,6 @@ class TrackerBox(Box):
             return [last[1]] + self[last[1]].box_history(uid=uid)
         return [last[1]]
 
-    def __getitem__(self, item):
-        try:
-            value = super(Box, self).__getitem__(item)
-        except KeyError as err:
-            if self._box_config['default_box']:
-                default_value = self._box_config['default_box_attr']
-                if isinstance(default_value, collections.Callable):
-                    if default_value.__name__ == 'Box':
-                        return self.__class__(__box_heritage=(self, item),
-                                              **self.__box_config())
-                    return default_value()
-                elif hasattr(default_value, 'copy'):
-                    return default_value.copy()
-                return default_value
-            raise err
-        else:
-            return self.__convert_and_store(item, value)
-
     def __disabled_parent(self):
         heritage = self._box_config['__tracker_heritage']
         if not heritage:
@@ -767,7 +748,7 @@ class TrackerBox(Box):
             return True
         return heritage[0]._TrackerBox__disabled_parent()
 
-    def __convert_and_store(self, item, value):
+    def _convert_and_store(self, item, value):
         if (self._box_config.get('__created') and not
                 self._box_config['__disable_track']):
             heritage = self._box_config['__tracker_heritage']
@@ -781,33 +762,23 @@ class TrackerBox(Box):
                 if not history or history[-1] != (tracker, item):
                     history.append((tracker, item))
 
-        if item in self._box_config['__converted']:
-            return value
-        if isinstance(value, dict) and not isinstance(value, Box):
-            value = self.__class__(value, __box_heritage=(self, item),
-                                   **self.__box_config())
-            self[item] = value
-        elif isinstance(value, list) and not isinstance(value, BoxList):
-            if self._box_config['frozen_box']:
-                value = _recursive_tuples(value, self.__class__,
-                                          recreate_tuples=self._box_config[
-                                              'modify_tuples_box'],
-                                          __box_heritage=(self, item),
-                                          **self.__box_config())
-            else:
-                value = BoxList(value, __box_heritage=(self, item),
-                                box_class=self.__class__,
-                                **self.__box_config())
-            self[item] = value
-        elif (self._box_config['modify_tuples_box'] and
-                  isinstance(value, tuple)):
-            value = _recursive_tuples(value, self.__class__,
-                                      recreate_tuples=True,
-                                      __box_heritage=(self, item),
-                                      **self.__box_config())
-            self[item] = value
-        self._box_config['__converted'].add(item)
-        return value
+        return super(TrackerBox, self)._convert_and_store(item, value)
+
+    @_disable_tracking
+    def to_dict(self):
+        return super(TrackerBox, self).to_dict()
+
+    @_disable_tracking
+    def box_it_up(self):
+        return super(TrackerBox, self).box_it_up()
+
+    @_disable_tracking
+    def __hash__(self):
+        return super(TrackerBox, self).__hash__()
+
+    @_disable_tracking
+    def __dir__(self):
+        return super(TrackerBox, self).__dir__() + ['box_history']
 
 
 class BoxList(list):
@@ -960,7 +931,7 @@ class BoxList(list):
 
     def box_it_up(self):
         for v in self:
-            if hasattr(v, 'box_it_up'):
+            if hasattr(v, 'box_it_up') and v is not self:
                 v.box_it_up()
 
 

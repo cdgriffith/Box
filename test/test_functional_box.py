@@ -5,7 +5,6 @@ from __future__ import absolute_import
 
 import pytest
 import pickle
-from box import *
 
 from test.common import *
 
@@ -442,7 +441,7 @@ class TestBoxFunctional(unittest.TestCase):
     def test_circular_references(self):
         circular_dict = {}
         circular_dict['a'] = circular_dict
-        bx = Box(circular_dict)
+        bx = Box(circular_dict, box_it_up=True)
         assert bx.a.a == bx.a
         circular_dict_2 = bx.a.a.a.to_dict()
         assert str(circular_dict_2) == "{'a': {...}}"
@@ -539,3 +538,11 @@ class TestBoxFunctional(unittest.TestCase):
     def test_conversion_dup_only(self):
         with pytest.raises(BoxError):
             Box(movie_data, conversion_box=False, box_duplicates='error')
+
+    def test_tracker_box(self):
+        bx = TrackerBox(movie_data)
+        assert not bx.box_history()
+        bx.movies.Spaceballs
+        assert bx.box_history() == ['movies', 'Spaceballs']
+
+
