@@ -544,5 +544,11 @@ class TestBoxFunctional(unittest.TestCase):
         assert not bx.box_history()
         bx.movies.Spaceballs
         assert bx.box_history() == ['movies', 'Spaceballs']
+        bx.movies
+        assert bx.box_history() == ['movies']
+        assert bx.box_history(-2) == ['movies', 'Spaceballs']
 
-
+        bx.to_dict()
+        with pytest.raises(BoxError):
+            hash(bx)
+        assert 'box_history' in dir(bx)
