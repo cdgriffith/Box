@@ -152,9 +152,6 @@ def _safe_attr(attr, camel_killer=False, replacement_char='x'):
     if out in kwlist:
         out = '{0}{1}'.format(replacement_char, out)
 
-    if out[0] not in (string.ascii_letters + "_"):
-        out = '{0}{1}'.format(replacement_char, out)
-
     return re.sub('_+', '_', out)
 
 
