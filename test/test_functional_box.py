@@ -321,6 +321,7 @@ class TestBoxFunctional(unittest.TestCase):
         assert isinstance(bx._box_config, dict)
         with pytest.raises(BoxError):
             delattr(bx, '_box_config')
+        bx._box_config 
 
     def test_default_box(self):
         bx = Box(test_dict, default_box=True, default_box_attr={'hi': 'there'})
