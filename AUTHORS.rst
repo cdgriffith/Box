@@ -28,3 +28,4 @@ Suggestions and bug reporting:
 - RickS (rshap91)
 - askvictor [Hacker News]
 - wouter bolsterlee (wbolster)
+- Mickaël Thomas (mickael9)

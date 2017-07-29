@@ -418,6 +418,12 @@ class Box(dict):
         else:
             return self.__convert_and_store(item, value)
 
+    def values(self):
+        return [self[x] for x in self]
+
+    def items(self):
+        return [(x, self[x]) for x in self]
+
     def __box_config(self):
         out = {}
         for k, v in self._box_config.copy().items():

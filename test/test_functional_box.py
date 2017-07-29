@@ -541,3 +541,23 @@ class TestBoxFunctional(unittest.TestCase):
     def test_conversion_dup_only(self):
         with pytest.raises(BoxError):
             Box(movie_data, conversion_box=False, box_duplicates='error')
+
+    def test_values(self):
+        b = Box()
+        b.foo = {}
+        assert isinstance(b.values()[0], Box)
+        c = Box()
+        c.foohoo = []
+        assert isinstance(c.values()[0], BoxList)
+        d = Box(movie_data)
+        assert len(movie_data["movies"].values()) == len(d.movies.values())
+
+    def test_items(self):
+        b = Box()
+        b.foo = {}
+        assert isinstance(b.items()[0][1], Box)
+        c = Box()
+        c.foohoo = []
+        assert isinstance(c.items()[0][1], BoxList)
+        d = Box(movie_data)
+        assert len(movie_data["movies"].items()) == len(d.movies.items())
