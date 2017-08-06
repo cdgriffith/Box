@@ -29,6 +29,8 @@ class TestBoxFunctional(unittest.TestCase):
         assert dict(getattr(bx, 'Key 2')) == test_dict['Key 2']
         setattr(bx, 'TEST_KEY', 'VALUE')
         assert bx.TEST_KEY == 'VALUE'
+        setattr(bx, 'TEST_KEY', 'VALUE2')
+        assert bx.TEST_KEY == 'VALUE2'
         delattr(bx, 'TEST_KEY')
         assert 'TEST_KEY' not in bx.to_dict(), bx.to_dict()
         assert isinstance(bx['Key 2'].Key4, Box)
@@ -321,7 +323,7 @@ class TestBoxFunctional(unittest.TestCase):
         assert isinstance(bx._box_config, dict)
         with pytest.raises(BoxError):
             delattr(bx, '_box_config')
-        bx._box_config 
+        bx._box_config
 
     def test_default_box(self):
         bx = Box(test_dict, default_box=True, default_box_attr={'hi': 'there'})
@@ -512,6 +514,10 @@ class TestBoxFunctional(unittest.TestCase):
         cc = my_box.__copy__()
         assert my_box == cc
         assert isinstance(cc, Box)
+
+        dd = BoxList([my_box])
+        assert dd == copy.copy(dd)
+        assert isinstance(copy.copy(dd), BoxList)
 
     def test_custom_key_errors(self):
         my_box = Box()
