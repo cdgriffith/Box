@@ -725,6 +725,16 @@ class BoxList(list):
                         BoxList(p_object))
         super(BoxList, self).insert(index, p_object)
 
+    def __getstate__(self):
+        return {'box_class': self.box_class,
+                'box_options': self.box_options,
+                'box_org_ref': self.box_org_ref}
+
+    def __setstate__(self, state):
+        self.box_class = state['box_class']
+        self.box_options = state['box_options']
+        self.box_org_ref = state['box_org_ref']
+
     def __repr__(self):
         return "<BoxList: {0}>".format(self.to_list())
 
