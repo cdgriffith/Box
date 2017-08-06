@@ -731,6 +731,17 @@ class BoxList(list):
     def __str__(self):
         return str(self.to_list())
 
+    def __copy__(self):
+        return self.__class__(super(self.__class__, self).copy())
+
+    def __deepcopy__(self, memodict=None):
+        out = self.__class__()
+        memodict = memodict or {}
+        memodict[id(self)] = out
+        for k in self:
+            out.append(copy.deepcopy(k))
+        return out
+
     def to_list(self):
         new_list = []
         for x in self:
