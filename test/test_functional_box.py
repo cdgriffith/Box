@@ -29,8 +29,6 @@ class TestBoxFunctional(unittest.TestCase):
         assert dict(getattr(bx, 'Key 2')) == test_dict['Key 2']
         setattr(bx, 'TEST_KEY', 'VALUE')
         assert bx.TEST_KEY == 'VALUE'
-        setattr(bx, 'TEST_KEY', 'VALUE2')
-        assert bx.TEST_KEY == 'VALUE2'
         delattr(bx, 'TEST_KEY')
         assert 'TEST_KEY' not in bx.to_dict(), bx.to_dict()
         assert isinstance(bx['Key 2'].Key4, Box)
@@ -39,6 +37,9 @@ class TestBoxFunctional(unittest.TestCase):
         bx2 = Box([((3, 4), "A"), ("_box_config", 'test')])
         assert bx2[(3, 4)] == "A"
         assert bx2['_box_config'] == 'test'
+        bx3 = Box(a=4, conversion_box=False)
+        setattr(bx3, 'key', 2)
+        assert bx3.key == 2
 
     def test_box_modifiy_at_depth(self):
         bx = Box(**test_dict)
