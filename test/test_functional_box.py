@@ -4,6 +4,7 @@
 from __future__ import absolute_import
 
 import pytest
+import pickle
 
 try:
     from common import *
@@ -36,6 +37,9 @@ class TestBoxFunctional(unittest.TestCase):
         bx2 = Box([((3, 4), "A"), ("_box_config", 'test')])
         assert bx2[(3, 4)] == "A"
         assert bx2['_box_config'] == 'test'
+        bx3 = Box(a=4, conversion_box=False)
+        setattr(bx3, 'key', 2)
+        assert bx3.key == 2
 
     def test_box_modifiy_at_depth(self):
         bx = Box(**test_dict)
@@ -320,6 +324,7 @@ class TestBoxFunctional(unittest.TestCase):
         assert isinstance(bx._box_config, dict)
         with pytest.raises(BoxError):
             delattr(bx, '_box_config')
+        bx._box_config
 
     def test_default_box(self):
         bx = Box(test_dict, default_box=True, default_box_attr={'hi': 'there'})
@@ -443,7 +448,7 @@ class TestBoxFunctional(unittest.TestCase):
     def test_circular_references(self):
         circular_dict = {}
         circular_dict['a'] = circular_dict
-        bx = Box(circular_dict)
+        bx = Box(circular_dict, box_it_up=True)
         assert bx.a.a == bx.a
         circular_dict_2 = bx.a.a.a.to_dict()
         assert str(circular_dict_2) == "{'a': {...}}"
@@ -462,3 +467,105 @@ class TestBoxFunctional(unittest.TestCase):
         circular_list_2 = bl.to_list()
         assert circular_list_2 == circular_list_2[0]
         assert isinstance(circular_list_2, list)
+
+    def test_to_multiline(self):
+        a = BoxList([Box(a=1), Box(b=2), Box(three=5)])
+
+        a.to_json(tmp_json_file, multiline=True)
+        count = 0
+        with open(tmp_json_file) as f:
+            for line in f:
+                assert isinstance(json.loads(line), dict)
+                count += 1
+        assert count == 3
+
+    def test_from_multiline(self):
+        content = '{"a": 2}\n{"b": 3}\r\n \n'
+        with open(tmp_json_file, 'w') as f:
+            f.write(content)
+
+        a = BoxList.from_json(filename=tmp_json_file, multiline=True)
+        assert a[1].b == 3
+
+    def test_duplicate_errors(self):
+        with pytest.raises(BoxError) as err:
+            Box({"?a": 1, "!a": 3}, box_duplicates="error")
+        assert "Duplicate" in str(err)
+
+        Box({"?a": 1, "!a": 3}, box_duplicates="ignore")
+
+        with pytest.warns(UserWarning) as warning:
+            Box({"?a": 1, "!a": 3}, box_duplicates="warn")
+        assert warning[0].message.args[0].startswith("Duplicate")
+
+        my_box = Box({"?a": 1}, box_duplicates="error")
+        with pytest.raises(BoxError):
+            my_box['^a'] = 3
+
+    def test_copy(self):
+        my_box = Box(movie_data)
+        bb = my_box.copy()
+        assert my_box == bb
+        assert isinstance(bb, Box)
+
+        aa = copy.deepcopy(my_box)
+        assert my_box == aa
+        assert isinstance(aa, Box)
+
+        cc = my_box.__copy__()
+        assert my_box == cc
+        assert isinstance(cc, Box)
+
+        dd = BoxList([my_box])
+        assert dd == copy.copy(dd)
+        assert isinstance(copy.copy(dd), BoxList)
+
+    def test_custom_key_errors(self):
+        my_box = Box()
+
+        with pytest.raises(BoxKeyError):
+            my_box.g
+
+        with pytest.raises(AttributeError):
+            my_box.g
+
+        with pytest.raises(KeyError):
+            my_box['g']
+
+        with pytest.raises(BoxKeyError):
+            my_box['g']
+
+        with pytest.raises(BoxError):
+            my_box['g']
+
+    def test_pickle(self):
+        pic_file = os.path.join(tmp_dir, 'test.p')
+        bb = Box(movie_data, conversion_box=False)
+        pickle.dump(bb, open(pic_file, 'wb'))
+        loaded = pickle.load(open(pic_file, 'rb'))
+        assert bb == loaded
+        assert loaded._box_config['conversion_box'] is False
+
+    def test_conversion_dup_only(self):
+        with pytest.raises(BoxError):
+            Box(movie_data, conversion_box=False, box_duplicates='error')
+
+    def test_values(self):
+        b = Box()
+        b.foo = {}
+        assert isinstance(b.values()[0], Box)
+        c = Box()
+        c.foohoo = []
+        assert isinstance(c.values()[0], BoxList)
+        d = Box(movie_data)
+        assert len(movie_data["movies"].values()) == len(d.movies.values())
+
+    def test_items(self):
+        b = Box()
+        b.foo = {}
+        assert isinstance(b.items()[0][1], Box)
+        c = Box()
+        c.foohoo = []
+        assert isinstance(c.items()[0][1], BoxList)
+        d = Box(movie_data)
+        assert len(movie_data["movies"].items()) == len(d.movies.items())
