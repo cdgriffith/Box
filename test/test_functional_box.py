@@ -7,7 +7,7 @@ import pytest
 import pickle
 
 try:
-    from common import *
+    from test.common import *
 except ImportError:
     from .common import *
 
