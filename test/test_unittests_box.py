@@ -3,7 +3,7 @@
 from __future__ import absolute_import
 
 try:
-    from common import *
+    from test.common import *
 except ImportError:
     from .common import *
 
