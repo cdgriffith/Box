@@ -607,10 +607,16 @@ class TestBoxFunctional(unittest.TestCase):
         p.start()
         p.join()
 
+        assert queue.get()
+
 
 def mp_queue_test(q):
     bx = q.get()
-    assert isinstance(bx, Box)
-    assert bx.a == 4
-
+    try:
+        assert isinstance(bx, Box)
+        assert bx.a == 4
+    except AssertionError:
+        q.put(False)
+    else:
+        q.put(True)
 
