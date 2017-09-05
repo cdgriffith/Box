@@ -3,11 +3,12 @@
 # Test files gathered from json.org and yaml.org
 from __future__ import absolute_import
 
+from multiprocessing import Process, Queue
 import pytest
 import pickle
 
 try:
-    from common import *
+    from test.common import *
 except ImportError:
     from .common import *
 
@@ -40,8 +41,10 @@ class TestBoxFunctional(unittest.TestCase):
         bx3 = Box(a=4, conversion_box=False)
         setattr(bx3, 'key', 2)
         assert bx3.key == 2
+        bx3.__setattr__("Test", 3)
+        assert bx3.Test == 3
 
-    def test_box_modifiy_at_depth(self):
+    def test_box_modify_at_depth(self):
         bx = Box(**test_dict)
         assert 'key1' in bx
         assert 'key2' not in bx
@@ -569,3 +572,51 @@ class TestBoxFunctional(unittest.TestCase):
         assert isinstance(c.items()[0][1], BoxList)
         d = Box(movie_data)
         assert len(movie_data["movies"].items()) == len(d.movies.items())
+
+    def test_get(self):
+        bx = Box()
+        bx["c"] = {}
+        assert isinstance(bx.get("c"), Box)
+        assert isinstance(bx.get("b", {}), Box)
+        assert "a" in bx.get("a", Box(a=1, conversion_box=False))
+        assert isinstance(bx.get("a", [1, 2]), BoxList)
+
+    def test_is_in(self):
+        bx = Box()
+        dbx = Box(default_box=True)
+        assert "a" not in bx
+        assert "a" not in dbx
+        if not PY3:
+            assert not bx.has_key('a')
+            assert not dbx.has_key('a')
+        bx["b"] = 1
+        dbx["b"] = {}
+        assert "b" in bx
+        assert "b" in dbx
+        if not PY3:
+            assert bx.has_key('b')
+            assert dbx.has_key('b')
+
+    def test_through_queue(self):
+        my_box = Box(a=4, c={"d": 3})
+
+        queue = Queue()
+        queue.put(my_box)
+
+        p = Process(target=mp_queue_test, args=(queue, ))
+        p.start()
+        p.join()
+
+        assert queue.get()
+
+
+def mp_queue_test(q):
+    bx = q.get()
+    try:
+        assert isinstance(bx, Box)
+        assert bx.a == 4
+    except AssertionError:
+        q.put(False)
+    else:
+        q.put(True)
+

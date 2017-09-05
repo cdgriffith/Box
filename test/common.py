@@ -12,6 +12,8 @@ except ImportError:
 
 import box
 from box import *
+PY3 = sys.version_info >= (3, 0)
+
 test_root = os.path.abspath(os.path.dirname(__file__))
 tmp_dir = os.path.join(test_root, "tmp")
 

@@ -8,6 +8,7 @@ Code contributions:
 - Alexandre Decan (AlexandreDecan)
 - dhilipsiva (dhilipsiva)
 - MAA (FooBarQuaxx)
+- Jiang Chen (criver)
 
 Suggestions and bug reporting:
 
