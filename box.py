@@ -380,8 +380,10 @@ class Box(dict):
         try:
             return self[key]
         except KeyError:
-            if isinstance(default, dict):
-                return Box()
+            if isinstance(default, dict) and not isinstance(default, Box):
+                return Box(default)
+            if isinstance(default, list) and not isinstance(default, BoxList):
+                return BoxList(default)
             return default
 
     def copy(self):

@@ -577,6 +577,8 @@ class TestBoxFunctional(unittest.TestCase):
         bx["c"] = {}
         assert isinstance(bx.get("c"), Box)
         assert isinstance(bx.get("b", {}), Box)
+        assert "a" in bx.get("a", Box(a=1, conversion_box=False))
+        assert isinstance(bx.get("a", [1, 2]), BoxList)
 
     def test_is_in(self):
         bx = Box()
