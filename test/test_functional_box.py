@@ -40,8 +40,10 @@ class TestBoxFunctional(unittest.TestCase):
         bx3 = Box(a=4, conversion_box=False)
         setattr(bx3, 'key', 2)
         assert bx3.key == 2
+        bx3.__setattr__("Test", 3)
+        assert bx3.Test == 3
 
-    def test_box_modifiy_at_depth(self):
+    def test_box_modify_at_depth(self):
         bx = Box(**test_dict)
         assert 'key1' in bx
         assert 'key2' not in bx
@@ -576,16 +578,18 @@ class TestBoxFunctional(unittest.TestCase):
         assert isinstance(bx.get("c"), Box)
         assert isinstance(bx.get("b", {}), Box)
 
-    def is_in(self):
+    def test_is_in(self):
         bx = Box()
         dbx = Box(default_box=True)
         assert "a" not in bx
         assert "a" not in dbx
-        assert not bx.has_key('a')
-        assert not dbx.hash_key('a')
+        if not PY3:
+            assert not bx.has_key('a')
+            assert not dbx.has_key('a')
         bx["b"] = 1
         dbx["b"] = {}
         assert "b" in bx
         assert "b" in dbx
-        assert bx.has_key('b')
-        assert dbx.hash_key('b')
+        if not PY3:
+            assert bx.has_key('b')
+            assert dbx.has_key('b')

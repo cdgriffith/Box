@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+Version 3.1.1
+~~~~~~~~~~~~~
+
+* Fixing __contains__ (thanks to Jiang Chen)
+* Fixing get could return non box objects
+
 Version 3.1.0
 ~~~~~~~~~~~~~
 
