@@ -376,6 +376,14 @@ class Box(dict):
 
         return list(items)
 
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            if isinstance(default, dict):
+                return Box()
+            return default
+
     def copy(self):
         return self.__class__(super(self.__class__, self).copy())
 

@@ -569,3 +569,23 @@ class TestBoxFunctional(unittest.TestCase):
         assert isinstance(c.items()[0][1], BoxList)
         d = Box(movie_data)
         assert len(movie_data["movies"].items()) == len(d.movies.items())
+
+    def test_get(self):
+        bx = Box()
+        bx["c"] = {}
+        assert isinstance(bx.get("c"), Box)
+        assert isinstance(bx.get("b", {}), Box)
+
+    def is_in(self):
+        bx = Box()
+        dbx = Box(default_box=True)
+        assert "a" not in bx
+        assert "a" not in dbx
+        assert not bx.has_key('a')
+        assert not dbx.hash_key('a')
+        bx["b"] = 1
+        dbx["b"] = {}
+        assert "b" in bx
+        assert "b" in dbx
+        assert bx.has_key('b')
+        assert dbx.hash_key('b')
