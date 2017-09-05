@@ -4,13 +4,13 @@ Changelog
 Version 3.1.1
 ~~~~~~~~~~~~~
 
-* Fixing __contains__ (thanks to Jiang Chen)
-* Fixing get could return non box objects
+* Fixing `__contains__` (thanks to Jiang Chen)
+* Fixing `get` could return non box objects
 
 Version 3.1.0
 ~~~~~~~~~~~~~
 
-* Adding copy and deepcopy support that with return a Box object
+* Adding `copy` and `deepcopy` support that with return a Box object
 * Adding support for customizable safe attr replacement
 * Adding custom error for missing keys
 * Changing that for this 3.x release, 2.6 support exists

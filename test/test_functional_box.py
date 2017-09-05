@@ -3,6 +3,7 @@
 # Test files gathered from json.org and yaml.org
 from __future__ import absolute_import
 
+from multiprocessing import Process, Queue
 import pytest
 import pickle
 
@@ -595,3 +596,21 @@ class TestBoxFunctional(unittest.TestCase):
         if not PY3:
             assert bx.has_key('b')
             assert dbx.has_key('b')
+
+    def test_through_queue(self):
+        my_box = Box(a=4, c={"d": 3})
+
+        queue = Queue()
+        queue.put(my_box)
+
+        p = Process(target=mp_queue_test, args=(queue, ))
+        p.start()
+        p.join()
+
+
+def mp_queue_test(q):
+    bx = q.get()
+    assert isinstance(bx, Box)
+    assert bx.a == 4
+
+
