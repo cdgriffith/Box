@@ -55,7 +55,9 @@ jobs:
             python setup.py bdist_wheel
       - run:
           name: coveralls
-          command: coveralls
+          command: |
+            . venv/bin/activate
+            coveralls
 
       - store_artifacts:
           path: dist
