@@ -7,3 +7,4 @@ addict
 dotmap
 reusables
 memory_profiler
+wheel
