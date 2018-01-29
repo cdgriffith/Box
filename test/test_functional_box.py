@@ -355,9 +355,6 @@ class TestBoxFunctional(unittest.TestCase):
         assert con_kill_box.camel_case == 'Item'
         assert con_kill_box.x321_camel_case_fever == 'Safe'
 
-        with pytest.raises(BoxKeyError):
-            assert con_kill_box.CamelCase
-
     def test_default_and_camel_killer_box(self):
         td = extended_test_dict.copy()
         td['CamelCase'] = 'Item'
