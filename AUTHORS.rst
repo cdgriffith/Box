@@ -9,6 +9,7 @@ Code contributions:
 - dhilipsiva (dhilipsiva)
 - MAA (FooBarQuaxx)
 - Jiang Chen (criver)
+- Matan Rosenberg (matan129)
 
 Suggestions and bug reporting:
 

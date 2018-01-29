@@ -355,6 +355,14 @@ class TestBoxFunctional(unittest.TestCase):
         assert con_kill_box.camel_case == 'Item'
         assert con_kill_box.x321_camel_case_fever == 'Safe'
 
+    def test_default_and_camel_killer_box(self):
+        td = extended_test_dict.copy()
+        td['CamelCase'] = 'Item'
+
+        killer_default_box = Box(td, camel_killer_box=True, default_box=True)
+
+        assert killer_default_box.camel_case == 'Item'
+
     def test_property_box(self):
         td = test_dict.copy()
         td['inner'] = {'CamelCase': 'Item'}

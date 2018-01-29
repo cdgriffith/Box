@@ -411,16 +411,7 @@ class Box(dict):
             if item == '_box_config':
                 raise BoxError('_box_config key must exist and does not. '
                                'This is most likely a bug, please report.')
-            default_value = self._box_config['default_box_attr']
-            if self._box_config['default_box']:
-                if default_value is self.__class__:
-                    return self.__class__(__box_heritage=(self, item),
-                                          **self.__box_config())
-                elif isinstance(default_value, collections.Callable):
-                    return default_value()
-                elif hasattr(default_value, 'copy'):
-                    return default_value.copy()
-                return default_value
+
             raise BoxKeyError(str(err))
         else:
             return self.__convert_and_store(item, value)
@@ -471,7 +462,7 @@ class Box(dict):
         if (self._box_config['__box_heritage'] and
                 self._box_config['__created']):
             past, item = self._box_config['__box_heritage']
-            if not past[item]:
+            if item not in past:
                 past[item] = self
             self._box_config['__box_heritage'] = None
 
@@ -482,20 +473,30 @@ class Box(dict):
             except KeyError:
                 value = object.__getattribute__(self, item)
         except AttributeError as err:
-            try:
-                return self.__getitem__(item)
-            except KeyError:
-                if item == '_box_config':
-                    raise BoxError('_box_config key must exist')
-                kill_camel = self._box_config['camel_killer_box']
-                if self._box_config['conversion_box'] and item:
-                    k = _conversion_checks(item, self.keys(), self._box_config)
-                    if k:
+            if item == '_box_config':
+                raise BoxError('_box_config key must exist')
+
+            kill_camel = self._box_config['camel_killer_box']
+            if self._box_config['conversion_box'] and item:
+                k = _conversion_checks(item, self.keys(), self._box_config)
+                if k:
+                    return self.__getitem__(k)
+            if kill_camel:
+                for k in self.keys():
+                    if item == _camel_killer(k):
                         return self.__getitem__(k)
-                if kill_camel:
-                    for k in self.keys():
-                        if item == _camel_killer(k):
-                            return self.__getitem__(k)
+
+            default_value = self._box_config['default_box_attr']
+            if self._box_config['default_box']:
+                if default_value is self.__class__:
+                    return self.__class__(__box_heritage=(self, item),
+                                          **self.__box_config())
+                elif isinstance(default_value, collections.Callable):
+                    return default_value()
+                elif hasattr(default_value, 'copy'):
+                    return default_value.copy()
+                return default_value
+
             raise BoxKeyError(str(err))
         else:
             if item == '_box_config':
