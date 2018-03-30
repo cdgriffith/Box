@@ -8,7 +8,7 @@ source:
 requirements:
   build:
     - pytest
-    - coverage >= 3.6
+    - coverage >=3.6
     - tox
     - pytest-cov
     - PyYAML
