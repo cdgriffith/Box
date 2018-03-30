@@ -58,5 +58,5 @@ test_script:
   - "py.test --cov=box test/"
 
 on_success:
-  - "coveralls"
+  # - "coveralls"  # was not working for me!
   - bash -c "if [ $APPVEYOR_REPO_BRANCH = 'master' ]; then conda build --python $PYTHON_VERSION --user janssen --token $ANACONDA_TOKEN conda/box; fi"
