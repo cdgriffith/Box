@@ -29,8 +29,9 @@ install:
 - conda config --set anaconda_upload yes
 - pip install -r requirements-test.txt
 - pip install coveralls
+- pip install .
 
-script: PYTHONPATH=. py.test --cov=box test/
+script: py.test --cov=box test/
 
 after_success:
     - coveralls
