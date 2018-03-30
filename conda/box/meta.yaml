@@ -8,6 +8,7 @@ source:
 requirements:
   build:
     - PyYAML
+    - pytest-runner
 
   run:
     - PyYAML
