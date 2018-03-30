@@ -54,7 +54,7 @@ build: false  # Not a C# project, build stuff at the test step instead.
 
 test_script:
   # Run the project tests
-  - $Env:PATH="$Env:PATH;."
+  - Env:PATH="$Env:PATH;."
   - "python py.test --cov=box test/"
 
 on_success:
