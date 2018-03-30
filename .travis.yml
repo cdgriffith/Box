@@ -1,15 +1,43 @@
-sudo: required
-dist: trusty
-language: python
-python:
-    - "2.6"
-    - "2.7"
-    - "3.3"
-    - "3.4"
-    - "3.5"
-    - "3.6"
+matrix:
+  include:
+    - os: linux
+      language: python
+      env: MINICONDA="https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh" PYTHONVER="2.7"
+    - os: linux
+      language: python
+      env: MINICONDA="https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh" PYTHONVER="3.5"
+    - os: linux
+      language: python
+      env: MINICONDA="https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh" PYTHONVER="3.6"
+    - os: osx
+      language: generic
+      env: MINICONDA="https://repo.continuum.io/miniconda/Miniconda2-latest-MacOSX-x86_64.sh" PYTHONVER="2.7"
+    - os: osx
+      language: generic
+      env: MINICONDA="https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh" PYTHONVER="3.5"
+    - os: osx
+      language: generic
+      env: MINICONDA="https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh" PYTHONVER="3.6"
+
 install:
-    - pip install -r requirements-test.txt
-    - pip install coveralls
-script: PYTHONPATH=. py.test --cov=box test/
-after_success: coveralls
+- wget ${MINICONDA} -O miniconda.sh
+- bash miniconda.sh -b -p $HOME/miniconda
+- export PATH="$HOME/miniconda/bin:$PATH"
+- conda config --set always_yes yes --set changeps1 no
+- conda update -q conda
+- conda install conda-build anaconda-client
+- conda config --set anaconda_upload yes
+- pip install -r requirements-test.txt
+- pip install coveralls
+- pip install .
+
+script: py.test --cov=box test/
+
+after_success:
+    - coveralls
+
+deploy:
+  - provider: script
+    script: conda build --python ${PYTHONVER} --user janssen --token ${CONDA_UPLOAD_TOKEN} conda/box
+    on:
+      branch: master
