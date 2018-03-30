@@ -27,8 +27,6 @@ install:
 - conda update -q conda
 - conda install conda-build anaconda-client
 - conda config --set anaconda_upload yes
-
-script:
 - pip install -r requirements-test.txt
 - pip install coveralls
 
@@ -36,4 +34,9 @@ script: PYTHONPATH=. py.test --cov=box test/
 
 after_success:
     - coveralls
-    - conda build --python ${PYTHONVER} --user janssen --token ${CONDA_UPLOAD_TOKEN} conda/box
+
+deploy:
+  - provider: script
+    script: conda build --python ${PYTHONVER} --user pyiron --token ${CONDA_UPLOAD_TOKEN} conda/box
+    on:
+      branch: master
