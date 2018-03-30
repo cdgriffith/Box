@@ -49,12 +49,12 @@ install:
 - "conda config --set anaconda_upload yes"
 - "pip install -r requirements-test.txt"
 - "pip install coveralls"
+- "pip install ."
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
 test_script:
   # Run the project tests
-  - Env:PATH="$Env:PATH;."
   - "python py.test --cov=box test/"
 
 on_success:
