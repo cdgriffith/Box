@@ -32,8 +32,7 @@ script:
 - pip install -r requirements-test.txt
 - pip install coveralls
 
-script:
-    - PYTHONPATH=. py.test --cov=box test/
+script: PYTHONPATH=. py.test --cov=box test/
 
 after_success:
     - coveralls
