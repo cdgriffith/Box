@@ -301,9 +301,6 @@ snake_case_attributes.
       cameled.bad_habit
       # "I just can't stop!"
 
-If this is used along side `conversion_box`, which is enabled by default,
-all attributes will only be accessible with lowercase letters.
-
 
 BoxList
 -------

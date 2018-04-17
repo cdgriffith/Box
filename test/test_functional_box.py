@@ -355,6 +355,15 @@ class TestBoxFunctional(unittest.TestCase):
         assert con_kill_box.camel_case == 'Item'
         assert con_kill_box.x321_camel_case_fever == 'Safe'
 
+    def test_default_and_camel_killer_box(self):
+        td = extended_test_dict.copy()
+        td['CamelCase'] = 'Item'
+        killer_default_box = Box(td, camel_killer_box=True, default_box=True)
+        assert killer_default_box.camel_case == 'Item'
+        assert killer_default_box.CamelCase == 'Item'
+        assert isinstance(killer_default_box.does_not_exist, Box)
+        assert isinstance(killer_default_box['does_not_exist'], Box)
+
     def test_property_box(self):
         td = test_dict.copy()
         td['inner'] = {'CamelCase': 'Item'}
@@ -608,6 +617,13 @@ class TestBoxFunctional(unittest.TestCase):
         p.join()
 
         assert queue.get()
+
+    def test_update_with_integer(self):
+        bx = Box()
+        bx[1] = 4
+        assert bx[1] == 4
+        bx.update({1: 2})
+        assert bx[1] == 2
 
 
 def mp_queue_test(q):
