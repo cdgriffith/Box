@@ -409,8 +409,8 @@ class Box(dict):
             value = super(Box, self).__getitem__(item)
         except KeyError as err:
             if item == '_box_config':
-                raise BoxError('_box_config key must exist and does not. '
-                               'This is most likely a bug, please report.')
+                raise BoxKeyError('_box_config should only exist as an '
+                                  'attribute and is never defaulted')
             if self._box_config['default_box'] and not _ignore_default:
                 return self.__get_default(item)
             raise BoxKeyError(str(err))
