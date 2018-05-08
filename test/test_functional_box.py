@@ -355,6 +355,15 @@ class TestBoxFunctional(unittest.TestCase):
         assert con_kill_box.camel_case == 'Item'
         assert con_kill_box.x321_camel_case_fever == 'Safe'
 
+    def test_default_and_camel_killer_box(self):
+        td = extended_test_dict.copy()
+        td['CamelCase'] = 'Item'
+        killer_default_box = Box(td, camel_killer_box=True, default_box=True)
+        assert killer_default_box.camel_case == 'Item'
+        assert killer_default_box.CamelCase == 'Item'
+        assert isinstance(killer_default_box.does_not_exist, Box)
+        assert isinstance(killer_default_box['does_not_exist'], Box)
+
     def test_property_box(self):
         td = test_dict.copy()
         td['inner'] = {'CamelCase': 'Item'}
@@ -556,20 +565,20 @@ class TestBoxFunctional(unittest.TestCase):
     def test_values(self):
         b = Box()
         b.foo = {}
-        assert isinstance(b.values()[0], Box)
+        assert isinstance(list(b.values())[0], Box)
         c = Box()
         c.foohoo = []
-        assert isinstance(c.values()[0], BoxList)
+        assert isinstance(list(c.values())[0], BoxList)
         d = Box(movie_data)
         assert len(movie_data["movies"].values()) == len(d.movies.values())
 
     def test_items(self):
         b = Box()
         b.foo = {}
-        assert isinstance(b.items()[0][1], Box)
+        assert isinstance(list(b.items())[0][1], Box)
         c = Box()
         c.foohoo = []
-        assert isinstance(c.items()[0][1], BoxList)
+        assert isinstance(list(c.items())[0][1], BoxList)
         d = Box(movie_data)
         assert len(movie_data["movies"].items()) == len(d.movies.items())
 
@@ -586,16 +595,10 @@ class TestBoxFunctional(unittest.TestCase):
         dbx = Box(default_box=True)
         assert "a" not in bx
         assert "a" not in dbx
-        if not PY3:
-            assert not bx.has_key('a')
-            assert not dbx.has_key('a')
         bx["b"] = 1
         dbx["b"] = {}
         assert "b" in bx
         assert "b" in dbx
-        if not PY3:
-            assert bx.has_key('b')
-            assert dbx.has_key('b')
 
     def test_through_queue(self):
         my_box = Box(a=4, c={"d": 3})
@@ -609,6 +612,20 @@ class TestBoxFunctional(unittest.TestCase):
 
         assert queue.get()
 
+    def test_update_with_integer(self):
+        bx = Box()
+        bx[1] = 4
+        assert bx[1] == 4
+        bx.update({1: 2})
+        assert bx[1] == 2
+
+    def test_get_box_config(self):
+        bx = Box()
+        bx_config = bx.__getattr__('_box_config')
+        assert bx_config
+        with pytest.raises(BoxKeyError):
+            bx['_box_config']
+
 
 def mp_queue_test(q):
     bx = q.get()
@@ -619,4 +636,3 @@ def mp_queue_test(q):
         q.put(False)
     else:
         q.put(True)
-

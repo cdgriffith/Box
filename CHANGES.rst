@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+Version 3.1.2
+~~~~~~~~~~~~~
+
+* Fixing ordering of camel_case_killer vs default_box (thanks to Matan Rosenberg)
+* Fixing non string keys not being supported correctly (thanks to Matt Wisniewski)
+
 Version 3.1.1
 ~~~~~~~~~~~~~
 
