@@ -552,11 +552,19 @@ class TestBoxFunctional(unittest.TestCase):
 
     def test_pickle(self):
         pic_file = os.path.join(tmp_dir, 'test.p')
+        pic2_file = os.path.join(tmp_dir, 'test.p2')
         bb = Box(movie_data, conversion_box=False)
         pickle.dump(bb, open(pic_file, 'wb'))
         loaded = pickle.load(open(pic_file, 'rb'))
         assert bb == loaded
         assert loaded._box_config['conversion_box'] is False
+
+        ll = [[Box({'a': 'b'}, ordered_box=True)], [[{'c': 'g'}]]]
+        bx = BoxList(ll)
+        pickle.dump(bx, open(pic2_file, 'wb'))
+        loaded2 = pickle.load(open(pic2_file, 'rb'))
+        assert bx == loaded2
+        loaded2.box_options = bx.box_options
 
     def test_conversion_dup_only(self):
         with pytest.raises(BoxError):
