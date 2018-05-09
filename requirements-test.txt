@@ -2,7 +2,8 @@ pytest
 coverage >= 3.6
 tox
 pytest-cov
-ruamel.yaml
+PyYAML; python_version == '2.6'
+ruamel.yaml; python_version >= '2.7'
 addict
 dotmap
 reusables
