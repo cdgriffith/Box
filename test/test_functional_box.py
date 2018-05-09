@@ -637,7 +637,8 @@ class TestBoxFunctional(unittest.TestCase):
         assert list(reversed(bx)) == ['d', 'g', 'c', 'a', 'h']
         del bx.a
         bx.pop('c')
-        assert bx.keys() == ['h', 'g', 'd']
+        bx.__delattr__('g')
+        assert bx.keys() == ['h', 'd']
 
     def test_pop(self):
         bx = Box(a=4, c={"d": 3})
@@ -649,6 +650,7 @@ class TestBoxFunctional(unittest.TestCase):
         assert bx == {'c': {"d": 3}}
         with pytest.raises(BoxError):
             bx.pop(1, 2, 3)
+        assert bx.pop('c', True) is not True
 
     def test_pop_items(self):
         bx = Box(a=4)
