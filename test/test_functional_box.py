@@ -627,17 +627,17 @@ class TestBoxFunctional(unittest.TestCase):
             bx['_box_config']
 
     def test_ordered_box(self):
-        bx = Box(ordered_box=True)
+        bx = Box(h=1, ordered_box=True)
         bx.a = 1
         bx.c = 4
         bx['g'] = 7
         bx.d = 2
-        assert bx.keys() == ['a', 'c', 'g', 'd']
-        assert list(bx.__iter__()) == ['a', 'c', 'g', 'd']
-        assert list(reversed(bx)) == ['d', 'g', 'c', 'a']
+        assert bx.keys() == ['h', 'a', 'c', 'g', 'd']
+        assert list(bx.__iter__()) == ['h', 'a', 'c', 'g', 'd']
+        assert list(reversed(bx)) == ['d', 'g', 'c', 'a', 'h']
         del bx.a
         bx.pop('c')
-        assert bx.keys() == ['g', 'd']
+        assert bx.keys() == ['h', 'g', 'd']
 
     def test_pop(self):
         bx = Box(a=4, c={"d": 3})
@@ -657,11 +657,15 @@ class TestBoxFunctional(unittest.TestCase):
             assert bx.popitem()
 
     def test_iter(self):
-        bx = Box(a=4, c={"d": 3}, ordered_box=True)
+        bx = Box(ordered_box=True)
+        bx.a = 1
+        bx.c = 2
         assert list(bx.__iter__()) == ['a', 'c']
 
     def test_revered(self):
-        bx = Box(a=4, c={"d": 3}, ordered_box=True)
+        bx = Box(ordered_box=True)
+        bx.a = 1
+        bx.c = 2
         assert list(reversed(bx)) == ['c', 'a']
 
     def test_clear(self):
@@ -674,6 +678,7 @@ class TestBoxFunctional(unittest.TestCase):
         bx.clear()
         assert bx == {}
         assert bx.keys() == []
+
 
 def mp_queue_test(q):
     bx = q.get()
