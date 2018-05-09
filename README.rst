@@ -161,6 +161,7 @@ Box's parameters
    box_it_up        False     Recursively create all Boxes from the start (like previous versions)
    box_safe_prefix  "x"       Character or prefix to prepend to otherwise invalid attributes
    box_duplicates   "ignore"  When conversion duplicates are spotted, either ignore, warn or error
+   ordered_box      False     Preserve order of keys entered into the box
    ================ ========= ===========
 
 Box's functions
@@ -409,7 +410,7 @@ config values into python types. It supports `list`, `bool`, `int` and `float`.
 License
 =======
 
-MIT License, Copyright (c) 2017 Chris Griffith. See LICENSE file.
+MIT License, Copyright (c) 2017-2018 Chris Griffith. See LICENSE file.
 
 
 .. |BoxImage| image:: https://raw.githubusercontent.com/cdgriffith/Box/master/box_logo.png
