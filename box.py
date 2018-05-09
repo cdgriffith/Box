@@ -266,6 +266,7 @@ class Box(dict):
     :param box_safe_prefix: Conversion box prefix for unsafe attributes
     :param box_duplicates: "ignore", "error" or "warn" when duplicates exists
         in a conversion_box
+    :param ordered_box: Preserve the order of keys entered into the box
     """
 
     _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml',
