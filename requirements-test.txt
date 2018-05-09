@@ -2,7 +2,7 @@ pytest
 coverage >= 3.6
 tox
 pytest-cov
-PyYAML
+ruamel.yaml
 addict
 dotmap
 reusables
