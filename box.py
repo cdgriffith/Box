@@ -40,11 +40,11 @@ else:
 __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
            'BoxError', 'BoxKeyError']
 __author__ = 'Chris Griffith'
-__version__ = '3.1.2'
+__version__ = '3.2.0'
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box', 'box_it_up',
-                  'box_safe_prefix', 'box_duplicates')
+                  'box_safe_prefix', 'box_duplicates', 'ordered_box')
 
 _first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 _all_cap_re = re.compile('([a-z0-9])([A-Z])')
@@ -243,7 +243,8 @@ def _get_box_config(cls, kwargs):
             'frozen_box': kwargs.pop('frozen_box', False),
             'camel_killer_box': kwargs.pop('camel_killer_box', False),
             'modify_tuples_box': kwargs.pop('modify_tuples_box', False),
-            'box_duplicates': kwargs.pop('box_duplicates', 'ignore')
+            'box_duplicates': kwargs.pop('box_duplicates', 'ignore'),
+            'ordered_box': kwargs.pop('ordered_box', False)
             }
 
 
@@ -281,6 +282,8 @@ class Box(dict):
 
     def __init__(self, *args, **kwargs):
         self._box_config = _get_box_config(self.__class__, kwargs)
+        if self._box_config['ordered_box']:
+            self._box_config['ordered_box_values'] = []
         if (not self._box_config['conversion_box'] and
            self._box_config['box_duplicates'] != "ignore"):
             raise BoxError('box_duplicates are only for conversion_boxes')
@@ -292,13 +295,12 @@ class Box(dict):
                     if v is args[0]:
                         v = self
                     self[k] = v
-                    if k == "_box_config":
-                        continue
+                    self.__add_ordered(k)
             elif isinstance(args[0], Iterable):
                 for k, v in args[0]:
                     self[k] = v
-                    if k == "_box_config":
-                        continue
+                    self.__add_ordered(k)
+
             else:
                 raise ValueError('First argument must be mapping or iterable')
         elif args:
@@ -310,12 +312,18 @@ class Box(dict):
             if args and isinstance(args[0], Mapping) and v is args[0]:
                 v = self
             self[k] = v
+            self.__add_ordered(k)
 
         if (self._box_config['frozen_box'] or box_it or
            self._box_config['box_duplicates'] != 'ignore'):
             self.box_it_up()
 
         self._box_config['__created'] = True
+
+    def __add_ordered(self, key):
+        if (self._box_config['ordered_box'] and
+                key not in self._box_config['ordered_box_values']):
+            self._box_config['ordered_box_values'].append(key)
 
     def box_it_up(self):
         """
@@ -417,11 +425,16 @@ class Box(dict):
         else:
             return self.__convert_and_store(item, value)
 
+    def keys(self):
+        if self._box_config['ordered_box']:
+            return self._box_config['ordered_box_values']
+        return super(Box, self).keys()
+
     def values(self):
-        return [self[x] for x in self]
+        return [self[x] for x in self.keys()]
 
     def items(self):
-        return [(x, self[x]) for x in self]
+        return [(x, self[x]) for x in self.keys()]
 
     def __get_default(self, item):
         default_value = self._box_config['default_box_attr']
@@ -512,6 +525,7 @@ class Box(dict):
             _conversion_checks(key, self.keys(), self._box_config,
                                check_only=True, pre_check=True)
         super(Box, self).__setitem__(key, value)
+        self.__add_ordered(key)
         self.__create_lineage()
 
     def __setattr__(self, key, value):
@@ -543,12 +557,16 @@ class Box(dict):
                 self[key] = value
         else:
             object.__setattr__(self, key, value)
+        self.__add_ordered(key)
         self.__create_lineage()
 
     def __delitem__(self, key):
         if self._box_config['frozen_box']:
             raise BoxError('Box is frozen')
         super(Box, self).__delitem__(key)
+        if (self._box_config['ordered_box'] and
+                key in self._box_config['ordered_box_values']):
+            self._box_config['ordered_box_values'].remove(key)
 
     def __delattr__(self, item):
         if self._box_config['frozen_box']:
@@ -563,12 +581,54 @@ class Box(dict):
             del self[item]
         else:
             object.__delattr__(self, item)
+        if (self._box_config['ordered_box'] and
+                item in self._box_config['ordered_box_values']):
+            self._box_config['ordered_box_values'].remove(item)
+
+    def pop(self, key, *args):
+        if args:
+            if len(args) != 1:
+                raise BoxError('pop() takes only one optional'
+                               ' argument "default"')
+            try:
+                item = self[key]
+            except KeyError:
+                return args[0]
+            else:
+                del self[key]
+                return item
+        try:
+            item = self[key]
+        except KeyError:
+            raise BoxKeyError('{0}'.format(key))
+        else:
+            del self[key]
+            return item
+
+    def clear(self):
+        self._box_config['ordered_box_values'] = []
+        super(Box, self).clear()
+
+    def popitem(self):
+        try:
+            key = next(self.__iter__())
+        except StopIteration:
+            raise BoxKeyError('Empty box')
+        return key, self.pop(key)
 
     def __repr__(self):
         return '<Box: {0}>'.format(str(self.to_dict()))
 
     def __str__(self):
         return str(self.to_dict())
+
+    def __iter__(self):
+        for key in self.keys():
+            yield key
+
+    def __reversed__(self):
+        for key in reversed(list(self.keys())):
+            yield key
 
     def to_dict(self):
         """

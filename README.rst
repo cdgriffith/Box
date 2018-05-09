@@ -301,6 +301,26 @@ snake_case_attributes.
       cameled.bad_habit
       # "I just can't stop!"
 
+Ordered Box
+~~~~~~~~~~~
+
+Preserve the order that the keys were entered into the box. The preserved order
+will be observed while iterating over the box, or calling `.keys()`,
+`.values()` or `.items()`
+
+.. code:: python
+
+      box_of_order = Box(ordered_box=True)
+      box_of_order.c = 1
+      box_of_order.a = 2
+      box_of_order.d = 3
+
+      box_of_order.keys() == ['c', 'a', 'd']
+
+Keep in mind this will guarantee order of **kwargs passed to Box,
+as they are inherently not ordered until Python 3.6.
+
+
 
 BoxList
 -------

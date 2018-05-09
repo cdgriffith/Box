@@ -626,6 +626,61 @@ class TestBoxFunctional(unittest.TestCase):
         with pytest.raises(BoxKeyError):
             bx['_box_config']
 
+    def test_ordered_box(self):
+        bx = Box(h=1, ordered_box=True)
+        bx.a = 1
+        bx.c = 4
+        bx['g'] = 7
+        bx.d = 2
+        assert bx.keys() == ['h', 'a', 'c', 'g', 'd']
+        assert list(bx.__iter__()) == ['h', 'a', 'c', 'g', 'd']
+        assert list(reversed(bx)) == ['d', 'g', 'c', 'a', 'h']
+        del bx.a
+        bx.pop('c')
+        bx.__delattr__('g')
+        assert bx.keys() == ['h', 'd']
+
+    def test_pop(self):
+        bx = Box(a=4, c={"d": 3})
+        assert bx.pop('a') == 4
+        with pytest.raises(BoxKeyError):
+            bx.pop('b')
+        assert bx.pop('a', None) is None
+        assert bx.pop('a', True) is True
+        assert bx == {'c': {"d": 3}}
+        with pytest.raises(BoxError):
+            bx.pop(1, 2, 3)
+        assert bx.pop('c', True) is not True
+
+    def test_pop_items(self):
+        bx = Box(a=4)
+        assert bx.popitem() == ('a', 4)
+        with pytest.raises(BoxKeyError):
+            assert bx.popitem()
+
+    def test_iter(self):
+        bx = Box(ordered_box=True)
+        bx.a = 1
+        bx.c = 2
+        assert list(bx.__iter__()) == ['a', 'c']
+
+    def test_revered(self):
+        bx = Box(ordered_box=True)
+        bx.a = 1
+        bx.c = 2
+        assert list(reversed(bx)) == ['c', 'a']
+
+    def test_clear(self):
+        bx = Box(ordered_box=True)
+        bx.a = 1
+        bx.c = 4
+        bx['g'] = 7
+        bx.d = 2
+        assert bx.keys() == ['a', 'c', 'g', 'd']
+        bx.clear()
+        assert bx == {}
+        assert bx.keys() == []
+
 
 def mp_queue_test(q):
     bx = q.get()
