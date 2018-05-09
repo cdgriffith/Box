@@ -1,9 +1,11 @@
 Changelog
 ---------
 
-Version 3.1.2
+Version 3.2.0
 ~~~~~~~~~~~~~
 
+* Adding `ordered_box` option to keep key order based on insertion (thanks to pwwang)
+* Adding custom `__iter__`, `__revered__`, `pop`, `popitems`
 * Fixing ordering of camel_case_killer vs default_box (thanks to Matan Rosenberg)
 * Fixing non string keys not being supported correctly (thanks to Matt Wisniewski)
 
