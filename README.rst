@@ -317,7 +317,7 @@ will be observed while iterating over the box, or calling `.keys()`,
 
       box_of_order.keys() == ['c', 'a', 'd']
 
-Keep in mind this will guarantee order of **kwargs passed to Box,
+Keep in mind this will not guarantee order of `**kwargs` passed to Box,
 as they are inherently not ordered until Python 3.6.
 
 
