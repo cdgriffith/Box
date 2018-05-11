@@ -9,6 +9,8 @@ Code contributions:
 - dhilipsiva (dhilipsiva)
 - MAA (FooBarQuaxx)
 - Jiang Chen (criver)
+- Matan Rosenberg (matan129)
+- Matt Wisniewski (polishmatt)
 
 Suggestions and bug reporting:
 
@@ -30,3 +32,4 @@ Suggestions and bug reporting:
 - askvictor [Hacker News]
 - wouter bolsterlee (wbolster)
 - Mickaël Thomas (mickael9)
+- (pwwang)

@@ -161,6 +161,7 @@ Box's parameters
    box_it_up        False     Recursively create all Boxes from the start (like previous versions)
    box_safe_prefix  "x"       Character or prefix to prepend to otherwise invalid attributes
    box_duplicates   "ignore"  When conversion duplicates are spotted, either ignore, warn or error
+   ordered_box      False     Preserve order of keys entered into the box
    ================ ========= ===========
 
 Box's functions
@@ -301,8 +302,25 @@ snake_case_attributes.
       cameled.bad_habit
       # "I just can't stop!"
 
-If this is used along side `conversion_box`, which is enabled by default,
-all attributes will only be accessible with lowercase letters.
+Ordered Box
+~~~~~~~~~~~
+
+Preserve the order that the keys were entered into the box. The preserved order
+will be observed while iterating over the box, or calling `.keys()`,
+`.values()` or `.items()`
+
+.. code:: python
+
+      box_of_order = Box(ordered_box=True)
+      box_of_order.c = 1
+      box_of_order.a = 2
+      box_of_order.d = 3
+
+      box_of_order.keys() == ['c', 'a', 'd']
+
+Keep in mind this will not guarantee order of `**kwargs` passed to Box,
+as they are inherently not ordered until Python 3.6.
+
 
 
 BoxList
@@ -392,7 +410,7 @@ config values into python types. It supports `list`, `bool`, `int` and `float`.
 License
 =======
 
-MIT License, Copyright (c) 2017 Chris Griffith. See LICENSE file.
+MIT License, Copyright (c) 2017-2018 Chris Griffith. See LICENSE file.
 
 
 .. |BoxImage| image:: https://raw.githubusercontent.com/cdgriffith/Box/master/box_logo.png
