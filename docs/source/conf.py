@@ -42,14 +42,12 @@ Box Internals
 
 """
 
-
 with open("index.rst", "a") as index, open(changes_file) as changes:
     index.write(internals)
     index.write(changes.read())
 
 with open(os.path.join(project_root, "box.py"), "r") as box_file:
     box_content = box_file.read()
-
 
 attrs = dict(re.findall(r"__([a-z]+)__ *= *['\"](.+)['\"]", box_content))
 
@@ -63,8 +61,8 @@ attrs = dict(re.findall(r"__([a-z]+)__ *= *['\"](.+)['\"]", box_content))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.githubpages']
+              'sphinx.ext.viewcode',
+              'sphinx.ext.githubpages']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -110,7 +108,6 @@ pygments_style = 'sphinx'
 # If true, `to do` and `to do List` produce output, else they produce nothing.
 todo_include_todos = False
 
-
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -131,12 +128,10 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'Boxdoc'
-
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -166,7 +161,6 @@ latex_documents = [
      'Chris Griffith', 'manual'),
 ]
 
-
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
@@ -175,7 +169,6 @@ man_pages = [
     (master_doc, 'box', 'Box Documentation',
      [author], 1)
 ]
-
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -187,6 +180,3 @@ texinfo_documents = [
      author, 'Box', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-
