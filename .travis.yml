@@ -8,8 +8,11 @@ python:
     - "3.4"
     - "3.5"
     - "3.6"
-    - "3.7"
-    - "dev"
+matrix:
+  include:
+    - python: 3.7
+      dist: xenial
+      sudo: true
 install:
     - pip install -r requirements-test.txt
     - pip install coveralls
