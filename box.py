@@ -803,16 +803,16 @@ class BoxList(list):
         if isinstance(p_object, dict):
             try:
                 p_object = self.box_class(p_object, **self.box_options)
-            except AttributeError:
+            except AttributeError as err:
                 if 'box_class' in self.__dict__:
-                    raise
+                    raise err
         elif isinstance(p_object, list):
             try:
                 p_object = (self if id(p_object) == self.box_org_ref else
                             BoxList(p_object))
-            except AttributeError:
+            except AttributeError as err:
                 if 'box_org_ref' in self.__dict__:
-                    raise
+                    raise err
         super(BoxList, self).append(p_object)
 
     def extend(self, iterable):

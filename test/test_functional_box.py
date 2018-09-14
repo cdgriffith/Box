@@ -339,6 +339,12 @@ class TestBoxFunctional(unittest.TestCase):
             del bl[0]
         with pytest.raises(BoxError):
             bl[0] = 5
+        bl2 = BoxList([5, 4, 3])
+        del bl2[0]
+        assert bl2[0] == 4
+        bl2[1] = 4
+        assert bl2[1] == 4
+
 
     def test_config(self):
         bx = Box(extended_test_dict)
