@@ -792,12 +792,12 @@ class BoxList(list):
     def __delitem__(self, key):
         if self.box_options.get('frozen_box'):
             raise BoxError('BoxList is frozen')
-        super(BoxList).__delitem__(key)
+        super(BoxList, self).__delitem__(key)
 
     def __setitem__(self, key, value):
         if self.box_options.get('frozen_box'):
             raise BoxError('BoxList is frozen')
-        super(BoxList).__setitem__(key, value)
+        super(BoxList, self).__setitem__(key, value)
 
     def append(self, p_object):
         if isinstance(p_object, dict):
