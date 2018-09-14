@@ -16,10 +16,13 @@ from keyword import kwlist
 import warnings
 
 try:
-    from collections import Iterable, Mapping
+    from collections.abc import Iterable, Mapping
 except ImportError:
-    Mapping = dict
-    Iterable = (tuple, list)
+    try:
+        from collections import Iterable, Mapping
+    except ImportError:
+        Mapping = dict
+        Iterable = (tuple, list)
 
 yaml_support = True
 
@@ -740,7 +743,7 @@ class Box(dict):
         @classmethod
         def from_yaml(cls, yaml_string=None, filename=None,
                       encoding="utf-8", errors="strict",
-                      **kwargs):
+                      loader=yaml.SafeLoader, **kwargs):
             """
             Transform a yaml object string into a Box object.
 
@@ -748,6 +751,7 @@ class Box(dict):
             :param filename: filename to open and pass to `yaml.load`
             :param encoding: File encoding
             :param errors: How to handle encoding errors
+            :param loader: YAML Loader, defaults to SafeLoader
             :param kwargs: parameters to pass to `Box()` or `yaml.load`
             :return: Box object from yaml data
             """
@@ -757,7 +761,8 @@ class Box(dict):
                     bx_args[arg] = kwargs.pop(arg)
 
             data = _from_yaml(yaml_string=yaml_string, filename=filename,
-                              encoding=encoding, errors=errors, **kwargs)
+                              encoding=encoding, errors=errors,
+                              Loader=loader, **kwargs)
             if not isinstance(data, dict):
                 raise BoxError('yaml data not returned as a dictionary'
                                'but rather a {0}'.format(type(data).__name__))
@@ -777,13 +782,37 @@ class BoxList(list):
         if iterable:
             for x in iterable:
                 self.append(x)
+        if box_options.get('frozen_box'):
+            def frozen(*args, **kwargs):
+                raise BoxError('BoxList is frozen')
+            for method in ['append', 'extend', 'insert', 'pop',
+                           'remove', 'reverse', 'sort']:
+                self.__setattr__(method, frozen)
+
+    def __delitem__(self, key):
+        if self.box_options.get('frozen_box'):
+            raise BoxError('BoxList is frozen')
+        super(BoxList).__delitem__(key)
+
+    def __setitem__(self, key, value):
+        if self.box_options.get('frozen_box'):
+            raise BoxError('BoxList is frozen')
+        super(BoxList).__setitem__(key, value)
 
     def append(self, p_object):
         if isinstance(p_object, dict):
-            p_object = self.box_class(p_object, **self.box_options)
+            try:
+                p_object = self.box_class(p_object, **self.box_options)
+            except AttributeError:
+                if 'box_class' in self.__dict__:
+                    raise
         elif isinstance(p_object, list):
-            p_object = (self if id(p_object) == self.box_org_ref else
-                        BoxList(p_object))
+            try:
+                p_object = (self if id(p_object) == self.box_org_ref else
+                            BoxList(p_object))
+            except AttributeError:
+                if 'box_org_ref' in self.__dict__:
+                    raise
         super(BoxList, self).append(p_object)
 
     def extend(self, iterable):
@@ -805,7 +834,9 @@ class BoxList(list):
         return str(self.to_list())
 
     def __copy__(self):
-        return BoxList(x for x in self)
+        return BoxList((x for x in self),
+                       self.box_class,
+                       **self.box_options)
 
     def __deepcopy__(self, memodict=None):
         out = self.__class__()
@@ -900,6 +931,7 @@ class BoxList(list):
         @classmethod
         def from_yaml(cls, yaml_string=None, filename=None,
                       encoding="utf-8", errors="strict",
+                      loader=yaml.SafeLoader,
                       **kwargs):
             """
             Transform a yaml object string into a BoxList object.
@@ -908,6 +940,7 @@ class BoxList(list):
             :param filename: filename to open and pass to `yaml.load`
             :param encoding: File encoding
             :param errors: How to handle encoding errors
+            :param loader: YAML Loader, defaults to SafeLoader
             :param kwargs: parameters to pass to `BoxList()` or `yaml.load`
             :return: BoxList object from yaml data
             """
@@ -917,7 +950,8 @@ class BoxList(list):
                     bx_args[arg] = kwargs.pop(arg)
 
             data = _from_yaml(yaml_string=yaml_string, filename=filename,
-                              encoding=encoding, errors=errors, **kwargs)
+                              encoding=encoding, errors=errors,
+                              Loader=loader, **kwargs)
             if not isinstance(data, list):
                 raise BoxError('yaml data not returned as a list'
                                'but rather a {0}'.format(type(data).__name__))

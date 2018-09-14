@@ -321,6 +321,25 @@ class TestBoxFunctional(unittest.TestCase):
 
         assert hash(bx3)
 
+    def test_frozen_list(self):
+        bl = BoxList([5, 4, 3], frozen_box=True)
+        with pytest.raises(BoxError):
+            bl.pop(1)
+        with pytest.raises(BoxError):
+            bl.remove(4)
+        with pytest.raises(BoxError):
+            bl.sort()
+        with pytest.raises(BoxError):
+            bl.reverse()
+        with pytest.raises(BoxError):
+            bl.append('test')
+        with pytest.raises(BoxError):
+            bl.extend([4])
+        with pytest.raises(BoxError):
+            del bl[0]
+        with pytest.raises(BoxError):
+            bl[0] = 5
+
     def test_config(self):
         bx = Box(extended_test_dict)
         assert bx['_box_config'] is True
