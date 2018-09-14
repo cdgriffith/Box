@@ -1,3 +1,5 @@
+|BuildStatus| |CoverageStatus| |License| |PyPi| |DocStatus|
+
 |BoxImage|
 
 Python dictionaries with advanced dot notation access.
@@ -50,8 +52,6 @@ Python dictionaries with advanced dot notation access.
 
 Install
 =======
-
-|BuildStatus| |CoverageStatus| |License| |PyPi| |DocStatus|
 
 .. code:: bash
 
