@@ -16,10 +16,13 @@ from keyword import kwlist
 import warnings
 
 try:
-    from collections import Iterable, Mapping
+    from collections.abc import Iterable, Mapping
 except ImportError:
-    Mapping = dict
-    Iterable = (tuple, list)
+    try:
+        from collections import Iterable, Mapping
+    except ImportError:
+        Mapping = dict
+        Iterable = (tuple, list)
 
 yaml_support = True
 
@@ -40,7 +43,7 @@ else:
 __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
            'BoxError', 'BoxKeyError']
 __author__ = 'Chris Griffith'
-__version__ = '3.2.0'
+__version__ = '3.2.1'
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box', 'box_it_up',
@@ -56,6 +59,7 @@ class BoxError(Exception):
 
 class BoxKeyError(BoxError, KeyError, AttributeError):
     """Key does not exist"""
+
 
 # Abstract converter functions for use in any Box class
 
@@ -115,6 +119,7 @@ def _from_yaml(yaml_string=None, filename=None,
     else:
         raise BoxError('from_yaml requires a string or filename')
     return data
+
 
 # Helper functions
 
@@ -230,22 +235,22 @@ def _conversion_checks(item, keys, box_config, check_only=False,
 
 def _get_box_config(cls, kwargs):
     return {
-            # Internal use only
-            '__converted': set(),
-            '__box_heritage': kwargs.pop('__box_heritage', None),
-            '__hash': None,
-            '__created': False,
-            # Can be changed by user after box creation
-            'default_box': kwargs.pop('default_box', False),
-            'default_box_attr': kwargs.pop('default_box_attr', cls),
-            'conversion_box': kwargs.pop('conversion_box', True),
-            'box_safe_prefix': kwargs.pop('box_safe_prefix', 'x'),
-            'frozen_box': kwargs.pop('frozen_box', False),
-            'camel_killer_box': kwargs.pop('camel_killer_box', False),
-            'modify_tuples_box': kwargs.pop('modify_tuples_box', False),
-            'box_duplicates': kwargs.pop('box_duplicates', 'ignore'),
-            'ordered_box': kwargs.pop('ordered_box', False)
-            }
+        # Internal use only
+        '__converted': set(),
+        '__box_heritage': kwargs.pop('__box_heritage', None),
+        '__hash': None,
+        '__created': False,
+        # Can be changed by user after box creation
+        'default_box': kwargs.pop('default_box', False),
+        'default_box_attr': kwargs.pop('default_box_attr', cls),
+        'conversion_box': kwargs.pop('conversion_box', True),
+        'box_safe_prefix': kwargs.pop('box_safe_prefix', 'x'),
+        'frozen_box': kwargs.pop('frozen_box', False),
+        'camel_killer_box': kwargs.pop('camel_killer_box', False),
+        'modify_tuples_box': kwargs.pop('modify_tuples_box', False),
+        'box_duplicates': kwargs.pop('box_duplicates', 'ignore'),
+        'ordered_box': kwargs.pop('ordered_box', False)
+    }
 
 
 class Box(dict):
@@ -286,7 +291,7 @@ class Box(dict):
         if self._box_config['ordered_box']:
             self._box_config['ordered_box_values'] = []
         if (not self._box_config['conversion_box'] and
-           self._box_config['box_duplicates'] != "ignore"):
+                self._box_config['box_duplicates'] != "ignore"):
             raise BoxError('box_duplicates are only for conversion_boxes')
         if len(args) == 1:
             if isinstance(args[0], basestring):
@@ -316,7 +321,7 @@ class Box(dict):
             self.__add_ordered(k)
 
         if (self._box_config['frozen_box'] or box_it or
-           self._box_config['box_duplicates'] != 'ignore'):
+                self._box_config['box_duplicates'] != 'ignore'):
             self.box_it_up()
 
         self._box_config['__created'] = True
@@ -475,7 +480,7 @@ class Box(dict):
                                 **self.__box_config())
             self[item] = value
         elif (self._box_config['modify_tuples_box'] and
-                isinstance(value, tuple)):
+              isinstance(value, tuple)):
             value = _recursive_tuples(value, self.__class__,
                                       recreate_tuples=True,
                                       __box_heritage=(self, item),
@@ -740,7 +745,7 @@ class Box(dict):
         @classmethod
         def from_yaml(cls, yaml_string=None, filename=None,
                       encoding="utf-8", errors="strict",
-                      **kwargs):
+                      loader=yaml.SafeLoader, **kwargs):
             """
             Transform a yaml object string into a Box object.
 
@@ -748,6 +753,7 @@ class Box(dict):
             :param filename: filename to open and pass to `yaml.load`
             :param encoding: File encoding
             :param errors: How to handle encoding errors
+            :param loader: YAML Loader, defaults to SafeLoader
             :param kwargs: parameters to pass to `Box()` or `yaml.load`
             :return: Box object from yaml data
             """
@@ -757,7 +763,8 @@ class Box(dict):
                     bx_args[arg] = kwargs.pop(arg)
 
             data = _from_yaml(yaml_string=yaml_string, filename=filename,
-                              encoding=encoding, errors=errors, **kwargs)
+                              encoding=encoding, errors=errors,
+                              Loader=loader, **kwargs)
             if not isinstance(data, dict):
                 raise BoxError('yaml data not returned as a dictionary'
                                'but rather a {0}'.format(type(data).__name__))
@@ -777,13 +784,38 @@ class BoxList(list):
         if iterable:
             for x in iterable:
                 self.append(x)
+        if box_options.get('frozen_box'):
+            def frozen(*args, **kwargs):
+                raise BoxError('BoxList is frozen')
+
+            for method in ['append', 'extend', 'insert', 'pop',
+                           'remove', 'reverse', 'sort']:
+                self.__setattr__(method, frozen)
+
+    def __delitem__(self, key):
+        if self.box_options.get('frozen_box'):
+            raise BoxError('BoxList is frozen')
+        super(BoxList, self).__delitem__(key)
+
+    def __setitem__(self, key, value):
+        if self.box_options.get('frozen_box'):
+            raise BoxError('BoxList is frozen')
+        super(BoxList, self).__setitem__(key, value)
 
     def append(self, p_object):
         if isinstance(p_object, dict):
-            p_object = self.box_class(p_object, **self.box_options)
+            try:
+                p_object = self.box_class(p_object, **self.box_options)
+            except AttributeError as err:
+                if 'box_class' in self.__dict__:
+                    raise err
         elif isinstance(p_object, list):
-            p_object = (self if id(p_object) == self.box_org_ref else
-                        BoxList(p_object))
+            try:
+                p_object = (self if id(p_object) == self.box_org_ref else
+                            BoxList(p_object))
+            except AttributeError as err:
+                if 'box_org_ref' in self.__dict__:
+                    raise err
         super(BoxList, self).append(p_object)
 
     def extend(self, iterable):
@@ -805,7 +837,9 @@ class BoxList(list):
         return str(self.to_list())
 
     def __copy__(self):
-        return BoxList(x for x in self)
+        return BoxList((x for x in self),
+                       self.box_class,
+                       **self.box_options)
 
     def __deepcopy__(self, memodict=None):
         out = self.__class__()
@@ -900,6 +934,7 @@ class BoxList(list):
         @classmethod
         def from_yaml(cls, yaml_string=None, filename=None,
                       encoding="utf-8", errors="strict",
+                      loader=yaml.SafeLoader,
                       **kwargs):
             """
             Transform a yaml object string into a BoxList object.
@@ -908,6 +943,7 @@ class BoxList(list):
             :param filename: filename to open and pass to `yaml.load`
             :param encoding: File encoding
             :param errors: How to handle encoding errors
+            :param loader: YAML Loader, defaults to SafeLoader
             :param kwargs: parameters to pass to `BoxList()` or `yaml.load`
             :return: BoxList object from yaml data
             """
@@ -917,7 +953,8 @@ class BoxList(list):
                     bx_args[arg] = kwargs.pop(arg)
 
             data = _from_yaml(yaml_string=yaml_string, filename=filename,
-                              encoding=encoding, errors=errors, **kwargs)
+                              encoding=encoding, errors=errors,
+                              Loader=loader, **kwargs)
             if not isinstance(data, list):
                 raise BoxError('yaml data not returned as a list'
                                'but rather a {0}'.format(type(data).__name__))
@@ -978,7 +1015,7 @@ class ConfigBox(Box):
             return bool(item)
 
         if (isinstance(item, str) and
-           item.lower() in ('n', 'no', 'false', 'f', '0')):
+                item.lower() in ('n', 'no', 'false', 'f', '0')):
             return False
 
         return True if item else False

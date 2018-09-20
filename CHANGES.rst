@@ -1,6 +1,13 @@
 Changelog
 ---------
 
+Version 3.2.1
+~~~~~~~~~~~~~
+
+* Fixing pickling on python 3.7 (thanks to Martijn Pieters)
+* Fixing rumel loader error (thanks to richieadler)
+* Fixing frozen_box does not freeze the outermost BoxList (thanks to V.Anh Tran)
+
 Version 3.2.0
 ~~~~~~~~~~~~~
 

@@ -321,6 +321,30 @@ class TestBoxFunctional(unittest.TestCase):
 
         assert hash(bx3)
 
+    def test_frozen_list(self):
+        bl = BoxList([5, 4, 3], frozen_box=True)
+        with pytest.raises(BoxError):
+            bl.pop(1)
+        with pytest.raises(BoxError):
+            bl.remove(4)
+        with pytest.raises(BoxError):
+            bl.sort()
+        with pytest.raises(BoxError):
+            bl.reverse()
+        with pytest.raises(BoxError):
+            bl.append('test')
+        with pytest.raises(BoxError):
+            bl.extend([4])
+        with pytest.raises(BoxError):
+            del bl[0]
+        with pytest.raises(BoxError):
+            bl[0] = 5
+        bl2 = BoxList([5, 4, 3])
+        del bl2[0]
+        assert bl2[0] == 4
+        bl2[1] = 4
+        assert bl2[1] == 4
+
     def test_config(self):
         bx = Box(extended_test_dict)
         assert bx['_box_config'] is True
@@ -614,7 +638,7 @@ class TestBoxFunctional(unittest.TestCase):
         queue = Queue()
         queue.put(my_box)
 
-        p = Process(target=mp_queue_test, args=(queue, ))
+        p = Process(target=mp_queue_test, args=(queue,))
         p.start()
         p.join()
 

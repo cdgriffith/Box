@@ -11,6 +11,7 @@ Code contributions:
 - Jiang Chen (criver)
 - Matan Rosenberg (matan129)
 - Matt Wisniewski (polishmatt)
+- Martijn Pieters (mjpieters)
 
 Suggestions and bug reporting:
 
@@ -33,3 +34,6 @@ Suggestions and bug reporting:
 - wouter bolsterlee (wbolster)
 - Mickaël Thomas (mickael9)
 - (pwwang)
+- (richieadler)
+- V.Anh Tran (tranvietanh1991)
+- (ipcoder)

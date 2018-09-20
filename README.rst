@@ -1,3 +1,5 @@
+|BuildStatus| |CoverageStatus| |License| |PyPi| |DocStatus|
+
 |BoxImage|
 
 Python dictionaries with advanced dot notation access.
@@ -51,13 +53,11 @@ Python dictionaries with advanced dot notation access.
 Install
 =======
 
-|BuildStatus| |CoverageStatus| |License| |PyPi| |DocStatus|
-
 .. code:: bash
 
         pip install python-box
 
-Box is tested on python 2.7, 3.3+ and PyPy2.
+Box is tested on python 2.7 and 3.4+.
 If it does not install with this command, please
 open a github issue with the error you are experiencing!
 
