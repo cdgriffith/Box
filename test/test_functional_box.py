@@ -345,7 +345,6 @@ class TestBoxFunctional(unittest.TestCase):
         bl2[1] = 4
         assert bl2[1] == 4
 
-
     def test_config(self):
         bx = Box(extended_test_dict)
         assert bx['_box_config'] is True
@@ -639,7 +638,7 @@ class TestBoxFunctional(unittest.TestCase):
         queue = Queue()
         queue.put(my_box)
 
-        p = Process(target=mp_queue_test, args=(queue, ))
+        p = Process(target=mp_queue_test, args=(queue,))
         p.start()
         p.join()
 

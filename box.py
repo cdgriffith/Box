@@ -60,6 +60,7 @@ class BoxError(Exception):
 class BoxKeyError(BoxError, KeyError, AttributeError):
     """Key does not exist"""
 
+
 # Abstract converter functions for use in any Box class
 
 
@@ -118,6 +119,7 @@ def _from_yaml(yaml_string=None, filename=None,
     else:
         raise BoxError('from_yaml requires a string or filename')
     return data
+
 
 # Helper functions
 
@@ -233,22 +235,22 @@ def _conversion_checks(item, keys, box_config, check_only=False,
 
 def _get_box_config(cls, kwargs):
     return {
-            # Internal use only
-            '__converted': set(),
-            '__box_heritage': kwargs.pop('__box_heritage', None),
-            '__hash': None,
-            '__created': False,
-            # Can be changed by user after box creation
-            'default_box': kwargs.pop('default_box', False),
-            'default_box_attr': kwargs.pop('default_box_attr', cls),
-            'conversion_box': kwargs.pop('conversion_box', True),
-            'box_safe_prefix': kwargs.pop('box_safe_prefix', 'x'),
-            'frozen_box': kwargs.pop('frozen_box', False),
-            'camel_killer_box': kwargs.pop('camel_killer_box', False),
-            'modify_tuples_box': kwargs.pop('modify_tuples_box', False),
-            'box_duplicates': kwargs.pop('box_duplicates', 'ignore'),
-            'ordered_box': kwargs.pop('ordered_box', False)
-            }
+        # Internal use only
+        '__converted': set(),
+        '__box_heritage': kwargs.pop('__box_heritage', None),
+        '__hash': None,
+        '__created': False,
+        # Can be changed by user after box creation
+        'default_box': kwargs.pop('default_box', False),
+        'default_box_attr': kwargs.pop('default_box_attr', cls),
+        'conversion_box': kwargs.pop('conversion_box', True),
+        'box_safe_prefix': kwargs.pop('box_safe_prefix', 'x'),
+        'frozen_box': kwargs.pop('frozen_box', False),
+        'camel_killer_box': kwargs.pop('camel_killer_box', False),
+        'modify_tuples_box': kwargs.pop('modify_tuples_box', False),
+        'box_duplicates': kwargs.pop('box_duplicates', 'ignore'),
+        'ordered_box': kwargs.pop('ordered_box', False)
+    }
 
 
 class Box(dict):
@@ -289,7 +291,7 @@ class Box(dict):
         if self._box_config['ordered_box']:
             self._box_config['ordered_box_values'] = []
         if (not self._box_config['conversion_box'] and
-           self._box_config['box_duplicates'] != "ignore"):
+                self._box_config['box_duplicates'] != "ignore"):
             raise BoxError('box_duplicates are only for conversion_boxes')
         if len(args) == 1:
             if isinstance(args[0], basestring):
@@ -319,7 +321,7 @@ class Box(dict):
             self.__add_ordered(k)
 
         if (self._box_config['frozen_box'] or box_it or
-           self._box_config['box_duplicates'] != 'ignore'):
+                self._box_config['box_duplicates'] != 'ignore'):
             self.box_it_up()
 
         self._box_config['__created'] = True
@@ -478,7 +480,7 @@ class Box(dict):
                                 **self.__box_config())
             self[item] = value
         elif (self._box_config['modify_tuples_box'] and
-                isinstance(value, tuple)):
+              isinstance(value, tuple)):
             value = _recursive_tuples(value, self.__class__,
                                       recreate_tuples=True,
                                       __box_heritage=(self, item),
@@ -785,6 +787,7 @@ class BoxList(list):
         if box_options.get('frozen_box'):
             def frozen(*args, **kwargs):
                 raise BoxError('BoxList is frozen')
+
             for method in ['append', 'extend', 'insert', 'pop',
                            'remove', 'reverse', 'sort']:
                 self.__setattr__(method, frozen)
@@ -1012,7 +1015,7 @@ class ConfigBox(Box):
             return bool(item)
 
         if (isinstance(item, str) and
-           item.lower() in ('n', 'no', 'false', 'f', '0')):
+                item.lower() in ('n', 'no', 'false', 'f', '0')):
             return False
 
         return True if item else False
