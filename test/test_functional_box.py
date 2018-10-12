@@ -713,6 +713,10 @@ class TestBoxFunctional(unittest.TestCase):
         assert bx == {}
         assert bx.keys() == []
 
+    def test_from_url(self):
+        bx = Box.from_json(url="https://api.github.com/emojis")
+        assert bx.x100.startswith("http")
+
 
 def mp_queue_test(q):
     bx = q.get()

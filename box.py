@@ -24,6 +24,11 @@ except ImportError:
         Mapping = dict
         Iterable = (tuple, list)
 
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib2 import urlopen
+
 yaml_support = True
 
 try:
@@ -76,7 +81,7 @@ def _to_json(obj, filename=None,
         return json_dump
 
 
-def _from_json(json_string=None, filename=None,
+def _from_json(json_string=None, filename=None, url=None,
                encoding="utf-8", errors="strict", multiline=False, **kwargs):
     if filename:
         with open(filename, 'r', encoding=encoding, errors=errors) as f:
@@ -85,6 +90,8 @@ def _from_json(json_string=None, filename=None,
                         if line.strip() and not line.strip().startswith("#")]
             else:
                 data = json.load(f, **kwargs)
+    elif url:
+        data = json.loads(urlopen(url).read(), **kwargs)
     elif json_string:
         data = json.loads(json_string, **kwargs)
     else:
@@ -698,7 +705,7 @@ class Box(dict):
                         encoding=encoding, errors=errors, **json_kwargs)
 
     @classmethod
-    def from_json(cls, json_string=None, filename=None,
+    def from_json(cls, json_string=None, filename=None, url=None,
                   encoding="utf-8", errors="strict", **kwargs):
         """
         Transform a json object string into a Box object. If the incoming
@@ -706,6 +713,7 @@ class Box(dict):
 
         :param json_string: string to pass to `json.loads`
         :param filename: filename to open and pass to `json.load`
+        :param url: download a json file and pass it to `json.loads`
         :param encoding: File encoding
         :param errors: How to handle encoding errors
         :param kwargs: parameters to pass to `Box()` or `json.loads`
@@ -716,7 +724,7 @@ class Box(dict):
             if arg in BOX_PARAMETERS:
                 bx_args[arg] = kwargs.pop(arg)
 
-        data = _from_json(json_string, filename=filename,
+        data = _from_json(json_string, filename=filename, url=url,
                           encoding=encoding, errors=errors, **kwargs)
 
         if not isinstance(data, dict):
@@ -886,14 +894,16 @@ class BoxList(list):
                             encoding=encoding, errors=errors, **json_kwargs)
 
     @classmethod
-    def from_json(cls, json_string=None, filename=None, encoding="utf-8",
-                  errors="strict", multiline=False, **kwargs):
+    def from_json(cls, json_string=None, filename=None, url=None,
+                  encoding="utf-8", errors="strict", multiline=False,
+                  **kwargs):
         """
         Transform a json object string into a BoxList object. If the incoming
         json is a dict, you must use Box.from_json.
 
         :param json_string: string to pass to `json.loads`
         :param filename: filename to open and pass to `json.load`
+        :param url: download a json file and pass it to `json.loads`
         :param encoding: File encoding
         :param errors: How to handle encoding errors
         :param multiline: One object per line
@@ -905,8 +915,9 @@ class BoxList(list):
             if arg in BOX_PARAMETERS:
                 bx_args[arg] = kwargs.pop(arg)
 
-        data = _from_json(json_string, filename=filename, encoding=encoding,
-                          errors=errors, multiline=multiline, **kwargs)
+        data = _from_json(json_string, filename=filename, url=url,
+                          encoding=encoding, errors=errors,
+                          multiline=multiline, **kwargs)
 
         if not isinstance(data, list):
             raise BoxError('json data not returned as a list, '
