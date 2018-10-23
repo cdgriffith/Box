@@ -165,13 +165,13 @@ class TestBoxFunctional(unittest.TestCase):
 
     def test_to_yaml(self):
         a = Box(test_dict)
-        assert yaml.load(a.to_yaml()) == test_dict
+        assert yaml.load(a.to_yaml(), Loader=yaml.SafeLoader) == test_dict
 
     def test_to_yaml_file(self):
         a = Box(test_dict)
         a.to_yaml(tmp_yaml_file)
         with open(tmp_yaml_file) as f:
-            data = yaml.load(f)
+            data = yaml.load(f, Loader=yaml.SafeLoader)
             assert data == test_dict
 
     def test_boxlist(self):
@@ -323,12 +323,14 @@ class TestBoxFunctional(unittest.TestCase):
 
     def test_hashing(self):
         bx1 = Box(t=3, g=4, frozen_box=True)
-        bx2 = Box(t=3, g=4, frozen_box=True)
+        bx2 = Box(g=4, t=3, frozen_box=True)
         assert hash(bx1) == hash(bx2)
 
         bl1 = BoxList([1,2,3,4], frozen_box=True)
         bl2 = BoxList([1,2,3,4], frozen_box=True)
+        bl3 = BoxList([2,1,3,4], frozen_box=True)
         assert hash(bl2) == hash(bl1)
+        assert hash(bl3) != hash(bl2)
 
     def test_frozen_list(self):
         bl = BoxList([5, 4, 3], frozen_box=True)
@@ -405,7 +407,7 @@ class TestBoxFunctional(unittest.TestCase):
         assert isinstance(pbox.inner, SBox)
         assert pbox.inner.camel_case == 'Item'
         assert json.loads(pbox.json)['inner']['CamelCase'] == 'Item'
-        assert yaml.load(pbox.yaml)['inner']['CamelCase'] == 'Item'
+        assert yaml.load(pbox.yaml, Loader=yaml.SafeLoader)['inner']['CamelCase'] == 'Item'
         assert repr(pbox['inner']).startswith('<ShorthandBox')
         assert not isinstance(pbox.dict, Box)
         assert pbox.dict['inner']['CamelCase'] == 'Item'
@@ -426,7 +428,7 @@ class TestBoxFunctional(unittest.TestCase):
 
     def test_box_list_to_yaml(self):
         bl = BoxList([{'item': 1, 'CamelBad': 2}])
-        assert yaml.load(bl.to_yaml())[0]['item'] == 1
+        assert yaml.load(bl.to_yaml(), Loader=yaml.SafeLoader)[0]['item'] == 1
 
     def test_box_list_from_yaml(self):
         alist = [{'item': 1}, {'CamelBad': 2}]

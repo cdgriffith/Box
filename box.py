@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 #
-# Copyright (c) 2018 - Chris Griffith - MIT License
+# Copyright (c) 2017-2018 - Chris Griffith - MIT License
 """
 Improved dictionary access through dot notation with additional tools.
 """
@@ -15,13 +15,9 @@ from keyword import kwlist
 import warnings
 
 try:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Iterable, Mapping, Callable
 except ImportError:
-    try:
-        from collections import Iterable, Mapping
-    except ImportError:
-        Mapping = dict
-        Iterable = (tuple, list)
+    from collections import Iterable, Mapping, Callable
 
 yaml_support = True
 
@@ -440,7 +436,7 @@ class Box(dict):
         if default_value is self.__class__:
             return self.__class__(__box_heritage=(self, item),
                                   **self.__box_config())
-        elif isinstance(default_value, collections.Callable):
+        elif isinstance(default_value, Callable):
             return default_value()
         elif hasattr(default_value, 'copy'):
             return default_value.copy()
@@ -845,8 +841,7 @@ class BoxList(list):
     def __hash__(self):
         if self.box_options.get('frozen_box'):
             hashing = 98765
-            for item in self:
-                hashing ^= hash(item)
+            hashing ^= hash(tuple(self))
             return hashing
         raise TypeError("unhashable type: 'BoxList'")
 

@@ -4,7 +4,9 @@ Changelog
 Version 3.2.2
 ~~~~~~~~~~~~~
 
+* Adding hash abilities to new frozen BoxList
 * Fixing hashing returned unpredictable values (thanks to cebaa)
+* Removing non-collection support for mapping and callable identification
 
 Version 3.2.1
 ~~~~~~~~~~~~~
