@@ -546,8 +546,6 @@ class Box(dict):
                         if key == _camel_killer(each_key):
                             self[each_key] = value
                             break
-                else:
-                    self[key] = value
             else:
                 self[key] = value
         else:

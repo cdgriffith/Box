@@ -332,6 +332,9 @@ class TestBoxFunctional(unittest.TestCase):
         assert hash(bl2) == hash(bl1)
         assert hash(bl3) != hash(bl2)
 
+        with pytest.raises(TypeError):
+            hash(BoxList([1,2,3]))
+
     def test_frozen_list(self):
         bl = BoxList([5, 4, 3], frozen_box=True)
         with pytest.raises(BoxError):
