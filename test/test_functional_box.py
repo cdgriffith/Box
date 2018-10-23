@@ -321,6 +321,15 @@ class TestBoxFunctional(unittest.TestCase):
 
         assert hash(bx3)
 
+    def test_hashing(self):
+        bx1 = Box(t=3, g=4, frozen_box=True)
+        bx2 = Box(t=3, g=4, frozen_box=True)
+        assert hash(bx1) == hash(bx2)
+
+        bl1 = BoxList([1,2,3,4], frozen_box=True)
+        bl2 = BoxList([1,2,3,4], frozen_box=True)
+        assert hash(bl2) == hash(bl1)
+
     def test_frozen_list(self):
         bl = BoxList([5, 4, 3], frozen_box=True)
         with pytest.raises(BoxError):

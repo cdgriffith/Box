@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+Version 3.2.2
+~~~~~~~~~~~~~
+
+* Fixing hashing returned unpredictable values (thanks to cebaa)
+
 Version 3.2.1
 ~~~~~~~~~~~~~
 
