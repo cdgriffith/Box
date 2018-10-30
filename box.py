@@ -9,7 +9,6 @@ import string
 import sys
 import json
 import re
-import collections
 import copy
 from keyword import kwlist
 import warnings
@@ -656,7 +655,7 @@ class Box(dict):
                 v = BoxList(v)
             try:
                 self.__setattr__(k, v)
-            except TypeError:
+            except (AttributeError, TypeError):
                 self.__setitem__(k, v)
 
     def setdefault(self, item, default=None):

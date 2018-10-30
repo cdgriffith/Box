@@ -213,7 +213,9 @@ class TestBoxFunctional(unittest.TestCase):
                   'lister': ['a']})
         a.update([('asdf', 'fdsa')])
         a.update(testkey=66)
+        a.update({'items': 'test'})
 
+        assert a['items'] == 'test'
         assert a.key1.new == 5
         assert a['Key 2'].add_key == 6
         assert "Key5" in a['Key 2'].Key4
