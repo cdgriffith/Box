@@ -1,28 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 #
-# Copyright (c) 2017 - Chris Griffith - MIT License
+# Copyright (c) 2017-2018 - Chris Griffith - MIT License
 """
 Improved dictionary access through dot notation with additional tools.
 """
 import string
 import sys
 import json
-from uuid import uuid4
 import re
-import collections
 import copy
 from keyword import kwlist
 import warnings
 
 try:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Iterable, Mapping, Callable
 except ImportError:
-    try:
-        from collections import Iterable, Mapping
-    except ImportError:
-        Mapping = dict
-        Iterable = (tuple, list)
+    from collections import Iterable, Mapping, Callable
 
 yaml_support = True
 
@@ -238,7 +232,6 @@ def _get_box_config(cls, kwargs):
         # Internal use only
         '__converted': set(),
         '__box_heritage': kwargs.pop('__box_heritage', None),
-        '__hash': None,
         '__created': False,
         # Can be changed by user after box creation
         'default_box': kwargs.pop('default_box', False),
@@ -255,10 +248,7 @@ def _get_box_config(cls, kwargs):
 
 class Box(dict):
     """
-
-    The lists are turned into BoxLists
-    so that they can also intercept incoming items and turn
-    them into Boxes.
+    Improved dictionary access through dot notation with additional tools.
 
     :param default_box: Similar to defaultdict, return a default value
     :param default_box_attr: Specify the default replacement.
@@ -345,12 +335,10 @@ class Box(dict):
 
     def __hash__(self):
         if self._box_config['frozen_box']:
-            if not self._box_config['__hash']:
-                hashing = hash(uuid4().hex)
-                for item in self.items():
-                    hashing ^= hash(item)
-                self._box_config['__hash'] = hashing
-            return self._box_config['__hash']
+            hashing = 54321
+            for item in self.items():
+                hashing ^= hash(item)
+            return hashing
         raise TypeError("unhashable type: 'Box'")
 
     def __dir__(self):
@@ -447,7 +435,7 @@ class Box(dict):
         if default_value is self.__class__:
             return self.__class__(__box_heritage=(self, item),
                                   **self.__box_config())
-        elif isinstance(default_value, collections.Callable):
+        elif isinstance(default_value, Callable):
             return default_value()
         elif hasattr(default_value, 'copy'):
             return default_value.copy()
@@ -557,8 +545,6 @@ class Box(dict):
                         if key == _camel_killer(each_key):
                             self[each_key] = value
                             break
-                else:
-                    self[key] = value
             else:
                 self[key] = value
         else:
@@ -669,7 +655,7 @@ class Box(dict):
                 v = BoxList(v)
             try:
                 self.__setattr__(k, v)
-            except TypeError:
+            except (AttributeError, TypeError):
                 self.__setitem__(k, v)
 
     def setdefault(self, item, default=None):
@@ -848,6 +834,13 @@ class BoxList(list):
         for k in self:
             out.append(copy.deepcopy(k))
         return out
+
+    def __hash__(self):
+        if self.box_options.get('frozen_box'):
+            hashing = 98765
+            hashing ^= hash(tuple(self))
+            return hashing
+        raise TypeError("unhashable type: 'BoxList'")
 
     def to_list(self):
         new_list = []

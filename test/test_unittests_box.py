@@ -58,4 +58,5 @@ class TestBoxUnit(unittest.TestCase):
         assert "Rick Moranis" in movie_string
         box._to_yaml(movie_data, filename=m_file)
         assert "Rick Moranis" in open(m_file).read()
-        assert yaml.load(open(m_file)) == yaml.load(movie_string)
+        assert yaml.load(open(m_file), Loader=yaml.SafeLoader) == yaml.load(
+            movie_string, Loader=yaml.SafeLoader)
