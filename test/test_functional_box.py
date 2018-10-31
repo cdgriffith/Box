@@ -328,14 +328,14 @@ class TestBoxFunctional(unittest.TestCase):
         bx2 = Box(g=4, t=3, frozen_box=True)
         assert hash(bx1) == hash(bx2)
 
-        bl1 = BoxList([1,2,3,4], frozen_box=True)
-        bl2 = BoxList([1,2,3,4], frozen_box=True)
-        bl3 = BoxList([2,1,3,4], frozen_box=True)
+        bl1 = BoxList([1, 2, 3, 4], frozen_box=True)
+        bl2 = BoxList([1, 2, 3, 4], frozen_box=True)
+        bl3 = BoxList([2, 1, 3, 4], frozen_box=True)
         assert hash(bl2) == hash(bl1)
         assert hash(bl3) != hash(bl2)
 
         with pytest.raises(TypeError):
-            hash(BoxList([1,2,3]))
+            hash(BoxList([1, 2, 3]))
 
     def test_frozen_list(self):
         bl = BoxList([5, 4, 3], frozen_box=True)
@@ -412,7 +412,8 @@ class TestBoxFunctional(unittest.TestCase):
         assert isinstance(pbox.inner, SBox)
         assert pbox.inner.camel_case == 'Item'
         assert json.loads(pbox.json)['inner']['CamelCase'] == 'Item'
-        assert yaml.load(pbox.yaml, Loader=yaml.SafeLoader)['inner']['CamelCase'] == 'Item'
+        test_item = yaml.load(pbox.yaml, Loader=yaml.SafeLoader)
+        assert test_item['inner']['CamelCase'] == 'Item'
         assert repr(pbox['inner']).startswith('<ShorthandBox')
         assert not isinstance(pbox.dict, Box)
         assert pbox.dict['inner']['CamelCase'] == 'Item'
