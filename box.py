@@ -494,7 +494,6 @@ class Box(dict):
         except AttributeError as err:
             if item == "__getstate__":
                 raise AttributeError(item)
-            
             if item == '_box_config':
                 raise BoxError('_box_config key must exist')
             kill_camel = self._box_config['camel_killer_box']
