@@ -607,6 +607,12 @@ class TestBoxFunctional(unittest.TestCase):
         assert bx == loaded2
         loaded2.box_options = bx.box_options
 
+
+    def test_pickle_default_box(self):
+        bb = Box(default_box=True)
+        loaded = pickle.loads(pickle.dumps(bb))
+        assert bb == loaded
+        
     def test_conversion_dup_only(self):
         with pytest.raises(BoxError):
             Box(movie_data, conversion_box=False, box_duplicates='error')
