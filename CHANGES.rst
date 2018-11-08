@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+Version 3.2.3
+~~~~~~~~~~~~~
+
+* Fixing pickling with default box (thanks to sdementen)
+
 Version 3.2.2
 ~~~~~~~~~~~~~
 

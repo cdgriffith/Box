@@ -12,6 +12,7 @@ Code contributions:
 - Matan Rosenberg (matan129)
 - Matt Wisniewski (polishmatt)
 - Martijn Pieters (mjpieters)
+- (sdementen)
 
 Suggestions and bug reporting:
 
