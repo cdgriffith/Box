@@ -37,7 +37,7 @@ else:
 __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
            'BoxError', 'BoxKeyError']
 __author__ = 'Chris Griffith'
-__version__ = '3.2.1'
+__version__ = '3.2.3'
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box', 'box_it_up',
@@ -492,6 +492,8 @@ class Box(dict):
             except KeyError:
                 value = object.__getattribute__(self, item)
         except AttributeError as err:
+            if item == "__getstate__":
+                raise AttributeError(item)
             if item == '_box_config':
                 raise BoxError('_box_config key must exist')
             kill_camel = self._box_config['camel_killer_box']
