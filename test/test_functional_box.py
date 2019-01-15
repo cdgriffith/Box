@@ -735,6 +735,12 @@ class TestBoxFunctional(unittest.TestCase):
         assert bx == {}
         assert bx.keys() == []
 
+    def test_bad_recursive(self):
+        b = Box()
+        bl = b.setdefault("l", [])
+        bl.append(["foo"])
+        assert bl == [['foo']], bl
+
 
 def mp_queue_test(q):
     bx = q.get()

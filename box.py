@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 #
-# Copyright (c) 2017-2018 - Chris Griffith - MIT License
+# Copyright (c) 2017-2019 - Chris Griffith - MIT License
 """
 Improved dictionary access through dot notation with additional tools.
 """
@@ -37,7 +37,7 @@ else:
 __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
            'BoxError', 'BoxKeyError']
 __author__ = 'Chris Griffith'
-__version__ = '3.2.3'
+__version__ = '3.2.4'
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box', 'box_it_up',
@@ -768,7 +768,7 @@ class BoxList(list):
     def __init__(self, iterable=None, box_class=Box, **box_options):
         self.box_class = box_class
         self.box_options = box_options
-        self.box_org_ref = id(iterable)
+        self.box_org_ref = self.box_org_ref = id(iterable) if iterable else 0
         if iterable:
             for x in iterable:
                 self.append(x)

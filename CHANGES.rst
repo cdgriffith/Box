@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+Version 3.2.4
+~~~~~~~~~~~~~
+
+* Fixing recursion issue #68 when using setdefault (thanks to sdementen)
+
 Version 3.2.3
 ~~~~~~~~~~~~~
 
