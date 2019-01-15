@@ -24,7 +24,7 @@ setup(
     url='https://github.com/cdgriffith/Box',
     license='MIT',
     author=attrs['author'],
-    tests_require=["pytest", "coverage >= 3.6", "tox", "pytest-cov"],
+    tests_require=["pytest", "coverage >= 3.6", "pytest-cov"],
     install_requires=[],
     author_email='chris@cdgriffith.com',
     description='Advanced Python dictionaries with dot notation access',
@@ -56,6 +56,6 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules'
         ],
     extras_require={
-        'testing': ["pytest", "coverage >= 3.6", "tox", "pytest-cov"],
+        'testing': ["pytest", "coverage >= 3.6", "pytest-cov"],
         },
 )
