@@ -233,6 +233,7 @@ def _get_box_config(cls, kwargs):
         '__converted': set(),
         '__box_heritage': kwargs.pop('__box_heritage', None),
         '__created': False,
+        '__ordered_box_values': [],
         # Can be changed by user after box creation
         'default_box': kwargs.pop('default_box', False),
         'default_box_attr': kwargs.pop('default_box_attr', cls),
@@ -279,7 +280,7 @@ class Box(dict):
     def __init__(self, *args, **kwargs):
         self._box_config = _get_box_config(self.__class__, kwargs)
         if self._box_config['ordered_box']:
-            self._box_config['ordered_box_values'] = []
+            self._box_config['__ordered_box_values'] = []
         if (not self._box_config['conversion_box'] and
                 self._box_config['box_duplicates'] != "ignore"):
             raise BoxError('box_duplicates are only for conversion_boxes')
@@ -318,8 +319,8 @@ class Box(dict):
 
     def __add_ordered(self, key):
         if (self._box_config['ordered_box'] and
-                key not in self._box_config['ordered_box_values']):
-            self._box_config['ordered_box_values'].append(key)
+                key not in self._box_config['__ordered_box_values']):
+            self._box_config['__ordered_box_values'].append(key)
 
     def box_it_up(self):
         """
@@ -421,7 +422,7 @@ class Box(dict):
 
     def keys(self):
         if self._box_config['ordered_box']:
-            return self._box_config['ordered_box_values']
+            return self._box_config['__ordered_box_values']
         return super(Box, self).keys()
 
     def values(self):
@@ -559,8 +560,8 @@ class Box(dict):
             raise BoxError('Box is frozen')
         super(Box, self).__delitem__(key)
         if (self._box_config['ordered_box'] and
-                key in self._box_config['ordered_box_values']):
-            self._box_config['ordered_box_values'].remove(key)
+                key in self._box_config['__ordered_box_values']):
+            self._box_config['__ordered_box_values'].remove(key)
 
     def __delattr__(self, item):
         if self._box_config['frozen_box']:
@@ -576,8 +577,8 @@ class Box(dict):
         else:
             object.__delattr__(self, item)
         if (self._box_config['ordered_box'] and
-                item in self._box_config['ordered_box_values']):
-            self._box_config['ordered_box_values'].remove(item)
+                item in self._box_config['__ordered_box_values']):
+            self._box_config['__ordered_box_values'].remove(item)
 
     def pop(self, key, *args):
         if args:
@@ -600,7 +601,7 @@ class Box(dict):
             return item
 
     def clear(self):
-        self._box_config['ordered_box_values'] = []
+        self._box_config['__ordered_box_values'] = []
         super(Box, self).clear()
 
     def popitem(self):
