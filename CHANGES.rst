@@ -5,6 +5,7 @@ Version 3.2.4
 ~~~~~~~~~~~~~
 
 * Fixing recursion issue #68 when using setdefault (thanks to sdementen)
+* Fixing ordered_box would make 'ordered_box_values' internal helper as key in sub boxes
 
 Version 3.2.3
 ~~~~~~~~~~~~~
