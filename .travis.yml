@@ -2,8 +2,6 @@ sudo: required
 dist: trusty
 language: python
 python:
-    - "2.7"
-    - "3.4"
     - "3.5"
     - "3.6"
 matrix:
@@ -12,6 +10,7 @@ matrix:
       dist: xenial
       sudo: true
 install:
+    - pip install -r requirements.txt
     - pip install -r requirements-test.txt
     - pip install coveralls
 script: PYTHONPATH=. py.test --cov=box test/

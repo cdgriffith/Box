@@ -10,7 +10,7 @@ import re
 import copy
 from keyword import kwlist
 import warnings
-from collections import Iterable, Mapping, Callable
+from collections.abc import Iterable, Mapping, Callable
 
 import box
 from box.exceptions import BoxError, BoxKeyError
