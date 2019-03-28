@@ -29,6 +29,13 @@ except ImportError:
         yaml = None
         yaml_support = False
 
+try:
+    import wrapt
+    wrapt_support = True
+except ImportError:
+    wrapt_support = False
+
+    
 if sys.version_info >= (3, 0):
     basestring = str
 else:
@@ -1108,3 +1115,42 @@ class SBox(Box):
 
     def __repr__(self):
         return '<ShorthandBox: {0}>'.format(str(self.to_dict()))
+
+    
+if wrapt_support:
+    class BoxObject(wrapt.ObjectProxy):
+        """
+        Box Object.
+    
+        """
+
+        def __init__(self, wrapped, *args, box_class=box.Box, **kwargs):
+            """Initialize Box Object with __dict__ as a Box."""
+            super().__init__(wrapped)
+            try:
+                base_dict = super().__getattr__('__dict__')
+            except AttributeError:
+                base_dict = {}
+            super().__setattr__('__dict__', box_class(base_dict, *args, **kwargs))
+
+        def __call__(self, *args, **kwargs):
+            """Wrapper for Callable Objects."""
+            return self.__wrapped__(*args, **kwargs)
+
+        def __getattr__(self, name):
+            """Get Attribute from Wrapped Object or from Box."""
+            try:
+                return super().__getattr__(name)
+            except AttributeError:
+                return self.__dict__[name]
+
+        def __setattr__(self, name, value):
+            """Set Attribute in Wrapped Object or Box."""
+            if hasattr(self.__wrapped__, name):
+                setattr(self.__wrapped__, name, value)
+            elif name == '__dict__':
+                raise TypeError('cannot set __dict__')
+            else:
+                self.__dict__[name] = value
+    
+    __all__  += ['BoxObject']
