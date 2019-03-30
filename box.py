@@ -1141,12 +1141,13 @@ if wrapt_support:
 
         def __init__(self, wrapped=None, box_class=Box, *args, **kwargs):
             """Initialize Box Object with __dict__ as a Box."""
-            super().__init__(wrapped)
+            super(BoxObject, self).__init__(wrapped)
             try:
-                base_dict = super().__getattr__('__dict__')
+                base_dict = super(BoxObject, self).__getattr__('__dict__')
             except AttributeError:
                 base_dict = {}
-            super().__setattr__('__dict__', box_class(base_dict, *args, **kwargs))
+            super(BoxObject, self).__setattr__('__dict__',
+                                               box_class(base_dict, *args, **kwargs))
 
         def __call__(self, *args, **kwargs):
             """Call Method for Callable Objects."""
@@ -1155,7 +1156,7 @@ if wrapt_support:
         def __getattr__(self, name):
             """Get Attribute from Wrapped Object or from Box."""
             try:
-                return super().__getattr__(name)
+                return super(BoxObject, self).__getattr__(name)
             except AttributeError:
                 return self.__dict__[name]
 
@@ -1173,7 +1174,7 @@ if wrapt_support:
             if hasattr(self.__wrapped__, name):
                 delattr(self.__wrapped__, name)
             elif name == '__dict__':
-                super().__setattr__('__dict__', {})
+                super(BoxObject, self).__setattr__('__dict__', {})
             else:
                 del self.__dict__[name]
 
