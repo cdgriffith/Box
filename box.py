@@ -1124,8 +1124,19 @@ if wrapt_support:
 
     class BoxObject(wrapt.ObjectProxy):
         """
-        Box Object.
+        Wrapper for any Python object with a Box as __dict__.
 
+        Simple Usage:
+
+        import requests
+        url = 'https://raw.githubusercontent.com/cdgriffith/Box/master/box.py'
+        session = BoxObject(requests.Session())
+        session.source_code = session.get(url).text
+
+        :param wrapped: Wrapped Object.
+        :param box_class: Custom internal Box class
+        :param args: Arguments to box_class
+        :param kwargs: Keyword arguments to box_class
         """
 
         def __init__(self, wrapped=None, box_class=Box, *args, **kwargs):
@@ -1138,7 +1149,7 @@ if wrapt_support:
             super().__setattr__('__dict__', box_class(base_dict, *args, **kwargs))
 
         def __call__(self, *args, **kwargs):
-            """Wrapper for Callable Objects."""
+            """Call Method for Callable Objects."""
             return self.__wrapped__(*args, **kwargs)
 
         def __getattr__(self, name):

@@ -776,6 +776,9 @@ def test_box_object_attributes():
         assert getattr(b, tagged) == [v]
         setattr(b, k, getattr(b, tagged))
         assert getattr(b, k) == [v]
+    for k, v in test_dict.items():
+        assert k in b
+        assert b[k] == v
 
 
 def mp_queue_test(q):
