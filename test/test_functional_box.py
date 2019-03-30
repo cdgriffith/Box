@@ -747,7 +747,17 @@ def _f(value):
 
 
 python_example_objects = (
-    None, True, False, 1, 3.14, 'abc', [1, 2, 3], {}, ([], {}), lambda x: x**2, _f
+    None,
+    True,
+    False,
+    1,
+    3.14,
+    'abc',
+    [1, 2, 3],
+    {},
+    ([], {}),
+    lambda x: x**2,
+    _f
 )
 
 

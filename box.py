@@ -1146,8 +1146,9 @@ if wrapt_support:
                 base_dict = super(BoxObject, self).__getattr__('__dict__')
             except AttributeError:
                 base_dict = {}
-            super(BoxObject, self).__setattr__('__dict__',
-                                               box_class(base_dict, *args, **kwargs))
+            super(BoxObject, self).__setattr__(
+                '__dict__', box_class(base_dict, *args, **kwargs)
+            )
 
         def __call__(self, *args, **kwargs):
             """Call Method for Callable Objects."""
