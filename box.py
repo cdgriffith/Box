@@ -1179,5 +1179,4 @@ if wrapt_support:
             else:
                 del self.__dict__[name]
 
-
     __all__ += ['BoxObject']
