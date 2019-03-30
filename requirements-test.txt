@@ -3,7 +3,7 @@ coverage >= 4.5.2
 pytest-cov
 PyYAML; python_version <= '3.3'
 ruamel.yaml; python_version >= '3.4'
-python-box
+wrapt
 addict
 dotmap
 reusables
