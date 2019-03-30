@@ -742,6 +742,42 @@ class TestBoxFunctional(unittest.TestCase):
         assert bl == [['foo']], bl
 
 
+def _f(value):
+    yield value
+
+
+python_example_objects = (
+    None, True, False, 1, 3.14, 'abc', [1, 2, 3], {}, ([], {}), lambda x: x**2, _f
+)
+
+
+@pytest.mark.parametrize('wrapped', python_example_objects)
+def test_box_object_generic(wrapped):
+    b = BoxObject(wrapped)
+    assert b == wrapped
+    assert not (b is wrapped)
+    assert isinstance(b, BoxObject)
+    assert isinstance(b, type(wrapped))
+    b.box_key = 'secret_word'
+    assert b.box_key == 'secret_word'
+    assert 'box_key' in b.__dict__
+    assert isinstance(b.__dict__, Box)
+
+
+def test_box_object_attributes():
+    b = BoxObject(test_dict, **movie_data)
+    assert b == test_dict
+    assert not (b is test_dict)
+    assert b.__dict__ == movie_data
+    for k, v in movie_data.items():
+        assert getattr(b, k) == v
+        tagged = k + '_b'
+        setattr(b, tagged, [v])
+        assert getattr(b, tagged) == [v]
+        setattr(b, k, getattr(b, tagged))
+        assert getattr(b, k) == [v]
+
+
 def mp_queue_test(q):
     bx = q.get()
     try:

@@ -29,13 +29,16 @@ except ImportError:
         yaml = None
         yaml_support = False
 
+
+wrapt_support = True
+
 try:
     import wrapt
-    wrapt_support = True
 except ImportError:
+    wrapt = None
     wrapt_support = False
 
-    
+
 if sys.version_info >= (3, 0):
     basestring = str
 else:
@@ -1116,15 +1119,16 @@ class SBox(Box):
     def __repr__(self):
         return '<ShorthandBox: {0}>'.format(str(self.to_dict()))
 
-    
+
 if wrapt_support:
+
     class BoxObject(wrapt.ObjectProxy):
         """
         Box Object.
-    
+
         """
 
-        def __init__(self, wrapped, *args, box_class=box.Box, **kwargs):
+        def __init__(self, wrapped=None, box_class=Box, *args, **kwargs):
             """Initialize Box Object with __dict__ as a Box."""
             super().__init__(wrapped)
             try:
@@ -1152,5 +1156,6 @@ if wrapt_support:
                 raise TypeError('cannot set __dict__')
             else:
                 self.__dict__[name] = value
-    
-    __all__  += ['BoxObject']
+
+
+    __all__ += ['BoxObject']
