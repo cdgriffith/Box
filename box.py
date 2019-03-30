@@ -1168,5 +1168,14 @@ if wrapt_support:
             else:
                 self.__dict__[name] = value
 
+        def __delattr__(self, name):
+            """Delete Attribute in Wrapped Object or Box."""
+            if hasattr(self.__wrapped__, name):
+                delattr(self.__wrapped__, name)
+            elif name == '__dict__':
+                super().__setattr__('__dict__', {})
+            else:
+                del self.__dict__[name]
+
 
     __all__ += ['BoxObject']

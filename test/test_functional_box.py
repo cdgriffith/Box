@@ -762,6 +762,7 @@ def test_box_object_generic(wrapped):
     assert b.box_key == 'secret_word'
     assert 'box_key' in b.__dict__
     assert isinstance(b.__dict__, Box)
+    assert b.__dict__ != getattr(b.__wrapped__, '__dict__', None)
 
 
 def test_box_object_attributes():
@@ -769,6 +770,8 @@ def test_box_object_attributes():
     assert b == test_dict
     assert not (b is test_dict)
     assert b.__dict__ == movie_data
+    assert isinstance(b.__dict__, Box)
+    assert b.__dict__ != getattr(b.__wrapped__, '__dict__', None)
     for k, v in movie_data.items():
         assert getattr(b, k) == v
         tagged = k + '_b'
