@@ -1166,10 +1166,10 @@ if wrapt_support:
 
         def __setattr__(self, name, value):
             """Set Attribute in Wrapped Object or Box."""
-            if hasattr(self.__wrapped__, name):
-                setattr(self.__wrapped__, name, value)
-            elif name == '__dict__':
+            if name == '__dict__':
                 raise TypeError('cannot set __dict__')
+            elif hasattr(self.__wrapped__, name):
+                setattr(self.__wrapped__, name, value)
             else:
                 self.__dict__[name] = value
 
