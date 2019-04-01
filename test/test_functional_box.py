@@ -775,6 +775,15 @@ def test_box_object_generic(wrapped):
     assert b.__dict__ != getattr(b.__wrapped__, '__dict__', None)
 
 
+@pytest.mark.parametrize('wrapped', python_example_objects)
+def test_box_object_deletion(wrapped):
+    b = BoxObject(wrapped)
+    with pytest.raises(TypeError):
+        b.__dict__ = 0
+    del b.__dict__
+    assert b.__dict__ == {}
+
+
 def test_box_object_attributes():
     b = BoxObject(test_dict, **movie_data)
     assert b == test_dict
