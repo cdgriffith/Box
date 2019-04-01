@@ -1135,19 +1135,23 @@ if wrapt_support:
 
         :param wrapped: Wrapped Object.
         :param box_class: Custom internal Box class
-        :param args: Arguments to box_class
-        :param kwargs: Keyword arguments to box_class
+        :param kwargs: Keyword arguments to fill Box
         """
 
-        def __init__(self, wrapped=None, box_class=Box, *args, **kwargs):
+        def __init__(self, wrapped=None, *args, **kwargs):
             """Initialize Box Object with __dict__ as a Box."""
             super(BoxObject, self).__init__(wrapped)
             try:
                 base_dict = super(BoxObject, self).__getattr__('__dict__')
+                if args:
+                    raise TypeError('Cannot pass dictionary arguments when '
+                                    'internal object has __dict__ attributes. '
+                                    'Pass arguments by keyword instead.')
             except AttributeError:
-                base_dict = {}
+                base_dict = args
+            box_class = kwargs.pop('box_class', Box)
             super(BoxObject, self).__setattr__(
-                '__dict__', box_class(base_dict, *args, **kwargs)
+                '__dict__', box_class(base_dict, **kwargs)
             )
 
         def __call__(self, *args, **kwargs):

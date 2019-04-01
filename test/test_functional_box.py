@@ -829,6 +829,11 @@ def test_box_object_call():
     assert b(list(test_dict), **movie_data) == f(list(test_dict), **movie_data)
 
 
+def test_box_object_double_args():
+    with pytest.raises(TypeError):
+        BoxObject(_f, zip([1, 2, 3], [4, 5, 6]), **movie_data)
+
+
 def mp_queue_test(q):
     bx = q.get()
     try:
