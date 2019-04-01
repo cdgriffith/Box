@@ -1141,18 +1141,17 @@ if wrapt_support:
         def __init__(self, wrapped=None, *args, **kwargs):
             """Initialize Box Object with __dict__ as a Box."""
             super(BoxObject, self).__init__(wrapped)
+            box_class = kwargs.pop('box_class', Box)
             try:
                 base_dict = super(BoxObject, self).__getattr__('__dict__')
                 if args:
                     raise TypeError('Cannot pass dictionary arguments when '
                                     'internal object has __dict__ attributes. '
                                     'Pass arguments by keyword instead.')
+                box = box_class(base_dict, **kwargs)
             except AttributeError:
-                base_dict = args
-            box_class = kwargs.pop('box_class', Box)
-            super(BoxObject, self).__setattr__(
-                '__dict__', box_class(base_dict, **kwargs)
-            )
+                box = box_class(*args, **kwargs)
+            super(BoxObject, self).__setattr__('__dict__', box)
 
         def __call__(self, *args, **kwargs):
             """Call Method for Callable Objects."""
