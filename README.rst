@@ -406,6 +406,46 @@ config values into python types. It supports `list`, `bool`, `int` and `float`.
     config.Examples.float('floatly')
     # 4.4
 
+BoxObject
+---------
+
+An object wrapper with a **Box** for a **__dict__**.
+
+.. code:: python
+
+    import requests
+    from box import BoxObject
+
+    def get_html(session, url, *args, **kwargs):
+        response = session.get(url, *args, **kwargs)
+        text = response.text
+        response_meta = response.__dict__
+        for key in tuple(filter(lambda k: k.startswith('_'), response_meta)):
+            response_meta.pop(key)
+        return BoxObject(text, response_meta, frozen_box=True)
+
+    box_url = 'https://raw.githubusercontent.com/cdgriffith/Box/master/box.py'
+    with requests.Session() as session:
+        box_source = get_html(session, box_url)
+
+    box_source.url
+    # https://raw.githubusercontent.com/cdgriffith/Box/master/box.py
+
+    box_source.status_code
+    # 200
+
+    box_source.raw.reason
+    # OK
+
+**BoxObject**s act just like objects but they secretly carry around a **Box** with
+them to store attributes. **BoxObject**s are built off of **wrapt.ObjectProxy**s which
+can wrap almost any python object. They protect their wrapped objects storing them in
+the **__wrapped__** attribute and keeping the original **__dict__** in
+**__wrapped__.__dict__**.
+
+See the `Wrapt Documentation <https://wrapt.readthedocs.io/en/latest\>`_, specifically
+the section on **ObjectProxy**s, for more information.
+
 
 License
 =======
