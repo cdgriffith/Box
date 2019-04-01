@@ -746,6 +746,12 @@ def _f(value):
     yield value
 
 
+class _C(object):
+    def __init__(self):
+        self.a = 'a'
+        self.b = 2
+
+
 python_example_objects = (
     None,
     True,
@@ -757,7 +763,8 @@ python_example_objects = (
     {},
     ([], {}),
     lambda x: x**2,
-    _f
+    _f,
+    _C()
 )
 
 
@@ -781,7 +788,14 @@ def test_box_object_deletion(wrapped):
     with pytest.raises(TypeError):
         b.__dict__ = 0
     del b.__dict__
-    assert b.__dict__ == {}
+    assert b.__dict__ == getattr(b.__wrapped__, '__dict__', {})
+    with pytest.raises(AttributeError):
+        del b.foo
+    if hasattr(b.__wrapped__, 'a'):
+        del b.a
+    if not hasattr(b.__wrapped__, 'b'):
+        with pytest.raises(AttributeError):
+            del b.b
 
 
 def test_box_object_attributes():

@@ -1180,9 +1180,13 @@ if wrapt_support:
                     '__dict__',
                     getattr(self.__wrapped__, '__dict__', {})
                 )
-            elif hasattr(self.__wrapped__, name):
-                delattr(self.__wrapped__, name)
             else:
-                del self.__dict__[name]
+                try:
+                    delattr(self.__wrapped__, name)
+                except AttributeError as error:
+                    try:
+                        del self.__dict__[name]
+                    except KeyError:
+                        raise error
 
     __all__ += ['BoxObject']
