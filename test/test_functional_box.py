@@ -780,6 +780,11 @@ def test_box_object_generic(wrapped):
     assert 'box_key' in b.__dict__
     assert isinstance(b.__dict__, Box)
     assert b.__dict__ != getattr(b.__wrapped__, '__dict__', None)
+    with pytest.raises(AttributeError):
+        b.foo
+    if hasattr(b.__wrapped__, 'b'):
+        b.b = 1
+        assert b.__wrapped__.b == 1
 
 
 @pytest.mark.parametrize('wrapped', python_example_objects)
@@ -815,6 +820,10 @@ def test_box_object_attributes():
     for k, v in test_dict.items():
         assert k in b
         assert b[k] == v
+
+
+def test_box_object_call():
+    assert True
 
 
 def mp_queue_test(q):
