@@ -823,7 +823,10 @@ def test_box_object_attributes():
 
 
 def test_box_object_call():
-    assert True
+    def f(*args, **kwargs):
+        return (args, kwargs)
+    b = BoxObject(f)
+    assert b(list(test_dict), **movie_data) == f(list(test_dict), **movie_data)
 
 
 def mp_queue_test(q):
