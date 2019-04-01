@@ -1159,7 +1159,10 @@ if wrapt_support:
             try:
                 return super(BoxObject, self).__getattr__(name)
             except AttributeError:
-                return self.__dict__[name]
+                try:
+                    return self.__dict__[name]
+                except KeyError:
+                    raise AttributeError(name)
 
         def __setattr__(self, name, value):
             """Set Attribute in Wrapped Object or Box."""
