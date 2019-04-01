@@ -1135,6 +1135,7 @@ if wrapt_support:
 
         :param wrapped: Wrapped Object.
         :param box_class: Custom internal Box class
+        :param args: Arguments to fill Box
         :param kwargs: Keyword arguments to fill Box
         """
 
