@@ -13,6 +13,7 @@ Code contributions:
 - Matt Wisniewski (polishmatt)
 - Martijn Pieters (mjpieters)
 - (sdementen)
+- Brandon Gomes (bhgomes)
 
 Suggestions and bug reporting:
 

@@ -742,6 +742,98 @@ class TestBoxFunctional(unittest.TestCase):
         assert bl == [['foo']], bl
 
 
+def _f(value):
+    yield value
+
+
+class _C(object):
+    def __init__(self):
+        self.a = 'a'
+        self.b = 2
+
+
+python_example_objects = (
+    None,
+    True,
+    False,
+    1,
+    3.14,
+    'abc',
+    [1, 2, 3],
+    {},
+    ([], {}),
+    lambda x: x**2,
+    _f,
+    _C()
+)
+
+
+@pytest.mark.parametrize('wrapped', python_example_objects)
+def test_box_object_generic(wrapped):
+    b = BoxObject(wrapped)
+    assert b == wrapped
+    assert not (b is wrapped)
+    assert isinstance(b, BoxObject)
+    assert isinstance(b, type(wrapped))
+    b.box_key = 'secret_word'
+    assert b.box_key == 'secret_word'
+    assert 'box_key' in b.__dict__
+    assert isinstance(b.__dict__, Box)
+    assert b.__dict__ != getattr(b.__wrapped__, '__dict__', None)
+    with pytest.raises(AttributeError):
+        b.foo
+    if hasattr(b.__wrapped__, 'b'):
+        b.b = 1
+        assert b.__wrapped__.b == 1
+
+
+@pytest.mark.parametrize('wrapped', python_example_objects)
+def test_box_object_deletion(wrapped):
+    b = BoxObject(wrapped)
+    with pytest.raises(TypeError):
+        b.__dict__ = 0
+    del b.__dict__
+    assert b.__dict__ == getattr(b.__wrapped__, '__dict__', {})
+    with pytest.raises(AttributeError):
+        del b.foo
+    if hasattr(b.__wrapped__, 'a'):
+        del b.a
+    if not hasattr(b.__wrapped__, 'b'):
+        with pytest.raises(AttributeError):
+            del b.b
+
+
+def test_box_object_attributes():
+    b = BoxObject(test_dict, **movie_data)
+    assert b == test_dict
+    assert not (b is test_dict)
+    assert b.__dict__ == movie_data
+    assert isinstance(b.__dict__, Box)
+    assert b.__dict__ != getattr(b.__wrapped__, '__dict__', None)
+    for k, v in movie_data.items():
+        assert getattr(b, k) == v
+        tagged = k + '_b'
+        setattr(b, tagged, [v])
+        assert getattr(b, tagged) == [v]
+        setattr(b, k, getattr(b, tagged))
+        assert getattr(b, k) == [v]
+    for k, v in test_dict.items():
+        assert k in b
+        assert b[k] == v
+
+
+def test_box_object_call():
+    def f(*args, **kwargs):
+        return (args, kwargs)
+    b = BoxObject(f)
+    assert b(list(test_dict), **movie_data) == f(list(test_dict), **movie_data)
+
+
+def test_box_object_double_args():
+    with pytest.raises(TypeError):
+        BoxObject(_f, zip([1, 2, 3], [4, 5, 6]), **movie_data)
+
+
 def mp_queue_test(q):
     bx = q.get()
     try:
