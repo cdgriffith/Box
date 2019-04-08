@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+Version 3.3.0
+~~~~~~~~~~~~~
+
+* Adding `BoxObject` (thanks to Brandon Gomes)
+
 Version 3.2.4
 ~~~~~~~~~~~~~
 
