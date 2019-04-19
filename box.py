@@ -29,6 +29,16 @@ except ImportError:
         yaml = None
         yaml_support = False
 
+
+wrapt_support = True
+
+try:
+    import wrapt
+except ImportError:
+    wrapt = None
+    wrapt_support = False
+
+
 if sys.version_info >= (3, 0):
     basestring = str
 else:
@@ -37,7 +47,7 @@ else:
 __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
            'BoxError', 'BoxKeyError']
 __author__ = 'Chris Griffith'
-__version__ = '3.2.4'
+__version__ = '3.3.0'
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box', 'box_it_up',
@@ -1108,3 +1118,79 @@ class SBox(Box):
 
     def __repr__(self):
         return '<ShorthandBox: {0}>'.format(str(self.to_dict()))
+
+
+if wrapt_support:
+
+    class BoxObject(wrapt.ObjectProxy):
+        """
+        Wrapper for any Python object with a Box as __dict__.
+
+        Simple Usage:
+
+        import requests
+        url = 'https://raw.githubusercontent.com/cdgriffith/Box/master/box.py'
+        session = BoxObject(requests.Session())
+        session.source_code = session.get(url).text
+
+        :param wrapped: Wrapped Object.
+        :param box_class: Custom internal Box class
+        :param args: Arguments to fill Box
+        :param kwargs: Keyword arguments to fill Box
+        """
+
+        def __init__(self, wrapped=None, *args, **kwargs):
+            """Initialize Box Object with __dict__ as a Box."""
+            super(BoxObject, self).__init__(wrapped)
+            box_class = kwargs.pop('box_class', Box)
+            try:
+                base_dict = super(BoxObject, self).__getattr__('__dict__')
+                if args:
+                    raise TypeError('Cannot pass dictionary arguments when '
+                                    'internal object has __dict__ attributes. '
+                                    'Pass arguments by keyword instead.')
+                box = box_class(base_dict, **kwargs)
+            except AttributeError:
+                box = box_class(*args, **kwargs)
+            super(BoxObject, self).__setattr__('__dict__', box)
+
+        def __call__(self, *args, **kwargs):
+            """Call Method for Callable Objects."""
+            return self.__wrapped__(*args, **kwargs)
+
+        def __getattr__(self, name):
+            """Get Attribute from Wrapped Object or from Box."""
+            try:
+                return super(BoxObject, self).__getattr__(name)
+            except AttributeError as error:
+                try:
+                    return self.__dict__[name]
+                except KeyError:
+                    raise error
+
+        def __setattr__(self, name, value):
+            """Set Attribute in Wrapped Object or Box."""
+            if name == '__dict__':
+                raise TypeError('cannot set __dict__')
+            elif hasattr(self.__wrapped__, name):
+                setattr(self.__wrapped__, name, value)
+            else:
+                self.__dict__[name] = value
+
+        def __delattr__(self, name):
+            """Delete Attribute in Wrapped Object or Box."""
+            if name == '__dict__':
+                super(BoxObject, self).__setattr__(
+                    '__dict__',
+                    getattr(self.__wrapped__, '__dict__', {})
+                )
+            else:
+                try:
+                    delattr(self.__wrapped__, name)
+                except AttributeError as error:
+                    try:
+                        del self.__dict__[name]
+                    except KeyError:
+                        raise error
+
+    __all__ += ['BoxObject']
