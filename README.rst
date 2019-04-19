@@ -114,6 +114,20 @@ So if you plan to keep the original dict around, make sure to box_it_up or do a 
       safe_box
       # <Box: {'a': {'b': {'c': {}}}}>
 
+Limitations
+-----------
+
+`Box` is a subclass of `dict` and as such, certain keys cannot be accessed via dot notation.
+This is because names such as `keys` and `pop` have already been declared as methods, so `Box` cannot
+use it's special sauce to overwrite them. However it is still possible to have items with those names
+in the `Box` and access them like a normal dictionary, such as `my_box['keys']`.
+
+*This is as designed, and will not be changed.*
+
+The non-magic methods that exist in a `Box` are: 
+`box_it_up, clear, copy, from_json, fromkeys, get, items, keys, pop, popitem, setdefault, to_dict, to_json, update, values`.
+To view an entire list of what cannot be accessed via dot notation, run the command `dir(Box())`.
+
 
 Box
 ---
