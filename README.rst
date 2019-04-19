@@ -437,14 +437,14 @@ An object wrapper with a **Box** for a **__dict__**.
     box_source.raw.reason
     # OK
 
-**BoxObject**s act just like objects but they secretly carry around a **Box** with
-them to store attributes. **BoxObject**s are built off of **wrapt.ObjectProxy**s which
+**BoxObject** act just like objects but they secretly carry around a **Box** with
+them to store attributes. **BoxObject** are built off of **wrapt.ObjectProxy** which
 can wrap almost any python object. They protect their wrapped objects storing them in
 the **__wrapped__** attribute and keeping the original **__dict__** in
 **__wrapped__.__dict__**.
 
-See the `Wrapt Documentation <https://wrapt.readthedocs.io/en/latest\>`_, specifically
-the section on **ObjectProxy**s, for more information.
+See the `Wrapt Documentation`_, specifically
+the section on **ObjectProxy**, for more information.
 
 
 License
@@ -465,3 +465,4 @@ MIT License, Copyright (c) 2017-2018 Chris Griffith. See LICENSE file.
    :target: https://pypi.python.org/pypi/python-box/
 .. |License| image:: https://img.shields.io/pypi/l/python-box.svg
    :target: https://pypi.python.org/pypi/python-box/
+.. _`Wrapt Documentation`: https://wrapt.readthedocs.io/en/latest
