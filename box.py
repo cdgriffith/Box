@@ -128,7 +128,8 @@ def _from_yaml(yaml_string=None, filename=None,
 # Helper functions
 
 def _israwinstance(obj, klass):
-    return isinstance(obj, klass) and obj.__class__.__bases__ and obj.__class__.__bases__[0] is object
+    return isinstance(obj, klass) and obj.__class__.__bases__ \
+        and obj.__class__.__bases__[0] is object
 
 def _safe_key(key):
     try:
