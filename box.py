@@ -127,6 +127,8 @@ def _from_yaml(yaml_string=None, filename=None,
 
 # Helper functions
 
+def _israwinstance(obj, klass):
+    return isinstance(obj, klass) and obj.__class__.__bases__ and obj.__class__.__bases__[0] is object
 
 def _safe_key(key):
     try:
@@ -462,11 +464,11 @@ class Box(dict):
     def __convert_and_store(self, item, value):
         if item in self._box_config['__converted']:
             return value
-        if isinstance(value, dict) and not isinstance(value, Box):
+        if _israwinstance(value, dict):
             value = self.__class__(value, __box_heritage=(self, item),
                                    **self.__box_config())
             self[item] = value
-        elif isinstance(value, list) and not isinstance(value, BoxList):
+        elif _israwinstance(value, list):
             if self._box_config['frozen_box']:
                 value = _recursive_tuples(value, self.__class__,
                                           recreate_tuples=self._box_config[
@@ -479,7 +481,7 @@ class Box(dict):
                                 **self.__box_config())
             self[item] = value
         elif (self._box_config['modify_tuples_box'] and
-              isinstance(value, tuple)):
+              _israwinstance(value, tuple)):
             value = _recursive_tuples(value, self.__class__,
                                       recreate_tuples=True,
                                       __box_heritage=(self, item),
