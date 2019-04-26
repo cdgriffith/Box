@@ -45,7 +45,7 @@ else:
 __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
            'BoxError', 'BoxKeyError']
 __author__ = 'Chris Griffith'
-__version__ = '3.3.0'
+__version__ = '3.4.0'
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box', 'box_it_up',
@@ -546,25 +546,20 @@ class Box(dict):
             raise AttributeError("Key name '{0}' is protected".format(key))
         if key == '_box_config':
             return object.__setattr__(self, key, value)
-        try:
-            object.__getattribute__(self, key)
-        except (AttributeError, UnicodeEncodeError):
-            if (key not in self.keys() and
-                    (self._box_config['conversion_box'] or
-                     self._box_config['camel_killer_box'])):
-                if self._box_config['conversion_box']:
-                    k = _conversion_checks(key, self.keys(),
-                                           self._box_config)
-                    self[key if not k else k] = value
-                elif self._box_config['camel_killer_box']:
-                    for each_key in self:
-                        if key == _camel_killer(each_key):
-                            self[each_key] = value
-                            break
-            else:
-                self[key] = value
+        if (key not in self.keys() and
+                (self._box_config['conversion_box'] or
+                 self._box_config['camel_killer_box'])):
+            if self._box_config['conversion_box']:
+                k = _conversion_checks(key, self.keys(),
+                                       self._box_config)
+                self[key if not k else k] = value
+            elif self._box_config['camel_killer_box']:
+                for each_key in self:
+                    if key == _camel_killer(each_key):
+                        self[each_key] = value
+                        break
         else:
-            object.__setattr__(self, key, value)
+            self[key] = value
         self.__add_ordered(key)
         self.__create_lineage()
 
@@ -583,15 +578,7 @@ class Box(dict):
             raise BoxError('"_box_config" is protected')
         if item in self._protected_keys:
             raise AttributeError("Key name '{0}' is protected".format(item))
-        try:
-            object.__getattribute__(self, item)
-        except AttributeError:
-            del self[item]
-        else:
-            object.__delattr__(self, item)
-        if (self._box_config['ordered_box'] and
-                item in self._box_config['__ordered_box_values']):
-            self._box_config['__ordered_box_values'].remove(item)
+        del self[item]
 
     def pop(self, key, *args):
         if args:
