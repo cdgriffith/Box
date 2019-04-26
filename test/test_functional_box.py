@@ -700,7 +700,8 @@ class TestBoxFunctional:
         bx = Box(a=OrderedDict([('y', 1), ('x', 2)]))
         assert isinstance(bx.a, Box)
         assert not isinstance(bx.a, OrderedDict)
-        bx = Box(a=OrderedDict([('y', 1), ('x', 2)]), box_intact_types=[OrderedDict])
+        bx = Box(a=OrderedDict([('y', 1), ('x', 2)]),
+                 box_intact_types=[OrderedDict])
         assert isinstance(bx.a, OrderedDict)
         assert not isinstance(bx.a, Box)
 
@@ -817,11 +818,14 @@ class TestBoxObject:
             return args, kwargs
 
         b = BoxObject(f)
-        assert b(list(test_dict), **movie_data) == f(list(test_dict), **movie_data)
+        assert b(list(test_dict),
+                 **movie_data) == f(list(test_dict), **movie_data)
 
     def test_box_object_double_args(self):
         with pytest.raises(TypeError):
-            BoxObject(function_example, zip([1, 2, 3], [4, 5, 6]), **movie_data)
+            BoxObject(function_example,
+                      zip([1, 2, 3], [4, 5, 6]),
+                      **movie_data)
 
 
 def mp_queue_test(q):
