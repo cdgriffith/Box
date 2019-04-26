@@ -693,6 +693,15 @@ class TestBoxFunctional(unittest.TestCase):
         bx.pop('c')
         bx.__delattr__('g')
         assert bx.keys() == ['h', 'd']
+        
+    def test_intact_types(self):
+        from collections import OrderedDict
+        bx = Box(a = OrderedDict([('y', 1), ('x', 2)]))
+        assert isinstance(bx.a, Box)
+        assert not isinstance(bx.a, OrderedDict)
+        bx = Box(a = OrderedDict([('y', 1), ('x', 2)]), box_intact_types = [OrderedDict])
+        assert isinstance(bx.a, OrderedDict)
+        assert not isinstance(bx.a, Box)
 
     def test_pop(self):
         bx = Box(a=4, c={"d": 3})
