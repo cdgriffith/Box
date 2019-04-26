@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+Version 3.4.0
+~~~~~~~~~~~~~
+
+* Adding `box_intact_types` that allows preservation of selected object types (thanks to pwwang)
+* Adding limitations section to readme
+
 Version 3.3.0
 ~~~~~~~~~~~~~
 

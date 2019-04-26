@@ -29,7 +29,6 @@ except ImportError:
         yaml = None
         yaml_support = False
 
-
 wrapt_support = True
 
 try:
@@ -37,7 +36,6 @@ try:
 except ImportError:
     wrapt = None
     wrapt_support = False
-
 
 if sys.version_info >= (3, 0):
     basestring = str
@@ -47,11 +45,12 @@ else:
 __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
            'BoxError', 'BoxKeyError']
 __author__ = 'Chris Griffith'
-__version__ = '3.3.0'
+__version__ = '3.4.0'
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box', 'box_it_up',
-                  'box_safe_prefix', 'box_duplicates', 'ordered_box')
+                  'box_safe_prefix', 'box_duplicates', 'ordered_box',
+                  'box_intact_types')
 
 _first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 _all_cap_re = re.compile('([a-z0-9])([A-Z])')
@@ -177,8 +176,8 @@ def _camel_killer(attr):
 
     s1 = _first_cap_re.sub(r'\1_\2', attr)
     s2 = _all_cap_re.sub(r'\1_\2', s1)
-    return re.sub('_+', '_', s2.casefold() if hasattr(s2, 'casefold') else
-                  s2.lower())
+    return re.sub('_+', '_', s2.casefold() if hasattr(s2, 'casefold')
+                  else s2.lower())
 
 
 def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
@@ -253,7 +252,8 @@ def _get_box_config(cls, kwargs):
         'camel_killer_box': kwargs.pop('camel_killer_box', False),
         'modify_tuples_box': kwargs.pop('modify_tuples_box', False),
         'box_duplicates': kwargs.pop('box_duplicates', 'ignore'),
-        'ordered_box': kwargs.pop('ordered_box', False)
+        'ordered_box': kwargs.pop('ordered_box', False),
+        'box_intact_types': tuple(kwargs.pop('box_intact_types', ())),
     }
 
 
@@ -273,6 +273,7 @@ class Box(dict):
     :param box_duplicates: "ignore", "error" or "warn" when duplicates exists
         in a conversion_box
     :param ordered_box: Preserve the order of keys entered into the box
+    :param box_intact_types: Keep data with given types intact
     """
 
     _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml',
@@ -460,7 +461,9 @@ class Box(dict):
         return out
 
     def __convert_and_store(self, item, value):
-        if item in self._box_config['__converted']:
+        if (item in self._box_config['__converted'] or
+                (self._box_config['box_intact_types'] and
+                 isinstance(value, self._box_config['box_intact_types']))):
             return value
         if isinstance(value, dict) and not isinstance(value, Box):
             value = self.__class__(value, __box_heritage=(self, item),
@@ -543,25 +546,20 @@ class Box(dict):
             raise AttributeError("Key name '{0}' is protected".format(key))
         if key == '_box_config':
             return object.__setattr__(self, key, value)
-        try:
-            object.__getattribute__(self, key)
-        except (AttributeError, UnicodeEncodeError):
-            if (key not in self.keys() and
-                    (self._box_config['conversion_box'] or
-                     self._box_config['camel_killer_box'])):
-                if self._box_config['conversion_box']:
-                    k = _conversion_checks(key, self.keys(),
-                                           self._box_config)
-                    self[key if not k else k] = value
-                elif self._box_config['camel_killer_box']:
-                    for each_key in self:
-                        if key == _camel_killer(each_key):
-                            self[each_key] = value
-                            break
-            else:
-                self[key] = value
+        if (key not in self.keys() and
+                (self._box_config['conversion_box'] or
+                 self._box_config['camel_killer_box'])):
+            if self._box_config['conversion_box']:
+                k = _conversion_checks(key, self.keys(),
+                                       self._box_config)
+                self[key if not k else k] = value
+            elif self._box_config['camel_killer_box']:
+                for each_key in self:
+                    if key == _camel_killer(each_key):
+                        self[each_key] = value
+                        break
         else:
-            object.__setattr__(self, key, value)
+            self[key] = value
         self.__add_ordered(key)
         self.__create_lineage()
 
@@ -580,15 +578,7 @@ class Box(dict):
             raise BoxError('"_box_config" is protected')
         if item in self._protected_keys:
             raise AttributeError("Key name '{0}' is protected".format(item))
-        try:
-            object.__getattribute__(self, item)
-        except AttributeError:
-            del self[item]
-        else:
-            object.__delattr__(self, item)
-        if (self._box_config['ordered_box'] and
-                item in self._box_config['__ordered_box_values']):
-            self._box_config['__ordered_box_values'].remove(item)
+        del self[item]
 
     def pop(self, key, *args):
         if args:
@@ -801,14 +791,24 @@ class BoxList(list):
             raise BoxError('BoxList is frozen')
         super(BoxList, self).__setitem__(key, value)
 
+    def _is_intact_type(self, obj):
+        try:
+            if (self.box_options.get('box_intact_types') and
+                    isinstance(obj, self.box_options['box_intact_types'])):
+                return True
+        except AttributeError as err:
+            if 'box_options' in self.__dict__:
+                raise err
+        return False
+
     def append(self, p_object):
-        if isinstance(p_object, dict):
+        if isinstance(p_object, dict) and not self._is_intact_type(p_object):
             try:
                 p_object = self.box_class(p_object, **self.box_options)
             except AttributeError as err:
                 if 'box_class' in self.__dict__:
                     raise err
-        elif isinstance(p_object, list):
+        elif isinstance(p_object, list) and not self._is_intact_type(p_object):
             try:
                 p_object = (self if id(p_object) == self.box_org_ref else
                             BoxList(p_object))
@@ -822,9 +822,9 @@ class BoxList(list):
             self.append(item)
 
     def insert(self, index, p_object):
-        if isinstance(p_object, dict):
+        if isinstance(p_object, dict) and not self._is_intact_type(p_object):
             p_object = self.box_class(p_object, **self.box_options)
-        elif isinstance(p_object, list):
+        elif isinstance(p_object, list) and not self._is_intact_type(p_object):
             p_object = (self if id(p_object) == self.box_org_ref else
                         BoxList(p_object))
         super(BoxList, self).insert(index, p_object)
@@ -1192,5 +1192,6 @@ if wrapt_support:
                         del self.__dict__[name]
                     except KeyError:
                         raise error
+
 
     __all__ += ['BoxObject']

@@ -13,15 +13,16 @@ except ImportError:
     from .common import *
 
 
-class TestBoxFunctional(unittest.TestCase):
-    def setUp(self):
+class TestBoxFunctional:
+
+    @pytest.fixture(autouse=True)
+    def temp_dir_cleanup(self):
         shutil.rmtree(tmp_dir, ignore_errors=True)
         try:
             os.mkdir(tmp_dir)
         except OSError:
             pass
-
-    def tearDown(self):
+        yield
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
     def test_box(self):
@@ -664,7 +665,7 @@ class TestBoxFunctional(unittest.TestCase):
         p.start()
         p.join()
 
-        assert queue.get()
+        assert queue.get(timeout=1)
 
     def test_update_with_integer(self):
         bx = Box()
@@ -693,6 +694,23 @@ class TestBoxFunctional(unittest.TestCase):
         bx.pop('c')
         bx.__delattr__('g')
         assert bx.keys() == ['h', 'd']
+
+    def test_intact_types_dict(self):
+        from collections import OrderedDict
+        bx = Box(a=OrderedDict([('y', 1), ('x', 2)]))
+        assert isinstance(bx.a, Box)
+        assert not isinstance(bx.a, OrderedDict)
+        bx = Box(a=OrderedDict([('y', 1), ('x', 2)]),
+                 box_intact_types=[OrderedDict])
+        assert isinstance(bx.a, OrderedDict)
+        assert not isinstance(bx.a, Box)
+
+    def test_intact_types_list(self):
+        class MyList(list):
+            pass
+
+        bl = BoxList([[1, 2], MyList([3, 4])], box_intact_types=(MyList,))
+        assert isinstance(bl[0], BoxList)
 
     def test_pop(self):
         bx = Box(a=4, c={"d": 3})
@@ -742,100 +760,76 @@ class TestBoxFunctional(unittest.TestCase):
         assert bl == [['foo']], bl
 
 
-def _f(value):
-    yield value
+class TestBoxObject:
 
-
-class _C(object):
-    def __init__(self):
-        self.a = 'a'
-        self.b = 2
-
-
-python_example_objects = (
-    None,
-    True,
-    False,
-    1,
-    3.14,
-    'abc',
-    [1, 2, 3],
-    {},
-    ([], {}),
-    lambda x: x**2,
-    _f,
-    _C()
-)
-
-
-@pytest.mark.parametrize('wrapped', python_example_objects)
-def test_box_object_generic(wrapped):
-    b = BoxObject(wrapped)
-    assert b == wrapped
-    assert not (b is wrapped)
-    assert isinstance(b, BoxObject)
-    assert isinstance(b, type(wrapped))
-    b.box_key = 'secret_word'
-    assert b.box_key == 'secret_word'
-    assert 'box_key' in b.__dict__
-    assert isinstance(b.__dict__, Box)
-    assert b.__dict__ != getattr(b.__wrapped__, '__dict__', None)
-    with pytest.raises(AttributeError):
-        b.foo
-    if hasattr(b.__wrapped__, 'b'):
-        b.b = 1
-        assert b.__wrapped__.b == 1
-
-
-@pytest.mark.parametrize('wrapped', python_example_objects)
-def test_box_object_deletion(wrapped):
-    b = BoxObject(wrapped)
-    with pytest.raises(TypeError):
-        b.__dict__ = 0
-    del b.__dict__
-    assert b.__dict__ == getattr(b.__wrapped__, '__dict__', {})
-    with pytest.raises(AttributeError):
-        del b.foo
-    if hasattr(b.__wrapped__, 'a'):
-        del b.a
-    if not hasattr(b.__wrapped__, 'b'):
+    @pytest.mark.parametrize('wrapped', python_example_objects)
+    def test_box_object_generic(self, wrapped):
+        b = BoxObject(wrapped)
+        assert b == wrapped
+        assert not (b is wrapped)
+        assert isinstance(b, BoxObject)
+        assert isinstance(b, type(wrapped))
+        b.box_key = 'secret_word'
+        assert b.box_key == 'secret_word'
+        assert 'box_key' in b.__dict__
+        assert isinstance(b.__dict__, Box)
+        assert b.__dict__ != getattr(b.__wrapped__, '__dict__', None)
         with pytest.raises(AttributeError):
-            del b.b
+            b.foo
+        if hasattr(b.__wrapped__, 'b'):
+            b.b = 1
+            assert b.__wrapped__.b == 1
 
+    @pytest.mark.parametrize('wrapped', python_example_objects)
+    def test_box_object_deletion(self, wrapped):
+        b = BoxObject(wrapped)
+        with pytest.raises(TypeError):
+            b.__dict__ = 0
+        del b.__dict__
+        assert b.__dict__ == getattr(b.__wrapped__, '__dict__', {})
+        with pytest.raises(AttributeError):
+            del b.foo
+        if hasattr(b.__wrapped__, 'a'):
+            del b.a
+        if not hasattr(b.__wrapped__, 'b'):
+            with pytest.raises(AttributeError):
+                del b.b
 
-def test_box_object_attributes():
-    b = BoxObject(test_dict, **movie_data)
-    assert b == test_dict
-    assert not (b is test_dict)
-    assert b.__dict__ == movie_data
-    assert isinstance(b.__dict__, Box)
-    assert b.__dict__ != getattr(b.__wrapped__, '__dict__', None)
-    for k, v in movie_data.items():
-        assert getattr(b, k) == v
-        tagged = k + '_b'
-        setattr(b, tagged, [v])
-        assert getattr(b, tagged) == [v]
-        setattr(b, k, getattr(b, tagged))
-        assert getattr(b, k) == [v]
-    for k, v in test_dict.items():
-        assert k in b
-        assert b[k] == v
+    def test_box_object_attributes(self):
+        b = BoxObject(test_dict, **movie_data)
+        assert b == test_dict
+        assert not (b is test_dict)
+        assert b.__dict__ == movie_data
+        assert isinstance(b.__dict__, Box)
+        assert b.__dict__ != getattr(b.__wrapped__, '__dict__', None)
+        for k, v in movie_data.items():
+            assert getattr(b, k) == v
+            tagged = k + '_b'
+            setattr(b, tagged, [v])
+            assert getattr(b, tagged) == [v]
+            setattr(b, k, getattr(b, tagged))
+            assert getattr(b, k) == [v]
+        for k, v in test_dict.items():
+            assert k in b
+            assert b[k] == v
 
+    def test_box_object_call(self):
+        def f(*args, **kwargs):
+            return args, kwargs
 
-def test_box_object_call():
-    def f(*args, **kwargs):
-        return (args, kwargs)
-    b = BoxObject(f)
-    assert b(list(test_dict), **movie_data) == f(list(test_dict), **movie_data)
+        b = BoxObject(f)
+        assert b(list(test_dict),
+                 **movie_data) == f(list(test_dict), **movie_data)
 
-
-def test_box_object_double_args():
-    with pytest.raises(TypeError):
-        BoxObject(_f, zip([1, 2, 3], [4, 5, 6]), **movie_data)
+    def test_box_object_double_args(self):
+        with pytest.raises(TypeError):
+            BoxObject(function_example,
+                      zip([1, 2, 3], [4, 5, 6]),
+                      **movie_data)
 
 
 def mp_queue_test(q):
-    bx = q.get()
+    bx = q.get(timeout=1)
     try:
         assert isinstance(bx, Box)
         assert bx.a == 4

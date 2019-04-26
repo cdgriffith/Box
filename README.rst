@@ -114,6 +114,20 @@ So if you plan to keep the original dict around, make sure to box_it_up or do a 
       safe_box
       # <Box: {'a': {'b': {'c': {}}}}>
 
+Limitations
+-----------
+
+`Box` is a subclass of `dict` and as such, certain keys cannot be accessed via dot notation.
+This is because names such as `keys` and `pop` have already been declared as methods, so `Box` cannot
+use it's special sauce to overwrite them. However it is still possible to have items with those names
+in the `Box` and access them like a normal dictionary, such as `my_box['keys']`.
+
+*This is as designed, and will not be changed.*
+
+The non-magic methods that exist in a `Box` are: 
+`box_it_up, clear, copy, from_json, fromkeys, get, items, keys, pop, popitem, setdefault, to_dict, to_json, update, values`.
+To view an entire list of what cannot be accessed via dot notation, run the command `dir(Box())`.
+
 
 Box
 ---
@@ -162,6 +176,7 @@ Box's parameters
    box_safe_prefix  "x"       Character or prefix to prepend to otherwise invalid attributes
    box_duplicates   "ignore"  When conversion duplicates are spotted, either ignore, warn or error
    ordered_box      False     Preserve order of keys entered into the box
+   box_intact_types ()        Tuple of objects to preserve and not convert to a Box object
    ================ ========= ===========
 
 Box's functions
@@ -437,14 +452,14 @@ An object wrapper with a **Box** for a **__dict__**.
     box_source.raw.reason
     # OK
 
-**BoxObject**s act just like objects but they secretly carry around a **Box** with
-them to store attributes. **BoxObject**s are built off of **wrapt.ObjectProxy**s which
+**BoxObject** act just like objects but they secretly carry around a **Box** with
+them to store attributes. **BoxObject** are built off of **wrapt.ObjectProxy** which
 can wrap almost any python object. They protect their wrapped objects storing them in
 the **__wrapped__** attribute and keeping the original **__dict__** in
 **__wrapped__.__dict__**.
 
-See the `Wrapt Documentation <https://wrapt.readthedocs.io/en/latest\>`_, specifically
-the section on **ObjectProxy**s, for more information.
+See the `Wrapt Documentation`_, specifically
+the section on **ObjectProxy**, for more information.
 
 
 License
@@ -465,3 +480,4 @@ MIT License, Copyright (c) 2017-2018 Chris Griffith. See LICENSE file.
    :target: https://pypi.python.org/pypi/python-box/
 .. |License| image:: https://img.shields.io/pypi/l/python-box.svg
    :target: https://pypi.python.org/pypi/python-box/
+.. _`Wrapt Documentation`: https://wrapt.readthedocs.io/en/latest
