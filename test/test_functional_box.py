@@ -14,15 +14,14 @@ except ImportError:
 
 
 class TestBoxFunctional(unittest.TestCase):
-
-    @pytest.fixture(autouse=True)
-    def temp_dir_cleanup(self):
+    def setUp(self):
         shutil.rmtree(tmp_dir, ignore_errors=True)
         try:
-            os.makedirs(tmp_dir)
+            os.mkdir(tmp_dir)
         except OSError:
             pass
-        yield
+
+    def tearDown(self):
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
     def test_box(self):
@@ -210,36 +209,20 @@ class TestBoxFunctional(unittest.TestCase):
 
     def test_update(self):
         a = Box(test_dict)
-        a.grand = 1000
         a.update({'key1': {'new': 5}, 'Key 2': {"add_key": 6},
                   'lister': ['a']})
         a.update([('asdf', 'fdsa')])
         a.update(testkey=66)
-        a.update({'items': {'test': 'pme'}})
-        a.update({'key1': {'gg': 4}})
-        b = Box()
-        b.update(item=1)
+        a.update({'items': 'test'})
 
-        assert a.grand == 1000
-        assert a['grand'] == 1000
-        assert isinstance(a['items'], Box)
-        assert a['items'].test == 'pme'
+        assert a['items'] == 'test'
         assert a.key1.new == 5
         assert a['Key 2'].add_key == 6
+        assert "Key5" in a['Key 2'].Key4
         assert isinstance(a.key1, Box)
         assert isinstance(a.lister, BoxList)
         assert a.asdf == 'fdsa'
         assert a.testkey == 66
-        assert a.key1.new == 5  # On regular dict update this shouldn't happen
-        assert a.key1.gg == 4
-
-        c = Box(box_intact_types=[list])
-        c.a = [1, 2]
-        c.update({'b': [3, 4]})
-
-        assert c.a == [1, 2]
-        assert isinstance(c.b, list)
-        assert not isinstance(c.b, BoxList)
 
     def test_auto_attr(self):
         a = Box(test_dict, default_box=True)
@@ -258,31 +241,6 @@ class TestBoxFunctional(unittest.TestCase):
         assert new_list == BoxList([{'gah': 7}])
         assert a.key3.item == 2
         assert a.lister[0].gah == 7
-
-        # default_box propagates after a setdefault and list object
-        a = Box(default_box=True)
-        a.b.c.setdefault('d', [])
-        a.b.c.d.append({})
-        a.b.c.d[0].e.f = 1
-
-        assert a.b.c.d[0].e.f == 1
-
-        # without default_box we would get an error
-        a = Box()
-        a.setdefault('b', [])
-        a.b.append({})
-        with self.assertRaises(BoxKeyError):
-            a.b[0].c.d = 1
-
-        a = Box()
-        a.setdefault('b', {})
-        with self.assertRaises(BoxKeyError):
-            a.b.c.d = 1
-
-        a = Box(default_box=True)
-        a.setdefault('b', {})
-        a.b.c.d.e.f = 1
-        assert a.b.c.d.e.f == 1
 
     def test_from_json_file(self):
         bx = Box.from_json(filename=data_json_file)
@@ -311,15 +269,22 @@ class TestBoxFunctional(unittest.TestCase):
         with pytest.raises(BoxError) as err:
             Box.from_json()
 
+        assert 'requires' in str(err)
+
         with pytest.raises(BoxError) as err2:
             Box.from_json(json_string="[1]")
+
+        assert 'dict' in str(err2)
 
     def test_bad_from_yaml(self):
         with pytest.raises(BoxError) as err:
             Box.from_yaml()
+        assert 'requires' in str(err)
 
         with pytest.raises(BoxError) as err2:
             Box.from_yaml('lol')
+
+        assert 'dict' in str(err2)
 
     def test_conversion_box(self):
         bx = Box(extended_test_dict, conversion_box=True)
@@ -578,6 +543,7 @@ class TestBoxFunctional(unittest.TestCase):
     def test_duplicate_errors(self):
         with pytest.raises(BoxError) as err:
             Box({"?a": 1, "!a": 3}, box_duplicates="error")
+        assert "Duplicate" in str(err)
 
         Box({"?a": 1, "!a": 3}, box_duplicates="ignore")
 
@@ -590,15 +556,13 @@ class TestBoxFunctional(unittest.TestCase):
             my_box['^a'] = 3
 
     def test_copy(self):
-        my_box = Box(movie_data, camel_killer_box=True)
-        my_box.aB = 1
+        my_box = Box(movie_data)
         bb = my_box.copy()
         assert my_box == bb
         assert isinstance(bb, Box)
 
         aa = copy.deepcopy(my_box)
         assert my_box == aa
-        assert my_box.a_b == 1
         assert isinstance(aa, Box)
 
         cc = my_box.__copy__()
@@ -608,15 +572,6 @@ class TestBoxFunctional(unittest.TestCase):
         dd = BoxList([my_box])
         assert dd == copy.copy(dd)
         assert isinstance(copy.copy(dd), BoxList)
-
-    def test_deepcopy_of_frozen_box(self):
-        my_box = Box(data={'a': movie_data,
-                           'b': Box(movie_data, frozen_box=True)},
-                     frozen_box=True)
-        aa = copy.deepcopy(my_box)
-        assert my_box == aa
-        assert id(my_box) != id(aa)
-        assert isinstance(aa, Box)
 
     def test_custom_key_errors(self):
         my_box = Box()
@@ -640,19 +595,15 @@ class TestBoxFunctional(unittest.TestCase):
         pic_file = os.path.join(tmp_dir, 'test.p')
         pic2_file = os.path.join(tmp_dir, 'test.p2')
         bb = Box(movie_data, conversion_box=False)
-        with open(pic_file, 'wb') as pf:
-            pickle.dump(bb, pf)
-        with open(pic_file, 'rb') as pf:
-            loaded = pickle.load(pf)
+        pickle.dump(bb, open(pic_file, 'wb'))
+        loaded = pickle.load(open(pic_file, 'rb'))
         assert bb == loaded
         assert loaded._box_config['conversion_box'] is False
 
-        ll = [[Box({'a': 'b'}, ordered_box=True)], [[{'c': 'g'}]]]
+        ll = [[Box({'a': 'b'})], [[{'c': 'g'}]]]
         bx = BoxList(ll)
-        with open(pic2_file, 'wb') as pf:
-            pickle.dump(bx, pf)
-        with open(pic2_file, 'rb') as pf:
-            loaded2 = pickle.load(pf)
+        pickle.dump(bx, open(pic2_file, 'wb'))
+        loaded2 = pickle.load(open(pic2_file, 'rb'))
         assert bx == loaded2
         loaded2.box_options = bx.box_options
 
@@ -693,11 +644,6 @@ class TestBoxFunctional(unittest.TestCase):
         assert "a" in bx.get("a", Box(a=1, conversion_box=False))
         assert isinstance(bx.get("a", [1, 2]), BoxList)
 
-    def test_get_default_box(self):
-        bx = Box(default_box=True)
-        assert bx.get('test', 4) == 4
-        assert isinstance(bx.get('a'), Box)
-
     def test_is_in(self):
         bx = Box()
         dbx = Box(default_box=True)
@@ -718,7 +664,7 @@ class TestBoxFunctional(unittest.TestCase):
         p.start()
         p.join()
 
-        assert queue.get(timeout=1)
+        assert queue.get()
 
     def test_update_with_integer(self):
         bx = Box()
@@ -734,41 +680,9 @@ class TestBoxFunctional(unittest.TestCase):
         with pytest.raises(BoxKeyError):
             bx['_box_config']
 
-    def test_ordered_box(self):
-        bx = Box(h=1, ordered_box=True)
-        bx.a = 1
-        bx.c = 4
-        bx['g'] = 7
-        bx.d = 2
-        assert bx.keys() == ['h', 'a', 'c', 'g', 'd']
-        assert list(bx.__iter__()) == ['h', 'a', 'c', 'g', 'd']
-        assert list(reversed(bx)) == ['d', 'g', 'c', 'a', 'h']
-        del bx.a
-        bx.pop('c')
-        bx.__delattr__('g')
-        assert bx.keys() == ['h', 'd']
-
-    def test_intact_types_dict(self):
-        from collections import OrderedDict
-        bx = Box(a=OrderedDict([('y', 1), ('x', 2)]))
-        assert isinstance(bx.a, Box)
-        assert not isinstance(bx.a, OrderedDict)
-        bx = Box(a=OrderedDict([('y', 1), ('x', 2)]),
-                 box_intact_types=[OrderedDict])
-        assert isinstance(bx.a, OrderedDict)
-        assert not isinstance(bx.a, Box)
-
-    def test_intact_types_list(self):
-        class MyList(list):
-            pass
-
-        bl = BoxList([[1, 2], MyList([3, 4])], box_intact_types=(MyList,))
-        assert isinstance(bl[0], BoxList)
-
     def test_pop(self):
-        bx = Box(a=4, c={"d": 3}, b={"h": {"y": 2}})
+        bx = Box(a=4, c={"d": 3})
         assert bx.pop('a') == 4
-        assert bx.pop('b').h.y == 2
         with pytest.raises(BoxKeyError):
             bx.pop('b')
         assert bx.pop('a', None) is None
@@ -785,27 +699,27 @@ class TestBoxFunctional(unittest.TestCase):
             assert bx.popitem()
 
     def test_iter(self):
-        bx = Box(ordered_box=True)
+        bx = Box()
         bx.a = 1
         bx.c = 2
         assert list(bx.__iter__()) == ['a', 'c']
 
     def test_revered(self):
-        bx = Box(ordered_box=True)
+        bx = Box()
         bx.a = 1
         bx.c = 2
         assert list(reversed(bx)) == ['c', 'a']
 
     def test_clear(self):
-        bx = Box(ordered_box=True)
+        bx = Box()
         bx.a = 1
         bx.c = 4
         bx['g'] = 7
         bx.d = 2
-        assert bx.keys() == ['a', 'c', 'g', 'd']
+        assert list(bx.keys()) == ['a', 'c', 'g', 'd']
         bx.clear()
         assert bx == {}
-        assert bx.keys() == []
+        assert not bx.keys()
 
     def test_bad_recursive(self):
         b = Box()
@@ -813,112 +727,9 @@ class TestBoxFunctional(unittest.TestCase):
         bl.append(["foo"])
         assert bl == [['foo']], bl
 
-    def test_inheritance_copy(self):
-
-        class Box2(Box):
-            pass
-
-        class SBox2(SBox):
-            pass
-
-        class ConfigBox2(ConfigBox):
-            pass
-
-        b = Box2(a=1)
-        c = b.copy()
-        assert c == b
-        assert isinstance(c, Box)
-        c = b.__copy__()
-        assert c == b
-        assert isinstance(c, Box)
-
-        d = SBox2(a=1)
-        e = d.copy()
-        assert e == d
-        assert isinstance(e, SBox)
-        e = d.__copy__()
-        assert e == d
-        assert isinstance(e, SBox)
-
-        f = ConfigBox2(a=1)
-        g = f.copy()
-        assert g == f
-        assert isinstance(g, ConfigBox)
-        g = f.__copy__()
-        assert g == f
-        assert isinstance(g, ConfigBox)
-
-
-class TestBoxObject:
-
-    @pytest.mark.parametrize('wrapped', python_example_objects)
-    def test_box_object_generic(self, wrapped):
-        b = BoxObject(wrapped)
-        assert b == wrapped
-        assert not (b is wrapped)
-        assert isinstance(b, BoxObject)
-        assert isinstance(b, type(wrapped))
-        b.box_key = 'secret_word'
-        assert b.box_key == 'secret_word'
-        assert 'box_key' in b.__dict__
-        assert isinstance(b.__dict__, Box)
-        assert b.__dict__ != getattr(b.__wrapped__, '__dict__', None)
-        with pytest.raises(AttributeError):
-            b.foo
-        if hasattr(b.__wrapped__, 'b'):
-            b.b = 1
-            assert b.__wrapped__.b == 1
-
-    @pytest.mark.parametrize('wrapped', python_example_objects)
-    def test_box_object_deletion(self, wrapped):
-        b = BoxObject(wrapped)
-        with pytest.raises(TypeError):
-            b.__dict__ = 0
-        del b.__dict__
-        assert b.__dict__ == getattr(b.__wrapped__, '__dict__', {})
-        with pytest.raises(AttributeError):
-            del b.foo
-        if hasattr(b.__wrapped__, 'a'):
-            del b.a
-        if not hasattr(b.__wrapped__, 'b'):
-            with pytest.raises(AttributeError):
-                del b.b
-
-    def test_box_object_attributes(self):
-        b = BoxObject(test_dict, **movie_data)
-        assert b == test_dict
-        assert not (b is test_dict)
-        assert b.__dict__ == movie_data
-        assert isinstance(b.__dict__, Box)
-        assert b.__dict__ != getattr(b.__wrapped__, '__dict__', None)
-        for k, v in movie_data.items():
-            assert getattr(b, k) == v
-            tagged = k + '_b'
-            setattr(b, tagged, [v])
-            assert getattr(b, tagged) == [v]
-            setattr(b, k, getattr(b, tagged))
-            assert getattr(b, k) == [v]
-        for k, v in test_dict.items():
-            assert k in b
-            assert b[k] == v
-
-    def test_box_object_call(self):
-        def f(*args, **kwargs):
-            return args, kwargs
-
-        b = BoxObject(f)
-        assert b(list(test_dict),
-                 **movie_data) == f(list(test_dict), **movie_data)
-
-    def test_box_object_double_args(self):
-        with pytest.raises(TypeError):
-            BoxObject(function_example,
-                      zip([1, 2, 3], [4, 5, 6]),
-                      **movie_data)
-
 
 def mp_queue_test(q):
-    bx = q.get(timeout=1)
+    bx = q.get()
     try:
         assert isinstance(bx, Box)
         assert bx.a == 4

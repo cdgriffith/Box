@@ -1,6 +1,14 @@
 Changelog
 ---------
 
+Version 4.0.0
+~~~~~~~~~~~~~
+
+* Adding support for retrieving items via dot notation in keys
+* Changing layout of project to be more object specific
+* Changing to 120 line character limit
+* Removing `ordered_box` as Python 3.6+ is ordered by default
+
 Version 3.4.6
 ~~~~~~~~~~~~~
 
