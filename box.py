@@ -275,7 +275,7 @@ class Box(dict):
     :param box_duplicates: "ignore", "error" or "warn" when duplicates exists
         in a conversion_box
     :param ordered_box: Preserve the order of keys entered into the box
-    :param ordered_intact_types: Keep data with given types intact
+    :param box_intact_types: Keep data with given types intact
     """
 
     _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml',
