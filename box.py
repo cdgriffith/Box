@@ -464,7 +464,7 @@ class Box(dict):
 
     def __convert_and_store(self, item, value):
         if item in self._box_config['__converted'] or
-            isinstance(value, self._box_config['box_intact_types']):
+                isinstance(value, self._box_config['box_intact_types']):
             return value
         if isinstance(value, dict) and not isinstance(value, Box):
             value = self.__class__(value, __box_heritage=(self, item),
