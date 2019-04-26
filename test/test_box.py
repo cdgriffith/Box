@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 # Test files gathered from json.org and yaml.org
-from __future__ import absolute_import
 
 from multiprocessing import Process, Queue
 import pytest
@@ -13,16 +12,70 @@ except ImportError:
     from .common import *
 
 
-class TestBoxFunctional(unittest.TestCase):
-    def setUp(self):
+def mp_queue_test(q):
+    bx = q.get()
+    try:
+        assert isinstance(bx, Box)
+        assert bx.a == 4
+    except AssertionError:
+        q.put(False)
+    else:
+        q.put(True)
+
+
+class TestBox:
+
+    @pytest.fixture(autouse=True)
+    def temp_dir_cleanup(self):
         shutil.rmtree(tmp_dir, ignore_errors=True)
         try:
             os.mkdir(tmp_dir)
         except OSError:
             pass
-
-    def tearDown(self):
+        yield
         shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    def test_safe_attrs(self):
+        assert box._safe_attr("BAD!KEY!1", camel_killer=False) == "BAD_KEY_1"
+        assert box._safe_attr("BAD!KEY!2", camel_killer=True) == "bad_key_2"
+        assert box._safe_attr((5, 6, 7), camel_killer=False) == "x5_6_7"
+        assert box._safe_attr(356, camel_killer=False) == "x356"
+
+    def test_camel_killer(self):
+        assert box._camel_killer("CamelCase") == "camel_case"
+        assert box._camel_killer("Terrible321KeyA") == "terrible321_key_a"
+
+    def test_safe_key(self):
+        assert box._safe_key(("wer", "ah", 3)) == "('wer', 'ah', 3)"
+
+    def test_recursive_tuples(self):
+        out = box._recursive_tuples(({'test': 'a'},
+                                     ({'second': 'b'},
+                                      {'third': 'c'}, ('fourth',))),
+                                    dict, recreate_tuples=True)
+        assert isinstance(out, tuple)
+        assert isinstance(out[0], dict)
+        assert out[0] == {'test': 'a'}
+        assert isinstance(out[1], tuple)
+        assert isinstance(out[1][2], tuple)
+        assert out[1][0] == {'second': 'b'}
+
+    def test_to_json(self):
+        m_file = os.path.join(tmp_dir, "movie_data")
+        movie_string = box._to_json(movie_data)
+        assert "Rick Moranis" in movie_string
+        box._to_json(movie_data, filename=m_file)
+        assert "Rick Moranis" in open(m_file).read()
+        assert json.load(open(m_file)) == json.loads(movie_string)
+
+    def test_to_yaml(self):
+        m_file = os.path.join(tmp_dir, "movie_data")
+        movie_string = box._to_yaml(movie_data)
+        assert "Rick Moranis" in movie_string
+        box._to_yaml(movie_data, filename=m_file)
+        assert "Rick Moranis" in open(m_file).read()
+        assert yaml.load(open(m_file), Loader=yaml.SafeLoader) == yaml.load(
+            movie_string, Loader=yaml.SafeLoader)
 
     def test_box(self):
         bx = Box(**test_dict)
@@ -154,7 +207,7 @@ class TestBoxFunctional(unittest.TestCase):
         b = a.to_dict()
         assert not isinstance(b['new_list'], BoxList)
 
-    def test_to_json(self):
+    def test_to_json_basic(self):
         a = Box(test_dict)
         assert json.loads(a.to_json(indent=0)) == test_dict
 
@@ -163,7 +216,7 @@ class TestBoxFunctional(unittest.TestCase):
             data = json.load(f)
             assert data == test_dict
 
-    def test_to_yaml(self):
+    def test_to_yaml_basic(self):
         a = Box(test_dict)
         assert yaml.load(a.to_yaml(), Loader=yaml.SafeLoader) == test_dict
 
@@ -173,23 +226,6 @@ class TestBoxFunctional(unittest.TestCase):
         with open(tmp_yaml_file) as f:
             data = yaml.load(f, Loader=yaml.SafeLoader)
             assert data == test_dict
-
-    def test_boxlist(self):
-        new_list = BoxList({'item': x} for x in range(0, 10))
-        new_list.extend([{'item': 22}])
-        assert new_list[-1].item == 22
-        new_list.append([{'bad_item': 33}])
-        assert new_list[-1][0].bad_item == 33
-        assert repr(new_list).startswith("<BoxList:")
-        for x in new_list.to_list():
-            assert not isinstance(x, (BoxList, Box))
-        new_list.insert(0, {'test': 5})
-        new_list.insert(1, ['a', 'b'])
-        new_list.append('x')
-        assert new_list[0].test == 5
-        assert isinstance(str(new_list), str)
-        assert isinstance(new_list[1], BoxList)
-        assert not isinstance(new_list.to_list(), BoxList)
 
     def test_dir(self):
         a = Box(test_dict, camel_killer_box=True)
@@ -337,30 +373,6 @@ class TestBoxFunctional(unittest.TestCase):
         with pytest.raises(TypeError):
             hash(BoxList([1, 2, 3]))
 
-    def test_frozen_list(self):
-        bl = BoxList([5, 4, 3], frozen_box=True)
-        with pytest.raises(BoxError):
-            bl.pop(1)
-        with pytest.raises(BoxError):
-            bl.remove(4)
-        with pytest.raises(BoxError):
-            bl.sort()
-        with pytest.raises(BoxError):
-            bl.reverse()
-        with pytest.raises(BoxError):
-            bl.append('test')
-        with pytest.raises(BoxError):
-            bl.extend([4])
-        with pytest.raises(BoxError):
-            del bl[0]
-        with pytest.raises(BoxError):
-            bl[0] = 5
-        bl2 = BoxList([5, 4, 3])
-        del bl2[0]
-        assert bl2[0] == 4
-        bl2[1] = 4
-        assert bl2[1] == 4
-
     def test_config(self):
         bx = Box(extended_test_dict)
         assert bx['_box_config'] is True
@@ -417,39 +429,6 @@ class TestBoxFunctional(unittest.TestCase):
         assert repr(pbox['inner']).startswith('<ShorthandBox')
         assert not isinstance(pbox.dict, Box)
         assert pbox.dict['inner']['CamelCase'] == 'Item'
-
-    def test_box_list_to_json(self):
-        bl = BoxList([{'item': 1, 'CamelBad': 2}])
-        assert json.loads(bl.to_json())[0]['item'] == 1
-
-    def test_box_list_from_json(self):
-        alist = [{'item': 1}, {'CamelBad': 2}]
-        json_list = json.dumps(alist)
-        bl = BoxList.from_json(json_list, camel_killer_box=True)
-        assert bl[0].item == 1
-        assert bl[1].camel_bad == 2
-
-        with pytest.raises(BoxError):
-            BoxList.from_json(json.dumps({'a': 2}))
-
-    def test_box_list_to_yaml(self):
-        bl = BoxList([{'item': 1, 'CamelBad': 2}])
-        assert yaml.load(bl.to_yaml(), Loader=yaml.SafeLoader)[0]['item'] == 1
-
-    def test_box_list_from_yaml(self):
-        alist = [{'item': 1}, {'CamelBad': 2}]
-        yaml_list = yaml.dump(alist)
-        bl = BoxList.from_yaml(yaml_list, camel_killer_box=True)
-        assert bl[0].item == 1
-        assert bl[1].camel_bad == 2
-
-        with pytest.raises(BoxError):
-            BoxList.from_yaml(yaml.dump({'a': 2}))
-
-    def test_boxlist_box_it_up(self):
-        bxl = BoxList([extended_test_dict])
-        bxl.box_it_up()
-        assert "Key 3" in bxl[0].Key_2._box_config['__converted']
 
     def test_box_modify_tuples(self):
         bx = Box(extended_test_dict, modify_tuples_box=True)
@@ -727,13 +706,3 @@ class TestBoxFunctional(unittest.TestCase):
         bl.append(["foo"])
         assert bl == [['foo']], bl
 
-
-def mp_queue_test(q):
-    bx = q.get()
-    try:
-        assert isinstance(bx, Box)
-        assert bx.a == 4
-    except AssertionError:
-        q.put(False)
-    else:
-        q.put(True)
