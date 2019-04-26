@@ -51,8 +51,7 @@ __version__ = '3.3.0'
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box', 'box_it_up',
-                  'box_safe_prefix', 'box_duplicates', 'ordered_box',
-                  'box_intact_types')
+                  'box_safe_prefix', 'box_duplicates', 'ordered_box')
 
 _first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 _all_cap_re = re.compile('([a-z0-9])([A-Z])')
@@ -254,8 +253,7 @@ def _get_box_config(cls, kwargs):
         'camel_killer_box': kwargs.pop('camel_killer_box', False),
         'modify_tuples_box': kwargs.pop('modify_tuples_box', False),
         'box_duplicates': kwargs.pop('box_duplicates', 'ignore'),
-        'ordered_box': kwargs.pop('ordered_box', False),
-        'box_intact_types': tuple(kwargs.pop('box_intact_types', ())),
+        'ordered_box': kwargs.pop('ordered_box', False)
     }
 
 
@@ -275,7 +273,6 @@ class Box(dict):
     :param box_duplicates: "ignore", "error" or "warn" when duplicates exists
         in a conversion_box
     :param ordered_box: Preserve the order of keys entered into the box
-    :param box_intact_types: Keep data with given types intact
     """
 
     _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml',
@@ -463,9 +460,7 @@ class Box(dict):
         return out
 
     def __convert_and_store(self, item, value):
-        if (item in self._box_config['__converted'] or
-                (self._box_config['box_intact_types'] and 
-                 isinstance(value, self._box_config['box_intact_types']))):
+        if item in self._box_config['__converted']:
             return value
         if isinstance(value, dict) and not isinstance(value, Box):
             value = self.__class__(value, __box_heritage=(self, item),
