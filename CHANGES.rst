@@ -1,22 +1,15 @@
 Changelog
 ---------
 
-Version 3.4.1
+Version 4.0.0
 ~~~~~~~~~~~~~
 
-* Fixing copy of inherited classes (thanks to pwwang)
-* Fixing `get` when used with default_box
+* Adding support for retrieving items via dot notation in keys
+* Changing layout of project to be more object specific
+* Changing to 120 line character limit
+* Removing `ordered_box` as Python 3.6+ is ordered by default
 
-Version 3.4.0
-~~~~~~~~~~~~~
-
-* Adding `box_intact_types` that allows preservation of selected object types (thanks to pwwang)
-* Adding limitations section to readme
-
-Version 3.3.0
-~~~~~~~~~~~~~
-
-* Adding `BoxObject` (thanks to Brandon Gomes)
+TODO - ADD HERE
 
 Version 3.2.4
 ~~~~~~~~~~~~~

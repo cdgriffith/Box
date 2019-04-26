@@ -14,12 +14,9 @@ from collections.abc import Iterable, Mapping, Callable
 
 import box
 from box.exceptions import BoxError, BoxKeyError
-from box.converters import (_to_json, _from_json, _from_toml, _to_toml,
-                            _from_yaml, _to_yaml, BOX_PARAMETERS)
-
+from box.converters import (_to_json, _from_json, _from_toml, _to_toml, _from_yaml, _to_yaml, BOX_PARAMETERS)
 
 __all__ = ['Box']
-
 
 _first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 _all_cap_re = re.compile('([a-z0-9])([A-Z])')
@@ -77,8 +74,7 @@ def _camel_killer(attr):
 
     s1 = _first_cap_re.sub(r'\1_\2', attr)
     s2 = _all_cap_re.sub(r'\1_\2', s1)
-    return re.sub('_+', '_', s2.casefold() if hasattr(s2, 'casefold') else
-    s2.lower())
+    return re.sub('_+', '_', s2.lower())
 
 
 def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
@@ -87,8 +83,7 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
         if isinstance(i, dict):
             out_list.append(box_class(i, **kwargs))
         elif isinstance(i, list) or (recreate_tuples and isinstance(i, tuple)):
-            out_list.append(_recursive_tuples(i, box_class,
-                                              recreate_tuples, **kwargs))
+            out_list.append(_recursive_tuples(i, box_class, recreate_tuples, **kwargs))
         else:
             out_list.append(i)
     return tuple(out_list)
@@ -115,18 +110,15 @@ def _conversion_checks(item, keys, box_config, check_only=False,
                                 replacement_char=box_config['box_safe_prefix']
                                 )) for k in keys]
         if len(key_list) > len(set(x[1] for x in key_list)):
-            seen = set()
-            dups = set()
+            seen, dups = set(), set()
             for x in key_list:
                 if x[1] in seen:
                     dups.add("{0}({1})".format(x[0], x[1]))
                 seen.add(x[1])
             if box_config['box_duplicates'].startswith("warn"):
-                warnings.warn('Duplicate conversion attributes exist: '
-                              '{0}'.format(dups))
+                warnings.warn(f'Duplicate conversion attributes exist: {dups}')
             else:
-                raise BoxError('Duplicate conversion attributes exist: '
-                               '{0}'.format(dups))
+                raise BoxError(f'Duplicate conversion attributes exist: {dups}')
     if check_only:
         return
     # This way will be slower for warnings, as it will have double work
@@ -137,23 +129,12 @@ def _conversion_checks(item, keys, box_config, check_only=False,
             return k
 
 
-def _get_box_config(cls, kwargs):
+def _get_box_config(heritage):
     return {
         # Internal use only
         '__converted': set(),
-        '__box_heritage': kwargs.pop('__box_heritage', None),
+        '__box_heritage': heritage,
         '__created': False,
-        '__ordered_box_values': [],
-        # Can be changed by user after box creation
-        'default_box': kwargs.pop('default_box', False),
-        'default_box_attr': kwargs.pop('default_box_attr', cls),
-        'conversion_box': kwargs.pop('conversion_box', True),
-        'box_safe_prefix': kwargs.pop('box_safe_prefix', 'x'),
-        'frozen_box': kwargs.pop('frozen_box', False),
-        'camel_killer_box': kwargs.pop('camel_killer_box', False),
-        'modify_tuples_box': kwargs.pop('modify_tuples_box', False),
-        'box_duplicates': kwargs.pop('box_duplicates', 'ignore'),
-        'ordered_box': kwargs.pop('ordered_box', False)
     }
 
 
@@ -170,29 +151,48 @@ class Box(dict):
     :param modify_tuples_box: Recreate incoming tuples with dicts into Boxes
     :param box_it_up: Recursively create all Boxes from the start
     :param box_safe_prefix: Conversion box prefix for unsafe attributes
-    :param box_duplicates: "ignore", "error" or "warn" when duplicates exists
-        in a conversion_box
-    :param ordered_box: Preserve the order of keys entered into the box
+    :param box_duplicates: "ignore", "error" or "warn" when duplicates exists in a conversion_box
     """
 
     _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml',
                                  'from_yaml', 'from_json']
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, box_it_up=False, default_box=False, default_box_attr=None, frozen_box=False,
+                camel_killer_box=False, conversion_box=True, modify_tuples_box=False, box_safe_prefix='x',
+                box_duplicates='ignore', **kwargs):
         """
         Due to the way pickling works in python 3, we need to make sure
         the box config is created as early as possible.
         """
         obj = super(Box, cls).__new__(cls, *args, **kwargs)
-        obj._box_config = _get_box_config(cls, kwargs)
+        obj._box_config = _get_box_config(kwargs.pop('__box_heritage', None))
+        obj._box_config.update({
+            'default_box': default_box,
+            'default_box_attr': default_box_attr or cls.__class__,
+            'conversion_box': conversion_box,
+            'box_safe_prefix': box_safe_prefix,
+            'frozen_box': frozen_box,
+            'camel_killer_box': camel_killer_box,
+            'modify_tuples_box': modify_tuples_box,
+            'box_duplicates': box_duplicates
+        })
         return obj
 
-    def __init__(self, *args, **kwargs):
-        self._box_config = _get_box_config(self.__class__, kwargs)
-        if self._box_config['ordered_box']:
-            self._box_config['__ordered_box_values'] = []
-        if (not self._box_config['conversion_box'] and
-                self._box_config['box_duplicates'] != "ignore"):
+    def __init__(self, *args, box_it_up=False, default_box=False, default_box_attr=None, frozen_box=False,
+                 camel_killer_box=False, conversion_box=True, modify_tuples_box=False, box_safe_prefix='x',
+                 box_duplicates='ignore', **kwargs):
+        self._box_config = _get_box_config(kwargs.pop('__box_heritage', None))
+        self._box_config.update({
+            'default_box': default_box,
+            'default_box_attr': default_box_attr or self.__class__,
+            'conversion_box': conversion_box,
+            'box_safe_prefix': box_safe_prefix,
+            'frozen_box': frozen_box,
+            'camel_killer_box': camel_killer_box,
+            'modify_tuples_box': modify_tuples_box,
+            'box_duplicates': box_duplicates
+        })
+        if not self._box_config['conversion_box'] and self._box_config['box_duplicates'] != "ignore":
             raise BoxError('box_duplicates are only for conversion_boxes')
         if len(args) == 1:
             if isinstance(args[0], str):
@@ -202,35 +202,23 @@ class Box(dict):
                     if v is args[0]:
                         v = self
                     self[k] = v
-                    self.__add_ordered(k)
             elif isinstance(args[0], Iterable):
                 for k, v in args[0]:
                     self[k] = v
-                    self.__add_ordered(k)
-
             else:
                 raise ValueError('First argument must be mapping or iterable')
         elif args:
-            raise TypeError('Box expected at most 1 argument, '
-                            'got {0}'.format(len(args)))
+            raise TypeError('Box expected at most 1 argument, got {0}'.format(len(args)))
 
-        box_it = kwargs.pop('box_it_up', False)
         for k, v in kwargs.items():
             if args and isinstance(args[0], Mapping) and v is args[0]:
                 v = self
             self[k] = v
-            self.__add_ordered(k)
 
-        if (self._box_config['frozen_box'] or box_it or
-                self._box_config['box_duplicates'] != 'ignore'):
+        if self._box_config['frozen_box'] or box_it_up or self._box_config['box_duplicates'] != 'ignore':
             self.box_it_up()
 
         self._box_config['__created'] = True
-
-    def __add_ordered(self, key):
-        if (self._box_config['ordered_box'] and
-                key not in self._box_config['__ordered_box_values']):
-            self._box_config['__ordered_box_values'].append(key)
 
     def box_it_up(self):
         """
@@ -239,8 +227,7 @@ class Box(dict):
         any of those sub box objects.
         """
         for k in self:
-            _conversion_checks(k, self.keys(), self._box_config,
-                               check_only=True)
+            _conversion_checks(k, self.keys(), self._box_config, check_only=True)
             if self[k] is not self and hasattr(self[k], 'box_it_up'):
                 self[k].box_it_up()
 
@@ -259,8 +246,7 @@ class Box(dict):
         # Only show items accessible by dot notation
         for key in self.keys():
             key = _safe_key(key)
-            if (' ' not in key and key[0] not in string.digits and
-                    key not in kwlist):
+            if ' ' not in key and key[0] not in string.digits and key not in kwlist:
                 for letter in key:
                     if letter not in allowed:
                         break
@@ -271,9 +257,7 @@ class Box(dict):
             key = _safe_key(key)
             if key not in items:
                 if self._box_config['conversion_box']:
-                    key = _safe_attr(key, camel_killer=kill_camel,
-                                     replacement_char=self._box_config[
-                                         'box_safe_prefix'])
+                    key = _safe_attr(key, camel_killer=kill_camel, replacement_char=self._box_config['box_safe_prefix'])
                     if key:
                         items.add(key)
             if kill_camel:
@@ -290,8 +274,7 @@ class Box(dict):
         except KeyError:
             if isinstance(default, dict) and not isinstance(default, Box):
                 return Box(default)
-            if isinstance(default, list) \
-                    and not isinstance(default, box.BoxList):
+            if isinstance(default, list) and not isinstance(default, box.BoxList):
                 return box.BoxList(default)
             return default
 
@@ -301,12 +284,12 @@ class Box(dict):
     def __copy__(self):
         return self.__class__(super(self.__class__, self).copy())
 
-    def __deepcopy__(self, memodict=None):
+    def __deepcopy__(self, memo=None):
         out = self.__class__()
-        memodict = memodict or {}
-        memodict[id(self)] = out
+        memo = memo or {}
+        memo[id(self)] = out
         for k, v in self.items():
-            out[copy.deepcopy(k, memodict)] = copy.deepcopy(v, memodict)
+            out[copy.deepcopy(k, memo=memo)] = copy.deepcopy(v, memo=memo)
         return out
 
     def __setstate__(self, state):
@@ -318,8 +301,12 @@ class Box(dict):
             value = super(Box, self).__getitem__(item)
         except KeyError as err:
             if item == '_box_config':
-                raise BoxKeyError('_box_config should only exist as an '
-                                  'attribute and is never defaulted')
+                raise BoxKeyError('_box_config should only exist as an attribute and is never defaulted')
+            if "." in item:
+                first_item, children = item.split(".")
+                if first_item in self.keys() and isinstance(self[first_item], dict):
+                    return self.__convert_and_store(item, super(Box, self).__getitem__(first_item))[children]
+
             if self._box_config['default_box'] and not _ignore_default:
                 return self.__get_default(item)
             raise BoxKeyError(str(err))
@@ -327,8 +314,6 @@ class Box(dict):
             return self.__convert_and_store(item, value)
 
     def keys(self):
-        if self._box_config['ordered_box']:
-            return self._box_config['__ordered_box_values']
         return super(Box, self).keys()
 
     def values(self):
@@ -340,8 +325,7 @@ class Box(dict):
     def __get_default(self, item):
         default_value = self._box_config['default_box_attr']
         if default_value is self.__class__:
-            return self.__class__(__box_heritage=(self, item),
-                                  **self.__box_config())
+            return self.__class__(__box_heritage=(self, item), **self.__box_config())
         elif isinstance(default_value, Callable):
             return default_value()
         elif hasattr(default_value, 'copy'):
@@ -359,35 +343,27 @@ class Box(dict):
         if item in self._box_config['__converted']:
             return value
         if isinstance(value, dict) and not isinstance(value, Box):
-            value = self.__class__(value, __box_heritage=(self, item),
-                                   **self.__box_config())
+            value = self.__class__(value, __box_heritage=(self, item), **self.__box_config())
             self[item] = value
-        elif isinstance(value, list) \
-                and not isinstance(value, box.BoxList):
+        elif isinstance(value, list) and not isinstance(value, box.BoxList):
             if self._box_config['frozen_box']:
-                value = _recursive_tuples(value, self.__class__,
-                                          recreate_tuples=self._box_config[
-                                              'modify_tuples_box'],
+                value = _recursive_tuples(value,
+                                          self.__class__,
+                                          recreate_tuples=self._box_config['modify_tuples_box'],
                                           __box_heritage=(self, item),
                                           **self.__box_config())
             else:
-                value = box.BoxList(value, __box_heritage=(self, item),
-                                         box_class=self.__class__,
-                                         **self.__box_config())
+                value = box.BoxList(value, __box_heritage=(self, item), box_class=self.__class__, **self.__box_config())
             self[item] = value
-        elif (self._box_config['modify_tuples_box'] and
-              isinstance(value, tuple)):
-            value = _recursive_tuples(value, self.__class__,
-                                      recreate_tuples=True,
-                                      __box_heritage=(self, item),
+        elif self._box_config['modify_tuples_box'] and isinstance(value, tuple):
+            value = _recursive_tuples(value, self.__class__, recreate_tuples=True, __box_heritage=(self, item),
                                       **self.__box_config())
             self[item] = value
         self._box_config['__converted'].add(item)
         return value
 
     def __create_lineage(self):
-        if (self._box_config['__box_heritage'] and
-                self._box_config['__created']):
+        if self._box_config['__box_heritage'] and self._box_config['__created']:
             past, item = self._box_config['__box_heritage']
             if not past[item]:
                 past[item] = self
@@ -422,53 +398,40 @@ class Box(dict):
             return self.__convert_and_store(item, value)
 
     def __setitem__(self, key, value):
-        if (key != '_box_config' and self._box_config['__created'] and
-                self._box_config['frozen_box']):
+        if key != '_box_config' and self._box_config['__created'] and self._box_config['frozen_box']:
             raise BoxError('Box is frozen')
         if self._box_config['conversion_box']:
             _conversion_checks(key, self.keys(), self._box_config,
                                check_only=True, pre_check=True)
         super(Box, self).__setitem__(key, value)
-        self.__add_ordered(key)
         self.__create_lineage()
 
     def __setattr__(self, key, value):
-        if (key != '_box_config' and self._box_config['frozen_box'] and
-                self._box_config['__created']):
+        if key != '_box_config' and self._box_config['frozen_box'] and self._box_config['__created']:
             raise BoxError('Box is frozen')
         if key in self._protected_keys:
-            raise AttributeError("Key name '{0}' is protected".format(key))
+            raise AttributeError(f"Key name '{key}' is protected")
         if key == '_box_config':
             return object.__setattr__(self, key, value)
-        try:
-            object.__getattribute__(self, key)
-        except (AttributeError, UnicodeEncodeError):
-            if (key not in self.keys() and
-                    (self._box_config['conversion_box'] or
-                     self._box_config['camel_killer_box'])):
-                if self._box_config['conversion_box']:
-                    k = _conversion_checks(key, self.keys(),
-                                           self._box_config)
-                    self[key if not k else k] = value
-                elif self._box_config['camel_killer_box']:
-                    for each_key in self:
-                        if key == _camel_killer(each_key):
-                            self[each_key] = value
-                            break
-            else:
-                self[key] = value
+        if key not in self.keys() and (self._box_config['conversion_box'] or self._box_config['camel_killer_box']):
+            if self._box_config['conversion_box']:
+                k = _conversion_checks(key, self.keys(), self._box_config)
+                self[key if not k else k] = value
+            elif self._box_config['camel_killer_box']:
+                for each_key in self:
+                    if key == _camel_killer(each_key):
+                        self[each_key] = value
+                        break
+                else:
+                    self[_camel_killer(key)] = value
         else:
-            object.__setattr__(self, key, value)
-        self.__add_ordered(key)
+            self[key] = value
         self.__create_lineage()
 
     def __delitem__(self, key):
         if self._box_config['frozen_box']:
             raise BoxError('Box is frozen')
         super(Box, self).__delitem__(key)
-        if (self._box_config['ordered_box'] and
-                key in self._box_config['__ordered_box_values']):
-            self._box_config['__ordered_box_values'].remove(key)
 
     def __delattr__(self, item):
         if self._box_config['frozen_box']:
@@ -476,22 +439,13 @@ class Box(dict):
         if item == '_box_config':
             raise BoxError('"_box_config" is protected')
         if item in self._protected_keys:
-            raise AttributeError("Key name '{0}' is protected".format(item))
-        try:
-            object.__getattribute__(self, item)
-        except AttributeError:
-            del self[item]
-        else:
-            object.__delattr__(self, item)
-        if (self._box_config['ordered_box'] and
-                item in self._box_config['__ordered_box_values']):
-            self._box_config['__ordered_box_values'].remove(item)
+            raise AttributeError(f"Key name '{item}' is protected")
+        del self[item]
 
     def pop(self, key, *args):
         if args:
             if len(args) != 1:
-                raise BoxError('pop() takes only one optional'
-                               ' argument "default"')
+                raise BoxError('pop() takes only one optional argument "default"')
             try:
                 item = self[key]
             except KeyError:
@@ -502,13 +456,12 @@ class Box(dict):
         try:
             item = self[key]
         except KeyError:
-            raise BoxKeyError('{0}'.format(key))
+            raise BoxKeyError(f'{key}')
         else:
             del self[key]
             return item
 
     def clear(self):
-        self._box_config['__ordered_box_values'] = []
         super(Box, self).clear()
 
     def popitem(self):
@@ -519,7 +472,7 @@ class Box(dict):
         return key, self.pop(key)
 
     def __repr__(self):
-        return '<Box: {0}>'.format(str(self.to_dict()))
+        return f'<Box: {self.to_dict()}>'
 
     def __str__(self):
         return str(self.to_dict())
@@ -579,8 +532,7 @@ class Box(dict):
         self[item] = default
         return default
 
-    def to_json(self, filename=None,
-                encoding="utf-8", errors="strict", **json_kwargs):
+    def to_json(self, filename=None, encoding="utf-8", errors="strict", **json_kwargs):
         """
         Transform the Box object into a JSON string.
 
@@ -590,12 +542,10 @@ class Box(dict):
         :param json_kwargs: additional arguments to pass to json.dump(s)
         :return: string of JSON or return of `json.dump`
         """
-        return _to_json(self.to_dict(), filename=filename,
-                        encoding=encoding, errors=errors, **json_kwargs)
+        return _to_json(self.to_dict(), filename=filename, encoding=encoding, errors=errors, **json_kwargs)
 
     @classmethod
-    def from_json(cls, json_string=None, filename=None,
-                  encoding="utf-8", errors="strict", **kwargs):
+    def from_json(cls, json_string=None, filename=None, encoding="utf-8", errors="strict", **kwargs):
         """
         Transform a json object string into a Box object. If the incoming
         json is a list, you must use BoxList.from_json.
@@ -607,22 +557,18 @@ class Box(dict):
         :param kwargs: parameters to pass to `Box()` or `json.loads`
         :return: Box object from json data
         """
-        bx_args = {}
+        box_args = {}
         for arg in kwargs.copy():
             if arg in BOX_PARAMETERS:
-                bx_args[arg] = kwargs.pop(arg)
+                box_args[arg] = kwargs.pop(arg)
 
-        data = _from_json(json_string, filename=filename,
-                          encoding=encoding, errors=errors, **kwargs)
+        data = _from_json(json_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
 
         if not isinstance(data, dict):
-            raise BoxError('json data not returned as a dictionary, '
-                           'but rather a {0}'.format(type(data).__name__))
-        return cls(data, **bx_args)
+            raise BoxError(f'json data not returned as a dictionary, but rather a {type(data).__name__}')
+        return cls(data, **box_args)
 
-    def to_yaml(self, filename=None, default_flow_style=False,
-                encoding="utf-8", errors="strict",
-                **yaml_kwargs):
+    def to_yaml(self, filename=None, default_flow_style=False, encoding="utf-8", errors="strict", **yaml_kwargs):
         """
         Transform the Box object into a YAML string.
 
@@ -633,13 +579,11 @@ class Box(dict):
         :param yaml_kwargs: additional arguments to pass to yaml.dump
         :return: string of YAML or return of `yaml.dump`
         """
-        return _to_yaml(self.to_dict(), filename=filename,
-                        default_flow_style=default_flow_style,
+        return _to_yaml(self.to_dict(), filename=filename, default_flow_style=default_flow_style,
                         encoding=encoding, errors=errors, **yaml_kwargs)
 
     @classmethod
-    def from_yaml(cls, yaml_string=None, filename=None,
-                  encoding="utf-8", errors="strict", **kwargs):
+    def from_yaml(cls, yaml_string=None, filename=None, encoding="utf-8", errors="strict", **kwargs):
         """
         Transform a yaml object string into a Box object.
 
@@ -650,14 +594,12 @@ class Box(dict):
         :param kwargs: parameters to pass to `Box()` or `yaml.load`
         :return: Box object from yaml data
         """
-        bx_args = {}
+        box_args = {}
         for arg in kwargs.copy():
             if arg in BOX_PARAMETERS:
-                bx_args[arg] = kwargs.pop(arg)
+                box_args[arg] = kwargs.pop(arg)
 
-        data = _from_yaml(yaml_string=yaml_string, filename=filename,
-                          encoding=encoding, errors=errors, **kwargs)
+        data = _from_yaml(yaml_string=yaml_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
         if not isinstance(data, dict):
-            raise BoxError('yaml data not returned as a dictionary'
-                           'but rather a {0}'.format(type(data).__name__))
-        return cls(data, **bx_args)
+            raise BoxError(f'yaml data not returned as a dictionary but rather a {type(data).__name__}')
+        return cls(data, **box_args)
