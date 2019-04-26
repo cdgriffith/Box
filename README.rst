@@ -176,6 +176,7 @@ Box's parameters
    box_safe_prefix  "x"       Character or prefix to prepend to otherwise invalid attributes
    box_duplicates   "ignore"  When conversion duplicates are spotted, either ignore, warn or error
    ordered_box      False     Preserve order of keys entered into the box
+   box_intact_types ()        Tuple of objects to preserve and not convert to a Box object
    ================ ========= ===========
 
 Box's functions
