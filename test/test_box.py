@@ -133,37 +133,6 @@ class TestBox:
         e = Box(({'three': 3, 'one': 1, 'two': 2}))
         assert a == b == c == d == e
 
-    def test_config_box(self):
-        g = {"b0": 'no',
-             "b1": 'yes',
-             "b2": 'True',
-             "b3": 'false',
-             "b4": True,
-             "i0": '34',
-             "f0": '5.5',
-             "f1": '3.333',
-             "l0": '4,5,6,7,8',
-             "l1": '[2 3 4 5 6]'}
-
-        cns = ConfigBox(bb=g)
-        assert cns.bb.list("l1", spliter=" ") == ["2", "3", "4", "5", "6"]
-        assert cns.bb.list("l0", mod=lambda x: int(x)) == [4, 5, 6, 7, 8]
-        assert not cns.bb.bool("b0")
-        assert cns.bb.bool("b1")
-        assert cns.bb.bool("b2")
-        assert not cns.bb.bool("b3")
-        assert cns.bb.int("i0") == 34
-        assert cns.bb.float("f0") == 5.5
-        assert cns.bb.float("f1") == 3.333
-        assert cns.bb.getboolean("b4"), cns.bb.getboolean("b4")
-        assert cns.bb.getfloat("f0") == 5.5
-        assert cns.bb.getint("i0") == 34
-        assert cns.bb.getint("Hello!", 5) == 5
-        assert cns.bb.getfloat("Wooo", 4.4) == 4.4
-        assert cns.bb.getboolean("huh", True) is True
-        assert cns.bb.list("Waaaa", [1]) == [1]
-        assert repr(cns).startswith("<ConfigBox")
-
     def test_protected_box_methods(self):
         my_box = Box(a=3)
         with pytest.raises(AttributeError):
@@ -237,11 +206,6 @@ class TestBox:
 
         assert a.big_camel == 'hi'
         assert 'big_camel' in dir(a)
-
-        b = ConfigBox(test_dict)
-
-        for item in ('to_yaml', 'to_dict', 'to_json', 'int', 'list', 'float'):
-            assert item in dir(b)
 
     def test_update(self):
         a = Box(test_dict)
@@ -391,9 +355,6 @@ class TestBox:
         bx3 = Box(default_box=True, default_box_attr=3)
         assert bx3.hello == 3
 
-        bx4 = Box(default_box=True, default_box_attr=ConfigBox)
-        assert isinstance(bx4.bbbbb, ConfigBox)
-
     def test_camel_killer_box(self):
         td = extended_test_dict.copy()
         td['CamelCase'] = 'Item'
@@ -415,20 +376,6 @@ class TestBox:
         assert killer_default_box.CamelCase == 'Item'
         assert isinstance(killer_default_box.does_not_exist, Box)
         assert isinstance(killer_default_box['does_not_exist'], Box)
-
-    def test_property_box(self):
-        td = test_dict.copy()
-        td['inner'] = {'CamelCase': 'Item'}
-
-        pbox = SBox(td, camel_killer_box=True)
-        assert isinstance(pbox.inner, SBox)
-        assert pbox.inner.camel_case == 'Item'
-        assert json.loads(pbox.json)['inner']['CamelCase'] == 'Item'
-        test_item = yaml.load(pbox.yaml, Loader=yaml.SafeLoader)
-        assert test_item['inner']['CamelCase'] == 'Item'
-        assert repr(pbox['inner']).startswith('<ShorthandBox')
-        assert not isinstance(pbox.dict, Box)
-        assert pbox.dict['inner']['CamelCase'] == 'Item'
 
     def test_box_modify_tuples(self):
         bx = Box(extended_test_dict, modify_tuples_box=True)
