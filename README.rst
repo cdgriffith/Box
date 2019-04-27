@@ -478,6 +478,8 @@ A huge thank you to everyone that has given features and feedback over the years
 
 Check out everyone that has contributed_.
 
+Also a special thanks to Python Software Foundation, and PSF-Trademarks Committee, for official approval to use the Python logo on the `Box` logo!
+
 
 History
 =======
@@ -485,7 +487,7 @@ History
 Feb 2014 - Inception
 --------------------
 
-`Box` was first crestedunder the name `Namespace` in the reusables_ package.
+`Box` was first created_ under the name `Namespace` in the reusables_ package.
 Years of usage and suggestions helped mold it into the largest section of
 the reusables library.
 
@@ -538,4 +540,5 @@ MIT License, Copyright (c) 2017-2019 Chris Griffith. See LICENSE file.
 .. _PythonBytes: https://pythonbytes.fm/episodes/show/68/python-notebooks-galore
 .. _contributed: AUTHORS.rst
 .. _`Wrapt Documentation`: https://wrapt.readthedocs.io/en/latest
-.. _reusables: https://github.com/cdgriffith/Reusables/commit/df20de4db74371c2fedf1578096f3e29c93ccdf3#diff-e9a0f470ef3e8afb4384dc2824943048R51
+.. _reusables: https://github.com/cdgriffith/reusables#reusables
+.. _created: https://github.com/cdgriffith/Reusables/commit/df20de4db74371c2fedf1578096f3e29c93ccdf3#diff-e9a0f470ef3e8afb4384dc2824943048R51
