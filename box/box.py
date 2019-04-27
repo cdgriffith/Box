@@ -26,18 +26,11 @@ _all_cap_re = re.compile('([a-z0-9])([A-Z])')
 # Helper functions
 
 
-def _safe_key(key, encoding='utf-8'):
-    try:
-        return str(key)
-    except UnicodeEncodeError:
-        return key.encode(encoding, "ignore")
-
-
 def _safe_attr(attr, camel_killer=False, replacement_char='x'):
     """Convert a key into something that is accessible as an attribute"""
     allowed = string.ascii_letters + string.digits + '_'
 
-    attr = _safe_key(attr)
+    attr = str(attr)
 
     if camel_killer:
         attr = _camel_killer(attr)
@@ -248,7 +241,7 @@ class Box(dict):
         items = set(self._protected_keys)
         # Only show items accessible by dot notation
         for key in self.keys():
-            key = _safe_key(key)
+            key = str(key)
             if ' ' not in key and key[0] not in string.digits and key not in kwlist:
                 for letter in key:
                     if letter not in allowed:
@@ -257,7 +250,6 @@ class Box(dict):
                     items.add(key)
 
         for key in self.keys():
-            key = _safe_key(key)
             if key not in items:
                 if self._box_config['conversion_box']:
                     key = _safe_attr(key, camel_killer=kill_camel, replacement_char=self._box_config['box_safe_prefix'])
