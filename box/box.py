@@ -11,6 +11,7 @@ import copy
 from keyword import kwlist
 import warnings
 from collections.abc import Iterable, Mapping, Callable
+from typing import Any
 
 import box
 from box.exceptions import BoxError, BoxKeyError
@@ -25,11 +26,11 @@ _all_cap_re = re.compile('([a-z0-9])([A-Z])')
 # Helper functions
 
 
-def _safe_key(key):
+def _safe_key(key, encoding='utf-8'):
     try:
         return str(key)
     except UnicodeEncodeError:
-        return key.encode("utf-8", "ignore")
+        return key.encode(encoding, "ignore")
 
 
 def _safe_attr(attr, camel_killer=False, replacement_char='x'):
@@ -157,9 +158,10 @@ class Box(dict):
     _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml',
                                  'from_yaml', 'from_json']
 
-    def __new__(cls, *args, box_it_up=False, default_box=False, default_box_attr=None, frozen_box=False,
-                camel_killer_box=False, conversion_box=True, modify_tuples_box=False, box_safe_prefix='x',
-                box_duplicates='ignore', **kwargs):
+    def __new__(cls, *args: Any, box_it_up: bool = False, default_box: bool = False,
+                default_box_attr: Any = None, frozen_box: bool = False, camel_killer_box: bool = False,
+                conversion_box: bool = True, modify_tuples_box: bool = False, box_safe_prefix: str = 'x',
+                box_duplicates: str = 'ignore', **kwargs: Any):
         """
         Due to the way pickling works in python 3, we need to make sure
         the box config is created as early as possible.
@@ -178,9 +180,10 @@ class Box(dict):
         })
         return obj
 
-    def __init__(self, *args, box_it_up=False, default_box=False, default_box_attr=None, frozen_box=False,
-                 camel_killer_box=False, conversion_box=True, modify_tuples_box=False, box_safe_prefix='x',
-                 box_duplicates='ignore', **kwargs):
+    def __init__(self, *args: Any, box_it_up: bool = False, default_box: bool = False,
+                 default_box_attr: Any = None, frozen_box: bool = False, camel_killer_box: bool = False,
+                 conversion_box: bool = True, modify_tuples_box: bool = False, box_safe_prefix: str = 'x',
+                 box_duplicates: str = 'ignore', **kwargs: Any):
         self._box_config = _get_box_config(kwargs.pop('__box_heritage', None))
         self._box_config.update({
             'default_box': default_box,
@@ -303,7 +306,7 @@ class Box(dict):
             if item == '_box_config':
                 raise BoxKeyError('_box_config should only exist as an attribute and is never defaulted')
             if "." in item:
-                first_item, children = item.split(".")
+                first_item, children = item.split(".", 1)
                 if first_item in self.keys() and isinstance(self[first_item], dict):
                     return self.__convert_and_store(item, super(Box, self).__getitem__(first_item))[children]
 
@@ -422,8 +425,6 @@ class Box(dict):
                     if key == _camel_killer(each_key):
                         self[each_key] = value
                         break
-                else:
-                    self[_camel_killer(key)] = value
         else:
             self[key] = value
         self.__create_lineage()

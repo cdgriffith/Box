@@ -4,6 +4,7 @@ import os
 import shutil
 import sys
 import copy
+import pytest
 
 try:
     import yaml

@@ -26,8 +26,7 @@ class BoxList(list):
             def frozen(*args, **kwargs):
                 raise BoxError('BoxList is frozen')
 
-            for method in ['append', 'extend', 'insert', 'pop',
-                           'remove', 'reverse', 'sort']:
+            for method in ['append', 'extend', 'insert', 'pop', 'remove', 'reverse', 'sort']:
                 self.__setattr__(method, frozen)
 
     def __delitem__(self, key):
@@ -49,8 +48,7 @@ class BoxList(list):
                     raise err
         elif isinstance(p_object, list):
             try:
-                p_object = (self if id(p_object) == self.box_org_ref else
-                            BoxList(p_object))
+                p_object = (self if id(p_object) == self.box_org_ref else BoxList(p_object))
             except AttributeError as err:
                 if 'box_org_ref' in self.__dict__:
                     raise err
@@ -64,8 +62,7 @@ class BoxList(list):
         if isinstance(p_object, dict):
             p_object = self.box_class(p_object, **self.box_options)
         elif isinstance(p_object, list):
-            p_object = (self if id(p_object) == self.box_org_ref else
-                        BoxList(p_object))
+            p_object = (self if id(p_object) == self.box_org_ref else BoxList(p_object))
         super(BoxList, self).insert(index, p_object)
 
     def __repr__(self):
@@ -79,12 +76,12 @@ class BoxList(list):
                        self.box_class,
                        **self.box_options)
 
-    def __deepcopy__(self, memodict=None):
+    def __deepcopy__(self, memo=None):
         out = self.__class__()
-        memodict = memodict or {}
-        memodict[id(self)] = out
+        memo = memo or {}
+        memo[id(self)] = out
         for k in self:
-            out.append(copy.deepcopy(k))
+            out.append(copy.deepcopy(k, memo=memo))
         return out
 
     def __hash__(self):
