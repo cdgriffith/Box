@@ -6,11 +6,14 @@ from box import Box
 class WraptBox(wrapt.ObjectProxy):
     """
     Wrapper for any Python object with a Box as __dict__.
+
     Simple Usage:
+
     import requests
     url = 'https://raw.githubusercontent.com/cdgriffith/Box/master/box.py'
-    session = BoxObject(requests.Session())
+    session = WraptBox(requests.Session())
     session.source_code = session.get(url).text
+
     :param wrapped: Wrapped Object.
     :param box_class: Custom internal Box class
     :param args: Arguments to fill Box
