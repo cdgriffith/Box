@@ -86,3 +86,10 @@ class TestBoxList:
         bxl = BoxList([extended_test_dict])
         bxl.box_it_up()
         assert "Key 3" in bxl[0].Key_2._box_config['__converted']
+
+    def test_intact_types_list(self):
+        class MyList(list):
+            pass
+
+        bl = BoxList([[1, 2], MyList([3, 4])], box_intact_types=(MyList,))
+        assert isinstance(bl[0], BoxList)

@@ -9,7 +9,16 @@ Version 4.0.0
 * Changing to 120 line character limit
 * Removing `ordered_box` as Python 3.6+ is ordered by default
 
-TODO - ADD HERE
+Version 3.4.0
+~~~~~~~~~~~~~
+
+* Adding `box_intact_types` that allows preservation of selected object types (thanks to pwwang)
+* Adding limitations section to readme
+
+Version 3.3.0
+~~~~~~~~~~~~~
+
+* Adding `BoxObject` (thanks to Brandon Gomes)
 
 Version 3.2.4
 ~~~~~~~~~~~~~

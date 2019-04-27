@@ -9,3 +9,10 @@ from box.box_list import BoxList
 from box.config_box import ConfigBox
 from box.shorthand_box import SBox
 from box.exceptions import BoxError, BoxKeyError
+
+try:
+    import wrapt
+except ImportError:
+    pass
+else:
+    from box.wrapt_box import WraptBox

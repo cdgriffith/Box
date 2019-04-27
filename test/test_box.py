@@ -671,3 +671,12 @@ class TestBox:
         bx = Box(camel_killer_box=True)
         bx[(1, 2)] = 32
         assert bx == {(1, 2): 32}
+
+    def test_intact_types_dict(self):
+        from collections import OrderedDict
+        bx = Box(a=OrderedDict([('y', 1), ('x', 2)]))
+        assert isinstance(bx.a, Box)
+        assert not isinstance(bx.a, OrderedDict)
+        bx = Box(a=OrderedDict([('y', 1), ('x', 2)]), box_intact_types=[OrderedDict])
+        assert isinstance(bx.a, OrderedDict)
+        assert not isinstance(bx.a, Box)
