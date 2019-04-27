@@ -45,9 +45,6 @@ class TestBox:
         assert box._camel_killer("CamelCase") == "camel_case"
         assert box._camel_killer("Terrible321KeyA") == "terrible321_key_a"
 
-    def test_safe_key(self):
-        assert box._safe_key(("wer", "ah", 3)) == "('wer', 'ah', 3)"
-
     def test_recursive_tuples(self):
         out = box._recursive_tuples(({'test': 'a'},
                                      ({'second': 'b'},
@@ -661,3 +658,16 @@ class TestBox:
         del b['movies.Spaceballs.rating']
         assert b['movies.Spaceballs.rating'] == "PG"
 
+    def test_unicode(self):
+        bx = Box()
+        bx["\U0001f631"] = 4
+
+        bx2 = Box(camel_killer_box=True)
+        bx2["\U0001f631"] = 4
+
+        assert bx == bx2 == {'😱': 4}
+
+    def test_camel_killer_hashables(self):
+        bx = Box(camel_killer_box=True)
+        bx[(1, 2)] = 32
+        assert bx == {(1, 2): 32}
