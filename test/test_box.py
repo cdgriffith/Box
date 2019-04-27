@@ -653,3 +653,11 @@ class TestBox:
         bl.append(["foo"])
         assert bl == [['foo']], bl
 
+    def test_dots(self):
+        b = Box(movie_data)
+        assert b['movies.Spaceballs.rating'] == "PG"
+        b['movies.Spaceballs.rating'] = 4
+        assert b['movies.Spaceballs.rating'] == 4
+        del b['movies.Spaceballs.rating']
+        assert b['movies.Spaceballs.rating'] == "PG"
+
