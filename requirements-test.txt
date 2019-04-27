@@ -6,3 +6,4 @@ dotmap
 reusables
 memory_profiler
 wheel
+wrapt

@@ -39,14 +39,23 @@ class BoxList(list):
             raise BoxError('BoxList is frozen')
         super(BoxList, self).__setitem__(key, value)
 
+    def _is_intact_type(self, obj):
+        try:
+            if self.box_options.get('box_intact_types') and isinstance(obj, self.box_options['box_intact_types']):
+                return True
+        except AttributeError as err:
+            if 'box_options' in self.__dict__:
+                raise err
+        return False
+
     def append(self, p_object):
-        if isinstance(p_object, dict):
+        if isinstance(p_object, dict) and not self._is_intact_type(p_object):
             try:
                 p_object = self.box_class(p_object, **self.box_options)
             except AttributeError as err:
                 if 'box_class' in self.__dict__:
                     raise err
-        elif isinstance(p_object, list):
+        elif isinstance(p_object, list) and not self._is_intact_type(p_object):
             try:
                 p_object = (self if id(p_object) == self.box_org_ref else BoxList(p_object))
             except AttributeError as err:
@@ -59,9 +68,9 @@ class BoxList(list):
             self.append(item)
 
     def insert(self, index, p_object):
-        if isinstance(p_object, dict):
+        if isinstance(p_object, dict) and not self._is_intact_type(p_object):
             p_object = self.box_class(p_object, **self.box_options)
-        elif isinstance(p_object, list):
+        elif isinstance(p_object, list) and not self._is_intact_type(p_object):
             p_object = (self if id(p_object) == self.box_org_ref else BoxList(p_object))
         super(BoxList, self).insert(index, p_object)
 

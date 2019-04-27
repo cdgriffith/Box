@@ -17,6 +17,7 @@ Code contributions:
 - Stretch (str3tch)
 - (jandelgado)
 - Jeremiah Lowin (jlowin)
+- - (pwwang)
 
 Suggestions and bug reporting:
 
@@ -49,3 +50,6 @@ Suggestions and bug reporting:
 - Jeremiah Lowin (jlowin)
 - Michael Stella (alertedsnake)
 - Tim Gates (timgates42)
+- (FunkyLoveCow)
+- Kevin Cross (kevinhcross)
+- (Patrock)

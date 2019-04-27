@@ -114,21 +114,6 @@ So if you plan to keep the original dict around, make sure to box_it_up or do a 
       safe_box
       # <Box: {'a': {'b': {'c': {}}}}>
 
-Limitations
------------
-
-`Box` is a subclass of `dict` and as such, certain keys cannot be accessed via dot notation.
-This is because names such as `keys` and `pop` have already been declared as methods, so `Box` cannot
-use it's special sauce to overwrite them. However it is still possible to have items with those names
-in the `Box` and access them like a normal dictionary, such as `my_box['keys']`.
-
-*This is as designed, and will not be changed.*
-
-The non-magic methods that exist in a `Box` are: 
-`box_it_up, clear, copy, from_json, fromkeys, get, items, keys, pop, popitem, setdefault, to_dict, to_json, update, values`.
-To view an entire list of what cannot be accessed via dot notation, run the command `dir(Box())`.
-
-
 Box
 ---
 
@@ -158,6 +143,21 @@ allowing for recursive dot notation access.
 `Box` also includes helper functions to transform it back into a `dict`,
 as well as into `JSON` or `YAML` strings or files.
 
+Limitations
+~~~~~~~~~~~
+
+`Box` is a subclass of `dict` and as such, certain keys cannot be accessed via dot notation.
+This is because names such as `keys` and `pop` have already been declared as methods, so `Box` cannot
+use it's special sauce to overwrite them. However it is still possible to have items with those names
+in the `Box` and access them like a normal dictionary, such as `my_box['keys']`.
+
+*This is as designed, and will not be changed.*
+
+The non-magic methods that exist in a `Box` are:
+`box_it_up, clear, copy, from_json, fromkeys, get, items, keys, pop, popitem, setdefault, to_dict, to_json, update, values`.
+To view an entire list of what cannot be accessed via dot notation, run the command `dir(Box())`.
+
+
 Box's parameters
 ~~~~~~~~~~~~~~~~
 
@@ -175,7 +175,6 @@ Box's parameters
    box_it_up        False     Recursively create all Boxes from the start (like previous versions)
    box_safe_prefix  "x"       Character or prefix to prepend to otherwise invalid attributes
    box_duplicates   "ignore"  When conversion duplicates are spotted, either ignore, warn or error
-   ordered_box      False     Preserve order of keys entered into the box
    box_intact_types ()        Tuple of objects to preserve and not convert to a Box object
    ================ ========= ===========
 
@@ -421,15 +420,15 @@ config values into python types. It supports `list`, `bool`, `int` and `float`.
     config.Examples.float('floatly')
     # 4.4
 
-BoxObject
----------
+WraptBox
+~~~~~~~~
 
 An object wrapper with a **Box** for a **__dict__**.
 
 .. code:: python
 
     import requests
-    from box import BoxObject
+    from box import WraptBox
 
     def get_html(session, url, *args, **kwargs):
         response = session.get(url, *args, **kwargs)
@@ -437,7 +436,7 @@ An object wrapper with a **Box** for a **__dict__**.
         response_meta = response.__dict__
         for key in tuple(filter(lambda k: k.startswith('_'), response_meta)):
             response_meta.pop(key)
-        return BoxObject(text, response_meta, frozen_box=True)
+        return WraptBox(text, response_meta, frozen_box=True)
 
     box_url = 'https://raw.githubusercontent.com/cdgriffith/Box/master/box.py'
     with requests.Session() as session:
@@ -452,8 +451,8 @@ An object wrapper with a **Box** for a **__dict__**.
     box_source.raw.reason
     # OK
 
-**BoxObject** act just like objects but they secretly carry around a **Box** with
-them to store attributes. **BoxObject** are built off of **wrapt.ObjectProxy** which
+**WraptBox** act just like objects but they secretly carry around a **Box** with
+them to store attributes. **WraptBox** are built off of **wrapt.ObjectProxy** which
 can wrap almost any python object. They protect their wrapped objects storing them in
 the **__wrapped__** attribute and keeping the original **__dict__** in
 **__wrapped__.__dict__**.
@@ -461,11 +460,66 @@ the **__wrapped__** attribute and keeping the original **__dict__** in
 See the `Wrapt Documentation`_, specifically
 the section on **ObjectProxy**, for more information.
 
+Testimonials
+============
+
+"Awesome time (and finger!) saver." - Zenlc2000
+
+"no thanks." - burnbabyburn
+
+"Oh, that is cool. I am so using Box." - PythonBytes_
+
+"I just prefer plain dictionaries." - falcolas
+
+Thanks
+======
+
+A huge thank you to everyone that has given features and feedback over the years to Box!
+
+Check out everyone that has contributed_.
+
+
+History
+=======
+
+Feb 2014 - Inception
+--------------------
+
+`Box` was first crestedunder the name `Namespace` in the reusables_ package.
+Years of usage and suggestions helped mold it into the largest section of
+the reusables library.
+
+Mar 2017 - Box 1.0
+------------------
+
+After years of upgrades it became clear it was used more than most other parts of
+the reusables library of tools. `Box` become its own package.
+
+Mar 2017 - BoxLists
+-------------------
+
+2.0 quickly followed 1.0, adding BoxList to allow for further dot notations
+while down in lists. Also added the handy `to_json` and `to_yaml` functionality.
+
+May 2017 - Options
+------------------
+
+Box 3.0 brought a lot of options to the table for maximum customization. From
+allowing you to freeze the box or just help you find your attributes when
+accessing them by dot notation.
+
+May 2019 - 2.7 EOL
+------------------
+
+Box 4.0 was made with python 2.x out of mind. Everything from f-strings to
+type-hinting was added to update the package. The modules grew large enough
+to separate the different objects into their own files and test files.
+
 
 License
 =======
 
-MIT License, Copyright (c) 2017-2018 Chris Griffith. See LICENSE file.
+MIT License, Copyright (c) 2017-2019 Chris Griffith. See LICENSE file.
 
 
 .. |BoxImage| image:: https://raw.githubusercontent.com/cdgriffith/Box/master/box_logo.png
@@ -480,4 +534,8 @@ MIT License, Copyright (c) 2017-2018 Chris Griffith. See LICENSE file.
    :target: https://pypi.python.org/pypi/python-box/
 .. |License| image:: https://img.shields.io/pypi/l/python-box.svg
    :target: https://pypi.python.org/pypi/python-box/
+
+.. _PythonBytes: https://pythonbytes.fm/episodes/show/68/python-notebooks-galore
+.. _contributed: AUTHORS.rst
 .. _`Wrapt Documentation`: https://wrapt.readthedocs.io/en/latest
+.. _reusables: https://github.com/cdgriffith/Reusables/commit/df20de4db74371c2fedf1578096f3e29c93ccdf3#diff-e9a0f470ef3e8afb4384dc2824943048R51

@@ -11,7 +11,7 @@ import copy
 from keyword import kwlist
 import warnings
 from collections.abc import Iterable, Mapping, Callable
-from typing import Any
+from typing import Any, Union, Tuple, List
 
 import box
 from box.exceptions import BoxError, BoxKeyError
@@ -25,12 +25,11 @@ _all_cap_re = re.compile('([a-z0-9])([A-Z])')
 
 # Helper functions
 
-
 def _safe_attr(attr, camel_killer=False, replacement_char='x'):
     """Convert a key into something that is accessible as an attribute"""
     allowed = string.ascii_letters + string.digits + '_'
 
-    attr = str(attr)
+    attr = attr.decode('utf-8', 'ignore') if isinstance(attr, bytes) else str(attr)
 
     if camel_killer:
         attr = _camel_killer(attr)
@@ -39,18 +38,18 @@ def _safe_attr(attr, camel_killer=False, replacement_char='x'):
 
     out = ''
     for character in attr:
-        out += character if character in allowed else "_"
-    out = out.strip("_")
+        out += character if character in allowed else '_'
+    out = out.strip('_')
 
     try:
         int(out[0])
     except (ValueError, IndexError):
         pass
     else:
-        out = '{0}{1}'.format(replacement_char, out)
+        out = f'{replacement_char}{out}'
 
     if out in kwlist:
-        out = '{0}{1}'.format(replacement_char, out)
+        out = f'{replacement_char}{out}'
 
     return re.sub('_+', '_', out)
 
@@ -61,10 +60,7 @@ def _camel_killer(attr):
 
     Taken from http://stackoverflow.com/a/1176023/3244542
     """
-    try:
-        attr = str(attr)
-    except UnicodeEncodeError:
-        attr = attr.encode("utf-8", "ignore")
+    attr = str(attr)
 
     s1 = _first_cap_re.sub(r'\1_\2', attr)
     s2 = _all_cap_re.sub(r'\1_\2', s1)
@@ -107,9 +103,9 @@ def _conversion_checks(item, keys, box_config, check_only=False,
             seen, dups = set(), set()
             for x in key_list:
                 if x[1] in seen:
-                    dups.add("{0}({1})".format(x[0], x[1]))
+                    dups.add(f'{x[0]}({x[1]})')
                 seen.add(x[1])
-            if box_config['box_duplicates'].startswith("warn"):
+            if box_config['box_duplicates'].startswith('warn'):
                 warnings.warn(f'Duplicate conversion attributes exist: {dups}')
             else:
                 raise BoxError(f'Duplicate conversion attributes exist: {dups}')
@@ -146,6 +142,7 @@ class Box(dict):
     :param box_it_up: Recursively create all Boxes from the start
     :param box_safe_prefix: Conversion box prefix for unsafe attributes
     :param box_duplicates: "ignore", "error" or "warn" when duplicates exists in a conversion_box
+    :param box_intact_types: tuple of types to ignore converting
     """
 
     _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml',
@@ -154,7 +151,7 @@ class Box(dict):
     def __new__(cls, *args: Any, box_it_up: bool = False, default_box: bool = False,
                 default_box_attr: Any = None, frozen_box: bool = False, camel_killer_box: bool = False,
                 conversion_box: bool = True, modify_tuples_box: bool = False, box_safe_prefix: str = 'x',
-                box_duplicates: str = 'ignore', **kwargs: Any):
+                box_duplicates: str = 'ignore', box_intact_types: Union[Tuple, List] = (), **kwargs: Any):
         """
         Due to the way pickling works in python 3, we need to make sure
         the box config is created as early as possible.
@@ -169,14 +166,16 @@ class Box(dict):
             'frozen_box': frozen_box,
             'camel_killer_box': camel_killer_box,
             'modify_tuples_box': modify_tuples_box,
-            'box_duplicates': box_duplicates
+            'box_duplicates': box_duplicates,
+            'box_intact_types': tuple(box_intact_types)
         })
         return obj
 
     def __init__(self, *args: Any, box_it_up: bool = False, default_box: bool = False,
                  default_box_attr: Any = None, frozen_box: bool = False, camel_killer_box: bool = False,
                  conversion_box: bool = True, modify_tuples_box: bool = False, box_safe_prefix: str = 'x',
-                 box_duplicates: str = 'ignore', **kwargs: Any):
+                 box_duplicates: str = 'ignore',  box_intact_types: Union[Tuple, List] = (), **kwargs: Any):
+        super(Box, self).__init__()
         self._box_config = _get_box_config(kwargs.pop('__box_heritage', None))
         self._box_config.update({
             'default_box': default_box,
@@ -186,9 +185,10 @@ class Box(dict):
             'frozen_box': frozen_box,
             'camel_killer_box': camel_killer_box,
             'modify_tuples_box': modify_tuples_box,
-            'box_duplicates': box_duplicates
+            'box_duplicates': box_duplicates,
+            'box_intact_types': tuple(box_intact_types)
         })
-        if not self._box_config['conversion_box'] and self._box_config['box_duplicates'] != "ignore":
+        if not self._box_config['conversion_box'] and self._box_config['box_duplicates'] != 'ignore':
             raise BoxError('box_duplicates are only for conversion_boxes')
         if len(args) == 1:
             if isinstance(args[0], str):
@@ -204,7 +204,7 @@ class Box(dict):
             else:
                 raise ValueError('First argument must be mapping or iterable')
         elif args:
-            raise TypeError('Box expected at most 1 argument, got {0}'.format(len(args)))
+            raise TypeError(f'Box expected at most 1 argument, got {len(args)}')
 
         for k, v in kwargs.items():
             if args and isinstance(args[0], Mapping) and v is args[0]:
@@ -233,7 +233,7 @@ class Box(dict):
             for item in self.items():
                 hashing ^= hash(item)
             return hashing
-        raise TypeError("unhashable type: 'Box'")
+        raise TypeError('unhashable type: "Box"')
 
     def __dir__(self):
         allowed = string.ascii_letters + string.digits + '_'
@@ -297,8 +297,8 @@ class Box(dict):
         except KeyError as err:
             if item == '_box_config':
                 raise BoxKeyError('_box_config should only exist as an attribute and is never defaulted')
-            if "." in item:
-                first_item, children = item.split(".", 1)
+            if '.' in item:
+                first_item, children = item.split('.', 1)
                 if first_item in self.keys() and isinstance(self[first_item], dict):
                     return self.__convert_and_store(item, super(Box, self).__getitem__(first_item))[children]
 
@@ -330,12 +330,13 @@ class Box(dict):
     def __box_config(self):
         out = {}
         for k, v in self._box_config.copy().items():
-            if not k.startswith("__"):
+            if not k.startswith('__'):
                 out[k] = v
         return out
 
     def __convert_and_store(self, item, value):
-        if item in self._box_config['__converted']:
+        if (item in self._box_config['__converted'] or
+                (self._box_config['box_intact_types'] and isinstance(value, self._box_config['box_intact_types']))):
             return value
         if isinstance(value, dict) and not isinstance(value, Box):
             value = self.__class__(value, __box_heritage=(self, item), **self.__box_config())
@@ -371,7 +372,7 @@ class Box(dict):
             except KeyError:
                 value = object.__getattribute__(self, item)
         except AttributeError as err:
-            if item == "__getstate__":
+            if item == '__getstate__':
                 raise AttributeError(item)
             if item == '_box_config':
                 raise BoxError('_box_config key must exist')
@@ -405,7 +406,7 @@ class Box(dict):
         if key != '_box_config' and self._box_config['frozen_box'] and self._box_config['__created']:
             raise BoxError('Box is frozen')
         if key in self._protected_keys:
-            raise AttributeError(f"Key name '{key}' is protected")
+            raise AttributeError(f'Key name "{key}" is protected')
         if key == '_box_config':
             return object.__setattr__(self, key, value)
         if key not in self.keys() and (self._box_config['conversion_box'] or self._box_config['camel_killer_box']):
@@ -432,7 +433,7 @@ class Box(dict):
         if item == '_box_config':
             raise BoxError('"_box_config" is protected')
         if item in self._protected_keys:
-            raise AttributeError(f"Key name '{item}' is protected")
+            raise AttributeError(f'Key name "{item}" is protected')
         del self[item]
 
     def pop(self, key, *args):
@@ -525,7 +526,7 @@ class Box(dict):
         self[item] = default
         return default
 
-    def to_json(self, filename=None, encoding="utf-8", errors="strict", **json_kwargs):
+    def to_json(self, filename=None, encoding='utf-8', errors='strict', **json_kwargs):
         """
         Transform the Box object into a JSON string.
 
@@ -538,7 +539,7 @@ class Box(dict):
         return _to_json(self.to_dict(), filename=filename, encoding=encoding, errors=errors, **json_kwargs)
 
     @classmethod
-    def from_json(cls, json_string=None, filename=None, encoding="utf-8", errors="strict", **kwargs):
+    def from_json(cls, json_string=None, filename=None, encoding='utf-8', errors='strict', **kwargs):
         """
         Transform a json object string into a Box object. If the incoming
         json is a list, you must use BoxList.from_json.
@@ -561,7 +562,7 @@ class Box(dict):
             raise BoxError(f'json data not returned as a dictionary, but rather a {type(data).__name__}')
         return cls(data, **box_args)
 
-    def to_yaml(self, filename=None, default_flow_style=False, encoding="utf-8", errors="strict", **yaml_kwargs):
+    def to_yaml(self, filename=None, default_flow_style=False, encoding='utf-8', errors='strict', **yaml_kwargs):
         """
         Transform the Box object into a YAML string.
 
@@ -576,7 +577,7 @@ class Box(dict):
                         encoding=encoding, errors=errors, **yaml_kwargs)
 
     @classmethod
-    def from_yaml(cls, yaml_string=None, filename=None, encoding="utf-8", errors="strict", **kwargs):
+    def from_yaml(cls, yaml_string=None, filename=None, encoding='utf-8', errors='strict', **kwargs):
         """
         Transform a yaml object string into a Box object.
 
