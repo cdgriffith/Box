@@ -401,10 +401,10 @@ class Box(dict):
             return default
 
     def copy(self):
-        return self.__class__(super(self.__class__, self).copy())
+        return Box(super(Box, self).copy())
 
     def __copy__(self):
-        return self.__class__(super(self.__class__, self).copy())
+        return Box(super(Box, self).copy())
 
     def __deepcopy__(self, memodict=None):
         out = self.__class__()
@@ -1093,6 +1093,12 @@ class ConfigBox(Box):
     def __repr__(self):
         return '<ConfigBox: {0}>'.format(str(self.to_dict()))
 
+    def copy(self):
+        return ConfigBox(super(ConfigBox, self).copy())
+
+    def __copy__(self):
+        return ConfigBox(super(ConfigBox, self).copy())
+
 
 class SBox(Box):
     """
@@ -1118,6 +1124,12 @@ class SBox(Box):
 
     def __repr__(self):
         return '<ShorthandBox: {0}>'.format(str(self.to_dict()))
+
+    def copy(self):
+        return SBox(super(SBox, self).copy())
+
+    def __copy__(self):
+        return SBox(super(SBox, self).copy())
 
 
 if wrapt_support:

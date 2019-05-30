@@ -759,6 +759,32 @@ class TestBoxFunctional:
         bl.append(["foo"])
         assert bl == [['foo']], bl
 
+    def test_inheritance_copy(self):
+
+        class Box2(Box):
+            pass
+
+        class SBox2(SBox):
+            pass
+
+        class ConfigBox2(ConfigBox):
+            pass
+
+        b = Box2(a=1)
+        c = b.copy()
+        assert c == b
+        assert isinstance(c, Box)
+
+        d = SBox2(a=1)
+        e = d.copy()
+        assert e == d
+        assert isinstance(e, SBox)
+
+        f = ConfigBox2(a=1)
+        g = f.copy()
+        assert g == f
+        assert isinstance(g, ConfigBox)
+
 
 class TestBoxObject:
 
