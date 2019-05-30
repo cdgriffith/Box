@@ -1,6 +1,13 @@
 Changelog
 ---------
 
+Version 3.4.1
+~~~~~~~~~~~~~
+
+* Fixing copy of inherited classes (thanks to pwwang)
+* Fixing unexpected behavior of converted attribute names (thanks to pwwang)
+
+
 Version 3.4.0
 ~~~~~~~~~~~~~
 

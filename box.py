@@ -146,9 +146,15 @@ def _safe_attr(attr, camel_killer=False, replacement_char='x'):
     attr = attr.replace(' ', '_')
 
     out = ''
+    starting_chr = ''
     for character in attr:
-        out += character if character in allowed else "_"
-    out = out.strip("_")
+        if starting_chr:
+            out += character if character in allowed else "_"
+        elif character in allowed:
+            starting_chr = character
+            out += character
+
+    out = out.rstrip("_")
 
     try:
         int(out[0])
