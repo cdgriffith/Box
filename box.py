@@ -146,15 +146,9 @@ def _safe_attr(attr, camel_killer=False, replacement_char='x'):
     attr = attr.replace(' ', '_')
 
     out = ''
-    starting_chr = ''
     for character in attr:
-        if starting_chr:
-            out += character if character in allowed else "_"
-        elif character in allowed:
-            starting_chr = character
-            out += character
-
-    out = out.rstrip("_")
+        out += character if character in allowed else "_"
+    out = out.strip("_")
 
     try:
         int(out[0])
@@ -397,14 +391,15 @@ class Box(dict):
         return list(items)
 
     def get(self, key, default=None):
-        try:
-            return self[key]
-        except KeyError:
+        if key not in self:
+            if default is None and self._box_config['default_box']:
+                return self.__get_default(key)
             if isinstance(default, dict) and not isinstance(default, Box):
                 return Box(default)
             if isinstance(default, list) and not isinstance(default, BoxList):
                 return BoxList(default)
             return default
+        return self[key]
 
     def copy(self):
         return Box(super(Box, self).copy())

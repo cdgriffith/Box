@@ -645,6 +645,11 @@ class TestBoxFunctional:
         assert "a" in bx.get("a", Box(a=1, conversion_box=False))
         assert isinstance(bx.get("a", [1, 2]), BoxList)
 
+    def test_get_default_box(self):
+        bx = Box(default_box=True)
+        assert bx.get('test', 4) == 4
+        assert isinstance(bx.get('a'), Box)
+
     def test_is_in(self):
         bx = Box()
         dbx = Box(default_box=True)
