@@ -5,6 +5,7 @@
 
 import sys
 import json
+from pathlib import Path
 
 import ruamel.yaml as yaml
 import toml
@@ -16,20 +17,16 @@ BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'box_safe_prefix', 'box_duplicates', 'ordered_box')
 
 
-def _to_json(obj, filename=None,
-             encoding="utf-8", errors="strict", **json_kwargs):
-    json_dump = json.dumps(obj,
-                           ensure_ascii=False, **json_kwargs)
+def _to_json(obj, filename=None, encoding="utf-8", errors="strict", **json_kwargs):
+    json_dump = json.dumps(obj, ensure_ascii=False, **json_kwargs)
     if filename:
         with open(filename, 'w', encoding=encoding, errors=errors) as f:
-            f.write(json_dump if sys.version_info >= (3, 0) else
-                    json_dump.decode("utf-8"))
+            f.write(json_dump if sys.version_info >= (3, 0) else json_dump.decode("utf-8"))
     else:
         return json_dump
 
 
-def _from_json(json_string=None, filename=None,
-               encoding="utf-8", errors="strict", multiline=False, **kwargs):
+def _from_json(json_string=None, filename=None, encoding="utf-8", errors="strict", multiline=False, **kwargs):
     if filename:
         with open(filename, 'r', encoding=encoding, errors=errors) as f:
             if multiline:
@@ -44,9 +41,7 @@ def _from_json(json_string=None, filename=None,
     return data
 
 
-def _to_yaml(obj, filename=None, default_flow_style=False,
-             encoding="utf-8", errors="strict",
-             **yaml_kwargs):
+def _to_yaml(obj, filename=None, default_flow_style=False, encoding="utf-8", errors="strict", **yaml_kwargs):
     if filename:
         with open(filename, 'w',
                   encoding=encoding, errors=errors) as f:
@@ -59,9 +54,7 @@ def _to_yaml(obj, filename=None, default_flow_style=False,
                          **yaml_kwargs)
 
 
-def _from_yaml(yaml_string=None, filename=None,
-               encoding="utf-8", errors="strict",
-               **kwargs):
+def _from_yaml(yaml_string=None, filename=None, encoding="utf-8", errors="strict", **kwargs):
     if 'Loader' not in kwargs:
         kwargs['Loader'] = yaml.SafeLoader
     if filename:
@@ -84,11 +77,9 @@ def _to_toml(obj, filename=None, encoding="utf-8", errors="strict"):
         return toml.dumps(obj)
 
 
-def _from_toml(toml_string=None, filename=None,
-               encoding="utf-8", errors="strict"):
+def _from_toml(toml_string=None, filename=None, encoding="utf-8", errors="strict"):
     if filename:
-        with open(filename, 'r',
-                  encoding=encoding, errors=errors) as f:
+        with open(filename, 'r', encoding=encoding, errors=errors) as f:
             data = toml.load(f)
     elif toml_string:
         data = toml.loads(toml_string)

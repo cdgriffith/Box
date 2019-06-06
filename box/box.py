@@ -335,9 +335,11 @@ class Box(dict):
         return out
 
     def __convert_and_store(self, item, value):
+        # If the value has already been converted or should not be converted, return it as-is
         if (item in self._box_config['__converted'] or
                 (self._box_config['box_intact_types'] and isinstance(value, self._box_config['box_intact_types']))):
             return value
+        # This is the magic sauce that makes sub dictionaries into new box objects
         if isinstance(value, dict) and not isinstance(value, Box):
             value = self.__class__(value, __box_heritage=(self, item), **self.__box_config())
             self[item] = value
