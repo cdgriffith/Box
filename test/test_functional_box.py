@@ -779,14 +779,23 @@ class TestBoxFunctional:
         c = b.copy()
         assert c == b
         assert isinstance(c, Box)
+        c = b.__copy__()
+        assert c == b
+        assert isinstance(c, Box)
 
         d = SBox2(a=1)
         e = d.copy()
         assert e == d
         assert isinstance(e, SBox)
+        e = d.__copy__()
+        assert e == d
+        assert isinstance(e, SBox)
 
         f = ConfigBox2(a=1)
         g = f.copy()
+        assert g == f
+        assert isinstance(g, ConfigBox)
+        g = f.__copy__()
         assert g == f
         assert isinstance(g, ConfigBox)
 
