@@ -1,6 +1,6 @@
 import wrapt
 
-from box import Box
+from box import Box, BoxList
 
 
 class WraptBox(wrapt.ObjectProxy):
@@ -42,12 +42,9 @@ class WraptBox(wrapt.ObjectProxy):
     def __getattr__(self, name):
         """Get Attribute from Wrapped Object or from Box."""
         try:
+            return self.__wrapped__.__dict__[name]
+        except KeyError:
             return super(WraptBox, self).__getattr__(name)
-        except AttributeError as error:
-            try:
-                return self.__dict__[name]
-            except KeyError:
-                raise error
 
     def __setattr__(self, name, value):
         """Set Attribute in Wrapped Object or Box."""
@@ -55,8 +52,10 @@ class WraptBox(wrapt.ObjectProxy):
             raise TypeError('cannot set __dict__')
         elif hasattr(self.__wrapped__, name):
             setattr(self.__wrapped__, name, value)
-        else:
-            self.__dict__[name] = value
+        try:
+            self.__wrapped__.__dict__[name] = value
+        except Exception as err:
+            print(err)
 
     def __delattr__(self, name):
         """Delete Attribute in Wrapped Object or Box."""
