@@ -45,7 +45,7 @@ else:
 __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
            'BoxError', 'BoxKeyError']
 __author__ = 'Chris Griffith'
-__version__ = '3.4.0'
+__version__ = '3.4.1'
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box', 'box_it_up',
@@ -391,20 +391,21 @@ class Box(dict):
         return list(items)
 
     def get(self, key, default=None):
-        try:
-            return self[key]
-        except KeyError:
+        if key not in self:
+            if default is None and self._box_config['default_box']:
+                return self.__get_default(key)
             if isinstance(default, dict) and not isinstance(default, Box):
                 return Box(default)
             if isinstance(default, list) and not isinstance(default, BoxList):
                 return BoxList(default)
             return default
+        return self[key]
 
     def copy(self):
-        return self.__class__(super(self.__class__, self).copy())
+        return Box(super(Box, self).copy())
 
     def __copy__(self):
-        return self.__class__(super(self.__class__, self).copy())
+        return Box(super(Box, self).copy())
 
     def __deepcopy__(self, memodict=None):
         out = self.__class__()
@@ -1093,6 +1094,12 @@ class ConfigBox(Box):
     def __repr__(self):
         return '<ConfigBox: {0}>'.format(str(self.to_dict()))
 
+    def copy(self):
+        return ConfigBox(super(ConfigBox, self).copy())
+
+    def __copy__(self):
+        return ConfigBox(super(ConfigBox, self).copy())
+
 
 class SBox(Box):
     """
@@ -1118,6 +1125,12 @@ class SBox(Box):
 
     def __repr__(self):
         return '<ShorthandBox: {0}>'.format(str(self.to_dict()))
+
+    def copy(self):
+        return SBox(super(SBox, self).copy())
+
+    def __copy__(self):
+        return SBox(super(SBox, self).copy())
 
 
 if wrapt_support:

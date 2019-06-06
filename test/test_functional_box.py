@@ -645,6 +645,11 @@ class TestBoxFunctional:
         assert "a" in bx.get("a", Box(a=1, conversion_box=False))
         assert isinstance(bx.get("a", [1, 2]), BoxList)
 
+    def test_get_default_box(self):
+        bx = Box(default_box=True)
+        assert bx.get('test', 4) == 4
+        assert isinstance(bx.get('a'), Box)
+
     def test_is_in(self):
         bx = Box()
         dbx = Box(default_box=True)
@@ -758,6 +763,41 @@ class TestBoxFunctional:
         bl = b.setdefault("l", [])
         bl.append(["foo"])
         assert bl == [['foo']], bl
+
+    def test_inheritance_copy(self):
+
+        class Box2(Box):
+            pass
+
+        class SBox2(SBox):
+            pass
+
+        class ConfigBox2(ConfigBox):
+            pass
+
+        b = Box2(a=1)
+        c = b.copy()
+        assert c == b
+        assert isinstance(c, Box)
+        c = b.__copy__()
+        assert c == b
+        assert isinstance(c, Box)
+
+        d = SBox2(a=1)
+        e = d.copy()
+        assert e == d
+        assert isinstance(e, SBox)
+        e = d.__copy__()
+        assert e == d
+        assert isinstance(e, SBox)
+
+        f = ConfigBox2(a=1)
+        g = f.copy()
+        assert g == f
+        assert isinstance(g, ConfigBox)
+        g = f.__copy__()
+        assert g == f
+        assert isinstance(g, ConfigBox)
 
 
 class TestBoxObject:

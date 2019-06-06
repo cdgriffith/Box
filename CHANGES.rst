@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+Version 3.4.1
+~~~~~~~~~~~~~
+
+* Fixing copy of inherited classes (thanks to pwwang)
+* Fixing `get` when used with default_box
+
 Version 3.4.0
 ~~~~~~~~~~~~~
 
