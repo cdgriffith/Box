@@ -9,9 +9,9 @@ class SBox(Box):
     ShorthandBox (SBox) allows for
     property access of `dict` `json` and `yaml`
     """
-    _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml',
+    _protected_keys = dir({}) + ['to_dict', 'to_json', 'to_yaml',
                                  'json', 'yaml', 'from_yaml', 'from_json',
-                                 'dict']
+                                 'dict', 'toml', 'from_toml', 'to_toml']
 
     @property
     def dict(self):
@@ -24,6 +24,10 @@ class SBox(Box):
     @property
     def yaml(self):
         return self.to_yaml()
+
+    @property
+    def toml(self):
+        return self.to_toml()
 
     def __repr__(self):
         return '<ShorthandBox: {0}>'.format(str(self.to_dict()))
