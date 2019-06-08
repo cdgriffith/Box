@@ -27,3 +27,9 @@ class SBox(Box):
 
     def __repr__(self):
         return '<ShorthandBox: {0}>'.format(str(self.to_dict()))
+
+    def copy(self):
+        return SBox(super(SBox, self).copy())
+
+    def __copy__(self):
+        return SBox(super(SBox, self).copy())

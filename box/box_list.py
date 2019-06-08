@@ -3,9 +3,8 @@
 
 import copy
 
-from box.converters import (_to_yaml, _from_yaml, _to_json, _from_json,
-                            BOX_PARAMETERS)
-from box.exceptions import  BoxError
+from box.converters import (_to_yaml, _from_yaml, _to_json, _from_json, BOX_PARAMETERS)
+from box.exceptions import BoxError
 import box
 
 
@@ -210,5 +209,4 @@ class BoxList(list):
         for v in self:
             if hasattr(v, 'box_it_up') and v is not self:
                 v.box_it_up()
-
 

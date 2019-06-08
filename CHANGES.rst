@@ -7,7 +7,15 @@ Version 4.0.0
 * Adding support for retrieving items via dot notation in keys
 * Changing layout of project to be more object specific
 * Changing to 120 line character limit
+* Changing how `safe_attr` handles unsafe characters
 * Removing `ordered_box` as Python 3.6+ is ordered by default
+* Removing `BoxObject` in favor of it being another module
+
+Version 3.4.1
+~~~~~~~~~~~~~
+
+* Fixing copy of inherited classes (thanks to pwwang)
+* Fixing `get` when used with default_box
 
 Version 3.4.0
 ~~~~~~~~~~~~~
