@@ -92,14 +92,13 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
     return tuple(out_list)
 
 
-def _conversion_checks(item, keys, box_config, check_only=False,
-                       pre_check=False):
+def _conversion_checks(item, keys, box_config, check_only=False, pre_check=False):
     """
     Internal use for checking if a duplicate safe attribute already exists
 
     :param item: Item to see if a dup exists
     :param keys: Keys to check against
-    :param box_config: Easier to pass in than ask for specfic items
+    :param box_config: Easier to pass in than ask for specific items
     :param check_only: Don't bother doing the conversion work
     :param pre_check: Need to add the item to the list of keys to check
     :return: the original unmodified key, if exists and not check_only
@@ -158,8 +157,7 @@ class Box(dict):
     :param box_intact_types: tuple of types to ignore converting
     """
 
-    _protected_keys = dir({}) + ['to_dict', 'tree_view', 'to_json', 'to_yaml',
-                                 'from_yaml', 'from_json']
+    _protected_keys = dir({}) + ['to_dict', 'to_json', 'to_yaml', 'from_yaml', 'from_json', 'from_toml', 'to_toml']
 
     def __new__(cls, *args: Any, box_it_up: bool = False, default_box: bool = False,
                 default_box_attr: Any = None, frozen_box: bool = False, camel_killer_box: bool = False,
