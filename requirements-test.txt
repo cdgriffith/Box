@@ -1,9 +1,5 @@
 pytest >= 4.1.1
 coverage >= 4.5.2
 pytest-cov
-addict
-dotmap
 reusables
-memory_profiler
 wheel
-wrapt

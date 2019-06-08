@@ -17,6 +17,9 @@ import box
 from box.exceptions import BoxError, BoxKeyError
 from box.converters import (_to_json, _from_json, _from_toml, _to_toml, _from_yaml, _to_yaml, BOX_PARAMETERS)
 
+# TODO toml support for BoxList
+# TODO tests for toml
+# TODO backwards compatibility pledge
 __all__ = ['Box']
 
 _first_cap_re = re.compile('(.)([A-Z][a-z]+)')
@@ -29,17 +32,27 @@ def _safe_attr(attr, camel_killer=False, replacement_char='x'):
     """Convert a key into something that is accessible as an attribute"""
     allowed = string.ascii_letters + string.digits + '_'
 
+    if isinstance(attr, tuple):
+        attr = "_".join([str(x) for x in attr])
+
     attr = attr.decode('utf-8', 'ignore') if isinstance(attr, bytes) else str(attr)
 
     if camel_killer:
         attr = _camel_killer(attr)
 
-    attr = attr.replace(' ', '_')
+    out = []
+    last_safe = 0
+    for i, character in enumerate(attr):
+        if character in allowed:
+            last_safe = i
+            out.append(character)
+        elif not out:
+            continue
+        else:
+            if last_safe == i - 1:
+                out.append('_')
 
-    out = ''
-    for character in attr:
-        out += character if character in allowed else '_'
-    out = out.strip('_')
+    out = "".join(out)[:last_safe+1]
 
     try:
         int(out[0])
@@ -51,7 +64,7 @@ def _safe_attr(attr, camel_killer=False, replacement_char='x'):
     if out in kwlist:
         out = f'{replacement_char}{out}'
 
-    return re.sub('_+', '_', out)
+    return out
 
 
 def _camel_killer(attr):
@@ -64,7 +77,7 @@ def _camel_killer(attr):
 
     s1 = _first_cap_re.sub(r'\1_\2', attr)
     s2 = _all_cap_re.sub(r'\1_\2', s1)
-    return re.sub('_+', '_', s2.lower())
+    return re.sub(' *_+', '_', s2.lower())
 
 
 def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
@@ -174,7 +187,7 @@ class Box(dict):
     def __init__(self, *args: Any, box_it_up: bool = False, default_box: bool = False,
                  default_box_attr: Any = None, frozen_box: bool = False, camel_killer_box: bool = False,
                  conversion_box: bool = True, modify_tuples_box: bool = False, box_safe_prefix: str = 'x',
-                 box_duplicates: str = 'ignore',  box_intact_types: Union[Tuple, List] = (), **kwargs: Any):
+                 box_duplicates: str = 'ignore', box_intact_types: Union[Tuple, List] = (), **kwargs: Any):
         super(Box, self).__init__()
         self._box_config = _get_box_config(kwargs.pop('__box_heritage', None))
         self._box_config.update({
@@ -264,20 +277,21 @@ class Box(dict):
         return list(items)
 
     def get(self, key, default=None):
-        try:
-            return self[key]
-        except KeyError:
+        if key not in self:
+            if default is None and self._box_config['default_box']:
+                return self.__get_default(key)
             if isinstance(default, dict) and not isinstance(default, Box):
                 return Box(default)
             if isinstance(default, list) and not isinstance(default, box.BoxList):
                 return box.BoxList(default)
             return default
+        return self[key]
 
     def copy(self):
-        return self.__class__(super(self.__class__, self).copy())
+        return Box(super(Box, self).copy())
 
     def __copy__(self):
-        return self.__class__(super(self.__class__, self).copy())
+        return Box(super(Box, self).copy())
 
     def __deepcopy__(self, memo=None):
         out = self.__class__()
@@ -375,9 +389,9 @@ class Box(dict):
                 value = object.__getattribute__(self, item)
         except AttributeError as err:
             if item == '__getstate__':
-                raise AttributeError(item)
+                raise AttributeError(item) from None
             if item == '_box_config':
-                raise BoxError('_box_config key must exist')
+                raise BoxError('_box_config key must exist') from None
             kill_camel = self._box_config['camel_killer_box']
             if self._box_config['conversion_box'] and item:
                 k = _conversion_checks(item, self.keys(), self._box_config)
@@ -389,7 +403,7 @@ class Box(dict):
                         return self.__getitem__(k)
             if self._box_config['default_box']:
                 return self.__get_default(item)
-            raise BoxKeyError(str(err))
+            raise BoxKeyError(str(err)) from None
         else:
             if item == '_box_config':
                 return value
@@ -452,7 +466,7 @@ class Box(dict):
         try:
             item = self[key]
         except KeyError:
-            raise BoxKeyError(f'{key}')
+            raise BoxKeyError(f'{key}') from None
         else:
             del self[key]
             return item
@@ -464,7 +478,7 @@ class Box(dict):
         try:
             key = next(self.__iter__())
         except StopIteration:
-            raise BoxKeyError('Empty box')
+            raise BoxKeyError('Empty box') from None
         return key, self.pop(key)
 
     def __repr__(self):
@@ -536,7 +550,7 @@ class Box(dict):
         :param encoding: File encoding
         :param errors: How to handle encoding errors
         :param json_kwargs: additional arguments to pass to json.dump(s)
-        :return: string of JSON or return of `json.dump`
+        :return: string of JSON (if no filename provided)
         """
         return _to_json(self.to_dict(), filename=filename, encoding=encoding, errors=errors, **json_kwargs)
 
@@ -573,7 +587,7 @@ class Box(dict):
         :param encoding: File encoding
         :param errors: How to handle encoding errors
         :param yaml_kwargs: additional arguments to pass to yaml.dump
-        :return: string of YAML or return of `yaml.dump`
+        :return: string of YAML (if no filename provided)
         """
         return _to_yaml(self.to_dict(), filename=filename, default_flow_style=default_flow_style,
                         encoding=encoding, errors=errors, **yaml_kwargs)
@@ -581,7 +595,7 @@ class Box(dict):
     @classmethod
     def from_yaml(cls, yaml_string=None, filename=None, encoding='utf-8', errors='strict', **kwargs):
         """
-        Transform a yaml object string into a Box object.
+        Transform a yaml object string into a Box object. By default will use SafeLoader.
 
         :param yaml_string: string to pass to `yaml.load`
         :param filename: filename to open and pass to `yaml.load`
@@ -598,4 +612,38 @@ class Box(dict):
         data = _from_yaml(yaml_string=yaml_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
         if not isinstance(data, dict):
             raise BoxError(f'yaml data not returned as a dictionary but rather a {type(data).__name__}')
+        return cls(data, **box_args)
+
+    def to_toml(self, filename: str = None, encoding: str = 'utf-8', errors: str = 'strict'):
+        """
+        Transform the Box object into a toml string.
+
+        :param filename: File to write toml object too
+        :param encoding: File encoding
+        :param errors: How to handle encoding errors
+        :return: string of TOML (if no filename provided)
+        """
+        return _to_toml(self.to_dict(), filename=filename, encoding=encoding, errors=errors)
+
+    @classmethod
+    def from_toml(cls, toml_string: str = None, filename: str = None,
+                  encoding: str = 'utf-8', errors: str = 'strict', **kwargs):
+        """
+        Transforms a toml string or file into a Box object
+
+        :param toml_string: string to pass to `toml.load`
+        :param filename: filename to open and pass to `toml.load`
+        :param encoding: File encoding
+        :param errors: How to handle encoding errors
+        :param kwargs: parameters to pass to `Box()`
+        :return:
+        """
+        box_args = {}
+        for arg in kwargs.copy():
+            if arg in BOX_PARAMETERS:
+                box_args[arg] = kwargs.pop(arg)
+
+        data = _from_toml(toml_string=toml_string, filename=filename, encoding=encoding, errors=errors)
+        if not isinstance(data, dict):
+            raise BoxError(f'toml data not returned as a dictionary but rather a {type(data).__name__}')
         return cls(data, **box_args)
