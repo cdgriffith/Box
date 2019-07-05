@@ -45,7 +45,7 @@ else:
 __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
            'BoxError', 'BoxKeyError']
 __author__ = 'Chris Griffith'
-__version__ = '3.4.1'
+__version__ = '3.4.2'
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box', 'box_it_up',
