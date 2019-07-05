@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+Version 3.4.2
+~~~~~~~~~~~~~
+
+* Adding license, changes and authors files to source distribution
+
 Version 3.4.1
 ~~~~~~~~~~~~~
 
