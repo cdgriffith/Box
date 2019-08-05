@@ -258,6 +258,16 @@ class TestBoxFunctional(unittest.TestCase):
         with self.assertRaises(BoxKeyError):
             a.b[0].c.d = 1
 
+        a = Box()
+        a.setdefault('b', {})
+        with self.assertRaises(BoxKeyError):
+            a.b.c.d = 1
+
+        a = Box(default_box=True)
+        a.setdefault('b', {})
+        a.b.c.d.e.f = 1
+        assert a.b.c.d.e.f == 1
+
     def test_from_json_file(self):
         bx = Box.from_json(filename=data_json_file)
         assert isinstance(bx, Box)

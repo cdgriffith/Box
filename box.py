@@ -667,7 +667,7 @@ class Box(dict):
             return self[item]
 
         if isinstance(default, dict):
-            default = self.__class__(default)
+            default = self.__class__(default, **self.__box_config())
         if isinstance(default, list):
             default = BoxList(default, 
                               box_class=self.__class__, **self.__box_config())
