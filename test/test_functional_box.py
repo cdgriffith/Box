@@ -245,7 +245,7 @@ class TestBoxFunctional(unittest.TestCase):
 
         # default_box propagates after a setdefault and list object
         a = Box(default_box=True)
-        a.b.c.setdefault('d',[])
+        a.b.c.setdefault('d', [])
         a.b.c.d.append({})
         a.b.c.d[0].e.f = 1
 
@@ -253,7 +253,7 @@ class TestBoxFunctional(unittest.TestCase):
 
         # without default_box we would get an error
         a = Box()
-        a.setdefault('b',[])
+        a.setdefault('b', [])
         a.b.append({})
         with self.assertRaises(BoxKeyError):
             a.b[0].c.d = 1
