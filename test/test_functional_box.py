@@ -13,7 +13,7 @@ except ImportError:
     from .common import *
 
 
-class TestBoxFunctional:
+class TestBoxFunctional(unittest.TestCase):
 
     @pytest.fixture(autouse=True)
     def temp_dir_cleanup(self):
@@ -246,10 +246,17 @@ class TestBoxFunctional:
         # default_box propagates after a setdefault and list object
         a = Box(default_box=True)
         a.b.c.setdefault('d',[])
-        a.b.c.d.append(Box(default_box=True))
+        a.b.c.d.append({})
         a.b.c.d[0].e.f = 1
 
         assert a.b.c.d[0].e.f == 1
+
+        # without default_box we would get an error
+        a = Box()
+        a.setdefault('b',[])
+        a.b.append({})
+        with self.assertRaises(BoxKeyError):
+            a.b[0].c.d = 1
 
     def test_from_json_file(self):
         bx = Box.from_json(filename=data_json_file)
