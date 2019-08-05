@@ -243,6 +243,14 @@ class TestBoxFunctional:
         assert a.key3.item == 2
         assert a.lister[0].gah == 7
 
+        # default_box propagates after a setdefault and list object
+        a = Box(default_box=True)
+        a.b.c.setdefault('d',[])
+        a.b.c.d.append(Box(default_box=True))
+        a.b.c.d[0].e.f = 1
+
+        assert a.b.c.d[0].e.f == 1
+
     def test_from_json_file(self):
         bx = Box.from_json(filename=data_json_file)
         assert isinstance(bx, Box)
