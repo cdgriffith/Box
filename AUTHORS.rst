@@ -43,3 +43,4 @@ Suggestions and bug reporting:
 - (cebaa)
 - (deluxghost)
 - Nikolay Stanishev (nikolaystanishev)
+- Craig Quiter (crizCraig)
