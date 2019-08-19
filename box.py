@@ -408,7 +408,7 @@ class Box(dict):
         return Box(super(Box, self).copy())
 
     def __deepcopy__(self, memodict=None):
-        out = self.__class__()
+        out = self.__class__(**self.__box_config())
         memodict = memodict or {}
         memodict[id(self)] = out
         for k, v in self.items():
@@ -643,24 +643,16 @@ class Box(dict):
                 out_dict[k] = v.to_list()
         return out_dict
 
-    def update(self, item=None, **kwargs):
-        if not item:
-            item = kwargs
-        iter_over = item.items() if hasattr(item, 'items') else item
-        for k, v in iter_over:
-            if isinstance(v, dict):
-                # Box objects must be created in case they are already
-                # in the `converted` box_config set
-                v = self.__class__(v)
-                if k in self and isinstance(self[k], dict):
-                    self[k].update(v)
-                    continue
-            if isinstance(v, list):
-                v = BoxList(v)
-            try:
-                self.__setattr__(k, v)
-            except (AttributeError, TypeError):
-                self.__setitem__(k, v)
+    def update(self, E=None, **F):
+        if E:
+            if hasattr(E, 'keys'):
+                for k in E:
+                    self[k] = self.__convert_and_store(k, E[k])
+            else:
+                for k, v in E:
+                    self[k] = self.__convert_and_store(k, v)
+        for k in F:
+            self[k] = self.__convert_and_store(k, F[k])
 
     def setdefault(self, item, default=None):
         if item in self:
@@ -843,7 +835,7 @@ class BoxList(list):
                        **self.box_options)
 
     def __deepcopy__(self, memodict=None):
-        out = self.__class__()
+        out = self.__class__(**self.box_options)
         memodict = memodict or {}
         memodict[id(self)] = out
         for k in self:

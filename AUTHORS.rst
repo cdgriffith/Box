@@ -42,3 +42,4 @@ Suggestions and bug reporting:
 - (ipcoder)
 - (cebaa)
 - (deluxghost)
+- Nikolay Stanishev (nikolaystanishev)
