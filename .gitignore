@@ -90,3 +90,5 @@ ENV/
 .ropeproject
 
 .idea/
+.pypirc
+release.bat

@@ -1,6 +1,14 @@
 Changelog
 ---------
 
+Version 3.4.3
+~~~~~~~~~~~~~
+
+* Fixing propagation of box options when adding a new list via setdefault (thanks to Stretch)
+* Fixing update does not keep box_intact_types (thanks to pwwang)
+* Fixing update to operate the same way as a normal dictionary (thanks to Craig Quiter)
+* Fixing deepcopy not copying box options (thanks to Nikolay Stanishev)
+
 Version 3.4.2
 ~~~~~~~~~~~~~
 

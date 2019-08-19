@@ -13,7 +13,7 @@ except ImportError:
     from .common import *
 
 
-class TestBoxFunctional:
+class TestBoxFunctional(unittest.TestCase):
 
     @pytest.fixture(autouse=True)
     def temp_dir_cleanup(self):
@@ -210,20 +210,30 @@ class TestBoxFunctional:
 
     def test_update(self):
         a = Box(test_dict)
+        a.grand = 1000
         a.update({'key1': {'new': 5}, 'Key 2': {"add_key": 6},
                   'lister': ['a']})
         a.update([('asdf', 'fdsa')])
         a.update(testkey=66)
         a.update({'items': 'test'})
 
+        assert a.grand == 1000
+        assert a['grand'] == 1000
         assert a['items'] == 'test'
         assert a.key1.new == 5
         assert a['Key 2'].add_key == 6
-        assert "Key5" in a['Key 2'].Key4
         assert isinstance(a.key1, Box)
         assert isinstance(a.lister, BoxList)
         assert a.asdf == 'fdsa'
         assert a.testkey == 66
+
+        c = Box(box_intact_types=[list])
+        c.a = [1, 2]
+        c.update({'b': [3, 4]})
+
+        assert c.a == [1, 2]
+        assert isinstance(c.b, list)
+        assert not isinstance(c.b, BoxList)
 
     def test_auto_attr(self):
         a = Box(test_dict, default_box=True)
@@ -242,6 +252,31 @@ class TestBoxFunctional:
         assert new_list == BoxList([{'gah': 7}])
         assert a.key3.item == 2
         assert a.lister[0].gah == 7
+
+        # default_box propagates after a setdefault and list object
+        a = Box(default_box=True)
+        a.b.c.setdefault('d', [])
+        a.b.c.d.append({})
+        a.b.c.d[0].e.f = 1
+
+        assert a.b.c.d[0].e.f == 1
+
+        # without default_box we would get an error
+        a = Box()
+        a.setdefault('b', [])
+        a.b.append({})
+        with self.assertRaises(BoxKeyError):
+            a.b[0].c.d = 1
+
+        a = Box()
+        a.setdefault('b', {})
+        with self.assertRaises(BoxKeyError):
+            a.b.c.d = 1
+
+        a = Box(default_box=True)
+        a.setdefault('b', {})
+        a.b.c.d.e.f = 1
+        assert a.b.c.d.e.f == 1
 
     def test_from_json_file(self):
         bx = Box.from_json(filename=data_json_file)
@@ -549,13 +584,15 @@ class TestBoxFunctional:
             my_box['^a'] = 3
 
     def test_copy(self):
-        my_box = Box(movie_data)
+        my_box = Box(movie_data, camel_killer_box=True)
+        my_box.aB = 1
         bb = my_box.copy()
         assert my_box == bb
         assert isinstance(bb, Box)
 
         aa = copy.deepcopy(my_box)
         assert my_box == aa
+        assert my_box.a_b == 1
         assert isinstance(aa, Box)
 
         cc = my_box.__copy__()
