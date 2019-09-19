@@ -19,8 +19,16 @@ test_root = os.path.abspath(os.path.dirname(__file__))
 data_dir = os.path.join(test_root, "data")
 tmp_dir = os.path.join(test_root, "tmp")
 
-os.makedirs(data_dir, exist_ok=True)
-os.makedirs(tmp_dir, exist_ok=True)
+try:
+    os.makedirs(data_dir)
+except OSError:
+    pass
+
+try:
+    os.makedirs(tmp_dir)
+except OSError:
+    pass
+
 
 test_dict = {'key1': 'value1',
              'not$allowed': 'fine_value',

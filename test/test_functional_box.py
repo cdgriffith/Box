@@ -19,7 +19,7 @@ class TestBoxFunctional(unittest.TestCase):
     def temp_dir_cleanup(self):
         shutil.rmtree(tmp_dir, ignore_errors=True)
         try:
-            os.makedirs(tmp_dir, exist_ok=True)
+            os.makedirs(tmp_dir)
         except OSError:
             pass
         yield
