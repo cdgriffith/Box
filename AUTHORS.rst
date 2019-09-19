@@ -44,3 +44,4 @@ Suggestions and bug reporting:
 - (deluxghost)
 - Nikolay Stanishev (nikolaystanishev)
 - Craig Quiter (crizCraig)
+- Jeremiah Lowin (jlowin)

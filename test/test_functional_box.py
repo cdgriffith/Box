@@ -19,7 +19,7 @@ class TestBoxFunctional(unittest.TestCase):
     def temp_dir_cleanup(self):
         shutil.rmtree(tmp_dir, ignore_errors=True)
         try:
-            os.mkdir(tmp_dir)
+            os.makedirs(tmp_dir, exist_ok=True)
         except OSError:
             pass
         yield
@@ -747,8 +747,9 @@ class TestBoxFunctional(unittest.TestCase):
         assert isinstance(bl[0], BoxList)
 
     def test_pop(self):
-        bx = Box(a=4, c={"d": 3})
+        bx = Box(a=4, c={"d": 3}, b={"h": {"y": 2}})
         assert bx.pop('a') == 4
+        assert bx.pop('b').h.y == 2
         with pytest.raises(BoxKeyError):
             bx.pop('b')
         assert bx.pop('a', None) is None

@@ -16,7 +16,11 @@ from box import *
 PY3 = sys.version_info >= (3, 0)
 
 test_root = os.path.abspath(os.path.dirname(__file__))
+data_dir = os.path.join(test_root, "data")
 tmp_dir = os.path.join(test_root, "tmp")
+
+os.makedirs(data_dir, exist_ok=True)
+os.makedirs(tmp_dir, exist_ok=True)
 
 test_dict = {'key1': 'value1',
              'not$allowed': 'fine_value',
