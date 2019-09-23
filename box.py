@@ -45,7 +45,7 @@ else:
 __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
            'BoxError', 'BoxKeyError']
 __author__ = 'Chris Griffith'
-__version__ = '3.4.3'
+__version__ = '3.4.4'
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box', 'box_it_up',
@@ -592,6 +592,8 @@ class Box(dict):
                 return args[0]
             else:
                 del self[key]
+                if isinstance(item, Box):
+                    item._box_config['__box_heritage'] = ()
                 return item
         try:
             item = self[key]
@@ -599,6 +601,8 @@ class Box(dict):
             raise BoxKeyError('{0}'.format(key))
         else:
             del self[key]
+            if isinstance(item, Box):
+                item._box_config['__box_heritage'] = ()
             return item
 
     def clear(self):

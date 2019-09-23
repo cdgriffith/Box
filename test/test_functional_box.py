@@ -19,7 +19,7 @@ class TestBoxFunctional(unittest.TestCase):
     def temp_dir_cleanup(self):
         shutil.rmtree(tmp_dir, ignore_errors=True)
         try:
-            os.mkdir(tmp_dir)
+            os.makedirs(tmp_dir)
         except OSError:
             pass
         yield
@@ -625,15 +625,19 @@ class TestBoxFunctional(unittest.TestCase):
         pic_file = os.path.join(tmp_dir, 'test.p')
         pic2_file = os.path.join(tmp_dir, 'test.p2')
         bb = Box(movie_data, conversion_box=False)
-        pickle.dump(bb, open(pic_file, 'wb'))
-        loaded = pickle.load(open(pic_file, 'rb'))
+        with open(pic_file, 'wb') as pf:
+            pickle.dump(bb, pf)
+        with open(pic_file, 'rb') as pf:
+            loaded = pickle.load(pf)
         assert bb == loaded
         assert loaded._box_config['conversion_box'] is False
 
         ll = [[Box({'a': 'b'}, ordered_box=True)], [[{'c': 'g'}]]]
         bx = BoxList(ll)
-        pickle.dump(bx, open(pic2_file, 'wb'))
-        loaded2 = pickle.load(open(pic2_file, 'rb'))
+        with open(pic2_file, 'wb') as pf:
+            pickle.dump(bx, pf)
+        with open(pic2_file, 'rb') as pf:
+            loaded2 = pickle.load(pf)
         assert bx == loaded2
         loaded2.box_options = bx.box_options
 
@@ -747,8 +751,9 @@ class TestBoxFunctional(unittest.TestCase):
         assert isinstance(bl[0], BoxList)
 
     def test_pop(self):
-        bx = Box(a=4, c={"d": 3})
+        bx = Box(a=4, c={"d": 3}, b={"h": {"y": 2}})
         assert bx.pop('a') == 4
+        assert bx.pop('b').h.y == 2
         with pytest.raises(BoxKeyError):
             bx.pop('b')
         assert bx.pop('a', None) is None

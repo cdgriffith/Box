@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+Version 3.4.4
+~~~~~~~~~~~~~
+
+* Fixing pop not properly resetting box_heritage (thanks to Jeremiah Lowin)
+
 Version 3.4.3
 ~~~~~~~~~~~~~
 
