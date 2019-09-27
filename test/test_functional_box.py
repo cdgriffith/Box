@@ -216,6 +216,9 @@ class TestBoxFunctional(unittest.TestCase):
         a.update([('asdf', 'fdsa')])
         a.update(testkey=66)
         a.update({'items': {'test': 'pme'}})
+        a.update({'key1': {'gg': 4}})
+        b = Box()
+        b.update(item=1)
 
         assert a.grand == 1000
         assert a['grand'] == 1000
@@ -227,6 +230,8 @@ class TestBoxFunctional(unittest.TestCase):
         assert isinstance(a.lister, BoxList)
         assert a.asdf == 'fdsa'
         assert a.testkey == 66
+        assert a.key1.new == 5  # On regular dict update this shouldn't happen
+        assert a.key1.gg == 4
 
         c = Box(box_intact_types=[list])
         c.a = [1, 2]

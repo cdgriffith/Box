@@ -461,9 +461,8 @@ class Box(dict):
                 out[k] = v
         return out
 
-    def __convert_and_store(self, item, value, force_conversion=False):
-        if ((item in self._box_config['__converted'] and
-             not force_conversion) or
+    def __convert_and_store(self, item, value):
+        if (item in self._box_config['__converted'] or
                 (self._box_config['box_intact_types'] and
                  isinstance(value, self._box_config['box_intact_types']))):
             return value
@@ -649,18 +648,25 @@ class Box(dict):
         return out_dict
 
     def update(self, E=None, **F):
-        if E:
-            if hasattr(E, 'keys'):
-                for k in E:
-                    self[k] = self.__convert_and_store(
-                        k, E[k], force_conversion=True)
-            else:
-                for k, v in E:
-                    self[k] = self.__convert_and_store(
-                        k, v, force_conversion=True)
-        for k in F:
-            self[k] = self.__convert_and_store(
-                k, F[k], force_conversion=True)
+        if not E:
+            E = F
+        iter_over = E.items() if hasattr(E, 'items') else E
+        for k, v in iter_over:
+            intact_type = (self._box_config['box_intact_types'] and
+                           isinstance(v, self._box_config['box_intact_types']))
+            if isinstance(v, dict) and not intact_type:
+                # Box objects must be created in case they are already
+                # in the `converted` box_config set
+                v = self.__class__(v, **self.__box_config())
+                if k in self and isinstance(self[k], dict):
+                    self[k].update(v)
+                    continue
+            if isinstance(v, list) and not intact_type:
+                v = BoxList(v, **self.__box_config())
+            try:
+                self.__setattr__(k, v)
+            except (AttributeError, TypeError):
+                self.__setitem__(k, v)
 
     def setdefault(self, item, default=None):
         if item in self:
