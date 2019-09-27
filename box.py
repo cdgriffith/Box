@@ -45,7 +45,7 @@ else:
 __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
            'BoxError', 'BoxKeyError']
 __author__ = 'Chris Griffith'
-__version__ = '3.4.4'
+__version__ = '3.4.5'
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box', 'box_it_up',
@@ -461,8 +461,9 @@ class Box(dict):
                 out[k] = v
         return out
 
-    def __convert_and_store(self, item, value):
-        if (item in self._box_config['__converted'] or
+    def __convert_and_store(self, item, value, force_conversion=False):
+        if ((item in self._box_config['__converted'] and
+             not force_conversion) or
                 (self._box_config['box_intact_types'] and
                  isinstance(value, self._box_config['box_intact_types']))):
             return value
@@ -651,12 +652,15 @@ class Box(dict):
         if E:
             if hasattr(E, 'keys'):
                 for k in E:
-                    self[k] = self.__convert_and_store(k, E[k])
+                    self[k] = self.__convert_and_store(
+                        k, E[k], force_conversion=True)
             else:
                 for k, v in E:
-                    self[k] = self.__convert_and_store(k, v)
+                    self[k] = self.__convert_and_store(
+                        k, v, force_conversion=True)
         for k in F:
-            self[k] = self.__convert_and_store(k, F[k])
+            self[k] = self.__convert_and_store(
+                k, F[k], force_conversion=True)
 
     def setdefault(self, item, default=None):
         if item in self:

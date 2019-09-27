@@ -215,11 +215,12 @@ class TestBoxFunctional(unittest.TestCase):
                   'lister': ['a']})
         a.update([('asdf', 'fdsa')])
         a.update(testkey=66)
-        a.update({'items': 'test'})
+        a.update({'items': {'test': 'pme'}})
 
         assert a.grand == 1000
         assert a['grand'] == 1000
-        assert a['items'] == 'test'
+        assert isinstance(a['items'], Box)
+        assert a['items'].test == 'pme'
         assert a.key1.new == 5
         assert a['Key 2'].add_key == 6
         assert isinstance(a.key1, Box)

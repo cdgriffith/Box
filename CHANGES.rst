@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+Version 3.4.5
+~~~~~~~~~~~~~
+
+* Fixing update does not convert new sub dictionaries or lists (thanks to Michael Stella)
+
 Version 3.4.4
 ~~~~~~~~~~~~~
 
