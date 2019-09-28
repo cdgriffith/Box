@@ -45,7 +45,7 @@ else:
 __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
            'BoxError', 'BoxKeyError']
 __author__ = 'Chris Griffith'
-__version__ = '3.4.4'
+__version__ = '3.4.5'
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box', 'box_it_up',
@@ -648,15 +648,25 @@ class Box(dict):
         return out_dict
 
     def update(self, E=None, **F):
-        if E:
-            if hasattr(E, 'keys'):
-                for k in E:
-                    self[k] = self.__convert_and_store(k, E[k])
-            else:
-                for k, v in E:
-                    self[k] = self.__convert_and_store(k, v)
-        for k in F:
-            self[k] = self.__convert_and_store(k, F[k])
+        if not E:
+            E = F
+        iter_over = E.items() if hasattr(E, 'items') else E
+        for k, v in iter_over:
+            intact_type = (self._box_config['box_intact_types'] and
+                           isinstance(v, self._box_config['box_intact_types']))
+            if isinstance(v, dict) and not intact_type:
+                # Box objects must be created in case they are already
+                # in the `converted` box_config set
+                v = self.__class__(v, **self.__box_config())
+                if k in self and isinstance(self[k], dict):
+                    self[k].update(v)
+                    continue
+            if isinstance(v, list) and not intact_type:
+                v = BoxList(v, **self.__box_config())
+            try:
+                self.__setattr__(k, v)
+            except (AttributeError, TypeError):
+                self.__setitem__(k, v)
 
     def setdefault(self, item, default=None):
         if item in self:

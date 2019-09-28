@@ -215,17 +215,23 @@ class TestBoxFunctional(unittest.TestCase):
                   'lister': ['a']})
         a.update([('asdf', 'fdsa')])
         a.update(testkey=66)
-        a.update({'items': 'test'})
+        a.update({'items': {'test': 'pme'}})
+        a.update({'key1': {'gg': 4}})
+        b = Box()
+        b.update(item=1)
 
         assert a.grand == 1000
         assert a['grand'] == 1000
-        assert a['items'] == 'test'
+        assert isinstance(a['items'], Box)
+        assert a['items'].test == 'pme'
         assert a.key1.new == 5
         assert a['Key 2'].add_key == 6
         assert isinstance(a.key1, Box)
         assert isinstance(a.lister, BoxList)
         assert a.asdf == 'fdsa'
         assert a.testkey == 66
+        assert a.key1.new == 5  # On regular dict update this shouldn't happen
+        assert a.key1.gg == 4
 
         c = Box(box_intact_types=[list])
         c.a = [1, 2]

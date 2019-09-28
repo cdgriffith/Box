@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+Version 3.4.5
+~~~~~~~~~~~~~
+
+* Fixing update does not convert new sub dictionaries or lists (thanks to Michael Stella)
+* Changing update to work as it used to with sub merging until major release
+
 Version 3.4.4
 ~~~~~~~~~~~~~
 

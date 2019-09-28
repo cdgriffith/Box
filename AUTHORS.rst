@@ -45,3 +45,4 @@ Suggestions and bug reporting:
 - Nikolay Stanishev (nikolaystanishev)
 - Craig Quiter (crizCraig)
 - Jeremiah Lowin (jlowin)
+- Michael Stella (alertedsnake)
