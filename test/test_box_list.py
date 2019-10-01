@@ -82,6 +82,21 @@ class TestBoxList:
         with pytest.raises(BoxError):
             BoxList.from_yaml(yaml.dump({'a': 2}))
 
+    def test_box_list_to_toml(self):
+        bl = BoxList([{'item': 1, 'CamelBad': 2}])
+        assert toml.loads(bl.to_toml(key_name='test'))['test'][0]['item'] == 1
+
+    def test_box_list_from_tml(self):
+        alist = [{'item': 1}, {'CamelBad': 2}]
+        toml_list = toml.dumps({'key': alist})
+        print(toml_list)
+        bl = BoxList.from_toml(toml_string=toml_list, key_name='key', camel_killer_box=True)
+        assert bl[0].item == 1
+        assert bl[1].camel_bad == 2
+
+        with pytest.raises(BoxError):
+            BoxList.from_toml(toml.dumps({'a': 2}), 'a')
+
     def test_box_list_box_it_up(self):
         bxl = BoxList([extended_test_dict])
         bxl.box_it_up()

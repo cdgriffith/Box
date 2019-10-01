@@ -6,49 +6,32 @@ Python dictionaries with advanced dot notation access.
 
 .. code:: python
 
-         from box import Box
+        from box import Box
 
-         movie_data = {
-           "movies": {
-             "Spaceballs": {
-               "imdb stars": 7.1,
-               "rating": "PG",
-               "length": 96,
-               "director": "Mel Brooks",
-               "stars": [{"name": "Mel Brooks", "imdb": "nm0000316", "role": "President Skroob"},
-                         {"name": "John Candy","imdb": "nm0001006", "role": "Barf"},
-                         {"name": "Rick Moranis", "imdb": "nm0001548", "role": "Dark Helmet"}
-               ]
-             },
-             "Robin Hood: Men in Tights": {
-               "imdb stars": 6.7,
-               "rating": "PG-13",
-               "length": 104,
-               "director": "Mel Brooks",
-               "stars": [
-                         {"name": "Cary Elwes", "imdb": "nm0000144", "role": "Robin Hood"},
-                         {"name": "Richard Lewis", "imdb": "nm0507659", "role": "Prince John"},
-                         {"name": "Roger Rees", "imdb": "nm0715953", "role": "Sheriff of Rottingham"},
-                         {"name": "Amy Yasbeck", "imdb": "nm0001865", "role": "Marian"}
-               ]
-             }
-           }
-         }
+        movies = {
+            "Robin Hood: Men in Tights": {
+                "imdb_stars": 6.7,
+                "length": 104,
+                "stars": [ {"name": "Cary Elwes", "imdb": "nm0000144", "role": "Robin Hood"},
+                           {"name": "Richard Lewis", "imdb": "nm0507659", "role": "Prince John"} ]
+            }
+        }
 
-         # Box is a conversion_box by default, pass in `conversion_box=False` to disable that behavior
-         movie_box = Box(movie_data)
+        movie_box = Box(movies)
 
+        movie_box.Robin_Hood_Men_in_Tights.imdb_stars
+        # 6.7
 
-         movie_box.movies.Robin_Hood_Men_in_Tights.imdb_stars
-         # 6.7
+        # Box will automatically make otherwise inaccessible keys ("Robin Hood: Men in Tights") safe to access as an attribute
+        # You can always pass `conversion_box=False` to `Box` to disable that behavior
 
-         movie_box.movies.Spaceballs.stars[0].name
-         # 'Mel Brooks'
+        movie_box.Robin_Hood_Men_in_Tights.stars[0].name
+        # 'Cary Elwes'
 
-         # All new dict and lists added to a Box or BoxList object are converted
-         movie_box.movies.Spaceballs.stars.append({"name": "Bill Pullman", "imdb": "nm0000597", "role": "Lone Starr"})
-         movie_box.movies.Spaceballs.stars[-1].role
-         # 'Lone Starr'
+        # All new dict and lists added to a Box or BoxList object are converted
+        movie_box.Robin_Hood_Men_in_Tights.stars.append({"name": "Roger Rees", "imdb": "nm0715953", "role": "Sheriff of Rottingham"})
+        movie_box.Robin_Hood_Men_in_Tights.stars[-1].role
+        # 'Sheriff of Rottingham'
 
 Install
 =======
@@ -57,12 +40,9 @@ Install
 
         pip install python-box
 
-Box is tested on python 3.4+.
+Box is tested on python 3.6+.
 If it does not install with this command, please
 open a github issue with the error you are experiencing!
-
-If you want to be able to use the `to_yaml` functionality make sure to
-install `PyYAML` or `ruamel.yaml` as well.
 
 Overview
 ========
@@ -153,8 +133,8 @@ in the `Box` and access them like a normal dictionary, such as `my_box['keys']`.
 
 *This is as designed, and will not be changed.*
 
-The non-magic methods that exist in a `Box` are:
-`box_it_up, clear, copy, from_json, fromkeys, get, items, keys, pop, popitem, setdefault, to_dict, to_json, update, values`.
+Common non-magic methods that exist in a `Box` are:
+`box_it_up, clear, copy, from_json, fromkeys, get, items, keys, pop, popitem, setdefault, to_dict, to_json, update, merge_update, values`.
 To view an entire list of what cannot be accessed via dot notation, run the command `dir(Box())`.
 
 
@@ -188,10 +168,12 @@ Box's functions
    ================ ===========
    to_dict          Recursively transform all Box (and BoxList) objects back into a dict (and lists)
    to_json          Save Box object as a JSON string or write to a file with the `filename` parameter
-   to_yaml*         Save Box object as a YAML string or write to a file with the `filename` parameter
+   to_yaml          Save Box object as a YAML string or write to a file with the `filename` parameter
+   to_toml          Save Box object as a TOML string or write to a file with the `filename` parameter
    box_it_up        Recursively create all objects into Box and BoxList objects (to front-load operation)
    from_json        Classmethod, Create a Box object from a JSON file or string (all Box parameters can be passed)
-   from_yaml*       Classmethod, Create a Box object from a YAML file or string (all Box parameters can be passed)
+   from_yaml        Classmethod, Create a Box object from a YAML file or string (all Box parameters can be passed)
+   from_toml        Classmethod, Create a Box object from a TOML file or string (all Box parameters can be passed)
    ================ ===========
 
 \* Only available if `PyYaml` or `ruamel.yaml` is detected.
@@ -316,27 +298,6 @@ snake_case_attributes.
       cameled.bad_habit
       # "I just can't stop!"
 
-Ordered Box
-~~~~~~~~~~~
-
-Preserve the order that the keys were entered into the box. The preserved order
-will be observed while iterating over the box, or calling `.keys()`,
-`.values()` or `.items()`
-
-.. code:: python
-
-      box_of_order = Box(ordered_box=True)
-      box_of_order.c = 1
-      box_of_order.a = 2
-      box_of_order.d = 3
-
-      box_of_order.keys() == ['c', 'a', 'd']
-
-Keep in mind this will not guarantee order of `**kwargs` passed to Box,
-as they are inherently not ordered until Python 3.6.
-
-
-
 BoxList
 -------
 
@@ -444,34 +405,34 @@ Also a special thanks to Python Software Foundation, and PSF-Trademarks Committe
 History
 =======
 
-Feb 2014 - Inception
---------------------
+Feb 2014: Inception
+-------------------
 
 `Box` was first created_ under the name `Namespace` in the reusables_ package.
 Years of usage and suggestions helped mold it into the largest section of
 the reusables library.
 
-Mar 2017 - Box 1.0
-------------------
+Mar 2017: Box 1.0
+-----------------
 
 After years of upgrades it became clear it was used more than most other parts of
 the reusables library of tools. `Box` become its own package.
 
-Mar 2017 - BoxLists
--------------------
+Mar 2017: BoxLists
+------------------
 
 2.0 quickly followed 1.0, adding BoxList to allow for further dot notations
 while down in lists. Also added the handy `to_json` and `to_yaml` functionality.
 
-May 2017 - Options
-------------------
+May 2017: Options
+-----------------
 
 Box 3.0 brought a lot of options to the table for maximum customization. From
 allowing you to freeze the box or just help you find your attributes when
 accessing them by dot notation.
 
-May 2019 - 2.7 EOL
-------------------
+Oct 2019: 2.7 EOL
+-----------------
 
 Box 4.0 was made with python 2.x out of mind. Everything from f-strings to
 type-hinting was added to update the package. The modules grew large enough
@@ -486,9 +447,7 @@ MIT License, Copyright (c) 2017-2019 Chris Griffith. See LICENSE file.
 Legal
 =====
 
-This project uses hearthstone card data take from https://github.com/HearthSim/HearthstoneJSON available under the MIT License
-
-
+This project uses hearthstone card data taken from https://github.com/HearthSim/HearthstoneJSON available under the MIT License
 
 
 .. |BoxImage| image:: https://raw.githubusercontent.com/cdgriffith/Box/master/box_logo.png

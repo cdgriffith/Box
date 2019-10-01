@@ -6,10 +6,8 @@ import sys
 import copy
 import pytest
 
-try:
-    import yaml
-except ImportError:
-    import ruamel.yaml as yaml
+import ruamel.yaml as yaml
+import toml
 
 import box
 from box import *

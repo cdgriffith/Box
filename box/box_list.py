@@ -3,7 +3,7 @@
 
 import copy
 
-from box.converters import (_to_yaml, _from_yaml, _to_json, _from_json, BOX_PARAMETERS)
+from box.converters import (_to_yaml, _from_yaml, _to_json, _from_json, _to_toml, _from_toml, BOX_PARAMETERS)
 from box.exceptions import BoxError
 import box
 
@@ -74,7 +74,7 @@ class BoxList(list):
         super(BoxList, self).insert(index, p_object)
 
     def __repr__(self):
-        return "<BoxList: {0}>".format(self.to_list())
+        return f'<BoxList: {self.to_list()}>'
 
     def __str__(self):
         return str(self.to_list())
@@ -112,9 +112,8 @@ class BoxList(list):
                 new_list.append(x)
         return new_list
 
-    def to_json(self, filename=None,
-                encoding="utf-8", errors="strict",
-                multiline=False, **json_kwargs):
+    def to_json(self, filename: str = None, encoding: str = 'utf-8', errors: str = 'strict',
+                multiline: bool = False, **json_kwargs):
         """
         Transform the BoxList object into a JSON string.
 
@@ -126,17 +125,15 @@ class BoxList(list):
         :return: string of JSON or return of `json.dump`
         """
         if filename and multiline:
-            lines = [_to_json(item, filename=False, encoding=encoding,
-                              errors=errors, **json_kwargs) for item in self]
+            lines = [_to_json(item, filename=False, encoding=encoding, errors=errors, **json_kwargs) for item in self]
             with open(filename, 'w', encoding=encoding, errors=errors) as f:
                 f.write("\n".join(lines))
         else:
-            return _to_json(self.to_list(), filename=filename,
-                            encoding=encoding, errors=errors, **json_kwargs)
+            return _to_json(self.to_list(), filename=filename, encoding=encoding, errors=errors, **json_kwargs)
 
     @classmethod
-    def from_json(cls, json_string=None, filename=None, encoding="utf-8",
-                  errors="strict", multiline=False, **kwargs):
+    def from_json(cls, json_string: str = None, filename: str = None, encoding: str = 'utf-8', errors: str = 'strict',
+                  multiline: bool = False, **kwargs):
         """
         Transform a json object string into a BoxList object. If the incoming
         json is a dict, you must use Box.from_json.
@@ -158,13 +155,11 @@ class BoxList(list):
                           errors=errors, multiline=multiline, **kwargs)
 
         if not isinstance(data, list):
-            raise BoxError('json data not returned as a list, '
-                           'but rather a {0}'.format(type(data).__name__))
+            raise BoxError(f'json data not returned as a list, but rather a {type(data).__name__}')
         return cls(data, **bx_args)
 
-    def to_yaml(self, filename=None, default_flow_style=False,
-                encoding="utf-8", errors="strict",
-                **yaml_kwargs):
+    def to_yaml(self, filename: str = None, default_flow_style: bool = False,
+                encoding: str = 'utf-8', errors: str = 'strict', **yaml_kwargs):
         """
         Transform the BoxList object into a YAML string.
 
@@ -175,14 +170,12 @@ class BoxList(list):
         :param yaml_kwargs: additional arguments to pass to yaml.dump
         :return: string of YAML or return of `yaml.dump`
         """
-        return _to_yaml(self.to_list(), filename=filename,
-                        default_flow_style=default_flow_style,
+        return _to_yaml(self.to_list(), filename=filename, default_flow_style=default_flow_style,
                         encoding=encoding, errors=errors, **yaml_kwargs)
 
     @classmethod
-    def from_yaml(cls, yaml_string=None, filename=None,
-                  encoding="utf-8", errors="strict",
-                  **kwargs):
+    def from_yaml(cls, yaml_string: str = None, filename: str = None,
+                  encoding: str = 'utf-8', errors: str = 'strict', **kwargs):
         """
         Transform a yaml object string into a BoxList object.
 
@@ -198,15 +191,52 @@ class BoxList(list):
             if arg in BOX_PARAMETERS:
                 bx_args[arg] = kwargs.pop(arg)
 
-        data = _from_yaml(yaml_string=yaml_string, filename=filename,
-                          encoding=encoding, errors=errors, **kwargs)
+        data = _from_yaml(yaml_string=yaml_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
         if not isinstance(data, list):
-            raise BoxError('yaml data not returned as a list'
-                           'but rather a {0}'.format(type(data).__name__))
+            raise BoxError(f'yaml data not returned as a list but rather a {type(data).__name__}')
         return cls(data, **bx_args)
+
+    def to_toml(self, filename: str = None, key_name: str = 'toml', encoding: str = 'utf-8', errors: str = 'strict'):
+        """
+        Transform the Box object into a toml string.
+
+        :param filename: File to write toml object too
+        :param key_name: Specify the name of the key to store the string under
+            (cannot directly convert to toml)
+        :param encoding: File encoding
+        :param errors: How to handle encoding errors
+        :return: string of TOML (if no filename provided)
+        """
+        return _to_toml({key_name: self.to_list()}, filename=filename, encoding=encoding, errors=errors)
+
+    @classmethod
+    def from_toml(cls, toml_string: str = None, filename: str = None, key_name: str = 'toml',
+                  encoding: str = 'utf-8', errors: str = 'strict', **kwargs):
+        """
+        Transforms a toml string or file into a Box object
+
+        :param toml_string: string to pass to `toml.load`
+        :param filename: filename to open and pass to `toml.load`
+        :param key_name: Specify the name of the key to pull the list from
+            (cannot directly convert from toml)
+        :param encoding: File encoding
+        :param errors: How to handle encoding errors
+        :param kwargs: parameters to pass to `Box()`
+        :return:
+        """
+        bx_args = {}
+        for arg in list(kwargs.keys()):
+            if arg in BOX_PARAMETERS:
+                bx_args[arg] = kwargs.pop(arg)
+
+        data = _from_toml(toml_string=toml_string, filename=filename, encoding=encoding, errors=errors)
+        if key_name not in data:
+            raise BoxError(f'{key_name} was not found.')
+        if not isinstance(data[key_name], list):
+            raise BoxError(f'toml data not returned as a list but rather a {type(data).__name__}')
+        return cls(data[key_name], **bx_args)
 
     def box_it_up(self):
         for v in self:
             if hasattr(v, 'box_it_up') and v is not self:
                 v.box_it_up()
-
