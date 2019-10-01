@@ -17,7 +17,7 @@ Code contributions:
 - Stretch (str3tch)
 - (jandelgado)
 - Jeremiah Lowin (jlowin)
-- - (pwwang)
+- (pwwang)
 
 Suggestions and bug reporting:
 

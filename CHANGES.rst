@@ -5,11 +5,37 @@ Version 4.0.0
 ~~~~~~~~~~~~~
 
 * Adding support for retrieving items via dot notation in keys
+* Adding merge_update that acts like previous Box magic update
 * Changing layout of project to be more object specific
+* Changing update to act like normal dict update
 * Changing to 120 line character limit
 * Changing how `safe_attr` handles unsafe characters
 * Removing `ordered_box` as Python 3.6+ is ordered by default
 * Removing `BoxObject` in favor of it being another module
+
+Version 3.4.5
+~~~~~~~~~~~~~
+
+* Fixing update does not convert new sub dictionaries or lists (thanks to Michael Stella)
+* Changing update to work as it used to with sub merging until major release
+
+Version 3.4.4
+~~~~~~~~~~~~~
+
+* Fixing pop not properly resetting box_heritage (thanks to Jeremiah Lowin)
+
+Version 3.4.3
+~~~~~~~~~~~~~
+
+* Fixing propagation of box options when adding a new list via setdefault (thanks to Stretch)
+* Fixing update does not keep box_intact_types (thanks to pwwang)
+* Fixing update to operate the same way as a normal dictionary (thanks to Craig Quiter)
+* Fixing deepcopy not copying box options (thanks to Nikolay Stanishev)
+
+Version 3.4.2
+~~~~~~~~~~~~~
+
+* Adding license, changes and authors files to source distribution
 
 Version 3.4.1
 ~~~~~~~~~~~~~
