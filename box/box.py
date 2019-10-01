@@ -291,12 +291,12 @@ class Box(dict):
     def __copy__(self):
         return Box(super(Box, self).copy())
 
-    def __deepcopy__(self, memo=None):
-        out = self.__class__()
-        memo = memo or {}
-        memo[id(self)] = out
+    def __deepcopy__(self, memodict=None):
+        out = self.__class__(**self.__box_config())
+        memodict = memodict or {}
+        memodict[id(self)] = out
         for k, v in self.items():
-            out[copy.deepcopy(k, memo=memo)] = copy.deepcopy(v, memo=memo)
+            out[copy.deepcopy(k, memodict)] = copy.deepcopy(v, memodict)
         return out
 
     def __setstate__(self, state):
@@ -308,7 +308,7 @@ class Box(dict):
             value = super(Box, self).__getitem__(item)
         except KeyError as err:
             if item == '_box_config':
-                raise BoxKeyError('_box_config should only exist as an attribute and is never defaulted')
+                raise BoxKeyError('_box_config should only exist as an attribute and is never defaulted') from None
             if '.' in item:
                 first_item, children = item.split('.', 1)
                 if first_item in self.keys() and isinstance(self[first_item], dict):
@@ -316,7 +316,7 @@ class Box(dict):
 
             if self._box_config['default_box'] and not _ignore_default:
                 return self.__get_default(item)
-            raise BoxKeyError(str(err))
+            raise BoxKeyError(str(err)) from None
         else:
             return self.__convert_and_store(item, value)
 
@@ -346,9 +346,9 @@ class Box(dict):
                 out[k] = v
         return out
 
-    def __convert_and_store(self, item, value):
+    def __convert_and_store(self, item, value, force_conversion=False):
         # If the value has already been converted or should not be converted, return it as-is
-        if (item in self._box_config['__converted'] or
+        if ((item in self._box_config['__converted'] and not force_conversion) or
                 (self._box_config['box_intact_types'] and isinstance(value, self._box_config['box_intact_types']))):
             return value
         # This is the magic sauce that makes sub dictionaries into new box objects
@@ -453,20 +453,25 @@ class Box(dict):
     def pop(self, key, *args):
         if args:
             if len(args) != 1:
-                raise BoxError('pop() takes only one optional argument "default"')
+                raise BoxError('pop() takes only one optional'
+                               ' argument "default"')
             try:
                 item = self[key]
             except KeyError:
                 return args[0]
             else:
                 del self[key]
+                if isinstance(item, Box):
+                    item._box_config['__box_heritage'] = ()
                 return item
         try:
             item = self[key]
         except KeyError:
-            raise BoxKeyError(f'{key}') from None
+            raise BoxKeyError('{0}'.format(key)) from None
         else:
             del self[key]
+            if isinstance(item, Box):
+                item._box_config['__box_heritage'] = ()
             return item
 
     def clear(self):
@@ -510,33 +515,52 @@ class Box(dict):
                 out_dict[k] = v.to_list()
         return out_dict
 
-    def update(self, item=None, **kwargs):
-        if not item:
-            item = kwargs
-        iter_over = item.items() if hasattr(item, 'items') else item
-        for k, v in iter_over:
-            if isinstance(v, dict):
+    def update(self, __m=None, **kwargs):
+        if __m:
+            if hasattr(__m, 'keys'):
+                for k in __m:
+                    self[k] = self.__convert_and_store(k, __m[k], force_conversion=True)
+            else:
+                for k, v in __m:
+                    self[k] = self.__convert_and_store(k, v, force_conversion=True)
+        for k in kwargs:
+            self[k] = self.__convert_and_store(k, kwargs[k], force_conversion=True)
+
+    def merge_update(self, __m=None, **kwargs):
+        def convert_and_set(k, v):
+            intact_type = (self._box_config['box_intact_types'] and isinstance(v, self._box_config['box_intact_types']))
+            if isinstance(v, dict) and not intact_type:
                 # Box objects must be created in case they are already
                 # in the `converted` box_config set
-                v = self.__class__(v)
+                v = self.__class__(v, **self.__box_config())
                 if k in self and isinstance(self[k], dict):
                     self[k].update(v)
-                    continue
-            if isinstance(v, list):
-                v = box.BoxList(v)
+                    return
+            if isinstance(v, list) and not intact_type:
+                v = box.BoxList(v, **self.__box_config())
             try:
                 self.__setattr__(k, v)
             except (AttributeError, TypeError):
                 self.__setitem__(k, v)
+
+        if __m:
+            if hasattr(__m, 'keys'):
+                for key in __m:
+                    convert_and_set(key, __m[key])
+            else:
+                for key, value in __m:
+                    convert_and_set(key, value)
+        for key in kwargs:
+            convert_and_set(key, kwargs[key])
 
     def setdefault(self, item, default=None):
         if item in self:
             return self[item]
 
         if isinstance(default, dict):
-            default = self.__class__(default)
+            default = self.__class__(default, **self.__box_config())
         if isinstance(default, list):
-            default = box.BoxList(default)
+            default = box.BoxList(default, box_class=self.__class__, **self.__box_config())
         self[item] = default
         return default
 

@@ -57,7 +57,7 @@ Install
 
         pip install python-box
 
-Box is tested on python 2.7 and 3.4+.
+Box is tested on python 3.4+.
 If it does not install with this command, please
 open a github issue with the error you are experiencing!
 

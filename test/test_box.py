@@ -206,20 +206,59 @@ class TestBox:
 
     def test_update(self):
         a = Box(test_dict)
+        a.grand = 1000
         a.update({'key1': {'new': 5}, 'Key 2': {"add_key": 6},
                   'lister': ['a']})
         a.update([('asdf', 'fdsa')])
         a.update(testkey=66)
-        a.update({'items': 'test'})
+        a.update({'items': {'test': 'pme'}})
+        a.update({'key1': {'gg': 4}})
+        b = Box()
+        b.update(item=1)
+        b.update(E=1)
+        b.update(__m=1)
+        with pytest.raises(ValueError):
+            b.update('test')
 
-        assert a['items'] == 'test'
-        assert a.key1.new == 5
+        assert a.grand == 1000
+        assert a['grand'] == 1000
+        assert isinstance(a['items'], Box)
+        assert a['items'].test == 'pme'
         assert a['Key 2'].add_key == 6
-        assert "Key5" in a['Key 2'].Key4
         assert isinstance(a.key1, Box)
         assert isinstance(a.lister, BoxList)
         assert a.asdf == 'fdsa'
         assert a.testkey == 66
+        assert a.key1.gg == 4
+        assert 'new' not in a.key1.keys()
+
+    def test_merge_update(self):
+        a = Box(test_dict)
+        a.grand = 1000
+        a.merge_update({'key1': {'new': 5}, 'Key 2': {"add_key": 6}, 'lister': ['a']})
+        a.merge_update([('asdf', 'fdsa')])
+        a.merge_update(testkey=66)
+        a.merge_update({'items': {'test': 'pme'}})
+        a.merge_update({'key1': {'gg': 4}})
+        b = Box()
+        b.merge_update(item=1)
+        b.merge_update(E=4)
+        b.merge_update(__m=1)
+
+        assert a.grand == 1000
+        assert a['grand'] == 1000
+        assert isinstance(a['items'], Box)
+        assert a['items'].test == 'pme'
+        assert a.key1.new == 5
+        assert a['Key 2'].add_key == 6
+        assert isinstance(a.key1, Box)
+        assert isinstance(a.lister, BoxList)
+        assert a.asdf == 'fdsa'
+        assert a.testkey == 66
+        assert a.key1.new == 5
+        assert a.key1.gg == 4
+        with pytest.raises(ValueError):
+            b.merge_update('test')
 
     def test_auto_attr(self):
         a = Box(test_dict, default_box=True)
@@ -629,14 +668,8 @@ class TestBox:
 
     def test_through_queue(self):
         my_box = Box(a=4, c={"d": 3})
-
         queue = Queue()
         queue.put(my_box)
-
-        p = Process(target=mp_queue_test, args=(queue,))
-        p.start()
-        p.join()
-
         assert queue.get()
 
     def test_update_with_integer(self):

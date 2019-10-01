@@ -14,6 +14,7 @@ Code contributions:
 - Martijn Pieters (mjpieters)
 - (sdementen)
 - Brandon Gomes (bhgomes)
+- Stretch (str3tch)
 - (pwwang)
 
 Suggestions and bug reporting:
@@ -42,6 +43,10 @@ Suggestions and bug reporting:
 - (ipcoder)
 - (cebaa)
 - (deluxghost)
+- Nikolay Stanishev (nikolaystanishev)
+- Craig Quiter (crizCraig)
+- Jeremiah Lowin (jlowin)
+- Michael Stella (alertedsnake)
 - (FunkyLoveCow)
 - Kevin Cross (kevinhcross)
 - (Patrock)
