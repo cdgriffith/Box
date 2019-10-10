@@ -55,8 +55,8 @@ BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
 _first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 _all_cap_re = re.compile('([a-z0-9])([A-Z])')
 
-# a sentinel object for indicating no default, in order to allow users to pass `None` as a
-# valid default value
+# a sentinel object for indicating no default, in order to allow users
+# to pass `None` as a valid default value
 NO_DEFAULT = object()
 
 class BoxError(Exception):
