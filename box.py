@@ -55,6 +55,9 @@ BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
 _first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 _all_cap_re = re.compile('([a-z0-9])([A-Z])')
 
+# a sentinel object for indicating no default, in order to allow users to pass `None` as a
+# valid default value
+NO_DEFAULT = object()
 
 class BoxError(Exception):
     """Non standard dictionary exceptions"""
@@ -390,9 +393,9 @@ class Box(dict):
 
         return list(items)
 
-    def get(self, key, default=None):
+    def get(self, key, default=NO_DEFAULT):
         if key not in self:
-            if default is None and self._box_config['default_box']:
+            if default is NO_DEFAULT and self._box_config['default_box']:
                 return self.__get_default(key)
             if isinstance(default, dict) and not isinstance(default, Box):
                 return Box(default)
