@@ -208,6 +208,8 @@ class Box(dict):
                 for k, v in args[0].items():
                     if v is args[0]:
                         v = self
+                    if v is None and self._box_config['default_box']:
+                        continue
                     self[k] = v
             elif isinstance(args[0], Iterable):
                 for k, v in args[0]:
