@@ -14,7 +14,8 @@ from box.exceptions import BoxError
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box', 'box_it_up',
-                  'box_safe_prefix', 'box_duplicates', 'ordered_box')
+                  'box_safe_prefix', 'box_duplicates', 'ordered_box',
+                  'default_box_none_transform')
 
 
 def _exists(filename, create=False):

@@ -384,6 +384,20 @@ class TestBox:
         bx3 = Box(default_box=True, default_box_attr=3)
         assert bx3.hello == 3
 
+    # Issue#59 https://github.com/cdgriffith/Box/issues/59 "Treat None values as non existing keys for default_box"
+    def test_default_box_none_transforms(self):
+        bx4 = Box({"noneValue": None, "inner": {"noneInner": None}}, default_box=True, default_box_attr="issue#59")
+        assert bx4.noneValue == "issue#59"
+        assert bx4.inner.noneInner == "issue#59"
+
+        bx5 = Box({"noneValue": None, "inner": {"noneInner": None}},
+                  default_box=True,
+                  default_box_none_transform=False,
+                  default_box_attr="attr")
+        assert bx5.noneValue is None
+        assert bx5.absentKey == "attr"
+        assert bx5.inner.noneInner is None
+
     def test_camel_killer_box(self):
         td = extended_test_dict.copy()
         td['CamelCase'] = 'Item'

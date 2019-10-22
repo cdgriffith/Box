@@ -147,6 +147,7 @@ class Box(dict):
     :param default_box: Similar to defaultdict, return a default value
     :param default_box_attr: Specify the default replacement.
         WARNING: If this is not the default 'Box', it will not be recursive
+    :param default_box_none_transform: When using default_box, treat keys with none values as absent. True by default
     :param frozen_box: After creation, the box cannot be modified
     :param camel_killer_box: Convert CamelCase to snake_case
     :param conversion_box: Check for near matching keys as attributes
@@ -159,8 +160,8 @@ class Box(dict):
 
     _protected_keys = dir({}) + ['to_dict', 'to_json', 'to_yaml', 'from_yaml', 'from_json', 'from_toml', 'to_toml']
 
-    def __new__(cls, *args: Any, box_it_up: bool = False, default_box: bool = False,
-                default_box_attr: Any = None, frozen_box: bool = False, camel_killer_box: bool = False,
+    def __new__(cls, *args: Any, box_it_up: bool = False, default_box: bool = False, default_box_attr: Any = None,
+                default_box_none_transform: bool = True, frozen_box: bool = False, camel_killer_box: bool = False,
                 conversion_box: bool = True, modify_tuples_box: bool = False, box_safe_prefix: str = 'x',
                 box_duplicates: str = 'ignore', box_intact_types: Union[Tuple, List] = (), **kwargs: Any):
         """
@@ -172,6 +173,7 @@ class Box(dict):
         obj._box_config.update({
             'default_box': default_box,
             'default_box_attr': default_box_attr or cls.__class__,
+            'default_box_none_transform': default_box_none_transform,
             'conversion_box': conversion_box,
             'box_safe_prefix': box_safe_prefix,
             'frozen_box': frozen_box,
@@ -182,8 +184,8 @@ class Box(dict):
         })
         return obj
 
-    def __init__(self, *args: Any, box_it_up: bool = False, default_box: bool = False,
-                 default_box_attr: Any = None, frozen_box: bool = False, camel_killer_box: bool = False,
+    def __init__(self, *args: Any, box_it_up: bool = False, default_box: bool = False, default_box_attr: Any = None,
+                 default_box_none_transform: bool = True, frozen_box: bool = False, camel_killer_box: bool = False,
                  conversion_box: bool = True, modify_tuples_box: bool = False, box_safe_prefix: str = 'x',
                  box_duplicates: str = 'ignore', box_intact_types: Union[Tuple, List] = (), **kwargs: Any):
         super(Box, self).__init__()
@@ -191,6 +193,7 @@ class Box(dict):
         self._box_config.update({
             'default_box': default_box,
             'default_box_attr': default_box_attr or self.__class__,
+            'default_box_none_transform': default_box_none_transform,
             'conversion_box': conversion_box,
             'box_safe_prefix': box_safe_prefix,
             'frozen_box': frozen_box,
@@ -208,6 +211,8 @@ class Box(dict):
                 for k, v in args[0].items():
                     if v is args[0]:
                         v = self
+                    if v is None and self._box_config['default_box'] and self._box_config['default_box_none_transform']:
+                        continue
                     self[k] = v
             elif isinstance(args[0], Iterable):
                 for k, v in args[0]:
