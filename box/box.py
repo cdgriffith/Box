@@ -17,9 +17,6 @@ import box
 from box.exceptions import BoxError, BoxKeyError
 from box.converters import (_to_json, _from_json, _from_toml, _to_toml, _from_yaml, _to_yaml, BOX_PARAMETERS)
 
-# TODO toml support for BoxList
-# TODO tests for toml
-# TODO backwards compatibility pledge
 __all__ = ['Box']
 
 _first_cap_re = re.compile('(.)([A-Z][a-z]+)')
@@ -242,6 +239,11 @@ class Box(dict):
             _conversion_checks(k, self.keys(), self._box_config, check_only=True)
             if self[k] is not self and hasattr(self[k], 'box_it_up'):
                 self[k].box_it_up()
+
+    def __add__(self, other):
+        new_box = self.copy()
+        new_box.merge_update(other)
+        return new_box
 
     def __hash__(self):
         if self._box_config['frozen_box']:

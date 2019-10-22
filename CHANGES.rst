@@ -6,6 +6,7 @@ Version 4.0.0
 
 * Adding support for retrieving items via dot notation in keys
 * Adding merge_update that acts like previous Box magic update
+* Adding support to `+` boxes together
 * Changing layout of project to be more object specific
 * Changing update to act like normal dict update
 * Changing to 120 line character limit

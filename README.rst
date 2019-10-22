@@ -8,25 +8,23 @@ Python dictionaries with advanced dot notation access.
 
         from box import Box
 
-        movies = {
+        movie_box = Box({
             "Robin Hood: Men in Tights": {
                 "imdb_stars": 6.7,
                 "length": 104,
                 "stars": [ {"name": "Cary Elwes", "imdb": "nm0000144", "role": "Robin Hood"},
                            {"name": "Richard Lewis", "imdb": "nm0507659", "role": "Prince John"} ]
             }
-        }
-
-        movie_box = Box(movies)
+        })
 
         movie_box.Robin_Hood_Men_in_Tights.imdb_stars
         # 6.7
 
-        # Box will automatically make otherwise inaccessible keys ("Robin Hood: Men in Tights") safe to access as an attribute
-        # You can always pass `conversion_box=False` to `Box` to disable that behavior
-
         movie_box.Robin_Hood_Men_in_Tights.stars[0].name
         # 'Cary Elwes'
+
+        # Box will automatically make otherwise inaccessible keys ("Robin Hood: Men in Tights") safe to access as an attribute
+        # You can always pass `conversion_box=False` to `Box` to disable that behavior
 
         # All new dict and lists added to a Box or BoxList object are converted
         movie_box.Robin_Hood_Men_in_Tights.stars.append({"name": "Roger Rees", "imdb": "nm0715953", "role": "Sheriff of Rottingham"})
@@ -68,7 +66,7 @@ and all sub objects back into a regular dictionary.
                     {'imdb': 'nm0001548', 'name': 'Rick Moranis', 'role': 'Dark Helmet'},
                     {'imdb': 'nm0000597', 'name': 'Bill Pullman', 'role': 'Lone Starr'}]}
 
-Box version 3 (and greater) now do sub box creation upon lookup, which means
+Box version 3 (and greater) do sub box creation upon lookup, which means
 it is only referencing the original dict objects until they are looked up
 or modified.
 
@@ -169,14 +167,14 @@ Box's functions
    to_dict          Recursively transform all Box (and BoxList) objects back into a dict (and lists)
    to_json          Save Box object as a JSON string or write to a file with the `filename` parameter
    to_yaml          Save Box object as a YAML string or write to a file with the `filename` parameter
-   to_toml          Save Box object as a TOML string or write to a file with the `filename` parameter
+   to_toml*          Save Box object as a TOML string or write to a file with the `filename` parameter
    box_it_up        Recursively create all objects into Box and BoxList objects (to front-load operation)
    from_json        Classmethod, Create a Box object from a JSON file or string (all Box parameters can be passed)
    from_yaml        Classmethod, Create a Box object from a YAML file or string (all Box parameters can be passed)
-   from_toml        Classmethod, Create a Box object from a TOML file or string (all Box parameters can be passed)
+   from_toml*        Classmethod, Create a Box object from a TOML file or string (all Box parameters can be passed)
    ================ ===========
 
-\* Only available if `PyYaml` or `ruamel.yaml` is detected.
+\* Do not work with BoxList, only Box
 
 Conversion Box
 ~~~~~~~~~~~~~~
