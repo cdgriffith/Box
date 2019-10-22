@@ -7,10 +7,12 @@ Version 4.0.0
 * Adding support for retrieving items via dot notation in keys
 * Adding merge_update that acts like previous Box magic update
 * Adding support to `+` boxes together
+* Adding default_box now can support expanding on `None` placeholders (thanks to Harun Tuncay and Jeremiah Lowin)
 * Changing layout of project to be more object specific
 * Changing update to act like normal dict update
 * Changing to 120 line character limit
 * Changing how `safe_attr` handles unsafe characters
+* Changing all exceptions to be bases of BoxError so can always be caught with that base exception
 * Removing `ordered_box` as Python 3.6+ is ordered by default
 * Removing `BoxObject` in favor of it being another module
 

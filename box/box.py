@@ -14,16 +14,17 @@ from collections.abc import Iterable, Mapping, Callable
 from typing import Any, Union, Tuple, List
 
 import box
-from box.exceptions import BoxError, BoxKeyError
+from box.exceptions import BoxError, BoxKeyError, BoxTypeError, BoxValueError
 from box.converters import (_to_json, _from_json, _from_toml, _to_toml, _from_yaml, _to_yaml, BOX_PARAMETERS)
 
 __all__ = ['Box']
 
 _first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 _all_cap_re = re.compile('([a-z0-9])([A-Z])')
+NO_DEFAULT = object()
+# a sentinel object for indicating no default, in order to allow users
+# to pass `None` as a valid default value
 
-
-# Helper functions
 
 def _safe_attr(attr, camel_killer=False, replacement_char='x'):
     """Convert a key into something that is accessible as an attribute"""
@@ -203,7 +204,7 @@ class Box(dict):
             raise BoxError('box_duplicates are only for conversion_boxes')
         if len(args) == 1:
             if isinstance(args[0], str):
-                raise ValueError('Cannot extrapolate Box from string')
+                raise BoxValueError('Cannot extrapolate Box from string')
             if isinstance(args[0], Mapping):
                 for k, v in args[0].items():
                     if v is args[0]:
@@ -215,9 +216,9 @@ class Box(dict):
                 for k, v in args[0]:
                     self[k] = v
             else:
-                raise ValueError('First argument must be mapping or iterable')
+                raise BoxValueError('First argument must be mapping or iterable')
         elif args:
-            raise TypeError(f'Box expected at most 1 argument, got {len(args)}')
+            raise BoxTypeError(f'Box expected at most 1 argument, got {len(args)}')
 
         for k, v in kwargs.items():
             if args and isinstance(args[0], Mapping) and v is args[0]:
@@ -240,8 +241,10 @@ class Box(dict):
             if self[k] is not self and hasattr(self[k], 'box_it_up'):
                 self[k].box_it_up()
 
-    def __add__(self, other):
+    def __add__(self, other: dict):
         new_box = self.copy()
+        if not isinstance(other, dict):
+            raise BoxTypeError(f'Box can only merge two boxes or a box and a dictionary.')
         new_box.merge_update(other)
         return new_box
 
@@ -251,7 +254,7 @@ class Box(dict):
             for item in self.items():
                 hashing ^= hash(item)
             return hashing
-        raise TypeError('unhashable type: "Box"')
+        raise BoxTypeError('unhashable type: "Box"')
 
     def __dir__(self):
         allowed = string.ascii_letters + string.digits + '_'
@@ -281,9 +284,11 @@ class Box(dict):
 
         return list(items)
 
-    def get(self, key, default=None):
+    def get(self, key, default=NO_DEFAULT):
         if key not in self:
-            if default is None and self._box_config['default_box']:
+            if (default is NO_DEFAULT and
+                    self._box_config['default_box'] and
+                    self._box_config['default_box_none_transform']):
                 return self.__get_default(key)
             if isinstance(default, dict) and not isinstance(default, Box):
                 return Box(default)
@@ -394,7 +399,7 @@ class Box(dict):
                 value = object.__getattribute__(self, item)
         except AttributeError as err:
             if item == '__getstate__':
-                raise AttributeError(item) from None
+                raise BoxKeyError(item) from None
             if item == '_box_config':
                 raise BoxError('_box_config key must exist') from None
             kill_camel = self._box_config['camel_killer_box']
@@ -427,7 +432,7 @@ class Box(dict):
         if key != '_box_config' and self._box_config['frozen_box'] and self._box_config['__created']:
             raise BoxError('Box is frozen')
         if key in self._protected_keys:
-            raise AttributeError(f'Key name "{key}" is protected')
+            raise BoxKeyError(f'Key name "{key}" is protected')
         if key == '_box_config':
             return object.__setattr__(self, key, value)
         if key not in self.keys() and (self._box_config['conversion_box'] or self._box_config['camel_killer_box']):
@@ -454,7 +459,7 @@ class Box(dict):
         if item == '_box_config':
             raise BoxError('"_box_config" is protected')
         if item in self._protected_keys:
-            raise AttributeError(f'Key name "{item}" is protected')
+            raise BoxKeyError(f'Key name "{item}" is protected')
         del self[item]
 
     def pop(self, key, *args):

@@ -4,7 +4,7 @@
 import copy
 
 from box.converters import (_to_yaml, _from_yaml, _to_json, _from_json, _to_toml, _from_toml, BOX_PARAMETERS)
-from box.exceptions import BoxError
+from box.exceptions import BoxError, BoxTypeError, BoxKeyError
 import box
 
 
@@ -44,7 +44,7 @@ class BoxList(list):
                 return True
         except AttributeError as err:
             if 'box_options' in self.__dict__:
-                raise err
+                raise BoxKeyError(err)
         return False
 
     def append(self, p_object):
@@ -53,13 +53,13 @@ class BoxList(list):
                 p_object = self.box_class(p_object, **self.box_options)
             except AttributeError as err:
                 if 'box_class' in self.__dict__:
-                    raise err
+                    raise BoxKeyError(err)
         elif isinstance(p_object, list) and not self._is_intact_type(p_object):
             try:
                 p_object = (self if id(p_object) == self.box_org_ref else BoxList(p_object))
             except AttributeError as err:
                 if 'box_org_ref' in self.__dict__:
-                    raise err
+                    raise BoxKeyError(err)
         super(BoxList, self).append(p_object)
 
     def extend(self, iterable):
@@ -97,7 +97,7 @@ class BoxList(list):
             hashing = 98765
             hashing ^= hash(tuple(self))
             return hashing
-        raise TypeError("unhashable type: 'BoxList'")
+        raise BoxTypeError("unhashable type: 'BoxList'")
 
     def to_list(self):
         new_list = []

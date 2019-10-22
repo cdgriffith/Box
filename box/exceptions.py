@@ -8,3 +8,11 @@ class BoxError(Exception):
 
 class BoxKeyError(BoxError, KeyError, AttributeError):
     """Key does not exist"""
+
+
+class BoxTypeError(BoxError, TypeError):
+    """Cannot handle that instance's type"""
+
+
+class BoxValueError(BoxError, ValueError):
+    """Issue doing something with that value"""

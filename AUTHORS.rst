@@ -19,6 +19,7 @@ Code contributions:
 - Jeremiah Lowin (jlowin)
 - (pwwang)
 - Harun Tuncay (haruntuncay)
+- Jeremiah Lowin (jlowin)
 
 Suggestions and bug reporting:
 
@@ -48,7 +49,6 @@ Suggestions and bug reporting:
 - (deluxghost)
 - Nikolay Stanishev (nikolaystanishev)
 - Craig Quiter (crizCraig)
-- Jeremiah Lowin (jlowin)
 - Michael Stella (alertedsnake)
 - Tim Gates (timgates42)
 - (FunkyLoveCow)
