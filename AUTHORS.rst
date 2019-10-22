@@ -16,6 +16,7 @@ Code contributions:
 - Brandon Gomes (bhgomes)
 - Stretch (str3tch)
 - (pwwang)
+- Harun Tuncay (haruntuncay)
 
 Suggestions and bug reporting:
 
