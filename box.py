@@ -200,7 +200,7 @@ def _conversion_checks(item, keys, box_config, check_only=False,
 
     :param item: Item to see if a dup exists
     :param keys: Keys to check against
-    :param box_config: Easier to pass in than ask for specfic items
+    :param box_config: Easier to pass in than ask for specific items
     :param check_only: Don't bother doing the conversion work
     :param pre_check: Need to add the item to the list of keys to check
     :return: the original unmodified key, if exists and not check_only
