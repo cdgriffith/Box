@@ -444,6 +444,8 @@ class Box(dict):
                     if key == _camel_killer(each_key):
                         self[each_key] = value
                         break
+                else:
+                    self[_camel_killer(key)] = value
         else:
             self[key] = value
         self.__create_lineage()
@@ -460,6 +462,8 @@ class Box(dict):
                     if key == _camel_killer(each_key):
                         super(Box, self).__delitem__(each_key)
                         break
+                else:
+                    raise BoxKeyError(f'Cannot find {key} to delete')
         else:
             super(Box, self).__delitem__(key)
 

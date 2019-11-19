@@ -431,7 +431,7 @@ Box 3.0 brought a lot of options to the table for maximum customization. From
 allowing you to freeze the box or just help you find your attributes when
 accessing them by dot notation.
 
-Oct 2019: 2.7 EOL
+Nov 2019: 2.7 EOL
 -----------------
 
 Box 4.0 was made with python 2.x out of mind. Everything from f-strings to
