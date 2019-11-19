@@ -793,3 +793,8 @@ class TestBox:
         c = Box(d=2)
         assert b + c == Box(c=1, d=2)
 
+    def test_type_recast(self):
+        b = Box(id='6', box_recast={'id': int})
+        assert isinstance(b.id, int)
+        with pytest.raises(ValueError):
+            b['sub_box'] = {'id': 'bad_id'}

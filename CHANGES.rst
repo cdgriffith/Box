@@ -8,6 +8,7 @@ Version 4.0.0
 * Adding merge_update that acts like previous Box magic update
 * Adding support to `+` boxes together
 * Adding default_box now can support expanding on `None` placeholders (thanks to Harun Tuncay and Jeremiah Lowin)
+* Adding ability to recast specified fields (thanks to Steven McGrath)
 * Changing layout of project to be more object specific
 * Changing update to act like normal dict update
 * Changing to 120 line character limit

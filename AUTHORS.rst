@@ -54,3 +54,4 @@ Suggestions and bug reporting:
 - (Patrock)
 - Tim Gates (timgates42)
 - (iordanivanov)
+- Steven McGrath (SteveMcGrath)
