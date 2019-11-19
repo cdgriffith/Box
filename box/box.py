@@ -451,7 +451,17 @@ class Box(dict):
     def __delitem__(self, key):
         if self._box_config['frozen_box']:
             raise BoxError('Box is frozen')
-        super(Box, self).__delitem__(key)
+        if key not in self.keys() and (self._box_config['conversion_box'] or self._box_config['camel_killer_box']):
+            if self._box_config['conversion_box']:
+                k = _conversion_checks(key, self.keys(), self._box_config)
+                super(Box, self).__delitem__(key if not k else k)
+            elif self._box_config['camel_killer_box']:
+                for each_key in self:
+                    if key == _camel_killer(each_key):
+                        super(Box, self).__delitem__(each_key)
+                        break
+        else:
+            super(Box, self).__delitem__(key)
 
     def __delattr__(self, item):
         if self._box_config['frozen_box']:

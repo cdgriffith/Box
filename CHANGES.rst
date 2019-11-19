@@ -13,6 +13,7 @@ Version 4.0.0
 * Changing to 120 line character limit
 * Changing how `safe_attr` handles unsafe characters
 * Changing all exceptions to be bases of BoxError so can always be caught with that base exception
+* Changing delete to also access converted keys (thanks to iordanivanov)
 * Removing `ordered_box` as Python 3.6+ is ordered by default
 * Removing `BoxObject` in favor of it being another module
 

@@ -89,7 +89,6 @@ class TestBoxList:
     def test_box_list_from_tml(self):
         alist = [{'item': 1}, {'CamelBad': 2}]
         toml_list = toml.dumps({'key': alist})
-        print(toml_list)
         bl = BoxList.from_toml(toml_string=toml_list, key_name='key', camel_killer_box=True)
         assert bl[0].item == 1
         assert bl[1].camel_bad == 2

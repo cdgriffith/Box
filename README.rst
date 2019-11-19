@@ -23,11 +23,13 @@ Python dictionaries with advanced dot notation access.
         movie_box.Robin_Hood_Men_in_Tights.stars[0].name
         # 'Cary Elwes'
 
-        # Box will automatically make otherwise inaccessible keys ("Robin Hood: Men in Tights") safe to access as an attribute
+        # Box will automatically make otherwise inaccessible keys ("Robin Hood: Men in Tights")
+        # safe to access as an attribute
         # You can always pass `conversion_box=False` to `Box` to disable that behavior
 
         # All new dict and lists added to a Box or BoxList object are converted
-        movie_box.Robin_Hood_Men_in_Tights.stars.append({"name": "Roger Rees", "imdb": "nm0715953", "role": "Sheriff of Rottingham"})
+        movie_box.Robin_Hood_Men_in_Tights.stars.append(
+             {"name": "Roger Rees", "imdb": "nm0715953", "role": "Sheriff of Rottingham"})
         movie_box.Robin_Hood_Men_in_Tights.stars[-1].role
         # 'Sheriff of Rottingham'
 

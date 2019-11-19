@@ -769,3 +769,10 @@ class TestBox:
         bx = Box(a=OrderedDict([('y', 1), ('x', 2)]), box_intact_types=[OrderedDict])
         assert isinstance(bx.a, OrderedDict)
         assert not isinstance(bx.a, Box)
+
+    def test_delete_attributes(self):
+        b = Box(notThief=1, sortaThief=0, reallyAThief=True, camel_killer_box=True)
+        del(b.not_thief)
+        del(b.really_a_thief)
+        with pytest.raises(KeyError):
+            del(b.really_a_thief)
