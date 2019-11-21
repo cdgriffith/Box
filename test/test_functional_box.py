@@ -609,6 +609,15 @@ class TestBoxFunctional(unittest.TestCase):
         assert dd == copy.copy(dd)
         assert isinstance(copy.copy(dd), BoxList)
 
+    def test_deepcopy_of_frozen_box(self):
+        my_box = Box(data={'a': movie_data,
+                           'b': Box(movie_data, frozen_box=True)},
+                     frozen_box=True)
+        aa = copy.deepcopy(my_box)
+        assert my_box == aa
+        assert id(my_box) != id(aa)
+        assert isinstance(aa, Box)
+
     def test_custom_key_errors(self):
         my_box = Box()
 
