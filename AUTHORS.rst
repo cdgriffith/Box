@@ -15,10 +15,10 @@ Code contributions:
 - (sdementen)
 - Brandon Gomes (bhgomes)
 - Stretch (str3tch)
-- (jandelgado)
-- Jeremiah Lowin (jlowin)
 - (pwwang)
 - Harun Tuncay (haruntuncay)
+- Jeremiah Lowin (jlowin)
+- (jandelgado)
 
 Suggestions and bug reporting:
 

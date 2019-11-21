@@ -18,6 +18,11 @@ Version 4.0.0
 * Removing `ordered_box` as Python 3.6+ is ordered by default
 * Removing `BoxObject` in favor of it being another module
 
+Version 3.4.6
+~~~~~~~~~~~~~
+
+* Fixing allowing frozen boxes to be deep copyable (thanks to jandelgado)
+
 Version 3.4.5
 ~~~~~~~~~~~~~
 

@@ -307,11 +307,15 @@ class Box(dict):
         return Box(super(Box, self).copy())
 
     def __deepcopy__(self, memodict=None):
-        out = self.__class__(**self.__box_config())
+        frozen = self._box_config['frozen_box']
+        config = self.__box_config()
+        config['frozen_box'] = False
+        out = self.__class__(**config)
         memodict = memodict or {}
         memodict[id(self)] = out
         for k, v in self.items():
             out[copy.deepcopy(k, memodict)] = copy.deepcopy(v, memodict)
+        out._box_config['frozen_box'] = frozen
         return out
 
     def __setstate__(self, state):
