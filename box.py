@@ -164,11 +164,7 @@ def _safe_attr(attr, camel_killer=False, replacement_char='x'):
 
 
 def _camel_killer(attr):
-    """
-    CamelKiller, qu'est-ce que c'est?
-
-    Taken from http://stackoverflow.com/a/1176023/3244542
-    """
+    """ CamelKiller, qu'est-ce que c'est? """
     try:
         attr = str(attr)
     except UnicodeEncodeError:
