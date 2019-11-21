@@ -45,7 +45,7 @@ else:
 __all__ = ['Box', 'ConfigBox', 'BoxList', 'SBox',
            'BoxError', 'BoxKeyError']
 __author__ = 'Chris Griffith'
-__version__ = '3.4.5'
+__version__ = '3.4.6'
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box', 'box_it_up',
@@ -164,11 +164,7 @@ def _safe_attr(attr, camel_killer=False, replacement_char='x'):
 
 
 def _camel_killer(attr):
-    """
-    CamelKiller, qu'est-ce que c'est?
-
-    Taken from http://stackoverflow.com/a/1176023/3244542
-    """
+    """ CamelKiller, qu'est-ce que c'est? """
     try:
         attr = str(attr)
     except UnicodeEncodeError:
@@ -200,7 +196,7 @@ def _conversion_checks(item, keys, box_config, check_only=False,
 
     :param item: Item to see if a dup exists
     :param keys: Keys to check against
-    :param box_config: Easier to pass in than ask for specfic items
+    :param box_config: Easier to pass in than ask for specific items
     :param check_only: Don't bother doing the conversion work
     :param pre_check: Need to add the item to the list of keys to check
     :return: the original unmodified key, if exists and not check_only
@@ -408,11 +404,15 @@ class Box(dict):
         return Box(super(Box, self).copy())
 
     def __deepcopy__(self, memodict=None):
-        out = self.__class__(**self.__box_config())
+        frozen = self._box_config['frozen_box']
+        config = self.__box_config()
+        config['frozen_box'] = False
+        out = self.__class__(**config)
         memodict = memodict or {}
         memodict[id(self)] = out
         for k, v in self.items():
             out[copy.deepcopy(k, memodict)] = copy.deepcopy(v, memodict)
+        out._box_config['frozen_box'] = frozen
         return out
 
     def __setstate__(self, state):

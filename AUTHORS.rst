@@ -15,6 +15,8 @@ Code contributions:
 - (sdementen)
 - Brandon Gomes (bhgomes)
 - Stretch (str3tch)
+- (jandelgado)
+- Jeremiah Lowin (jlowin)
 
 Suggestions and bug reporting:
 
@@ -46,3 +48,4 @@ Suggestions and bug reporting:
 - Craig Quiter (crizCraig)
 - Jeremiah Lowin (jlowin)
 - Michael Stella (alertedsnake)
+- Tim Gates (timgates42)

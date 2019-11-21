@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+Version 3.4.6
+~~~~~~~~~~~~~
+
+* Fixing allowing frozen boxes to be deep copyable (thanks to jandelgado)
+
 Version 3.4.5
 ~~~~~~~~~~~~~
 
