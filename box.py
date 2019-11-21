@@ -409,9 +409,8 @@ class Box(dict):
 
     def __deepcopy__(self, memodict=None):
         frozen = self._box_config['frozen_box']
-        config = self.__box_config()
-        config['frozen_box'] = False
-        out = self.__class__(**config)
+        self._box_config['frozen_box'] = False
+        out = self.__class__(**self._box_config)
         memodict = memodict or {}
         memodict[id(self)] = out
         for k, v in self.items():
