@@ -96,11 +96,6 @@ class TestBoxList:
         with pytest.raises(BoxError):
             BoxList.from_toml(toml.dumps({'a': 2}), 'a')
 
-    def test_box_list_box_it_up(self):
-        bxl = BoxList([extended_test_dict])
-        bxl.box_it_up()
-        assert "Key 3" in bxl[0].Key_2._box_config['__converted']
-
     def test_intact_types_list(self):
         class MyList(list):
             pass

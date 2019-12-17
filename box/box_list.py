@@ -236,7 +236,3 @@ class BoxList(list):
             raise BoxError(f'toml data not returned as a list but rather a {type(data).__name__}')
         return cls(data[key_name], **bx_args)
 
-    def box_it_up(self):
-        for v in self:
-            if hasattr(v, 'box_it_up') and v is not self:
-                v.box_it_up()

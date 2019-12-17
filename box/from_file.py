@@ -20,10 +20,7 @@ def _to_json(data):
     except JSONDecodeError:
         raise BoxError('File is not JSON as expected')
     except BoxError:
-        try:
-            return BoxList.from_json(data)
-        except BoxError:
-            raise BoxError('Could not convert JSON to Box object') from None
+        return BoxList.from_json(data)
 
 
 def _to_yaml(data):
@@ -32,10 +29,7 @@ def _to_yaml(data):
     except YAMLError:
         raise BoxError('File is not YAML as expected')
     except BoxError:
-        try:
-            return BoxList.from_yaml(data)
-        except BoxError:
-            raise BoxError('Could not convert YAML to Box object') from None
+        return BoxList.from_yaml(data)
 
 
 def _to_toml(data):
@@ -55,7 +49,7 @@ def box_from_file(file: Union[str, Path], file_type: str = None,
     :param file: Location of file
     :param encoding: File encoding
     :param errors: How to handle encoding errors
-    :param file_type: manually specifiy file type: json, toml or yaml
+    :param file_type: manually specify file type: json, toml or yaml
     :return: Box or BoxList
     """
 

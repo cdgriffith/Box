@@ -27,3 +27,9 @@ class TestFromFile:
             box_from_file(Path(test_root, "data", "bad_file.txt"), file_type='toml')
         with pytest.raises(BoxError):
             box_from_file(Path(test_root, "data", "bad_file.txt"), file_type='yaml')
+        with pytest.raises(BoxError):
+            box_from_file(Path(test_root, "data", "bad_file.txt"), file_type='unknown')
+        with pytest.raises(BoxError):
+            box_from_file(Path(test_root, "data", "bad_file.txt"))
+        with pytest.raises(BoxError):
+            box_from_file('does not exist')
