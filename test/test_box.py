@@ -470,7 +470,7 @@ class TestBox:
     def test_circular_references(self):
         circular_dict = {}
         circular_dict['a'] = circular_dict
-        bx = Box(circular_dict, box_it_up=True)
+        bx = Box(circular_dict)
         assert bx.a.a == bx.a
         circular_dict_2 = bx.a.a.a.to_dict()
         assert str(circular_dict_2) == "{'a': {...}}"
@@ -740,12 +740,13 @@ class TestBox:
         assert bl == [['foo']], bl
 
     def test_dots(self):
-        b = Box(movie_data)
+        b = Box(movie_data, box_dots=True)
         assert b['movies.Spaceballs.rating'] == "PG"
         b['movies.Spaceballs.rating'] = 4
         assert b['movies.Spaceballs.rating'] == 4
         del b['movies.Spaceballs.rating']
-        assert b['movies.Spaceballs.rating'] == "PG"
+        with pytest.raises(BoxKeyError):
+            b['movies.Spaceballs.rating']
 
     def test_unicode(self):
         bx = Box()
@@ -798,3 +799,9 @@ class TestBox:
         assert isinstance(b.id, int)
         with pytest.raises(ValueError):
             b['sub_box'] = {'id': 'bad_id'}
+
+    def test_box_dots(self):
+        b = Box({'my_key': {'does stuff': {'to get to': 'where I want'}}}, box_dots=True)
+        assert b['my_key.does stuff.to get to'] == 'where I want'
+        b['my_key.does stuff.to get to'] = 'test'
+        assert b['my_key.does stuff.to get to'] == 'test'

@@ -4,6 +4,7 @@
 from setuptools import setup
 import os
 import re
+import sys
 
 # Fix for issues with testing, experienced on win10
 import multiprocessing
@@ -18,6 +19,9 @@ attrs = dict(re.findall(r"__([a-z]+)__ *= *['\"](.+)['\"]", reuse_content))
 with open("README.rst", "r") as readme_file:
     long_description = readme_file.read()
 
+needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
+pytest_runner = ['pytest-runner'] if needs_pytest else []
+
 setup(
     name='python-box',
     version=attrs['version'],
@@ -31,9 +35,10 @@ setup(
     long_description=long_description,
     scripts=['box.py'],
     py_modules=['box'],
+    python_requires='>=3.6',
     include_package_data=True,
     platforms='any',
-    setup_requires=['pytest-runner'],
+    setup_requires=pytest_runner,
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',

@@ -153,6 +153,8 @@ class Box(dict):
     :param box_safe_prefix: Conversion box prefix for unsafe attributes
     :param box_duplicates: "ignore", "error" or "warn" when duplicates exists in a conversion_box
     :param box_intact_types: tuple of types to ignore converting
+    :param box_recast: cast certain keys to a specified type
+    :param box_dots: access nested Boxes by period separated keys in string
     """
 
     _protected_keys = dir({}) + ['to_dict', 'to_json', 'to_yaml', 'from_yaml', 'from_json', 'from_toml', 'to_toml']
@@ -161,7 +163,7 @@ class Box(dict):
                 default_box_none_transform: bool = True, frozen_box: bool = False, camel_killer_box: bool = False,
                 conversion_box: bool = True, modify_tuples_box: bool = False, box_safe_prefix: str = 'x',
                 box_duplicates: str = 'ignore', box_intact_types: Union[Tuple, List] = (),
-                box_recast: Dict = None, **kwargs: Any):
+                box_recast: Dict = None, box_dots: bool = False, **kwargs: Any):
         """
         Due to the way pickling works in python 3, we need to make sure
         the box config is created as early as possible.
@@ -179,7 +181,8 @@ class Box(dict):
             'modify_tuples_box': modify_tuples_box,
             'box_duplicates': box_duplicates,
             'box_intact_types': tuple(box_intact_types),
-            'box_recast': box_recast
+            'box_recast': box_recast,
+            'box_dots': box_dots
         })
         return obj
 
@@ -187,7 +190,7 @@ class Box(dict):
                  default_box_none_transform: bool = True, frozen_box: bool = False, camel_killer_box: bool = False,
                  conversion_box: bool = True, modify_tuples_box: bool = False, box_safe_prefix: str = 'x',
                  box_duplicates: str = 'ignore', box_intact_types: Union[Tuple, List] = (),
-                 box_recast: Dict = None, **kwargs: Any):
+                 box_recast: Dict = None, box_dots: bool = False, **kwargs: Any):
         super(Box, self).__init__()
         self._box_config = _get_box_config(kwargs.pop('__box_heritage', None))
         self._box_config.update({
@@ -201,7 +204,8 @@ class Box(dict):
             'modify_tuples_box': modify_tuples_box,
             'box_duplicates': box_duplicates,
             'box_intact_types': tuple(box_intact_types),
-            'box_recast': box_recast
+            'box_recast': box_recast,
+            'box_dots': box_dots
         })
         if not self._box_config['conversion_box'] and self._box_config['box_duplicates'] != 'ignore':
             raise BoxError('box_duplicates are only for conversion_boxes')
@@ -228,21 +232,7 @@ class Box(dict):
                 v = self
             self.__setitem__(k, v)
 
-        # if self._box_config['frozen_box'] or box_it_up or self._box_config['box_duplicates'] != 'ignore':
-        # self.box_it_up()
-
         self._box_config['__created'] = True
-
-    # def box_it_up(self):
-    #     """
-    #     Perform value lookup for all items in current dictionary,
-    #     generating all sub Box objects, while also running `box_it_up` on
-    #     any of those sub box objects.
-    #     """
-    #     for k in self:
-    #         _conversion_checks(k, self.keys(), self._box_config, check_only=True)
-    #         if self[k] is not self and hasattr(self[k], 'box_it_up'):
-    #             self[k].box_it_up()
 
     def __add__(self, other: dict):
         new_box = self.copy()
@@ -328,7 +318,7 @@ class Box(dict):
         except KeyError as err:
             if item == '_box_config':
                 raise BoxKeyError('_box_config should only exist as an attribute and is never defaulted') from None
-            if '.' in item:
+            if self._box_config['box_dots'] and '.' in item:
                 first_item, children = item.split('.', 1)
                 if first_item in self.keys() and isinstance(self[first_item], dict):
                     return self[first_item][children]
@@ -440,6 +430,10 @@ class Box(dict):
         if self._box_config['conversion_box']:
             _conversion_checks(key, self.keys(), self._box_config,
                                check_only=True, pre_check=True)
+        if self._box_config['box_dots'] and '.' in key:
+            first_item, children = key.split('.', 1)
+            if first_item in self.keys() and isinstance(self[first_item], dict):
+                return self[first_item].__setitem__(children, value)
         value = self.__recast(key, value)
         super(Box, self).__setitem__(key, value)
         self.__convert_and_store(key, value)
@@ -472,6 +466,10 @@ class Box(dict):
     def __delitem__(self, key):
         if self._box_config['frozen_box']:
             raise BoxError('Box is frozen')
+        if key not in self.keys() and self._box_config['box_dots'] and '.' in key:
+            first_item, children = key.split('.', 1)
+            if first_item in self.keys() and isinstance(self[first_item], dict):
+                return self[first_item].__delitem__(children)
         if key not in self.keys() and (self._box_config['conversion_box'] or self._box_config['camel_killer_box']):
             if self._box_config['conversion_box']:
                 k = _conversion_checks(key, self.keys(), self._box_config)

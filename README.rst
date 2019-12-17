@@ -23,13 +23,17 @@ Python dictionaries with advanced dot notation access.
         movie_box.Robin_Hood_Men_in_Tights.stars[0].name
         # 'Cary Elwes'
 
-        # Box will automatically make otherwise inaccessible keys ("Robin Hood: Men in Tights")
-        # safe to access as an attribute
-        # You can always pass `conversion_box=False` to `Box` to disable that behavior
 
-        # All new dict and lists added to a Box or BoxList object are converted
+Box will automatically make otherwise inaccessible keys ("Robin Hood: Men in Tights") safe to access as an attribute.
+You can always pass `conversion_box=False` to `Box` to disable that behavior.
+
+Also, all new dict and lists added to a Box or BoxList object are converted automatically.
+
+.. code:: python
+
         movie_box.Robin_Hood_Men_in_Tights.stars.append(
              {"name": "Roger Rees", "imdb": "nm0715953", "role": "Sheriff of Rottingham"})
+
         movie_box.Robin_Hood_Men_in_Tights.stars[-1].role
         # 'Sheriff of Rottingham'
 
@@ -40,9 +44,9 @@ Install
 
         pip install python-box
 
-Box is tested on python 3.6+.
-If it does not install with this command, please
-open a github issue with the error you are experiencing!
+Box is tested on python 3.6+
+
+If you have any issues please open a github issue with the error you are experiencing!
 
 Overview
 ========
@@ -156,6 +160,8 @@ Box's parameters
    box_safe_prefix  "x"       Character or prefix to prepend to otherwise invalid attributes
    box_duplicates   "ignore"  When conversion duplicates are spotted, either ignore, warn or error
    box_intact_types ()        Tuple of objects to preserve and not convert to a Box object
+   box_recast       None      cast certain keys to a specified type
+   box_dots         False     Allow access to nested dicts by dots in key names
    ================ ========= ===========
 
 Box's functions
