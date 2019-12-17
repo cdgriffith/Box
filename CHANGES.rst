@@ -5,6 +5,7 @@ Version 4.0.0
 ~~~~~~~~~~~~~
 
 * Adding support for retrieving items via dot notation in keys
+* Adding `box_from_file` helper function
 * Adding merge_update that acts like previous Box magic update
 * Adding support to `+` boxes together
 * Adding default_box now can support expanding on `None` placeholders (thanks to Harun Tuncay and Jeremiah Lowin)
