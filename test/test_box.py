@@ -5,6 +5,7 @@
 from multiprocessing import Process, Queue
 import pytest
 import pickle
+from pathlib import Path
 
 try:
     from test.common import *
@@ -793,6 +794,8 @@ class TestBox:
         b = Box(c=1)
         c = Box(d=2)
         assert b + c == Box(c=1, d=2)
+        with pytest.raises(BoxError):
+            Box() + BoxList()
 
     def test_type_recast(self):
         b = Box(id='6', box_recast={'id': int})
@@ -805,3 +808,9 @@ class TestBox:
         assert b['my_key.does stuff.to get to'] == 'where I want'
         b['my_key.does stuff.to get to'] = 'test'
         assert b['my_key.does stuff.to get to'] == 'test'
+
+    def test_toml(self):
+        b = Box.from_toml(filename=Path(test_root, "data", "toml_file.tml"))
+        assert b.database.server == '192.168.1.1'
+        assert b.clients.hosts == ["alpha", "omega"]
+        assert b.database.to_toml().startswith('server = "192.168.1.1"')
