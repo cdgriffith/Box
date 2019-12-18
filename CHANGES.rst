@@ -54,41 +54,6 @@ Version 3.4.1
 * Fixing copy of inherited classes (thanks to pwwang)
 * Fixing `get` when used with default_box
 
-Version 3.4.6
-~~~~~~~~~~~~~
-
-* Fixing allowing frozen boxes to be deep copyable (thanks to jandelgado)
-
-Version 3.4.5
-~~~~~~~~~~~~~
-
-* Fixing update does not convert new sub dictionaries or lists (thanks to Michael Stella)
-* Changing update to work as it used to with sub merging until major release
-
-Version 3.4.4
-~~~~~~~~~~~~~
-
-* Fixing pop not properly resetting box_heritage (thanks to Jeremiah Lowin)
-
-Version 3.4.3
-~~~~~~~~~~~~~
-
-* Fixing propagation of box options when adding a new list via setdefault (thanks to Stretch)
-* Fixing update does not keep box_intact_types (thanks to pwwang)
-* Fixing update to operate the same way as a normal dictionary (thanks to Craig Quiter)
-* Fixing deepcopy not copying box options (thanks to Nikolay Stanishev)
-
-Version 3.4.2
-~~~~~~~~~~~~~
-
-* Adding license, changes and authors files to source distribution
-
-Version 3.4.1
-~~~~~~~~~~~~~
-
-* Fixing copy of inherited classes (thanks to pwwang)
-* Fixing `get` when used with default_box
-
 Version 3.4.0
 ~~~~~~~~~~~~~
 
