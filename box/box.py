@@ -12,6 +12,7 @@ from keyword import kwlist
 import warnings
 from collections.abc import Iterable, Mapping, Callable
 from typing import Any, Union, Tuple, List, Dict
+from pathlib import Path
 
 import box
 from box.exceptions import BoxError, BoxKeyError, BoxTypeError, BoxValueError
@@ -22,6 +23,8 @@ __all__ = ['Box']
 _first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 _all_cap_re = re.compile('([a-z0-9])([A-Z])')
 NO_DEFAULT = object()
+
+
 # a sentinel object for indicating no default, in order to allow users
 # to pass `None` as a valid default value
 
@@ -279,9 +282,9 @@ class Box(dict):
 
     def get(self, key, default=NO_DEFAULT):
         if key not in self:
-            if (default is NO_DEFAULT and
-                    self._box_config['default_box'] and
-                    self._box_config['default_box_none_transform']):
+            if (default is NO_DEFAULT
+                    and self._box_config['default_box']
+                    and self._box_config['default_box_none_transform']):
                 return self.__get_default(key)
             if isinstance(default, dict) and not isinstance(default, Box):
                 return Box(default)
@@ -365,8 +368,8 @@ class Box(dict):
 
     def __convert_and_store(self, item, value, force_conversion=False):
         # If the value has already been converted or should not be converted, return it as-is
-        if ((item in self._box_config['__converted'] and not force_conversion) or
-                (self._box_config['box_intact_types'] and isinstance(value, self._box_config['box_intact_types']))):
+        if ((item in self._box_config['__converted'] and not force_conversion)
+                or (self._box_config['box_intact_types'] and isinstance(value, self._box_config['box_intact_types']))):
             return value
         value = self.__recast(item, value)
         # This is the magic sauce that makes sub dictionaries into new box objects
@@ -605,7 +608,8 @@ class Box(dict):
         self[item] = default
         return default
 
-    def to_json(self, filename=None, encoding='utf-8', errors='strict', **json_kwargs):
+    def to_json(self, filename: Union[str, Path] = None, encoding: str = 'utf-8', errors: str = 'strict',
+                **json_kwargs):
         """
         Transform the Box object into a JSON string.
 
@@ -618,7 +622,8 @@ class Box(dict):
         return _to_json(self.to_dict(), filename=filename, encoding=encoding, errors=errors, **json_kwargs)
 
     @classmethod
-    def from_json(cls, json_string=None, filename=None, encoding='utf-8', errors='strict', **kwargs):
+    def from_json(cls, json_string: str = None, filename: Union[str, Path] = None, encoding: str = 'utf-8',
+                  errors: str = 'strict', **kwargs):
         """
         Transform a json object string into a Box object. If the incoming
         json is a list, you must use BoxList.from_json.
@@ -641,7 +646,8 @@ class Box(dict):
             raise BoxError(f'json data not returned as a dictionary, but rather a {type(data).__name__}')
         return cls(data, **box_args)
 
-    def to_yaml(self, filename=None, default_flow_style=False, encoding='utf-8', errors='strict', **yaml_kwargs):
+    def to_yaml(self, filename: Union[str, Path] = None, default_flow_style: bool = False, encoding: str = 'utf-8',
+                errors: str = 'strict', **yaml_kwargs):
         """
         Transform the Box object into a YAML string.
 
@@ -656,7 +662,8 @@ class Box(dict):
                         encoding=encoding, errors=errors, **yaml_kwargs)
 
     @classmethod
-    def from_yaml(cls, yaml_string=None, filename=None, encoding='utf-8', errors='strict', **kwargs):
+    def from_yaml(cls, yaml_string: str = None, filename: Union[str, Path] = None, encoding: str = 'utf-8',
+                  errors: str = 'strict', **kwargs):
         """
         Transform a yaml object string into a Box object. By default will use SafeLoader.
 
@@ -677,7 +684,7 @@ class Box(dict):
             raise BoxError(f'yaml data not returned as a dictionary but rather a {type(data).__name__}')
         return cls(data, **box_args)
 
-    def to_toml(self, filename: str = None, encoding: str = 'utf-8', errors: str = 'strict'):
+    def to_toml(self, filename: Union[str, Path] = None, encoding: str = 'utf-8', errors: str = 'strict'):
         """
         Transform the Box object into a toml string.
 
@@ -689,7 +696,7 @@ class Box(dict):
         return _to_toml(self.to_dict(), filename=filename, encoding=encoding, errors=errors)
 
     @classmethod
-    def from_toml(cls, toml_string: str = None, filename: str = None,
+    def from_toml(cls, toml_string: str = None, filename: Union[str, Path] = None,
                   encoding: str = 'utf-8', errors: str = 'strict', **kwargs):
         """
         Transforms a toml string or file into a Box object
