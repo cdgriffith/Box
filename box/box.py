@@ -50,7 +50,7 @@ def _safe_attr(attr, camel_killer=False, replacement_char='x'):
             if last_safe == i - 1:
                 out.append('_')
 
-    out = "".join(out)[:last_safe+1]
+    out = "".join(out)[:last_safe + 1]
 
     try:
         int(out[0])

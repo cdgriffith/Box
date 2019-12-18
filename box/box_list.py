@@ -235,4 +235,3 @@ class BoxList(list):
         if not isinstance(data[key_name], list):
             raise BoxError(f'toml data not returned as a list but rather a {type(data).__name__}')
         return cls(data[key_name], **bx_args)
-
