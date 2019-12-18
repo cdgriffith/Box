@@ -5,6 +5,7 @@ import shutil
 import sys
 import copy
 import pytest
+from pathlib import Path
 
 import ruamel.yaml as yaml
 import toml
@@ -15,8 +16,7 @@ from box import *
 PY3 = sys.version_info >= (3, 0)
 
 test_root = os.path.abspath(os.path.dirname(__file__))
-tmp_dir = os.path.join(test_root, "tmp")
-
+tmp_dir = Path(test_root, "tmp")
 
 test_dict = {'key1': 'value1',
              'not$allowed': 'fine_value',

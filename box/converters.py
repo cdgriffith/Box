@@ -4,6 +4,7 @@
 # Abstract converter functions for use in any Box class
 
 import sys
+import csv
 import json
 from pathlib import Path
 
@@ -102,3 +103,26 @@ def _from_toml(toml_string=None, filename=None, encoding="utf-8", errors="strict
     else:
         raise BoxError('from_toml requires a string or filename')
     return data
+
+
+def _to_csv(box_list, filename, encoding="utf-8", errors="strict"):
+    csv_column_names = list(box_list[0].keys())
+    for row in box_list:
+        if list(row.keys()) != csv_column_names:
+            raise BoxError('BoxList must contain the same dictionary structure for every item to convert to csv')
+
+    if filename:
+        _exists(filename, create=True)
+        with open(filename, 'w', encoding=encoding, errors=errors, newline='') as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=csv_column_names)
+            writer.writeheader()
+            for data in box_list:
+                writer.writerow(data)
+
+
+def _from_csv(filename, encoding="utf-8", errors="strict"):
+    _exists(filename)
+    with open(filename, 'r', encoding=encoding, errors=errors,newline='') as f:
+        reader = csv.DictReader(f)
+        return [row for row in reader]
+

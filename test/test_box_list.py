@@ -3,6 +3,7 @@
 # Test files gathered from json.org and yaml.org
 
 import pytest
+from pathlib import Path
 
 
 try:
@@ -12,6 +13,16 @@ except ImportError:
 
 
 class TestBoxList:
+
+    @pytest.fixture(autouse=True)
+    def temp_dir_cleanup(self):
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        try:
+            os.mkdir(tmp_dir)
+        except OSError:
+            pass
+        yield
+        shutil.rmtree(tmp_dir, ignore_errors=True)
 
     def test_box_list(self):
         new_list = BoxList({'item': x} for x in range(0, 10))
@@ -102,3 +113,20 @@ class TestBoxList:
 
         bl = BoxList([[1, 2], MyList([3, 4])], box_intact_types=(MyList,))
         assert isinstance(bl[0], BoxList)
+
+    def test_to_csv(self):
+        data = BoxList([
+            {'Number': 1, 'Name': 'Chris', 'Country': 'US'},
+            {'Number': 2, 'Name': 'Sam', 'Country': 'US'},
+            {'Number': 3, 'Name': 'Jess', 'Country': 'US'},
+            {'Number': 4, 'Name': 'Frank', 'Country': 'UK'},
+            {'Number': 5, 'Name': 'Demo', 'Country': 'CA'},
+        ])
+
+        file = Path(tmp_dir, 'csv_file.csv')
+        data.to_csv(file)
+        assert file.read_text().startswith("Number,Name,Country\n1,Chris,US")
+
+    def test_from_csv(self):
+        bl = BoxList.from_csv(Path(test_root, 'data', 'csv_file.csv'))
+        assert bl[1].Name == 'Sam'

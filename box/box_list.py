@@ -3,7 +3,8 @@
 
 import copy
 
-from box.converters import (_to_yaml, _from_yaml, _to_json, _from_json, _to_toml, _from_toml, BOX_PARAMETERS)
+from box.converters import (_to_yaml, _from_yaml, _to_json, _from_json,
+                            _to_toml, _from_toml, _to_csv, _from_csv, BOX_PARAMETERS)
 from box.exceptions import BoxError, BoxTypeError, BoxKeyError
 import box
 
@@ -198,7 +199,7 @@ class BoxList(list):
 
     def to_toml(self, filename: str = None, key_name: str = 'toml', encoding: str = 'utf-8', errors: str = 'strict'):
         """
-        Transform the Box object into a toml string.
+        Transform the BoxList object into a toml string.
 
         :param filename: File to write toml object too
         :param key_name: Specify the name of the key to store the string under
@@ -213,7 +214,7 @@ class BoxList(list):
     def from_toml(cls, toml_string: str = None, filename: str = None, key_name: str = 'toml',
                   encoding: str = 'utf-8', errors: str = 'strict', **kwargs):
         """
-        Transforms a toml string or file into a Box object
+        Transforms a toml string or file into a BoxList object
 
         :param toml_string: string to pass to `toml.load`
         :param filename: filename to open and pass to `toml.load`
@@ -235,3 +236,10 @@ class BoxList(list):
         if not isinstance(data[key_name], list):
             raise BoxError(f'toml data not returned as a list but rather a {type(data).__name__}')
         return cls(data[key_name], **bx_args)
+
+    def to_csv(self, filename, encoding: str = 'utf-8', errors: str = 'strict'):
+        _to_csv(self, filename=filename, encoding=encoding, errors=errors)
+
+    @classmethod
+    def from_csv(cls, filename, encoding: str = 'utf-8', errors: str = 'strict'):
+        return cls(_from_csv(filename=filename, encoding=encoding, errors=errors))
