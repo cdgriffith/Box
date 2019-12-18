@@ -37,8 +37,6 @@ def _to_toml(data):
         return Box.from_toml(data)
     except TomlDecodeError:
         raise BoxError('File is not TOML as expected')
-    except BoxError:
-        raise BoxError('Could not convert TOML to Box object') from None
 
 
 def box_from_file(file: Union[str, Path], file_type: str = None,
