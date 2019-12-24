@@ -19,3 +19,6 @@ exclude_lines =
     raise BoxError\(f'File
     except OSError
     raise BoxError\(f'{filename}
+    item._box_config['__box_heritage'] = \(\)
+    except AttributeError as err
+    raise BoxKeyError(err)

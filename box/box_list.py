@@ -234,8 +234,6 @@ class BoxList(list):
         data = _from_toml(toml_string=toml_string, filename=filename, encoding=encoding, errors=errors)
         if key_name not in data:
             raise BoxError(f'{key_name} was not found.')
-        if not isinstance(data[key_name], list):
-            raise BoxError(f'toml data not returned as a list but rather a {type(data).__name__}')
         return cls(data[key_name], **bx_args)
 
     def to_csv(self, filename, encoding: str = 'utf-8', errors: str = 'strict'):

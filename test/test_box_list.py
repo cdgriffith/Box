@@ -107,6 +107,9 @@ class TestBoxList:
         with pytest.raises(BoxError):
             BoxList.from_toml(toml.dumps({'a': 2}), 'a')
 
+        with pytest.raises(BoxError):
+            BoxList.from_toml(toml_list, 'bad_key')
+
     def test_intact_types_list(self):
         class MyList(list):
             pass
