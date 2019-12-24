@@ -51,7 +51,7 @@ If you have any issues please open a github issue with the error you are experie
 Overview
 ========
 
-Box 4 is out, check out the `changes and updates <_docs/4.0_changes.md>`_ !
+Box 4 is out, check out the `changes and updates <docs/4.x_changes.rst>`_ !
 
 `Box` is designed to be an easy drop in transparently replacements for
 dictionaries, thanks to Python's
@@ -100,8 +100,9 @@ So if you plan to keep the original dict around, make sure to box_it_up or do a 
       safe_box
       # <Box: {'a': {'b': {'c': {}}}}>
 
-Box
----
+
+Boxes
+=====
 
 `Box` can be instantiated the same ways as `dict`.
 
@@ -130,7 +131,7 @@ allowing for recursive dot notation access.
 as well as into `JSON` or `YAML` strings or files.
 
 Limitations
-~~~~~~~~~~~
+-----------
 
 `Box` is a subclass of `dict` and as such, certain keys cannot be accessed via dot notation.
 This is because names such as `keys` and `pop` have already been declared as methods, so `Box` cannot
@@ -145,10 +146,9 @@ To view an entire list of what cannot be accessed via dot notation, run the comm
 
 
 Box's parameters
-~~~~~~~~~~~~~~~~
+----------------
 
 .. table::
-   :widths: auto
 
    ================ ========= ===========
    Keyword Argument Default   Description
@@ -166,7 +166,7 @@ Box's parameters
    ================ ========= ===========
 
 Box's functions
-~~~~~~~~~~~~~~~
+---------------
 
 .. table::
 
@@ -186,7 +186,7 @@ Box's functions
 \* Do not work with BoxList, only Box
 
 Conversion Box
-~~~~~~~~~~~~~~
+--------------
 
 By default, Box is now a `conversion_box`
 that adds automagic attribute access for keys that could not normally be attributes.
@@ -234,7 +234,7 @@ only reference or update them via standard dictionary modification.
 
 
 Frozen Box
-~~~~~~~~~~
+----------
 
 Want to show off your box without worrying about others messing it up? Freeze it!
 
@@ -260,7 +260,7 @@ if it has mutable objects. Speaking of `tuple`, that's what all the lists
 becomes now.
 
 Default Box
-~~~~~~~~~~~
+-----------
 
 It's boxes all the way down. At least, when you specify `default_box=True` it can be.
 
@@ -293,7 +293,7 @@ if it is, otherwise it will see if has the `copy` attribute and will call that,
 lastly, will just use the provided item as is.
 
 Camel Killer Box
-~~~~~~~~~~~~~~~~
+----------------
 
 Similar to how conversion box works, allow CamelCaseKeys to be found as
 snake_case_attributes.
@@ -306,7 +306,7 @@ snake_case_attributes.
       # "I just can't stop!"
 
 Box Recast Values
-~~~~~~~~~~~~~~~~~
+-----------------
 
 Automatically convert all incoming values of a particular key (at root or any sub box)
 to a different type.
@@ -333,7 +333,7 @@ If it cannot be converted, it will raise a `BoxValueError` (catachable with eith
     # box.exceptions.BoxValueError: Cannot convert Harry to <class 'int'>
 
 Box Intact Types
-~~~~~~~~~~~~~~~~
+----------------
 
 Do you not want box to convert lists or tuples or incoming dictionaries for some reasonn?
 That's totally fine, we got you covered!
@@ -350,7 +350,7 @@ That's totally fine, we got you covered!
 
 
 Box Dots
-~~~~~~~~
+--------
 
 A new way to traverse the Box!
 
@@ -379,7 +379,7 @@ Be aware, if those sub boxes didn't exist as planned, a new key with that value 
 
 
 BoxList
--------
+=======
 
 To make sure all items added to lists in the box are also converted, all lists
 are covered into `BoxList`. It's possible to
@@ -408,7 +408,7 @@ Transform a `BoxList` and all components back into regular `list` and `dict` ite
       #  ...
 
 SBox
-----
+====
 
 Shorthand Box, aka SBox for short(hand), has the properties `json`, `yaml` and
 `dict` for faster access than the regular `to_dict()` and so on.
@@ -424,7 +424,7 @@ Shorthand Box, aka SBox for short(hand), has the properties `json`, `yaml` and
 Note that in this case, `json` has no default indent, unlike `to_json`.
 
 ConfigBox
----------
+=========
 
 A Box with additional handling of string manipulation generally found in
 config files.

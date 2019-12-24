@@ -28,28 +28,24 @@ sys.path.insert(0, project_root)
 
 readme_file = os.path.join(project_root, "README.rst")
 changes_file = os.path.join(project_root, "CHANGES.rst")
+changes_4_file = os.path.join(project_root, "docs", "4.x_changes.rst")
 
 shutil.copy(readme_file, "index.rst")
 
-internals = """
+with open("index.rst", "r+") as index:
+    modified = index.read().replace("`changes and updates <docs/4.0_changes.md>`_", "`changes and updates below!")
+    index.seek(0)
+    index.write(modified)
 
-Box Internals
--------------
 
-.. automodule:: box
-   :members:
-   :undoc-members:
-
-"""
-
-with open("index.rst", "a") as index, open(changes_file) as changes:
-    index.write(internals)
+with open("index.rst", "a") as index, open(changes_file) as changes, open(changes_4_file) as change_4:
     index.write(changes.read())
+    index.write(change_4.read())
 
-with open(os.path.join(project_root, "box.py"), "r") as box_file:
-    box_content = box_file.read()
+with open(os.path.join(project_root, "box", "__init__.py"), "r") as init_file:
+    init_content = init_file.read()
 
-attrs = dict(re.findall(r"__([a-z]+)__ *= *['\"](.+)['\"]", box_content))
+attrs = dict(re.findall(r"__([a-z]+)__ *= *['\"](.+)['\"]", init_content))
 
 # -- General configuration ------------------------------------------------
 

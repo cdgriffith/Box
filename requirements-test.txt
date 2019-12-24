@@ -1,5 +1,5 @@
-pytest >= 4.1.1
-coverage >= 4.5.2
-pytest-cov
-reusables
-wheel
+pytest>=5.3.2
+coverage>=5.0.1
+pytest-cov>=2.8.1
+reusables>=0.9.5
+wheel>=0.33.6
