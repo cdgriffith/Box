@@ -157,7 +157,7 @@ Version 2.1.0
 Version 2.0.0
 -------------
 
-* Adding `BoxList` to allow for `Box`es to be recursively added to lists as well
+* Adding `BoxList` to allow for any `Box` to be recursively added to lists as well
 * Adding `to_json` and `to_yaml` functions
 * Changing `Box` original functionality to `LightBox`, `Box` now searches lists
 * Changing `Box` callable to return keys, not values, and they are sorted

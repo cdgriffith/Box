@@ -39,7 +39,9 @@ with open("index.rst", "r+") as index:
 
 
 with open("index.rst", "a") as index, open(changes_file) as changes, open(changes_4_file) as change_4:
+    index.write('\n')
     index.write(changes.read())
+    index.write('\n')
     index.write(change_4.read())
 
 with open(os.path.join(project_root, "box", "__init__.py"), "r") as init_file:
