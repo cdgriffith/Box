@@ -130,3 +130,12 @@ class TestBoxList:
     def test_from_csv(self):
         bl = BoxList.from_csv(Path(test_root, 'data', 'csv_file.csv'))
         assert bl[1].Name == 'Sam'
+
+    def test_bad_csv(self):
+        data = BoxList([
+            {'test': 1},
+            {'bad': 2, 'data': 3}
+        ])
+        file = Path(tmp_dir, 'csv_file.csv')
+        with pytest.raises(BoxError):
+            data.to_csv(file)

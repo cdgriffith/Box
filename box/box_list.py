@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
+from typing import Iterable
 
 import copy
 
@@ -15,7 +16,7 @@ class BoxList(list):
     objects as necessary.
     """
 
-    def __init__(self, iterable=None, box_class=box.Box, **box_options):
+    def __init__(self, iterable: Iterable = None, box_class: box.Box = box.Box, **box_options):
         self.box_class = box_class
         self.box_options = box_options
         self.box_org_ref = self.box_org_ref = id(iterable) if iterable else 0

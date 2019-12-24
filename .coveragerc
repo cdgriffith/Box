@@ -16,3 +16,6 @@ exclude_lines =
     raise BoxError\('_box_config key must exist
     raise err
     if 'box_class' in self.__dict__:
+    raise BoxError\(f'File
+    except OSError
+    raise BoxError\(f'{filename}

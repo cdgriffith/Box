@@ -305,6 +305,79 @@ snake_case_attributes.
       cameled.bad_habit
       # "I just can't stop!"
 
+Box Recast Values
+~~~~~~~~~~~~~~~~~
+
+Automatically convert all incoming values of a particular key (at root or any sub box)
+to a different type.
+
+For example, if you wanted to make sure any field labeled 'id' was an integer:
+
+.. code:: python
+
+    my_box = Box(box_recast={'id': int})
+
+    my_box.new_key = {'id': '55', 'example': 'value'}
+
+    print(type(my_box.new_key.id))
+    # 55
+
+If it cannot be converted, it will raise a `BoxValueError` (catachable with either `BoxError` or `ValueError` as well)
+
+.. code:: python
+
+    my_box = Box(box_recast={'id': int})
+
+    my_box.id = 'Harry'
+
+    # box.exceptions.BoxValueError: Cannot convert Harry to <class 'int'>
+
+Box Intact Types
+~~~~~~~~~~~~~~~~
+
+Do you not want box to convert lists or tuples or incoming dictionaries for some reasonn?
+That's totally fine, we got you covered!
+
+.. code:: python
+
+    my_box = Box(box_intact_types=[list, tuple])
+
+    # Don't automatically convert lists into #BoxList
+    my_box.new_data = [{'test': 'data'}]
+
+    print(type(my_box.new_data))
+    # <class 'list'>
+
+
+Box Dots
+~~~~~~~~
+
+A new way to traverse the Box!
+
+.. code:: python
+
+    my_box = Box(box_dots=True)
+
+    my_box.incoming = {'new': {'source 1': {'$$$': 'money'}}}
+
+    print(my_box['incoming.new.source 1.$$$'])
+    # money
+
+    my_box['incoming.new.source 1.$$$'] = 'spent'
+    print(my_box)
+    # {'incoming': {'new': {'source 1': {'$$$': 'spent'}}}}
+
+Be aware, if those sub boxes didn't exist as planned, a new key with that value would be created instead
+
+.. code:: python
+
+    del my_box['incoming']
+    my_box['incoming.new.source 1.$$$'] = 'test'
+    print(my_box)
+
+    # {'incoming.new.source 1.$$$': 'test'}
+
+
 BoxList
 -------
 

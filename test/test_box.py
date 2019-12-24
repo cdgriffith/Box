@@ -810,7 +810,8 @@ class TestBox:
         assert b['my_key.does stuff.to get to'] == 'test'
 
     def test_toml(self):
-        b = Box.from_toml(filename=Path(test_root, "data", "toml_file.tml"))
+        b = Box.from_toml(filename=Path(test_root, "data", "toml_file.tml"), default_box=True)
         assert b.database.server == '192.168.1.1'
         assert b.clients.hosts == ["alpha", "omega"]
         assert b.database.to_toml().startswith('server = "192.168.1.1"')
+        assert b._box_config['default_box'] is True

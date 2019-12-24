@@ -714,6 +714,4 @@ class Box(dict):
                 box_args[arg] = kwargs.pop(arg)
 
         data = _from_toml(toml_string=toml_string, filename=filename, encoding=encoding, errors=errors)
-        if not isinstance(data, dict):
-            raise BoxError(f'toml data not returned as a dictionary but rather a {type(data).__name__}')
         return cls(data, **box_args)

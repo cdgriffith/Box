@@ -20,3 +20,4 @@ class TestSBox:
         assert repr(pbox['inner']).startswith('<ShorthandBox')
         assert not isinstance(pbox.dict, Box)
         assert pbox.dict['inner']['CamelCase'] == 'Item'
+        assert pbox.toml.startswith('key1 = "value1"')
