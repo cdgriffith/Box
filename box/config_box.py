@@ -52,8 +52,8 @@ class ConfigBox(Box):
         if isinstance(item, (bool, int)):
             return bool(item)
 
-        if (isinstance(item, str) and
-                item.lower() in ('n', 'no', 'false', 'f', '0')):
+        if (isinstance(item, str)
+                and item.lower() in ('n', 'no', 'false', 'f', '0')):
             return False
 
         return True if item else False

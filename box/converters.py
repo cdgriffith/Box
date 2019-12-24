@@ -122,7 +122,6 @@ def _to_csv(box_list, filename, encoding="utf-8", errors="strict"):
 
 def _from_csv(filename, encoding="utf-8", errors="strict"):
     _exists(filename)
-    with open(filename, 'r', encoding=encoding, errors=errors,newline='') as f:
+    with open(filename, 'r', encoding=encoding, errors=errors, newline='') as f:
         reader = csv.DictReader(f)
         return [row for row in reader]
-
