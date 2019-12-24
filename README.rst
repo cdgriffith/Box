@@ -51,7 +51,7 @@ If you have any issues please open a github issue with the error you are experie
 Overview
 ========
 
-Box 4 is out, check out the `changes and updates <docs/4.x_changes.rst>`_ !
+Box 4 is out, check out the `changes and updates <docs/4.x_changes.rst>`_!
 
 `Box` is designed to be an easy drop in transparently replacements for
 dictionaries, thanks to Python's
@@ -468,7 +468,7 @@ Thoughts
 
 "no thanks." - burnbabyburn
 
-"Oh, that is cool. I am so using Box." - PythonBytes_
+
 
 "I just prefer plain dictionaries." - falcolas
 
@@ -479,8 +479,9 @@ A huge thank you to everyone that has given features and feedback over the years
 
 Check out everyone that has contributed_.
 
-Also a special thanks to Python Software Foundation, and PSF-Trademarks Committee, for official approval to use the Python logo on the `Box` logo!
+A special thanks to Python Software Foundation, and PSF-Trademarks Committee, for official approval to use the Python logo on the `Box` logo!
 
+Also special shout-out to PythonBytes_, who featured Box on their podcast.
 
 History
 =======
@@ -524,11 +525,6 @@ License
 
 MIT License, Copyright (c) 2017-2019 Chris Griffith. See LICENSE file.
 
-Legal
-=====
-
-This project uses hearthstone card data taken from https://github.com/HearthSim/HearthstoneJSON available under the MIT License
-
 
 .. |BoxImage| image:: https://raw.githubusercontent.com/cdgriffith/Box/master/box_logo.png
    :target: https://github.com/cdgriffith/Box
@@ -543,7 +539,7 @@ This project uses hearthstone card data taken from https://github.com/HearthSim/
 .. |License| image:: https://img.shields.io/pypi/l/python-box.svg
    :target: https://pypi.python.org/pypi/python-box/
 
-.. _PythonBytes: https://pythonbytes.fm/episodes/show/68/python-notebooks-galore
+.. _PythonBytes: https://pythonbytes.fm/episodes/show/19/put-your-python-dictionaries-in-a-box-and-apparently-python-is-really-wanted
 .. _contributed: AUTHORS.rst
 .. _`Wrapt Documentation`: https://wrapt.readthedocs.io/en/latest
 .. _reusables: https://github.com/cdgriffith/reusables#reusables

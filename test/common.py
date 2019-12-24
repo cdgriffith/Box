@@ -38,7 +38,6 @@ extended_test_dict.update(test_dict)
 
 data_json_file = os.path.join(test_root, "data", "json_file.json")
 data_yaml_file = os.path.join(test_root, "data", "yaml_file.yaml")
-data_hearthstone = os.path.join(test_root, "data", "hearthstone_cards.json")
 tmp_json_file = os.path.join(test_root, "tmp", "tmp_json_file.json")
 tmp_yaml_file = os.path.join(test_root, "tmp", "tmp_yaml_file.yaml")
 

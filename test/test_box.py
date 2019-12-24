@@ -437,24 +437,24 @@ class TestBox:
         bx2.Key_2 = 4
         assert bx2["Key 2"] == 4
 
-    def test_functional_hearthstone_data(self):
-        hearth = Box.from_json(filename=data_hearthstone,
-                               conversion_box=True,
-                               camel_killer_box=True,
-                               default_box=False)
-        assert hearth.the_jade_lotus
+    def test_functional_data(self):
+        data = Box.from_json(filename=data_json_file,
+                             conversion_box=True,
+                             camel_killer_box=True,
+                             default_box=False)
+        assert data.widget
 
         with pytest.raises(AttributeError):
-            hearth._bad_value
+            data._bad_value
 
         with pytest.raises(AttributeError):
-            hearth.the_jade_lotus._bad_value
+            data.widget._bad_value
 
-        base_config = hearth._Box__box_config()
-        jade_config = hearth.the_jade_lotus._Box__box_config()
+        base_config = data._Box__box_config()
+        widget_config = data.widget._Box__box_config()
 
-        assert base_config == jade_config, "{} != {}".format(base_config,
-                                                             jade_config)
+        assert base_config == widget_config, "{} != {}".format(base_config,
+                                                               widget_config)
 
     def test_functional_spaceballs(self):
         my_box = Box(movie_data)
@@ -776,19 +776,19 @@ class TestBox:
         b = Box(notThief=1, sortaThief=0, reallyAThief=True, camel_killer_box=True)
         b['$OhNo!'] = 3
         c = Box(notThief=1, sortaThief=0, reallyAThief=True, camel_killer_box=True, conversion_box=False)
-        del(b.not_thief)
-        del(b._oh_no_)
-        del(b.really_a_thief)
+        del (b.not_thief)
+        del (b._oh_no_)
+        del (b.really_a_thief)
         with pytest.raises(KeyError):
-            del(b.really_a_thief)
+            del (b.really_a_thief)
         with pytest.raises(KeyError):
-            del(b._oh_no_)
+            del (b._oh_no_)
 
-        del(c.not_thief)
-        del(c.really_a_thief)
+        del (c.not_thief)
+        del (c.really_a_thief)
         print(dir(c))
         with pytest.raises(KeyError):
-            del(c.really_a_thief)
+            del (c.really_a_thief)
 
     def test_add_boxes(self):
         b = Box(c=1)

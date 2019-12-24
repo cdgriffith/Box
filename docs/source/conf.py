@@ -33,9 +33,9 @@ changes_4_file = os.path.join(project_root, "docs", "4.x_changes.rst")
 shutil.copy(readme_file, "index.rst")
 
 with open("index.rst", "r+") as index:
-    modified = index.read().replace("`changes and updates <docs/4.0_changes.md>`_", "`changes and updates below!")
+    modified = index.readlines()
     index.seek(0)
-    index.write(modified)
+    index.write(''.join([x for x in modified if not x.startswith('Box 4 is out')]))
 
 
 with open("index.rst", "a") as index, open(changes_file) as changes, open(changes_4_file) as change_4:
