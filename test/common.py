@@ -4,11 +4,11 @@ import os
 import shutil
 import sys
 import copy
+import pytest
+from pathlib import Path
 
-try:
-    import yaml
-except ImportError:
-    import ruamel.yaml as yaml
+import ruamel.yaml as yaml
+import toml
 
 import box
 from box import *
@@ -16,19 +16,7 @@ from box import *
 PY3 = sys.version_info >= (3, 0)
 
 test_root = os.path.abspath(os.path.dirname(__file__))
-data_dir = os.path.join(test_root, "data")
-tmp_dir = os.path.join(test_root, "tmp")
-
-try:
-    os.makedirs(data_dir)
-except OSError:
-    pass
-
-try:
-    os.makedirs(tmp_dir)
-except OSError:
-    pass
-
+tmp_dir = Path(test_root, "tmp")
 
 test_dict = {'key1': 'value1',
              'not$allowed': 'fine_value',
@@ -50,7 +38,6 @@ extended_test_dict.update(test_dict)
 
 data_json_file = os.path.join(test_root, "data", "json_file.json")
 data_yaml_file = os.path.join(test_root, "data", "yaml_file.yaml")
-data_hearthstone = os.path.join(test_root, "data", "hearthstone_cards.json")
 tmp_json_file = os.path.join(test_root, "tmp", "tmp_json_file.json")
 tmp_yaml_file = os.path.join(test_root, "tmp", "tmp_yaml_file.yaml")
 

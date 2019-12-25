@@ -15,8 +15,10 @@ Code contributions:
 - (sdementen)
 - Brandon Gomes (bhgomes)
 - Stretch (str3tch)
-- (jandelgado)
+- (pwwang)
+- Harun Tuncay (haruntuncay)
 - Jeremiah Lowin (jlowin)
+- (jandelgado)
 
 Suggestions and bug reporting:
 
@@ -46,6 +48,10 @@ Suggestions and bug reporting:
 - (deluxghost)
 - Nikolay Stanishev (nikolaystanishev)
 - Craig Quiter (crizCraig)
-- Jeremiah Lowin (jlowin)
 - Michael Stella (alertedsnake)
+- (FunkyLoveCow)
+- Kevin Cross (kevinhcross)
+- (Patrock)
 - Tim Gates (timgates42)
+- (iordanivanov)
+- Steven McGrath (SteveMcGrath)

@@ -6,66 +6,52 @@ Python dictionaries with advanced dot notation access.
 
 .. code:: python
 
-         from box import Box
+        from box import Box
 
-         movie_data = {
-           "movies": {
-             "Spaceballs": {
-               "imdb stars": 7.1,
-               "rating": "PG",
-               "length": 96,
-               "director": "Mel Brooks",
-               "stars": [{"name": "Mel Brooks", "imdb": "nm0000316", "role": "President Skroob"},
-                         {"name": "John Candy","imdb": "nm0001006", "role": "Barf"},
-                         {"name": "Rick Moranis", "imdb": "nm0001548", "role": "Dark Helmet"}
-               ]
-             },
-             "Robin Hood: Men in Tights": {
-               "imdb stars": 6.7,
-               "rating": "PG-13",
-               "length": 104,
-               "director": "Mel Brooks",
-               "stars": [
-                         {"name": "Cary Elwes", "imdb": "nm0000144", "role": "Robin Hood"},
-                         {"name": "Richard Lewis", "imdb": "nm0507659", "role": "Prince John"},
-                         {"name": "Roger Rees", "imdb": "nm0715953", "role": "Sheriff of Rottingham"},
-                         {"name": "Amy Yasbeck", "imdb": "nm0001865", "role": "Marian"}
-               ]
-             }
-           }
-         }
+        movie_box = Box({
+            "Robin Hood: Men in Tights": {
+                "imdb_stars": 6.7,
+                "length": 104,
+                "stars": [ {"name": "Cary Elwes", "imdb": "nm0000144", "role": "Robin Hood"},
+                           {"name": "Richard Lewis", "imdb": "nm0507659", "role": "Prince John"} ]
+            }
+        })
 
-         # Box is a conversion_box by default, pass in `conversion_box=False` to disable that behavior
-         movie_box = Box(movie_data)
+        movie_box.Robin_Hood_Men_in_Tights.imdb_stars
+        # 6.7
+
+        movie_box.Robin_Hood_Men_in_Tights.stars[0].name
+        # 'Cary Elwes'
 
 
-         movie_box.movies.Robin_Hood_Men_in_Tights.imdb_stars
-         # 6.7
+Box will automatically make otherwise inaccessible keys ("Robin Hood: Men in Tights") safe to access as an attribute.
+You can always pass `conversion_box=False` to `Box` to disable that behavior.
 
-         movie_box.movies.Spaceballs.stars[0].name
-         # 'Mel Brooks'
+Also, all new dict and lists added to a Box or BoxList object are converted automatically.
 
-         # All new dict and lists added to a Box or BoxList object are converted
-         movie_box.movies.Spaceballs.stars.append({"name": "Bill Pullman", "imdb": "nm0000597", "role": "Lone Starr"})
-         movie_box.movies.Spaceballs.stars[-1].role
-         # 'Lone Starr'
+.. code:: python
+
+        movie_box.Robin_Hood_Men_in_Tights.stars.append(
+             {"name": "Roger Rees", "imdb": "nm0715953", "role": "Sheriff of Rottingham"})
+
+        movie_box.Robin_Hood_Men_in_Tights.stars[-1].role
+        # 'Sheriff of Rottingham'
 
 Install
 =======
 
 .. code:: bash
 
-        pip install python-box
+        pip install --upgrade python-box
 
-Box is tested on python 2.7 and 3.4+.
-If it does not install with this command, please
-open a github issue with the error you are experiencing!
+Box 4 is tested on python 3.6+
 
-If you want to be able to use the `to_yaml` functionality make sure to
-install `PyYAML` or `ruamel.yaml` as well.
+If you have any issues please open a github issue with the error you are experiencing!
 
 Overview
 ========
+
+Box 4 is out, check out the `changes and updates <docs/4.x_changes.rst>`_!
 
 `Box` is designed to be an easy drop in transparently replacements for
 dictionaries, thanks to Python's
@@ -88,7 +74,7 @@ and all sub objects back into a regular dictionary.
                     {'imdb': 'nm0001548', 'name': 'Rick Moranis', 'role': 'Dark Helmet'},
                     {'imdb': 'nm0000597', 'name': 'Bill Pullman', 'role': 'Lone Starr'}]}
 
-Box version 3 (and greater) now do sub box creation upon lookup, which means
+Box version 3 (and greater) do sub box creation upon lookup, which means
 it is only referencing the original dict objects until they are looked up
 or modified.
 
@@ -114,23 +100,9 @@ So if you plan to keep the original dict around, make sure to box_it_up or do a 
       safe_box
       # <Box: {'a': {'b': {'c': {}}}}>
 
-Limitations
------------
 
-`Box` is a subclass of `dict` and as such, certain keys cannot be accessed via dot notation.
-This is because names such as `keys` and `pop` have already been declared as methods, so `Box` cannot
-use it's special sauce to overwrite them. However it is still possible to have items with those names
-in the `Box` and access them like a normal dictionary, such as `my_box['keys']`.
-
-*This is as designed, and will not be changed.*
-
-The non-magic methods that exist in a `Box` are: 
-`box_it_up, clear, copy, from_json, fromkeys, get, items, keys, pop, popitem, setdefault, to_dict, to_json, update, values`.
-To view an entire list of what cannot be accessed via dot notation, run the command `dir(Box())`.
-
-
-Box
----
+Boxes
+=====
 
 `Box` can be instantiated the same ways as `dict`.
 
@@ -158,11 +130,25 @@ allowing for recursive dot notation access.
 `Box` also includes helper functions to transform it back into a `dict`,
 as well as into `JSON` or `YAML` strings or files.
 
+Limitations
+-----------
+
+`Box` is a subclass of `dict` and as such, certain keys cannot be accessed via dot notation.
+This is because names such as `keys` and `pop` have already been declared as methods, so `Box` cannot
+use it's special sauce to overwrite them. However it is still possible to have items with those names
+in the `Box` and access them like a normal dictionary, such as `my_box['keys']`.
+
+*This is as designed, and will not be changed.*
+
+Common non-magic methods that exist in a `Box` are:
+`box_it_up, clear, copy, from_json, fromkeys, get, items, keys, pop, popitem, setdefault, to_dict, to_json, update, merge_update, values`.
+To view an entire list of what cannot be accessed via dot notation, run the command `dir(Box())`.
+
+
 Box's parameters
-~~~~~~~~~~~~~~~~
+----------------
 
 .. table::
-   :widths: auto
 
    ================ ========= ===========
    Keyword Argument Default   Description
@@ -172,15 +158,15 @@ Box's parameters
    default_box      False     Act like a recursive default dict
    default_box_attr Box       Can overwrite with a different (non-recursive) default attribute to return
    camel_killer_box False     CamelCaseKeys become attribute accessible like snake case (camel_case_keys)
-   box_it_up        False     Recursively create all Boxes from the start (like previous versions)
    box_safe_prefix  "x"       Character or prefix to prepend to otherwise invalid attributes
    box_duplicates   "ignore"  When conversion duplicates are spotted, either ignore, warn or error
-   ordered_box      False     Preserve order of keys entered into the box
    box_intact_types ()        Tuple of objects to preserve and not convert to a Box object
+   box_recast       None      cast certain keys to a specified type
+   box_dots         False     Allow access to nested dicts by dots in key names
    ================ ========= ===========
 
 Box's functions
-~~~~~~~~~~~~~~~
+---------------
 
 .. table::
 
@@ -189,16 +175,18 @@ Box's functions
    ================ ===========
    to_dict          Recursively transform all Box (and BoxList) objects back into a dict (and lists)
    to_json          Save Box object as a JSON string or write to a file with the `filename` parameter
-   to_yaml*         Save Box object as a YAML string or write to a file with the `filename` parameter
+   to_yaml          Save Box object as a YAML string or write to a file with the `filename` parameter
+   to_toml*          Save Box object as a TOML string or write to a file with the `filename` parameter
    box_it_up        Recursively create all objects into Box and BoxList objects (to front-load operation)
    from_json        Classmethod, Create a Box object from a JSON file or string (all Box parameters can be passed)
-   from_yaml*       Classmethod, Create a Box object from a YAML file or string (all Box parameters can be passed)
+   from_yaml        Classmethod, Create a Box object from a YAML file or string (all Box parameters can be passed)
+   from_toml*        Classmethod, Create a Box object from a TOML file or string (all Box parameters can be passed)
    ================ ===========
 
-\* Only available if `PyYaml` or `ruamel.yaml` is detected.
+\* Do not work with BoxList, only Box
 
 Conversion Box
-~~~~~~~~~~~~~~
+--------------
 
 By default, Box is now a `conversion_box`
 that adds automagic attribute access for keys that could not normally be attributes.
@@ -246,7 +234,7 @@ only reference or update them via standard dictionary modification.
 
 
 Frozen Box
-~~~~~~~~~~
+----------
 
 Want to show off your box without worrying about others messing it up? Freeze it!
 
@@ -272,7 +260,7 @@ if it has mutable objects. Speaking of `tuple`, that's what all the lists
 becomes now.
 
 Default Box
-~~~~~~~~~~~
+-----------
 
 It's boxes all the way down. At least, when you specify `default_box=True` it can be.
 
@@ -305,7 +293,7 @@ if it is, otherwise it will see if has the `copy` attribute and will call that,
 lastly, will just use the provided item as is.
 
 Camel Killer Box
-~~~~~~~~~~~~~~~~
+----------------
 
 Similar to how conversion box works, allow CamelCaseKeys to be found as
 snake_case_attributes.
@@ -317,29 +305,81 @@ snake_case_attributes.
       cameled.bad_habit
       # "I just can't stop!"
 
-Ordered Box
-~~~~~~~~~~~
+Box Recast Values
+-----------------
 
-Preserve the order that the keys were entered into the box. The preserved order
-will be observed while iterating over the box, or calling `.keys()`,
-`.values()` or `.items()`
+Automatically convert all incoming values of a particular key (at root or any sub box)
+to a different type.
+
+For example, if you wanted to make sure any field labeled 'id' was an integer:
 
 .. code:: python
 
-      box_of_order = Box(ordered_box=True)
-      box_of_order.c = 1
-      box_of_order.a = 2
-      box_of_order.d = 3
+    my_box = Box(box_recast={'id': int})
 
-      box_of_order.keys() == ['c', 'a', 'd']
+    my_box.new_key = {'id': '55', 'example': 'value'}
 
-Keep in mind this will not guarantee order of `**kwargs` passed to Box,
-as they are inherently not ordered until Python 3.6.
+    print(type(my_box.new_key.id))
+    # 55
 
+If it cannot be converted, it will raise a `BoxValueError` (catachable with either `BoxError` or `ValueError` as well)
+
+.. code:: python
+
+    my_box = Box(box_recast={'id': int})
+
+    my_box.id = 'Harry'
+
+    # box.exceptions.BoxValueError: Cannot convert Harry to <class 'int'>
+
+Box Intact Types
+----------------
+
+Do you not want box to convert lists or tuples or incoming dictionaries for some reasonn?
+That's totally fine, we got you covered!
+
+.. code:: python
+
+    my_box = Box(box_intact_types=[list, tuple])
+
+    # Don't automatically convert lists into #BoxList
+    my_box.new_data = [{'test': 'data'}]
+
+    print(type(my_box.new_data))
+    # <class 'list'>
+
+
+Box Dots
+--------
+
+A new way to traverse the Box!
+
+.. code:: python
+
+    my_box = Box(box_dots=True)
+
+    my_box.incoming = {'new': {'source 1': {'$$$': 'money'}}}
+
+    print(my_box['incoming.new.source 1.$$$'])
+    # money
+
+    my_box['incoming.new.source 1.$$$'] = 'spent'
+    print(my_box)
+    # {'incoming': {'new': {'source 1': {'$$$': 'spent'}}}}
+
+Be aware, if those sub boxes didn't exist as planned, a new key with that value would be created instead
+
+.. code:: python
+
+    del my_box['incoming']
+    my_box['incoming.new.source 1.$$$'] = 'test'
+    print(my_box)
+
+    # {'incoming.new.source 1.$$$': 'test'}
 
 
 BoxList
--------
+=======
 
 To make sure all items added to lists in the box are also converted, all lists
 are covered into `BoxList`. It's possible to
@@ -368,7 +408,7 @@ Transform a `BoxList` and all components back into regular `list` and `dict` ite
       #  ...
 
 SBox
-----
+====
 
 Shorthand Box, aka SBox for short(hand), has the properties `json`, `yaml` and
 `dict` for faster access than the regular `to_dict()` and so on.
@@ -384,7 +424,7 @@ Shorthand Box, aka SBox for short(hand), has the properties `json`, `yaml` and
 Note that in this case, `json` has no default indent, unlike `to_json`.
 
 ConfigBox
----------
+=========
 
 A Box with additional handling of string manipulation generally found in
 config files.
@@ -421,51 +461,69 @@ config values into python types. It supports `list`, `bool`, `int` and `float`.
     config.Examples.float('floatly')
     # 4.4
 
-BoxObject
----------
+Thoughts
+========
 
-An object wrapper with a **Box** for a **__dict__**.
+"Awesome time (and finger!) saver." - Zenlc2000
 
-.. code:: python
+"no thanks." - burnbabyburn
 
-    import requests
-    from box import BoxObject
 
-    def get_html(session, url, *args, **kwargs):
-        response = session.get(url, *args, **kwargs)
-        text = response.text
-        response_meta = response.__dict__
-        for key in tuple(filter(lambda k: k.startswith('_'), response_meta)):
-            response_meta.pop(key)
-        return BoxObject(text, response_meta, frozen_box=True)
 
-    box_url = 'https://raw.githubusercontent.com/cdgriffith/Box/master/box.py'
-    with requests.Session() as session:
-        box_source = get_html(session, box_url)
+"I just prefer plain dictionaries." - falcolas
 
-    box_source.url
-    # https://raw.githubusercontent.com/cdgriffith/Box/master/box.py
+Thanks
+======
 
-    box_source.status_code
-    # 200
+A huge thank you to everyone that has given features and feedback over the years to Box!
 
-    box_source.raw.reason
-    # OK
+Check out everyone that has contributed_.
 
-**BoxObject** act just like objects but they secretly carry around a **Box** with
-them to store attributes. **BoxObject** are built off of **wrapt.ObjectProxy** which
-can wrap almost any python object. They protect their wrapped objects storing them in
-the **__wrapped__** attribute and keeping the original **__dict__** in
-**__wrapped__.__dict__**.
+A special thanks to Python Software Foundation, and PSF-Trademarks Committee, for official approval to use the Python logo on the `Box` logo!
 
-See the `Wrapt Documentation`_, specifically
-the section on **ObjectProxy**, for more information.
+Also special shout-out to PythonBytes_, who featured Box on their podcast.
+
+History
+=======
+
+Feb 2014: Inception
+-------------------
+
+`Box` was first created_ under the name `Namespace` in the reusables_ package.
+Years of usage and suggestions helped mold it into the largest section of
+the reusables library.
+
+Mar 2017: Box 1.0
+-----------------
+
+After years of upgrades it became clear it was used more than most other parts of
+the reusables library of tools. `Box` become its own package.
+
+Mar 2017: BoxLists
+------------------
+
+2.0 quickly followed 1.0, adding BoxList to allow for further dot notations
+while down in lists. Also added the handy `to_json` and `to_yaml` functionality.
+
+May 2017: Options
+-----------------
+
+Box 3.0 brought a lot of options to the table for maximum customization. From
+allowing you to freeze the box or just help you find your attributes when
+accessing them by dot notation.
+
+Dec 2019: 2.7 EOL
+-----------------
+
+Box 4.0 was made with python 2.x out of mind. Everything from f-strings to
+type-hinting was added to update the package. The modules grew large enough
+to separate the different objects into their own files and test files.
 
 
 License
 =======
 
-MIT License, Copyright (c) 2017-2018 Chris Griffith. See LICENSE file.
+MIT License, Copyright (c) 2017-2019 Chris Griffith. See LICENSE file.
 
 
 .. |BoxImage| image:: https://raw.githubusercontent.com/cdgriffith/Box/master/box_logo.png
@@ -480,4 +538,9 @@ MIT License, Copyright (c) 2017-2018 Chris Griffith. See LICENSE file.
    :target: https://pypi.python.org/pypi/python-box/
 .. |License| image:: https://img.shields.io/pypi/l/python-box.svg
    :target: https://pypi.python.org/pypi/python-box/
+
+.. _PythonBytes: https://pythonbytes.fm/episodes/show/19/put-your-python-dictionaries-in-a-box-and-apparently-python-is-really-wanted
+.. _contributed: AUTHORS.rst
 .. _`Wrapt Documentation`: https://wrapt.readthedocs.io/en/latest
+.. _reusables: https://github.com/cdgriffith/reusables#reusables
+.. _created: https://github.com/cdgriffith/Reusables/commit/df20de4db74371c2fedf1578096f3e29c93ccdf3#diff-e9a0f470ef3e8afb4384dc2824943048R51

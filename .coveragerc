@@ -15,3 +15,10 @@ exclude_lines =
     if item == '__box_config'
     raise BoxError\('_box_config key must exist
     raise err
+    if 'box_class' in self.__dict__:
+    raise BoxError\(f'File
+    except OSError
+    raise BoxError\(f'{filename}
+    item._box_config['__box_heritage'] = \(\)
+    except AttributeError as err
+    raise BoxKeyError(err)

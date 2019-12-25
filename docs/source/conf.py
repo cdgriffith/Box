@@ -28,28 +28,26 @@ sys.path.insert(0, project_root)
 
 readme_file = os.path.join(project_root, "README.rst")
 changes_file = os.path.join(project_root, "CHANGES.rst")
+changes_4_file = os.path.join(project_root, "docs", "4.x_changes.rst")
 
 shutil.copy(readme_file, "index.rst")
 
-internals = """
+with open("index.rst", "r+") as index:
+    modified = index.readlines()
+    index.seek(0)
+    index.write(''.join([x for x in modified if not x.startswith('Box 4 is out')]))
 
-Box Internals
--------------
 
-.. automodule:: box
-   :members:
-   :undoc-members:
-
-"""
-
-with open("index.rst", "a") as index, open(changes_file) as changes:
-    index.write(internals)
+with open("index.rst", "a") as index, open(changes_file) as changes, open(changes_4_file) as change_4:
+    index.write('\n')
     index.write(changes.read())
+    index.write('\n')
+    index.write(change_4.read())
 
-with open(os.path.join(project_root, "box.py"), "r") as box_file:
-    box_content = box_file.read()
+with open(os.path.join(project_root, "box", "__init__.py"), "r") as init_file:
+    init_content = init_file.read()
 
-attrs = dict(re.findall(r"__([a-z]+)__ *= *['\"](.+)['\"]", box_content))
+attrs = dict(re.findall(r"__([a-z]+)__ *= *['\"](.+)['\"]", init_content))
 
 # -- General configuration ------------------------------------------------
 
@@ -78,7 +76,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Box'
-copyright = '2017-2018, Chris Griffith'
+copyright = '2017-2019, Chris Griffith'
 author = 'Chris Griffith'
 
 # The version info for the project you're documenting, acts as replacement for

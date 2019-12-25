@@ -1,24 +1,43 @@
 Changelog
----------
+=========
+
+Version 4.0.0
+-------------
+
+* Adding support for retrieving items via dot notation in keys
+* Adding `box_from_file` helper function
+* Adding merge_update that acts like previous Box magic update
+* Adding support to `+` boxes together
+* Adding default_box now can support expanding on `None` placeholders (thanks to Harun Tuncay and Jeremiah Lowin)
+* Adding ability to recast specified fields (thanks to Steven McGrath)
+* Adding to_csv and from_csv capability for BoxList objects (thanks to Jiuli Gao)
+* Changing layout of project to be more object specific
+* Changing update to act like normal dict update
+* Changing to 120 line character limit
+* Changing how `safe_attr` handles unsafe characters
+* Changing all exceptions to be bases of BoxError so can always be caught with that base exception
+* Changing delete to also access converted keys (thanks to iordanivanov)
+* Removing `ordered_box` as Python 3.6+ is ordered by default
+* Removing `BoxObject` in favor of it being another module
 
 Version 3.4.6
-~~~~~~~~~~~~~
+-------------
 
 * Fixing allowing frozen boxes to be deep copyable (thanks to jandelgado)
 
 Version 3.4.5
-~~~~~~~~~~~~~
+-------------
 
 * Fixing update does not convert new sub dictionaries or lists (thanks to Michael Stella)
 * Changing update to work as it used to with sub merging until major release
 
 Version 3.4.4
-~~~~~~~~~~~~~
+-------------
 
 * Fixing pop not properly resetting box_heritage (thanks to Jeremiah Lowin)
 
 Version 3.4.3
-~~~~~~~~~~~~~
+-------------
 
 * Fixing propagation of box options when adding a new list via setdefault (thanks to Stretch)
 * Fixing update does not keep box_intact_types (thanks to pwwang)
@@ -26,40 +45,40 @@ Version 3.4.3
 * Fixing deepcopy not copying box options (thanks to Nikolay Stanishev)
 
 Version 3.4.2
-~~~~~~~~~~~~~
+-------------
 
 * Adding license, changes and authors files to source distribution
 
 Version 3.4.1
-~~~~~~~~~~~~~
+-------------
 
 * Fixing copy of inherited classes (thanks to pwwang)
 * Fixing `get` when used with default_box
 
 Version 3.4.0
-~~~~~~~~~~~~~
+-------------
 
 * Adding `box_intact_types` that allows preservation of selected object types (thanks to pwwang)
 * Adding limitations section to readme
 
 Version 3.3.0
-~~~~~~~~~~~~~
+-------------
 
 * Adding `BoxObject` (thanks to Brandon Gomes)
 
 Version 3.2.4
-~~~~~~~~~~~~~
+-------------
 
 * Fixing recursion issue #68 when using setdefault (thanks to sdementen)
 * Fixing ordered_box would make 'ordered_box_values' internal helper as key in sub boxes
 
 Version 3.2.3
-~~~~~~~~~~~~~
+-------------
 
 * Fixing pickling with default box (thanks to sdementen)
 
 Version 3.2.2
-~~~~~~~~~~~~~
+-------------
 
 * Adding hash abilities to new frozen BoxList
 * Fixing hashing returned unpredictable values (thanks to cebaa)
@@ -67,14 +86,14 @@ Version 3.2.2
 * Removing non-collection support for mapping and callable identification
 
 Version 3.2.1
-~~~~~~~~~~~~~
+-------------
 
 * Fixing pickling on python 3.7 (thanks to Martijn Pieters)
 * Fixing rumel loader error (thanks to richieadler)
 * Fixing frozen_box does not freeze the outermost BoxList (thanks to V.Anh Tran)
 
 Version 3.2.0
-~~~~~~~~~~~~~
+-------------
 
 * Adding `ordered_box` option to keep key order based on insertion (thanks to pwwang)
 * Adding custom `__iter__`, `__revered__`, `pop`, `popitems`
@@ -82,13 +101,13 @@ Version 3.2.0
 * Fixing non string keys not being supported correctly (thanks to Matt Wisniewski)
 
 Version 3.1.1
-~~~~~~~~~~~~~
+-------------
 
 * Fixing `__contains__` (thanks to Jiang Chen)
 * Fixing `get` could return non box objects
 
 Version 3.1.0
-~~~~~~~~~~~~~
+-------------
 
 * Adding `copy` and `deepcopy` support that with return a Box object
 * Adding support for customizable safe attr replacement
@@ -98,14 +117,14 @@ Version 3.1.0
 * Fixing pickling
 
 Version 3.0.1
-~~~~~~~~~~~~~
+-------------
 
 * Fixing first level recursion errors
 * Fixing spelling mistakes (thanks to John Benediktsson)
 * Fixing that list insert of lists did not use the original list but create an empty one
 
 Version 3.0.0
-~~~~~~~~~~~~~
+-------------
 
 * Adding default object abilities with `default_box` and `default_box_attr` kwargs
 * Adding `from_json` and `from_yaml` functions to both `Box` and `BoxList`
@@ -124,21 +143,21 @@ Version 3.0.0
 * Removing default indent for `to_json`
 
 Version 2.2.0
-~~~~~~~~~~~~~
+-------------
 
 * Adding support for `ruamel.yaml` (Thanks to Alexandre Decan)
 * Adding Contributing and Authors files
 
 Version 2.1.0
-~~~~~~~~~~~~~
+-------------
 
 * Adding `.update` and `.set_default` functionality
 * Adding `dir` support
 
 Version 2.0.0
-~~~~~~~~~~~~~
+-------------
 
-* Adding `BoxList` to allow for `Box`es to be recursively added to lists as well
+* Adding `BoxList` to allow for any `Box` to be recursively added to lists as well
 * Adding `to_json` and `to_yaml` functions
 * Changing `Box` original functionality to `LightBox`, `Box` now searches lists
 * Changing `Box` callable to return keys, not values, and they are sorted
@@ -146,7 +165,7 @@ Version 2.0.0
 
 
 Version 1.0.0
-~~~~~~~~~~~~~
+-------------
 
 * Initial release, copy from `reusables.Namespace`
 * Original creation, 2\13\2014
