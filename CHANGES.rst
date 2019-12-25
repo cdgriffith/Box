@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 4.0.1
+-------------
+
+* Fixing setup.py for release
+* Fixing documentation link
+
 Version 4.0.0
 -------------
 
