@@ -51,7 +51,7 @@ If you have any issues please open a github issue with the error you are experie
 Overview
 ========
 
-Box 4 is out, check out the `changes and updates <docs/4.x_changes.rst>`_!
+Box 4 is out, check out the `changes and updates <https://github.com/cdgriffith/Box/blob/master/docs/4.x_changes.rst>`_!
 
 `Box` is designed to be an easy drop in transparently replacements for
 dictionaries, thanks to Python's
