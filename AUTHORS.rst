@@ -55,3 +55,4 @@ Suggestions and bug reporting:
 - Tim Gates (timgates42)
 - (iordanivanov)
 - Steven McGrath (SteveMcGrath)
+- Marcelo Huerta (richieadler)

@@ -18,7 +18,6 @@ attrs = dict(re.findall(r"__([a-z]+)__ *= *['\"](.+)['\"]", init_content))
 with open("README.rst", "r") as readme_file:
     long_description = readme_file.read()
 
-
 setup(
     name='python-box',
     version=attrs['version'],
@@ -51,5 +50,5 @@ setup(
         'Topic :: Utilities',
         'Topic :: Software Development',
         'Topic :: Software Development :: Libraries :: Python Modules'
-        ]
+    ]
 )
