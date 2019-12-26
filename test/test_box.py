@@ -815,3 +815,12 @@ class TestBox:
         assert b.clients.hosts == ["alpha", "omega"]
         assert b.database.to_toml().startswith('server = "192.168.1.1"')
         assert b._box_config['default_box'] is True
+
+    def test_parameter_pass_through(self):
+        bx = Box.from_yaml('uno: 2', box_dots=True, default_box=True,
+                           default_box_attr=None, default_box_none_transform=True,
+                           frozen_box=False, camel_killer_box=True,
+                           conversion_box=True, modify_tuples_box=True,
+                           box_safe_prefix='x', box_duplicates='warn', box_intact_types=(),
+                           box_recast=None)
+        assert bx.uno == 2

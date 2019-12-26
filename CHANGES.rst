@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 4.0.2
+-------------
+
+* Fixing converters to properly pass through new box arguments (thanks to Marcelo Huerta)
+
 Version 4.0.1
 -------------
 
