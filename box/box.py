@@ -321,7 +321,7 @@ class Box(dict):
         except KeyError as err:
             if item == '_box_config':
                 raise BoxKeyError('_box_config should only exist as an attribute and is never defaulted') from None
-            if self._box_config['box_dots'] and '.' in item:
+            if self._box_config['box_dots'] and isinstance(item, str) and '.' in item:
                 first_item, children = item.split('.', 1)
                 if first_item in self.keys() and isinstance(self[first_item], dict):
                     return self[first_item][children]
@@ -469,7 +469,7 @@ class Box(dict):
     def __delitem__(self, key):
         if self._box_config['frozen_box']:
             raise BoxError('Box is frozen')
-        if key not in self.keys() and self._box_config['box_dots'] and '.' in key:
+        if key not in self.keys() and self._box_config['box_dots'] and isinstance(key, str) and '.' in key:
             first_item, children = key.split('.', 1)
             if first_item in self.keys() and isinstance(self[first_item], dict):
                 return self[first_item].__delitem__(children)
