@@ -808,8 +808,11 @@ class TestBox:
         assert b['my_key.does stuff.to get to'] == 'where I want'
         b['my_key.does stuff.to get to'] = 'test'
         assert b['my_key.does stuff.to get to'] == 'test'
+        del b['my_key.does stuff']
+        assert b['my_key'] == {}
         b[4] = 2
         assert b[4] == 2
+        del b[4]
 
     def test_toml(self):
         b = Box.from_toml(filename=Path(test_root, "data", "toml_file.tml"), default_box=True)
