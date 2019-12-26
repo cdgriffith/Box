@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 4.0.3
+-------------
+
+* Fixing non-string keys breaking when box_dots is enabled (thanks to Marcelo Huerta)
+
 Version 4.0.2
 -------------
 
