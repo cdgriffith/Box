@@ -22,11 +22,10 @@ __all__ = ['Box']
 
 _first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 _all_cap_re = re.compile('([a-z0-9])([A-Z])')
-NO_DEFAULT = object()
-
 
 # a sentinel object for indicating no default, in order to allow users
 # to pass `None` as a valid default value
+NO_DEFAULT = object()
 
 
 def _safe_attr(attr, camel_killer=False, replacement_char='x'):
@@ -282,10 +281,14 @@ class Box(dict):
 
     def get(self, key, default=NO_DEFAULT):
         if key not in self:
-            if (default is NO_DEFAULT
-                    and self._box_config['default_box']
+            if default is NO_DEFAULT:
+                if (
+                    self._box_config['default_box']
                     and self._box_config['default_box_none_transform']):
-                return self.__get_default(key)
+
+                    return self.__get_default(key)
+                else:
+                    return None
             if isinstance(default, dict) and not isinstance(default, Box):
                 return Box(default)
             if isinstance(default, list) and not isinstance(default, box.BoxList):
