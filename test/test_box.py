@@ -608,6 +608,7 @@ class TestBox:
     def test_get(self):
         bx = Box()
         bx["c"] = {}
+        assert bx.get("a") is None
         assert isinstance(bx.get("c"), Box)
         assert isinstance(bx.get("b", {}), Box)
         assert "a" in bx.get("a", Box(a=1, conversion_box=False))
@@ -617,6 +618,7 @@ class TestBox:
         bx = Box(default_box=True)
         assert bx.get('test', 4) == 4
         assert isinstance(bx.get('a'), Box)
+        assert bx.get('test', None) is None
 
     def test_inheritance_copy(self):
 

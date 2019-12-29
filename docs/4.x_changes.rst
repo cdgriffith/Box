@@ -37,6 +37,7 @@ Enabled with `box_dots=True`.
     del my_box['a.b.c.d']
     # <Box: {'a': {'b': {'c': {}}}}>
 
+This only works with keys that are string to begin with, as we don't do any automatic conversion behind the scene.
 
 Support for adding two Boxes together
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
