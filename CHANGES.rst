@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 4.0.4
+-------------
+
+* Fixing `get` to return None when not using default box (thanks to Jeremiah Lowin)
+
 Version 4.0.3
 -------------
 

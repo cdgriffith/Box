@@ -74,33 +74,6 @@ and all sub objects back into a regular dictionary.
                     {'imdb': 'nm0001548', 'name': 'Rick Moranis', 'role': 'Dark Helmet'},
                     {'imdb': 'nm0000597', 'name': 'Bill Pullman', 'role': 'Lone Starr'}]}
 
-Box version 3 (and greater) do sub box creation upon lookup, which means
-it is only referencing the original dict objects until they are looked up
-or modified.
-
-.. code:: python
-
-      a = {"a": {"b": {"c": {}}}}
-      a_box = Box(a)
-      a_box
-      # <Box: {'a': {'b': {'c': {}}}}>
-
-      a["a"]["b"]["d"] = "2"
-
-      a_box
-      # <Box: {'a': {'b': {'c': {}, 'd': '2'}}}>
-
-So if you plan to keep the original dict around, make sure to box_it_up or do a deepcopy first.
-
-.. code:: python
-
-      safe_box = Box(a, box_it_up=True)
-      a["a"]["b"]["d"] = "2"
-
-      safe_box
-      # <Box: {'a': {'b': {'c': {}}}}>
-
-
 Boxes
 =====
 
