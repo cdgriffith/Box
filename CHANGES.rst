@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 4.0.5
+-------------
+
+* Changing to allow for `PyYAML` if it already installed vs `ruamel.yaml` (thanks to wim glenn)
+
 Version 4.0.4
 -------------
 

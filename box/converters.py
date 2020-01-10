@@ -8,7 +8,10 @@ import csv
 import json
 from pathlib import Path
 
-import ruamel.yaml as yaml
+try:
+    import ruamel.yaml as yaml
+except ImportError:
+    import yaml
 import toml
 
 from box.exceptions import BoxError
