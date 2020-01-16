@@ -56,3 +56,5 @@ Suggestions and bug reporting:
 - (iordanivanov)
 - Steven McGrath (SteveMcGrath)
 - Marcelo Huerta (richieadler)
+- Wenbo Zhao (zhaowb)
+- Yordan Ivanov (iordanivanov)

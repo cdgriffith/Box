@@ -7,11 +7,13 @@ import sys
 import csv
 import json
 from pathlib import Path
+import warnings
 
 try:
     import ruamel.yaml as yaml
 except ImportError:
     import yaml
+    warnings.warn("ruamel.yaml was not detected, using PyYAML instead")
 import toml
 
 from box.exceptions import BoxError

@@ -161,7 +161,7 @@ class Box(dict):
 
     _protected_keys = dir({}) + ['to_dict', 'to_json', 'to_yaml', 'from_yaml', 'from_json', 'from_toml', 'to_toml']
 
-    def __new__(cls, *args: Any, default_box: bool = False, default_box_attr: Any = None,
+    def __new__(cls, *args: Any, default_box: bool = False, default_box_attr: Any = NO_DEFAULT,
                 default_box_none_transform: bool = True, frozen_box: bool = False, camel_killer_box: bool = False,
                 conversion_box: bool = True, modify_tuples_box: bool = False, box_safe_prefix: str = 'x',
                 box_duplicates: str = 'ignore', box_intact_types: Union[Tuple, List] = (),
@@ -174,7 +174,7 @@ class Box(dict):
         obj._box_config = _get_box_config(kwargs.pop('__box_heritage', None))
         obj._box_config.update({
             'default_box': default_box,
-            'default_box_attr': default_box_attr or cls.__class__,
+            'default_box_attr': cls.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
             'default_box_none_transform': default_box_none_transform,
             'conversion_box': conversion_box,
             'box_safe_prefix': box_safe_prefix,
@@ -188,7 +188,7 @@ class Box(dict):
         })
         return obj
 
-    def __init__(self, *args: Any, default_box: bool = False, default_box_attr: Any = None,
+    def __init__(self, *args: Any, default_box: bool = False, default_box_attr: Any = NO_DEFAULT,
                  default_box_none_transform: bool = True, frozen_box: bool = False, camel_killer_box: bool = False,
                  conversion_box: bool = True, modify_tuples_box: bool = False, box_safe_prefix: str = 'x',
                  box_duplicates: str = 'ignore', box_intact_types: Union[Tuple, List] = (),
@@ -197,7 +197,7 @@ class Box(dict):
         self._box_config = _get_box_config(kwargs.pop('__box_heritage', None))
         self._box_config.update({
             'default_box': default_box,
-            'default_box_attr': default_box_attr or self.__class__,
+            'default_box_attr': self.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
             'default_box_none_transform': default_box_none_transform,
             'conversion_box': conversion_box,
             'box_safe_prefix': box_safe_prefix,
@@ -284,8 +284,7 @@ class Box(dict):
             if default is NO_DEFAULT:
                 if (
                     self._box_config['default_box']
-                    and self._box_config['default_box_none_transform']):
-
+                        and self._box_config['default_box_none_transform']):
                     return self.__get_default(key)
                 else:
                     return None
@@ -337,7 +336,6 @@ class Box(dict):
 
     def keys(self):
         return super(Box, self).keys()
-
     def values(self):
         return [self[x] for x in self.keys()]
 
@@ -346,13 +344,20 @@ class Box(dict):
 
     def __get_default(self, item):
         default_value = self._box_config['default_box_attr']
-        if default_value is self.__class__:
-            return self.__class__(__box_heritage=(self, item), **self.__box_config())
+        if default_value in (self.__class__, dict):
+            value = self.__class__(__box_heritage=(self, item), **self.__box_config())
+        elif isinstance(default_value, dict):
+            value = self.__class__(__box_heritage=(self, item), **self.__box_config(), **default_value)
+        elif isinstance(default_value, list):
+            value = box.BoxList(**self.__box_config())
         elif isinstance(default_value, Callable):
-            return default_value()
+            value = default_value()
         elif hasattr(default_value, 'copy'):
-            return default_value.copy()
-        return default_value
+            value = default_value.copy()
+        else:
+            value = default_value
+        self.__convert_and_store(item, value)
+        return value
 
     def __box_config(self):
         out = {}

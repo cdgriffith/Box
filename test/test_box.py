@@ -263,7 +263,7 @@ class TestBox:
 
     def test_auto_attr(self):
         a = Box(test_dict, default_box=True)
-        assert a.a.a.a.a == Box()
+        assert isinstance(a.a.a.a.a, Box)
         a.b.b = 4
         assert a.b.b == 4
 
@@ -384,6 +384,21 @@ class TestBox:
 
         bx3 = Box(default_box=True, default_box_attr=3)
         assert bx3.hello == 3
+
+        bx4 = Box(default_box=True, default_box_attr=None)
+        assert bx4.who_is_there is None
+
+        bx5 = Box(default_box=True, default_box_attr=[])
+        assert isinstance(bx5.empty_list_please, list)
+        assert len(bx5.empty_list_please) == 0
+        bx5.empty_list_please.append(1)
+        assert bx5.empty_list_please[0] == 1
+
+        bx6 = Box(default_box=True, default_box_attr=[])
+        my_list = bx6.get('new_list')
+        my_list.append(5)
+        assert bx6.get('new_list')[0] == 5
+
 
     # Issue#59 https://github.com/cdgriffith/Box/issues/59 "Treat None values as non existing keys for default_box"
     def test_default_box_none_transforms(self):
