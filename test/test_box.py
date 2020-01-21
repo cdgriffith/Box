@@ -399,6 +399,11 @@ class TestBox:
         my_list.append(5)
         assert bx6.get('new_list')[0] == 5
 
+        bx7 = Box(default_box=True, default_box_attr=False)
+        assert bx7.nothing is False
+
+        bx8 = Box(default_box=True, default_box_attr=0)
+        assert bx8.nothing == 0
 
     # Issue#59 https://github.com/cdgriffith/Box/issues/59 "Treat None values as non existing keys for default_box"
     def test_default_box_none_transforms(self):
@@ -758,13 +763,17 @@ class TestBox:
         assert bl == [['foo']], bl
 
     def test_dots(self):
-        b = Box(movie_data, box_dots=True)
+        b = Box(movie_data.copy(), box_dots=True)
         assert b['movies.Spaceballs.rating'] == "PG"
         b['movies.Spaceballs.rating'] = 4
         assert b['movies.Spaceballs.rating'] == 4
         del b['movies.Spaceballs.rating']
         with pytest.raises(BoxKeyError):
             b['movies.Spaceballs.rating']
+        assert b['movies.Spaceballs.Stars[1].role'] == 'Barf'
+        b['movies.Spaceballs.Stars[1].role'] = 'Testing'
+        assert b['movies.Spaceballs.Stars[1].role'] == 'Testing'
+        assert b.movies.Spaceballs.Stars[1].role == 'Testing'
 
     def test_unicode(self):
         bx = Box()

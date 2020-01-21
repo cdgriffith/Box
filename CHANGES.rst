@@ -4,6 +4,7 @@ Changelog
 Version 4.1.0
 -------------
 
+* Adding support for list traversal with `box_dots` (thanks to Lei)
 * Fixing default_box_attr to accept items that evaluate to `None` (thanks to Wenbo Zhao and Yordan Ivanov)
 * Changing default_box to set objects in box on lookup
 * Fallback to `PyYAML` if `ruamel.yaml` is not detected (thanks to wim glenn)

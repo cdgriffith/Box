@@ -22,6 +22,7 @@ __all__ = ['Box']
 
 _first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 _all_cap_re = re.compile('([a-z0-9])([A-Z])')
+_list_pos_re = re.compile(r'\[(\d+)\]')
 
 # a sentinel object for indicating no default, in order to allow users
 # to pass `None` as a valid default value
@@ -325,9 +326,14 @@ class Box(dict):
                 raise BoxKeyError('_box_config should only exist as an attribute and is never defaulted') from None
             if self._box_config['box_dots'] and isinstance(item, str) and '.' in item:
                 first_item, children = item.split('.', 1)
-                if first_item in self.keys() and isinstance(self[first_item], dict):
-                    return self[first_item][children]
-
+                list_obj = _list_pos_re.search(first_item)
+                if list_obj and first_item.endswith(str(list_obj.group())):
+                    first_item = first_item[:-len(str(list_obj.group()))]
+                if first_item in self.keys():
+                    if list_obj:
+                        return self[first_item][int(list_obj.groups()[0])][children]
+                    elif hasattr(self[first_item], '__setitem__'):
+                        return self[first_item][children]
             if self._box_config['default_box'] and not _ignore_default:
                 return self.__get_default(item)
             raise BoxKeyError(str(err)) from None
@@ -336,6 +342,7 @@ class Box(dict):
 
     def keys(self):
         return super(Box, self).keys()
+
     def values(self):
         return [self[x] for x in self.keys()]
 
@@ -443,8 +450,14 @@ class Box(dict):
                                check_only=True, pre_check=True)
         if self._box_config['box_dots'] and isinstance(key, str) and '.' in key:
             first_item, children = key.split('.', 1)
-            if first_item in self.keys() and isinstance(self[first_item], dict):
-                return self[first_item].__setitem__(children, value)
+            list_obj = _list_pos_re.search(first_item)
+            if list_obj and first_item.endswith(list_obj.group()):
+                first_item = first_item[:-len(list_obj.group())]
+            if first_item in self.keys():
+                if list_obj:
+                    return self[first_item][int(list_obj.groups()[0])].__setitem__(children, value)
+                elif hasattr(self[first_item], '__setitem__'):
+                    return self[first_item].__setitem__(children, value)
         value = self.__recast(key, value)
         super(Box, self).__setitem__(key, value)
         self.__convert_and_store(key, value)
