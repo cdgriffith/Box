@@ -16,3 +16,7 @@ class BoxTypeError(BoxError, TypeError):
 
 class BoxValueError(BoxError, ValueError):
     """Issue doing something with that value"""
+
+
+class BoxWarning(UserWarning):
+    """Here be dragons"""

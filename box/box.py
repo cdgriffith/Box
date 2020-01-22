@@ -15,7 +15,7 @@ from typing import Any, Union, Tuple, List, Dict
 from pathlib import Path
 
 import box
-from box.exceptions import BoxError, BoxKeyError, BoxTypeError, BoxValueError
+from box.exceptions import BoxError, BoxKeyError, BoxTypeError, BoxValueError, BoxWarning
 from box.converters import (_to_json, _from_json, _from_toml, _to_toml, _from_yaml, _to_yaml, BOX_PARAMETERS)
 
 __all__ = ['Box']
@@ -27,6 +27,7 @@ _list_pos_re = re.compile(r'\[(\d+)\]')
 # a sentinel object for indicating no default, in order to allow users
 # to pass `None` as a valid default value
 NO_DEFAULT = object()
+
 
 
 def _safe_attr(attr, camel_killer=False, replacement_char='x'):
@@ -119,7 +120,7 @@ def _conversion_checks(item, keys, box_config, check_only=False, pre_check=False
                     dups.add(f'{x[0]}({x[1]})')
                 seen.add(x[1])
             if box_config['box_duplicates'].startswith('warn'):
-                warnings.warn(f'Duplicate conversion attributes exist: {dups}')
+                warnings.warn(f'Duplicate conversion attributes exist: {dups}', BoxWarning)
             else:
                 raise BoxError(f'Duplicate conversion attributes exist: {dups}')
     if check_only:

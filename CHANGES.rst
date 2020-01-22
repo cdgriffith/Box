@@ -5,6 +5,7 @@ Version 4.1.0
 -------------
 
 * Adding support for list traversal with `box_dots` (thanks to Lei)
+* Adding `BoxWarning` class to allow for the clean suppression of warnings
 * Fixing default_box_attr to accept items that evaluate to `None` (thanks to Wenbo Zhao and Yordan Ivanov)
 * Changing default_box to set objects in box on lookup
 * Fallback to `PyYAML` if `ruamel.yaml` is not detected (thanks to wim glenn)
@@ -46,6 +47,7 @@ Version 4.0.0
 * Changing how `safe_attr` handles unsafe characters
 * Changing all exceptions to be bases of BoxError so can always be caught with that base exception
 * Changing delete to also access converted keys (thanks to iordanivanov)
+* Changing from `PyYAML` to `ruamel.yaml` as default yaml import, aka yaml version default is 1.2 instead of 1.1
 * Removing `ordered_box` as Python 3.6+ is ordered by default
 * Removing `BoxObject` in favor of it being another module
 

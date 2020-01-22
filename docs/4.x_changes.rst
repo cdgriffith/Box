@@ -104,6 +104,36 @@ Keys with safety underscores used to be treated internally as if the underscores
 
 Those issues have been (hopefully) overcome and now will have the expected  `<Box: {'_out': 'preserved', 'out': 'updated'}>`
 
+YAML 1.2 default instead of 1.1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ruamel.yaml is now an install requirement and new default instead of PyYAML.
+By design ruamel.yaml uses the newer YAML v1.2 (which PyYAML does not yet support as of Jan 2020).
+
+To use the older version of 1.1, make sure to specify the version while using the from_yaml methods.
+
+.. code:: python
+
+    from box import Box
+    Box.from_yaml("fire_ze_missiles: no")
+    <Box: {'fire_ze_missiles': 'no'}>
+
+    Box.from_yaml("fire_ze_missiles: no", version='1.1')
+    <Box: {'fire_ze_missiles': False}>
+
+You can read more about the differences `here <https://yaml.readthedocs.io/en/latest/pyyaml.html#differences-with-pyyaml>`_
+
+To use PyYAML instead of ruamel.yaml you must install box without dependencies (such as `--no-deps` with `pip`)
+
+If you do chose to stick with PyYaML, you can suppress the warning on just box's import:
+
+.. code:: python
+
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from box import Box
+
 
 Additional changes
 ~~~~~~~~~~~~~~~~~~
@@ -126,7 +156,7 @@ As dictionaries are ordered by default in Python 3.6+ there is no point to conti
 Removing `BoxObject`
 ~~~~~~~~~~~~~~~~~~~~
 
-As BoxObject was not cross platform compatible and had some [issues](https://github.com/GrahamDumpleton/wrapt/issues/132) it has been removed. 
+As BoxObject was not cross platform compatible and had some `issues <https://github.com/GrahamDumpleton/wrapt/issues/132>`_ it has been removed.
 
 Removing `box_it_up`
 ~~~~~~~~~~~~~~~~~~~~
