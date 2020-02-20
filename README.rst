@@ -510,7 +510,7 @@ to separate the different objects into their own files and test files.
 License
 =======
 
-MIT License, Copyright (c) 2017-2019 Chris Griffith. See LICENSE file.
+MIT License, Copyright (c) 2017-2020 Chris Griffith. See LICENSE file.
 
 
 .. |BoxImage| image:: https://raw.githubusercontent.com/cdgriffith/Box/master/box_logo.png

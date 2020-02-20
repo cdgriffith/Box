@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 #
-# Copyright (c) 2017-2019 - Chris Griffith - MIT License
+# Copyright (c) 2017-2020 - Chris Griffith - MIT License
 """
 Improved dictionary access through dot notation with additional tools.
 """
@@ -334,12 +334,7 @@ class Box(dict):
                         break
                 else:
                     raise BoxError('Could not split box dots properly')
-                # list_obj = _list_pos_re.search(first_item)
-                # if list_obj and first_item.endswith(str(list_obj.group())):
-                #     first_item = first_item[:-len(str(list_obj.group()))]
                 if first_item in self.keys():
-                    # if list_obj:
-                    #     return self[first_item][int(list_obj.groups()[0])][children]
                     if hasattr(self[first_item], '__getitem__'):
                         return self[first_item][children]
             if self._box_config['default_box'] and not _ignore_default:
@@ -447,7 +442,6 @@ class Box(dict):
         else:
             if item == '_box_config':
                 return value
-            # return self.__convert_and_store(item, value)
         return value
 
     def __setitem__(self, key, value):

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
+#
+# Copyright (c) 2017-2020 - Chris Griffith - MIT License
 from typing import Iterable
 import re
 import copy
@@ -36,14 +38,10 @@ class BoxList(list):
     def __getitem__(self, item):
         if self.box_options.get('box_dots') and isinstance(item, str) and item.startswith('['):
             list_pos = _list_pos_re.search(item)
-            sel = list_pos.groups()[0]
-            value = super(BoxList, self).__getitem__(int(sel))
+            value = super(BoxList, self).__getitem__(int(list_pos.groups()[0]))
             if len(list_pos.group()) == len(item):
                 return value
-            key = item[len(list_pos.group()):].lstrip('.')
-            if not key:
-                return value
-            return value.__getitem__(key)
+            return value.__getitem__(item[len(list_pos.group()):].lstrip('.'))
         return super(BoxList, self).__getitem__(item)
 
     def __delitem__(self, key):
@@ -56,13 +54,10 @@ class BoxList(list):
             raise BoxError('BoxList is frozen')
         if self.box_options.get('box_dots') and isinstance(key, str) and key.startswith('['):
             list_pos = _list_pos_re.search(key)
-            sel = list_pos.groups()[0]
+            pos = int(list_pos.groups()[0])
             if len(list_pos.group()) == len(key):
-                return super(BoxList, self).__setitem__(int(sel), value)
-            next_key = key[len(list_pos.group()):].lstrip('.')
-            if not next_key:
-                return super(BoxList, self).__setitem__(int(sel), value)
-            return super(BoxList, self).__getitem__(int(sel)).__setitem__(next_key, value)
+                return super(BoxList, self).__setitem__(pos, value)
+            return super(BoxList, self).__getitem__(pos).__setitem__(key[len(list_pos.group()):].lstrip('.'), value)
         super(BoxList, self).__setitem__(key, value)
 
     def _is_intact_type(self, obj):
