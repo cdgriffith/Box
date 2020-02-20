@@ -802,19 +802,18 @@ class TestBox:
         b = Box(notThief=1, sortaThief=0, reallyAThief=True, camel_killer_box=True)
         b['$OhNo!'] = 3
         c = Box(notThief=1, sortaThief=0, reallyAThief=True, camel_killer_box=True, conversion_box=False)
-        del (b.not_thief)
-        del (b._oh_no_)
-        del (b.really_a_thief)
+        del b.not_thief
+        del b._oh_no_
+        del b.really_a_thief
         with pytest.raises(KeyError):
-            del (b.really_a_thief)
+            del b.really_a_thief
         with pytest.raises(KeyError):
-            del (b._oh_no_)
+            del b._oh_no_
 
-        del (c.not_thief)
-        del (c.really_a_thief)
-        print(dir(c))
+        del c.not_thief
+        del c.really_a_thief
         with pytest.raises(KeyError):
-            del (c.really_a_thief)
+            del c.really_a_thief
 
     def test_add_boxes(self):
         b = Box(c=1)

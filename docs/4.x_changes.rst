@@ -39,6 +39,9 @@ Enabled with `box_dots=True`.
 
 This only works with keys that are string to begin with, as we don't do any automatic conversion behind the scene.
 
+4.1 Update: This now also supports list traversal, like `my_box['my_key[0][0]']`
+
+
 Support for adding two Boxes together
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

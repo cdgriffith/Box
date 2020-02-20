@@ -29,7 +29,6 @@ _list_pos_re = re.compile(r'\[(\d+)\]')
 NO_DEFAULT = object()
 
 
-
 def _safe_attr(attr, camel_killer=False, replacement_char='x'):
     """Convert a key into something that is accessible as an attribute"""
     allowed = string.ascii_letters + string.digits + '_'
@@ -325,15 +324,23 @@ class Box(dict):
         except KeyError as err:
             if item == '_box_config':
                 raise BoxKeyError('_box_config should only exist as an attribute and is never defaulted') from None
-            if self._box_config['box_dots'] and isinstance(item, str) and '.' in item:
-                first_item, children = item.split('.', 1)
-                list_obj = _list_pos_re.search(first_item)
-                if list_obj and first_item.endswith(str(list_obj.group())):
-                    first_item = first_item[:-len(str(list_obj.group()))]
+            if self._box_config['box_dots'] and isinstance(item, str) and ('.' in item or '[' in item):
+                for idx, char in enumerate(item):
+                    if char == '[':
+                        first_item, children = item[:idx], item[idx:]
+                        break
+                    elif char == '.':
+                        first_item, children = item[:idx], item[idx + 1:]
+                        break
+                else:
+                    raise BoxError('Could not split box dots properly')
+                # list_obj = _list_pos_re.search(first_item)
+                # if list_obj and first_item.endswith(str(list_obj.group())):
+                #     first_item = first_item[:-len(str(list_obj.group()))]
                 if first_item in self.keys():
-                    if list_obj:
-                        return self[first_item][int(list_obj.groups()[0])][children]
-                    elif hasattr(self[first_item], '__setitem__'):
+                    # if list_obj:
+                    #     return self[first_item][int(list_obj.groups()[0])][children]
+                    if hasattr(self[first_item], '__getitem__'):
                         return self[first_item][children]
             if self._box_config['default_box'] and not _ignore_default:
                 return self.__get_default(item)
@@ -450,14 +457,17 @@ class Box(dict):
             _conversion_checks(key, self.keys(), self._box_config,
                                check_only=True, pre_check=True)
         if self._box_config['box_dots'] and isinstance(key, str) and '.' in key:
-            first_item, children = key.split('.', 1)
-            list_obj = _list_pos_re.search(first_item)
-            if list_obj and first_item.endswith(list_obj.group()):
-                first_item = first_item[:-len(list_obj.group())]
+            for idx, char in enumerate(key):
+                if char == '[':
+                    first_item, children = key[:idx], key[idx:]
+                    break
+                elif char == '.':
+                    first_item, children = key[:idx], key[idx + 1:]
+                    break
+            else:
+                raise BoxError('Could not split box dots properly')
             if first_item in self.keys():
-                if list_obj:
-                    return self[first_item][int(list_obj.groups()[0])].__setitem__(children, value)
-                elif hasattr(self[first_item], '__setitem__'):
+                if hasattr(self[first_item], '__setitem__'):
                     return self[first_item].__setitem__(children, value)
         value = self.__recast(key, value)
         super(Box, self).__setitem__(key, value)

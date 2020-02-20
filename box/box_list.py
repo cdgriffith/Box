@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 from typing import Iterable
-
+import re
 import copy
+
 
 from box.converters import (_to_yaml, _from_yaml, _to_json, _from_json,
                             _to_toml, _from_toml, _to_csv, _from_csv, BOX_PARAMETERS)
 from box.exceptions import BoxError, BoxTypeError, BoxKeyError
 import box
+
+_list_pos_re = re.compile(r'\[(\d+)\]')
 
 
 class BoxList(list):
@@ -30,6 +33,19 @@ class BoxList(list):
             for method in ['append', 'extend', 'insert', 'pop', 'remove', 'reverse', 'sort']:
                 self.__setattr__(method, frozen)
 
+    def __getitem__(self, item):
+        if self.box_options.get('box_dots') and isinstance(item, str) and item.startswith('['):
+            list_pos = _list_pos_re.search(item)
+            sel = list_pos.groups()[0]
+            value = super(BoxList, self).__getitem__(int(sel))
+            if len(list_pos.group()) == len(item):
+                return value
+            key = item[len(list_pos.group()):].lstrip('.')
+            if not key:
+                return value
+            return value.__getitem__(key)
+        return super(BoxList, self).__getitem__(item)
+
     def __delitem__(self, key):
         if self.box_options.get('frozen_box'):
             raise BoxError('BoxList is frozen')
@@ -38,6 +54,15 @@ class BoxList(list):
     def __setitem__(self, key, value):
         if self.box_options.get('frozen_box'):
             raise BoxError('BoxList is frozen')
+        if self.box_options.get('box_dots') and isinstance(key, str) and key.startswith('['):
+            list_pos = _list_pos_re.search(key)
+            sel = list_pos.groups()[0]
+            if len(list_pos.group()) == len(key):
+                return super(BoxList, self).__setitem__(int(sel), value)
+            next_key = key[len(list_pos.group()):].lstrip('.')
+            if not next_key:
+                return super(BoxList, self).__setitem__(int(sel), value)
+            return super(BoxList, self).__getitem__(int(sel)).__setitem__(next_key, value)
         super(BoxList, self).__setitem__(key, value)
 
     def _is_intact_type(self, obj):
@@ -58,7 +83,7 @@ class BoxList(list):
                     raise BoxKeyError(err)
         elif isinstance(p_object, list) and not self._is_intact_type(p_object):
             try:
-                p_object = (self if id(p_object) == self.box_org_ref else BoxList(p_object))
+                p_object = (self if id(p_object) == self.box_org_ref else BoxList(p_object, **self.box_options))
             except AttributeError as err:
                 if 'box_org_ref' in self.__dict__:
                     raise BoxKeyError(err)

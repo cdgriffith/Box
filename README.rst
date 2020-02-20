@@ -244,6 +244,10 @@ It's boxes all the way down. At least, when you specify `default_box=True` it ca
       empty_box.a.b.c.d.e.f.g
       # <Box: {}>
 
+      # BOX 4.1 change, on lookup the sub boxes are created
+      print(empty_box)
+      # <Box: {'a': {'b': {'c': {'d': {'e': {'f': {'g': {}}}}}}}}>
+
       empty_box.a.b.c.d.e.f.g = "h"
       empty_box
       # <Box: {'a': {'b': {'c': {'d': {'e': {'f': {'g': 'h'}}}}}}}>
@@ -264,6 +268,9 @@ Unless you want it to be something else.
 `default_box_attr` will first check if it is callable, and will call the object
 if it is, otherwise it will see if has the `copy` attribute and will call that,
 lastly, will just use the provided item as is.
+
+4.1 Update: Previous versions had an error when something that evaluated to None would
+also return a box, such as an empty string or empty list. This behavior has been fixed.
 
 Camel Killer Box
 ----------------
@@ -350,6 +357,13 @@ Be aware, if those sub boxes didn't exist as planned, a new key with that value 
 
     # {'incoming.new.source 1.$$$': 'test'}
 
+4.1 Update: Support for traversing box lists as well!
+
+.. code:: python
+
+        my_box = Box({'data': [ {'rabbit': 'hole'} ] }, box_dots=True)
+        print(data.data[0].rabbit)
+        # hole
 
 BoxList
 =======
