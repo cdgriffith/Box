@@ -219,7 +219,6 @@ class TestBox:
 
     def test_dir(self):
         a = Box(test_dict, camel_killer_box=True)
-        print(a)
         assert 'key1' in dir(a)
         assert 'not$allowed' not in dir(a)
         assert 'key4' in a['key 2']
@@ -402,6 +401,7 @@ class TestBox:
     def test_default_box(self):
         bx = Box(test_dict, default_box=True, default_box_attr={'hi': 'there'})
         assert bx.key_88 == {'hi': 'there'}
+        assert bx['test'] == {'hi': 'there'}
 
         bx2 = Box(test_dict, default_box=True, default_box_attr=Box)
         assert isinstance(bx2.key_77, Box)
@@ -484,11 +484,13 @@ class TestBox:
         bx.camel_case = {'new': 'item'}
         assert bx['CamelCase'] == Box(new='item')
 
+        bx['CamelCase'] = 4
+        assert bx.camel_case == 4
+
         bx2 = Box(extended_test_dict)
         bx2.Key_2 = 4
-        print(bx2)
-        assert bx2["Key 2"] == 4
 
+        assert bx2["Key 2"] == 4
 
     def test_functional_data(self):
         data = Box.from_json(filename=data_json_file,

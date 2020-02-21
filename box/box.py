@@ -263,8 +263,7 @@ class Box(dict):
 
     def __dir__(self):
         allowed = string.ascii_letters + string.digits + '_'
-        kill_camel = self._box_config['camel_killer_box']
-        items = set(self._protected_keys)
+        items = set(super(Box, self).__dir__())
         # Only show items accessible by dot notation
         for key in self.keys():
             key = str(key)
@@ -278,14 +277,9 @@ class Box(dict):
         for key in self.keys():
             if key not in items:
                 if self._box_config['conversion_box']:
-                    key = _safe_attr(key, camel_killer=kill_camel, replacement_char=self._box_config['box_safe_prefix'])
+                    key = _safe_attr(key, replacement_char=self._box_config['box_safe_prefix'])
                     if key:
                         items.add(key)
-            if kill_camel:
-                snake_key = _camel_killer(key)
-                if snake_key:
-                    items.remove(key)
-                    items.add(snake_key)
 
         return list(items)
 
