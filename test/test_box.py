@@ -751,15 +751,16 @@ class TestBox:
             bx['_box_config']
 
     def test_pop(self):
-        bx = Box(a=4, c={"d": 3})
+        bx = Box(a=4, c={"d": 3}, sub_box=Box(test=1))
         assert bx.pop('a') == 4
         with pytest.raises(BoxKeyError):
             bx.pop('b')
         assert bx.pop('a', None) is None
         assert bx.pop('a', True) is True
-        assert bx == {'c': {"d": 3}}
         with pytest.raises(BoxError):
             bx.pop(1, 2, 3)
+        bx.pop('sub_box').pop('test')
+        assert bx == {'c': {"d": 3}}
         assert bx.pop('c', True) is not True
 
     def test_pop_items(self):
@@ -810,7 +811,10 @@ class TestBox:
         assert b['movies.Spaceballs.Stars[1].role'] == 'Testing'
         assert b.movies.Spaceballs.Stars[1].role == 'Testing'
         with pytest.raises(BoxError):
-            b['movies[4']
+            b['.']
+        with pytest.raises(BoxError):
+            from box.box import _parse_box_dots
+            _parse_box_dots('-')
 
     def test_unicode(self):
         bx = Box()
