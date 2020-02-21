@@ -45,6 +45,23 @@ class TestBox:
     def test_camel_killer(self):
         assert box._camel_killer("CamelCase") == "camel_case"
         assert box._camel_killer("Terrible321KeyA") == "terrible321_key_a"
+        bx = Box(camel_killer_box=True, conversion_box=False)
+
+        bx.DeadCamel = 3
+        assert bx['dead_camel'] == 3
+        assert bx.dead_camel == 3
+
+        bx['BigCamel'] = 4
+        assert bx['big_camel'] == 4
+        assert bx.big_camel == 4
+
+        bx1 = Box(camel_killer_box=True, conversion_box=True)
+        bx1['BigCamel'] = 4
+        bx1.DeadCamel = 3
+        assert bx1['big_camel'] == 4
+        assert bx1['dead_camel'] == 3
+        assert bx1.big_camel == 4
+        assert bx1.dead_camel == 3
 
     def test_recursive_tuples(self):
         out = box._recursive_tuples(({'test': 'a'},
@@ -196,9 +213,10 @@ class TestBox:
 
     def test_dir(self):
         a = Box(test_dict, camel_killer_box=True)
+        print(a)
         assert 'key1' in dir(a)
         assert 'not$allowed' not in dir(a)
-        assert 'Key4' in a['Key 2']
+        assert 'key4' in a['key 2']
         for item in ('to_yaml', 'to_dict', 'to_json'):
             assert item in dir(a)
 
@@ -462,7 +480,9 @@ class TestBox:
 
         bx2 = Box(extended_test_dict)
         bx2.Key_2 = 4
+        print(bx2)
         assert bx2["Key 2"] == 4
+
 
     def test_functional_data(self):
         data = Box.from_json(filename=data_json_file,

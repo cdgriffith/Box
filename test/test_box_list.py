@@ -96,6 +96,8 @@ class TestBoxList:
     def test_box_list_to_toml(self):
         bl = BoxList([{'item': 1, 'CamelBad': 2}])
         assert toml.loads(bl.to_toml(key_name='test'))['test'][0]['item'] == 1
+        with pytest.raises(BoxError):
+            BoxList.from_toml('[[test]]\nitem = 1\nCamelBad = 2\n\n', key_name="does not exist")
 
     def test_box_list_from_tml(self):
         alist = [{'item': 1}, {'CamelBad': 2}]

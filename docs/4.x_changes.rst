@@ -88,6 +88,14 @@ Merge update takes existing sub dictionaries into consideration
     repr(box_one)
     "<Box: {'inside_dict': {'data': 5, 'folly': True}}>"
 
+Camel Killer Box now changes keys on insertion
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There was a bug in the 4.0 code that meant camel killer was not working at all under normal conditions due
+to the change of how the box is instantiated.
+
+
+
 
 Conversion keys are now a bit smarter with how they are handled
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -329,7 +329,7 @@ class Box(dict):
 
     def __getitem__(self, item, _ignore_default=False):
         try:
-            value = super(Box, self).__getitem__(item)
+            return super(Box, self).__getitem__(item)
         except KeyError as err:
             if item == '_box_config':
                 raise BoxKeyError('_box_config should only exist as an attribute and is never defaulted') from None
@@ -338,11 +338,13 @@ class Box(dict):
                 if first_item in self.keys():
                     if hasattr(self[first_item], '__getitem__'):
                         return self[first_item][children]
+            if self._box_config['camel_killer_box'] and isinstance(item, str):
+                converted = _camel_killer(item)
+                if converted in self.keys():
+                    return super(Box, self).__getitem__(converted)
             if self._box_config['default_box'] and not _ignore_default:
                 return self.__get_default(item)
             raise BoxKeyError(str(err)) from None
-        else:
-            return value
 
     def keys(self):
         return super(Box, self).keys()
@@ -440,9 +442,6 @@ class Box(dict):
             if self._box_config['default_box']:
                 return self.__get_default(item)
             raise BoxKeyError(str(err)) from None
-        else:
-            if item == '_box_config':
-                return value
         return value
 
     def __setitem__(self, key, value):
@@ -457,6 +456,16 @@ class Box(dict):
                 if hasattr(self[first_item], '__setitem__'):
                     return self[first_item].__setitem__(children, value)
         value = self.__recast(key, value)
+        if key not in self.keys() and (self._box_config['conversion_box'] or self._box_config['camel_killer_box']):
+            if self._box_config['conversion_box']:
+                key = _conversion_checks(key, self.keys(), self._box_config) or key
+            if self._box_config['camel_killer_box'] and isinstance(key, str):
+                for each_key in self:
+                    if key == _camel_killer(each_key):
+                        key = each_key
+                        break
+                else:
+                    key = _camel_killer(key)
         super(Box, self).__setitem__(key, value)
         self.__convert_and_store(key, value)
         self.__create_lineage()
@@ -469,21 +478,7 @@ class Box(dict):
         if key == '_box_config':
             return object.__setattr__(self, key, value)
         value = self.__recast(key, value)
-        if key not in self.keys() and (self._box_config['conversion_box'] or self._box_config['camel_killer_box']):
-            if self._box_config['conversion_box']:
-                k = _conversion_checks(key, self.keys(), self._box_config)
-                self[key if not k else k] = value
-            elif self._box_config['camel_killer_box']:
-                for each_key in self:
-                    if key == _camel_killer(each_key):
-                        self[each_key] = value
-                        break
-                else:
-                    self[_camel_killer(key)] = value
-        else:
-            self[key] = value
-        self.__convert_and_store(key, value)
-        self.__create_lineage()
+        self.__setitem__(key, value)
 
     def __delitem__(self, key):
         if self._box_config['frozen_box']:

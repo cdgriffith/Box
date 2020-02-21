@@ -365,6 +365,8 @@ Be aware, if those sub boxes didn't exist as planned, a new key with that value 
         print(data.data[0].rabbit)
         # hole
 
+This does only work for keys that are already strings as of version 4.1.
+
 BoxList
 =======
 
