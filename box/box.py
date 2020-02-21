@@ -461,7 +461,7 @@ class Box(dict):
                 key = _conversion_checks(key, self.keys(), self._box_config) or key
             if self._box_config['camel_killer_box'] and isinstance(key, str):
                 for each_key in self:
-                    if key == _camel_killer(each_key):
+                    if _camel_killer(key) == each_key:
                         key = each_key
                         break
                 else:
@@ -489,17 +489,13 @@ class Box(dict):
                 return self[first_item].__delitem__(children)
         if key not in self.keys() and (self._box_config['conversion_box'] or self._box_config['camel_killer_box']):
             if self._box_config['conversion_box']:
-                k = _conversion_checks(key, self.keys(), self._box_config)
-                super(Box, self).__delitem__(key if not k else k)
-            elif self._box_config['camel_killer_box']:
+                key = _conversion_checks(key, self.keys(), self._box_config) or key
+            if self._box_config['camel_killer_box'] and isinstance(key, str):
                 for each_key in self:
-                    if key == _camel_killer(each_key):
-                        super(Box, self).__delitem__(each_key)
+                    if _camel_killer(key) == each_key:
+                        key = each_key
                         break
-                else:
-                    raise BoxKeyError(f'Cannot find {key} to delete')
-        else:
-            super(Box, self).__delitem__(key)
+        super(Box, self).__delitem__(key)
 
     def __delattr__(self, item):
         if self._box_config['frozen_box']:
@@ -508,7 +504,7 @@ class Box(dict):
             raise BoxError('"_box_config" is protected')
         if item in self._protected_keys:
             raise BoxKeyError(f'Key name "{item}" is protected')
-        del self[item]
+        self.__delitem__(item)
 
     def pop(self, key, *args):
         if args:

@@ -63,6 +63,12 @@ class TestBox:
         assert bx1.big_camel == 4
         assert bx1.dead_camel == 3
 
+        del bx1.DeadCamel
+        assert 'dead_camel' not in bx1
+        del bx1['big_camel']
+        assert 'big_camel' not in bx1
+        assert len(bx1.keys()) == 0
+
     def test_recursive_tuples(self):
         out = box._recursive_tuples(({'test': 'a'},
                                      ({'second': 'b'},

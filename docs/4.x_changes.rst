@@ -94,7 +94,14 @@ Camel Killer Box now changes keys on insertion
 There was a bug in the 4.0 code that meant camel killer was not working at all under normal conditions due
 to the change of how the box is instantiated.
 
+.. code:: python
 
+        from box import Box
+
+        my_box = Box({'CamelCase': 'Item'}, camel_killer_box=True)
+        assert my_box.camel_case == 'Item'
+        print(my_box.to_dict())
+        # {'camel_case': 'Item'}
 
 
 Conversion keys are now a bit smarter with how they are handled
