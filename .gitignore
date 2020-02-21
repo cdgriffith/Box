@@ -93,3 +93,4 @@ ENV/
 .idea/
 .pypirc
 release.bat
+coverage/

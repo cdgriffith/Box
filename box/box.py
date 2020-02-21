@@ -332,6 +332,10 @@ class Box(dict):
                 if first_item in self.keys():
                     if hasattr(self[first_item], '__getitem__'):
                         return self[first_item][children]
+            if self._box_config['conversion_box'] and item:
+                k = _conversion_checks(item, self.keys(), self._box_config)
+                if k:
+                    return self.__getitem__(k)
             if self._box_config['camel_killer_box'] and isinstance(item, str):
                 converted = _camel_killer(item)
                 if converted in self.keys():
@@ -424,15 +428,6 @@ class Box(dict):
                 raise BoxKeyError(item) from None
             if item == '_box_config':
                 raise BoxError('_box_config key must exist') from None
-            kill_camel = self._box_config['camel_killer_box']
-            if self._box_config['conversion_box'] and item:
-                k = _conversion_checks(item, self.keys(), self._box_config)
-                if k:
-                    return self.__getitem__(k)
-            if kill_camel:
-                for k in self.keys():
-                    if item == _camel_killer(k):
-                        return self.__getitem__(k)
             if self._box_config['default_box']:
                 return self.__get_default(item)
             raise BoxKeyError(str(err)) from None
@@ -454,12 +449,7 @@ class Box(dict):
             if self._box_config['conversion_box']:
                 key = _conversion_checks(key, self.keys(), self._box_config) or key
             if self._box_config['camel_killer_box'] and isinstance(key, str):
-                for each_key in self:
-                    if _camel_killer(key) == each_key:
-                        key = each_key
-                        break
-                else:
-                    key = _camel_killer(key)
+                key = _camel_killer(key)
         super(Box, self).__setitem__(key, value)
         self.__convert_and_store(key, value)
         self.__create_lineage()

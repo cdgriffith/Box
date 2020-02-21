@@ -54,6 +54,7 @@ class TestBox:
         bx['BigCamel'] = 4
         assert bx['big_camel'] == 4
         assert bx.big_camel == 4
+        assert bx.BigCamel == 4
 
         bx1 = Box(camel_killer_box=True, conversion_box=True)
         bx1['BigCamel'] = 4
@@ -62,6 +63,8 @@ class TestBox:
         assert bx1['dead_camel'] == 3
         assert bx1.big_camel == 4
         assert bx1.dead_camel == 3
+        assert bx1.BigCamel == 4
+        assert bx1['BigCamel'] == 4
 
         del bx1.DeadCamel
         assert 'dead_camel' not in bx1
