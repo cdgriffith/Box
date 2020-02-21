@@ -13,6 +13,7 @@ Version 4.1.0
 * Changing `camel_killer` to convert items on insert, which will change the keys when converted back to dict unlike before
 * Fallback to `PyYAML` if `ruamel.yaml` is not detected (thanks to wim glenn)
 * Removing official support for `pypy` as it's pickling behavior is not the same as CPython
+* Removing internal __box_heritage as it was no longer needed due to behavior update
 
 Version 4.0.4
 -------------

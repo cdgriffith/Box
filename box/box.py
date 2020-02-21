@@ -141,12 +141,11 @@ def _parse_box_dots(item):
     raise BoxError('Could not split box dots properly')
 
 
-def _get_box_config(heritage):
+def _get_box_config():
     return {
         # Internal use only
         '__converted': set(),
-        '__box_heritage': heritage,
-        '__created': False,
+        '__created': False
     }
 
 
@@ -181,7 +180,7 @@ class Box(dict):
         the box config is created as early as possible.
         """
         obj = super(Box, cls).__new__(cls, *args, **kwargs)
-        obj._box_config = _get_box_config(kwargs.pop('__box_heritage', None))
+        obj._box_config = _get_box_config()
         obj._box_config.update({
             'default_box': default_box,
             'default_box_attr': cls.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
@@ -204,7 +203,7 @@ class Box(dict):
                  box_duplicates: str = 'ignore', box_intact_types: Union[Tuple, List] = (),
                  box_recast: Dict = None, box_dots: bool = False, **kwargs: Any):
         super(Box, self).__init__()
-        self._box_config = _get_box_config(kwargs.pop('__box_heritage', None))
+        self._box_config = _get_box_config()
         self._box_config.update({
             'default_box': default_box,
             'default_box_attr': self.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
@@ -356,9 +355,9 @@ class Box(dict):
     def __get_default(self, item):
         default_value = self._box_config['default_box_attr']
         if default_value in (self.__class__, dict):
-            value = self.__class__(__box_heritage=(self, item), **self.__box_config())
+            value = self.__class__( **self.__box_config())
         elif isinstance(default_value, dict):
-            value = self.__class__(__box_heritage=(self, item), **self.__box_config(), **default_value)
+            value = self.__class__( **self.__box_config(), **default_value)
         elif isinstance(default_value, list):
             value = box.BoxList(**self.__box_config())
         elif isinstance(default_value, Callable):
@@ -393,29 +392,20 @@ class Box(dict):
         value = self.__recast(item, value)
         # This is the magic sauce that makes sub dictionaries into new box objects
         if isinstance(value, dict) and not isinstance(value, Box):
-            value = self.__class__(value, __box_heritage=(self, item), **self.__box_config())
+            value = self.__class__(value, **self.__box_config())
             super(Box, self).__setitem__(item, value)
         elif isinstance(value, list) and not isinstance(value, box.BoxList):
             if self._box_config['frozen_box']:
                 value = _recursive_tuples(value,
                                           self.__class__,
                                           recreate_tuples=self._box_config['modify_tuples_box'],
-                                          __box_heritage=(self, item),
                                           **self.__box_config())
             else:
-                value = box.BoxList(value, __box_heritage=(self, item), box_class=self.__class__, **self.__box_config())
+                value = box.BoxList(value, box_class=self.__class__, **self.__box_config())
         elif self._box_config['modify_tuples_box'] and isinstance(value, tuple):
-            value = _recursive_tuples(value, self.__class__, recreate_tuples=True, __box_heritage=(self, item),
-                                      **self.__box_config())
+            value = _recursive_tuples(value, self.__class__, recreate_tuples=True, **self.__box_config())
         super(Box, self).__setitem__(item, value)
         self._box_config['__converted'].add(item)
-
-    def __create_lineage(self):
-        if self._box_config['__box_heritage'] and self._box_config['__created']:
-            past, item = self._box_config['__box_heritage']
-            if not past[item]:
-                past[item] = self
-            self._box_config['__box_heritage'] = None
 
     def __getattr__(self, item):
         try:
@@ -452,7 +442,6 @@ class Box(dict):
                 key = _camel_killer(key)
         super(Box, self).__setitem__(key, value)
         self.__convert_and_store(key, value)
-        self.__create_lineage()
 
     def __setattr__(self, key, value):
         if key != '_box_config' and self._box_config['frozen_box'] and self._box_config['__created']:
@@ -500,8 +489,6 @@ class Box(dict):
                 return args[0]
             else:
                 del self[key]
-                if isinstance(item, Box):
-                    item._box_config['__box_heritage'] = ()
                 return item
         try:
             item = self[key]
@@ -509,8 +496,6 @@ class Box(dict):
             raise BoxKeyError('{0}'.format(key)) from None
         else:
             del self[key]
-            if isinstance(item, Box):
-                item._box_config['__box_heritage'] = ()
             return item
 
     def clear(self):
