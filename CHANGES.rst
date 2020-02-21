@@ -10,6 +10,7 @@ Version 4.1.0
 * Fixing `BoxList` to properly send internal box options down into new lists
 * Changing default_box to set objects in box on lookup
 * Fallback to `PyYAML` if `ruamel.yaml` is not detected (thanks to wim glenn)
+* Removing official support for `pypy` as it's pickling behavior is not the same as CPython
 
 Version 4.0.4
 -------------

@@ -405,6 +405,13 @@ class TestBox:
         bx8 = Box(default_box=True, default_box_attr=0)
         assert bx8.nothing == 0
 
+        # Tests __get_default's `copy` clause
+        s = {1, 2, 3}
+        bx9 = Box(default_box=True, default_box_attr=s)
+        assert isinstance(bx9.test, set)
+        assert bx9.test == s
+        assert id(bx9.test) != id(s)
+
     # Issue#59 https://github.com/cdgriffith/Box/issues/59 "Treat None values as non existing keys for default_box"
     def test_default_box_none_transforms(self):
         bx4 = Box({"noneValue": None, "inner": {"noneInner": None}}, default_box=True, default_box_attr="issue#59")
@@ -774,6 +781,8 @@ class TestBox:
         b['movies.Spaceballs.Stars[1].role'] = 'Testing'
         assert b['movies.Spaceballs.Stars[1].role'] == 'Testing'
         assert b.movies.Spaceballs.Stars[1].role == 'Testing'
+        with pytest.raises(BoxError):
+            b['movies[4']
 
     def test_unicode(self):
         bx = Box()

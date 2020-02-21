@@ -132,6 +132,15 @@ def _conversion_checks(item, keys, box_config, check_only=False, pre_check=False
             return k
 
 
+def _parse_box_dots(item):
+    for idx, char in enumerate(item):
+        if char == '[':
+            return item[:idx], item[idx:]
+        elif char == '.':
+            return item[:idx], item[idx + 1:]
+    raise BoxError('Could not split box dots properly')
+
+
 def _get_box_config(heritage):
     return {
         # Internal use only
@@ -325,15 +334,7 @@ class Box(dict):
             if item == '_box_config':
                 raise BoxKeyError('_box_config should only exist as an attribute and is never defaulted') from None
             if self._box_config['box_dots'] and isinstance(item, str) and ('.' in item or '[' in item):
-                for idx, char in enumerate(item):
-                    if char == '[':
-                        first_item, children = item[:idx], item[idx:]
-                        break
-                    elif char == '.':
-                        first_item, children = item[:idx], item[idx + 1:]
-                        break
-                else:
-                    raise BoxError('Could not split box dots properly')
+                first_item, children = _parse_box_dots(item)
                 if first_item in self.keys():
                     if hasattr(self[first_item], '__getitem__'):
                         return self[first_item][children]
@@ -451,15 +452,7 @@ class Box(dict):
             _conversion_checks(key, self.keys(), self._box_config,
                                check_only=True, pre_check=True)
         if self._box_config['box_dots'] and isinstance(key, str) and '.' in key:
-            for idx, char in enumerate(key):
-                if char == '[':
-                    first_item, children = key[:idx], key[idx:]
-                    break
-                elif char == '.':
-                    first_item, children = key[:idx], key[idx + 1:]
-                    break
-            else:
-                raise BoxError('Could not split box dots properly')
+            first_item, children = _parse_box_dots(key)
             if first_item in self.keys():
                 if hasattr(self[first_item], '__setitem__'):
                     return self[first_item].__setitem__(children, value)
