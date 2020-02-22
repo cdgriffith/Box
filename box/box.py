@@ -100,25 +100,23 @@ def _conversion_checks(item, keys, box_config):
     :param item: Item to see if a dup exists
     :param keys: Keys to check against
     :param box_config: Easier to pass in than ask for specific items
-    :return: the original unmodified key, if exists and not check_only
     """
-    if box_config['box_duplicates'] != 'ignore':
-        keys = list(keys) + [item]
+    keys = list(keys) + [item]
 
-        key_list = [(k,
-                     _safe_attr(k, camel_killer=box_config['camel_killer_box'],
-                                replacement_char=box_config['box_safe_prefix']
-                                )) for k in keys]
-        if len(key_list) > len(set(x[1] for x in key_list)):
-            seen, dups = set(), set()
-            for x in key_list:
-                if x[1] in seen:
-                    dups.add(f'{x[0]}({x[1]})')
-                seen.add(x[1])
-            if box_config['box_duplicates'].startswith('warn'):
-                warnings.warn(f'Duplicate conversion attributes exist: {dups}', BoxWarning)
-            else:
-                raise BoxError(f'Duplicate conversion attributes exist: {dups}')
+    key_list = [(k,
+                 _safe_attr(k, camel_killer=box_config['camel_killer_box'],
+                            replacement_char=box_config['box_safe_prefix']
+                            )) for k in keys]
+    if len(key_list) > len(set(x[1] for x in key_list)):
+        seen, dups = set(), set()
+        for x in key_list:
+            if x[1] in seen:
+                dups.add(f'{x[0]}({x[1]})')
+            seen.add(x[1])
+        if box_config['box_duplicates'].startswith('warn'):
+            warnings.warn(f'Duplicate conversion attributes exist: {dups}', BoxWarning)
+        else:
+            raise BoxError(f'Duplicate conversion attributes exist: {dups}')
 
 
 def _attr_lookup(item, keys, box_config):
@@ -142,7 +140,6 @@ def _parse_box_dots(item):
 def _get_box_config():
     return {
         # Internal use only
-        '__converted': set(),
         '__created': False
     }
 
@@ -316,25 +313,6 @@ class Box(dict):
         self._box_config = state['_box_config']
         self.__dict__.update(state)
 
-    def __getitem__(self, item, _ignore_default=False):
-        try:
-            return super(Box, self).__getitem__(item)
-        except KeyError as err:
-            if item == '_box_config':
-                raise BoxKeyError('_box_config should only exist as an attribute and is never defaulted') from None
-            if self._box_config['box_dots'] and isinstance(item, str) and ('.' in item or '[' in item):
-                first_item, children = _parse_box_dots(item)
-                if first_item in self.keys():
-                    if hasattr(self[first_item], '__getitem__'):
-                        return self[first_item][children]
-            if self._box_config['camel_killer_box'] and isinstance(item, str):
-                converted = _camel_killer(item)
-                if converted in self.keys():
-                    return super(Box, self).__getitem__(converted)
-            if self._box_config['default_box'] and not _ignore_default:
-                return self.__get_default(item)
-            raise BoxKeyError(str(err)) from None
-
     def keys(self):
         return super(Box, self).keys()
 
@@ -377,14 +355,15 @@ class Box(dict):
         return value
 
     def __convert_and_store(self, item, value, force_conversion=False):
+        if isinstance(value, (int, float, str, bytes, bytearray, bool, complex, set, frozenset)):
+            return super(Box, self).__setitem__(item, value)
         # If the value has already been converted or should not be converted, return it as-is
-        if ((item in self._box_config['__converted'] and not force_conversion)
-                or (self._box_config['box_intact_types'] and isinstance(value, self._box_config['box_intact_types']))):
-            return value
+        if (not force_conversion or
+                (self._box_config['box_intact_types'] and isinstance(value, self._box_config['box_intact_types']))):
+            return super(Box, self).__setitem__(item, value)
         # This is the magic sauce that makes sub dictionaries into new box objects
         if isinstance(value, dict) and not isinstance(value, Box):
             value = self.__class__(value, **self.__box_config())
-            # super(Box, self).__setitem__(item, value)
         elif isinstance(value, list) and not isinstance(value, box.BoxList):
             if self._box_config['frozen_box']:
                 value = _recursive_tuples(value,
@@ -396,7 +375,25 @@ class Box(dict):
         elif self._box_config['modify_tuples_box'] and isinstance(value, tuple):
             value = _recursive_tuples(value, self.__class__, recreate_tuples=True, **self.__box_config())
         super(Box, self).__setitem__(item, value)
-        self._box_config['__converted'].add(item)
+
+    def __getitem__(self, item, _ignore_default=False):
+        try:
+            return super(Box, self).__getitem__(item)
+        except KeyError as err:
+            if item == '_box_config':
+                raise BoxKeyError('_box_config should only exist as an attribute and is never defaulted') from None
+            if self._box_config['box_dots'] and isinstance(item, str) and ('.' in item or '[' in item):
+                first_item, children = _parse_box_dots(item)
+                if first_item in self.keys():
+                    if hasattr(self[first_item], '__getitem__'):
+                        return self[first_item][children]
+            if self._box_config['camel_killer_box'] and isinstance(item, str):
+                converted = _camel_killer(item)
+                if converted in self.keys():
+                    return super(Box, self).__getitem__(converted)
+            if self._box_config['default_box'] and not _ignore_default:
+                return self.__get_default(item)
+            raise BoxKeyError(str(err)) from None
 
     def __getattr__(self, item):
         try:
@@ -430,9 +427,8 @@ class Box(dict):
         if key not in self.keys() and self._box_config['camel_killer_box']:
             if self._box_config['camel_killer_box'] and isinstance(key, str):
                 key = _camel_killer(key)
-        if self._box_config['conversion_box']:
+        if self._box_config['conversion_box'] and self._box_config['box_duplicates'] != 'ignore':
             _conversion_checks(key, self.keys(), self._box_config)
-        super(Box, self).__setitem__(key, value)
         self.__convert_and_store(key, value)
 
     def __setattr__(self, key, value):

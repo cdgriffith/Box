@@ -1,6 +1,10 @@
 Changelog
 =========
 
+Version 4.1.1
+-------------
+* Adding speed ups to creation and inserts up to 10x and non-conversion updates up to 2x
+
 Version 4.1.0
 -------------
 
