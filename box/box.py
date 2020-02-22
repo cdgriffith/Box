@@ -354,12 +354,11 @@ class Box(dict):
                 raise BoxValueError(f'Cannot convert {value} to {self._box_config["box_recast"][item]}') from None
         return value
 
-    def __convert_and_store(self, item, value, force_conversion=False):
+    def __convert_and_store(self, item, value):
         if isinstance(value, (int, float, str, bytes, bytearray, bool, complex, set, frozenset)):
             return super(Box, self).__setitem__(item, value)
         # If the value has already been converted or should not be converted, return it as-is
-        if (not force_conversion or
-                (self._box_config['box_intact_types'] and isinstance(value, self._box_config['box_intact_types']))):
+        if self._box_config['box_intact_types'] and isinstance(value, self._box_config['box_intact_types']):
             return super(Box, self).__setitem__(item, value)
         # This is the magic sauce that makes sub dictionaries into new box objects
         if isinstance(value, dict) and not isinstance(value, Box):
@@ -532,12 +531,12 @@ class Box(dict):
         if __m:
             if hasattr(__m, 'keys'):
                 for k in __m:
-                    self.__convert_and_store(k, __m[k], force_conversion=True)
+                    self.__convert_and_store(k, __m[k])
             else:
                 for k, v in __m:
-                    self.__convert_and_store(k, v, force_conversion=True)
+                    self.__convert_and_store(k, v)
         for k in kwargs:
-            self.__convert_and_store(k, kwargs[k], force_conversion=True)
+            self.__convert_and_store(k, kwargs[k])
 
     def merge_update(self, __m=None, **kwargs):
         def convert_and_set(k, v):
@@ -551,10 +550,7 @@ class Box(dict):
                     return
             if isinstance(v, list) and not intact_type:
                 v = box.BoxList(v, **self.__box_config())
-            try:
-                self.__setattr__(k, v)
-            except (AttributeError, TypeError):
-                self.__setitem__(k, v)
+            self.__setitem__(k, v)
 
         if __m:
             if hasattr(__m, 'keys'):
