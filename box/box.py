@@ -120,6 +120,8 @@ def _conversion_checks(item, keys, box_config):
             else:
                 raise BoxError(f'Duplicate conversion attributes exist: {dups}')
 
+
+def _attr_lookup(item, keys, box_config):
     # This way will be slower for warnings, as it will have double work
     # But faster for the default 'ignore'
     for k in keys:
@@ -325,10 +327,6 @@ class Box(dict):
                 if first_item in self.keys():
                     if hasattr(self[first_item], '__getitem__'):
                         return self[first_item][children]
-            if self._box_config['conversion_box'] and item:
-                k = _conversion_checks(item, self.keys(), self._box_config)
-                if k:
-                    return self.__getitem__(k)
             if self._box_config['camel_killer_box'] and isinstance(item, str):
                 converted = _camel_killer(item)
                 if converted in self.keys():
@@ -383,11 +381,10 @@ class Box(dict):
         if ((item in self._box_config['__converted'] and not force_conversion)
                 or (self._box_config['box_intact_types'] and isinstance(value, self._box_config['box_intact_types']))):
             return value
-        value = self.__recast(item, value)
         # This is the magic sauce that makes sub dictionaries into new box objects
         if isinstance(value, dict) and not isinstance(value, Box):
             value = self.__class__(value, **self.__box_config())
-            super(Box, self).__setitem__(item, value)
+            # super(Box, self).__setitem__(item, value)
         elif isinstance(value, list) and not isinstance(value, box.BoxList):
             if self._box_config['frozen_box']:
                 value = _recursive_tuples(value,
@@ -414,6 +411,10 @@ class Box(dict):
                 raise BoxError('_box_config key must exist') from None
             if self._box_config['default_box']:
                 return self.__get_default(item)
+            if self._box_config['conversion_box'] and item:
+                k = _attr_lookup(item, self.keys(), self._box_config)
+                if k:
+                    return self.__getitem__(k)
             raise BoxKeyError(str(err)) from None
         return value
 
@@ -426,11 +427,11 @@ class Box(dict):
                 if hasattr(self[first_item], '__setitem__'):
                     return self[first_item].__setitem__(children, value)
         value = self.__recast(key, value)
-        if key not in self.keys() and (self._box_config['conversion_box'] or self._box_config['camel_killer_box']):
-            if self._box_config['conversion_box']:
-                key = _conversion_checks(key, self.keys(), self._box_config) or key
+        if key not in self.keys() and self._box_config['camel_killer_box']:
             if self._box_config['camel_killer_box'] and isinstance(key, str):
                 key = _camel_killer(key)
+        if self._box_config['conversion_box']:
+            _conversion_checks(key, self.keys(), self._box_config)
         super(Box, self).__setitem__(key, value)
         self.__convert_and_store(key, value)
 
@@ -441,6 +442,8 @@ class Box(dict):
             raise BoxKeyError(f'Key name "{key}" is protected')
         if key == '_box_config':
             return object.__setattr__(self, key, value)
+        if self._box_config['conversion_box']:
+            key = _attr_lookup(key, self.keys(), self._box_config) or key
         value = self.__recast(key, value)
         self.__setitem__(key, value)
 
@@ -452,8 +455,6 @@ class Box(dict):
             if first_item in self.keys() and isinstance(self[first_item], dict):
                 return self[first_item].__delitem__(children)
         if key not in self.keys() and (self._box_config['conversion_box'] or self._box_config['camel_killer_box']):
-            if self._box_config['conversion_box']:
-                key = _conversion_checks(key, self.keys(), self._box_config) or key
             if self._box_config['camel_killer_box'] and isinstance(key, str):
                 for each_key in self:
                     if _camel_killer(key) == each_key:
@@ -468,6 +469,8 @@ class Box(dict):
             raise BoxError('"_box_config" is protected')
         if item in self._protected_keys:
             raise BoxKeyError(f'Key name "{item}" is protected')
+        if self._box_config['conversion_box']:
+            item = _attr_lookup(item, self.keys(), self._box_config) or item
         self.__delitem__(item)
 
     def pop(self, key, *args):
