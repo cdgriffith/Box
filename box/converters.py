@@ -7,11 +7,17 @@ import sys
 import csv
 import json
 from pathlib import Path
+import warnings
 
-import ruamel.yaml as yaml
+from box.exceptions import BoxError, BoxWarning
+
+try:
+    import ruamel.yaml as yaml
+except ImportError:
+    import yaml
+    warnings.warn("ruamel.yaml was not detected, using PyYAML instead, which may not support YAML 1.2", BoxWarning)
 import toml
 
-from box.exceptions import BoxError
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box',

@@ -45,6 +45,32 @@ class TestBox:
     def test_camel_killer(self):
         assert box._camel_killer("CamelCase") == "camel_case"
         assert box._camel_killer("Terrible321KeyA") == "terrible321_key_a"
+        bx = Box(camel_killer_box=True, conversion_box=False)
+
+        bx.DeadCamel = 3
+        assert bx['dead_camel'] == 3
+        assert bx.dead_camel == 3
+
+        bx['BigCamel'] = 4
+        assert bx['big_camel'] == 4
+        assert bx.big_camel == 4
+        assert bx.BigCamel == 4
+
+        bx1 = Box(camel_killer_box=True, conversion_box=True)
+        bx1['BigCamel'] = 4
+        bx1.DeadCamel = 3
+        assert bx1['big_camel'] == 4
+        assert bx1['dead_camel'] == 3
+        assert bx1.big_camel == 4
+        assert bx1.dead_camel == 3
+        assert bx1.BigCamel == 4
+        assert bx1['BigCamel'] == 4
+
+        del bx1.DeadCamel
+        assert 'dead_camel' not in bx1
+        del bx1['big_camel']
+        assert 'big_camel' not in bx1
+        assert len(bx1.keys()) == 0
 
     def test_recursive_tuples(self):
         out = box._recursive_tuples(({'test': 'a'},
@@ -198,7 +224,7 @@ class TestBox:
         a = Box(test_dict, camel_killer_box=True)
         assert 'key1' in dir(a)
         assert 'not$allowed' not in dir(a)
-        assert 'Key4' in a['Key 2']
+        assert 'key4' in a['key 2']
         for item in ('to_yaml', 'to_dict', 'to_json'):
             assert item in dir(a)
 
@@ -263,7 +289,7 @@ class TestBox:
 
     def test_auto_attr(self):
         a = Box(test_dict, default_box=True)
-        assert a.a.a.a.a == Box()
+        assert isinstance(a.a.a.a.a, Box)
         a.b.b = 4
         assert a.b.b == 4
 
@@ -378,12 +404,40 @@ class TestBox:
     def test_default_box(self):
         bx = Box(test_dict, default_box=True, default_box_attr={'hi': 'there'})
         assert bx.key_88 == {'hi': 'there'}
+        assert bx['test'] == {'hi': 'there'}
 
         bx2 = Box(test_dict, default_box=True, default_box_attr=Box)
         assert isinstance(bx2.key_77, Box)
 
         bx3 = Box(default_box=True, default_box_attr=3)
         assert bx3.hello == 3
+
+        bx4 = Box(default_box=True, default_box_attr=None)
+        assert bx4.who_is_there is None
+
+        bx5 = Box(default_box=True, default_box_attr=[])
+        assert isinstance(bx5.empty_list_please, list)
+        assert len(bx5.empty_list_please) == 0
+        bx5.empty_list_please.append(1)
+        assert bx5.empty_list_please[0] == 1
+
+        bx6 = Box(default_box=True, default_box_attr=[])
+        my_list = bx6.get('new_list')
+        my_list.append(5)
+        assert bx6.get('new_list')[0] == 5
+
+        bx7 = Box(default_box=True, default_box_attr=False)
+        assert bx7.nothing is False
+
+        bx8 = Box(default_box=True, default_box_attr=0)
+        assert bx8.nothing == 0
+
+        # Tests __get_default's `copy` clause
+        s = {1, 2, 3}
+        bx9 = Box(default_box=True, default_box_attr=s)
+        assert isinstance(bx9.test, set)
+        assert bx9.test == s
+        assert id(bx9.test) != id(s)
 
     # Issue#59 https://github.com/cdgriffith/Box/issues/59 "Treat None values as non existing keys for default_box"
     def test_default_box_none_transforms(self):
@@ -433,8 +487,12 @@ class TestBox:
         bx.camel_case = {'new': 'item'}
         assert bx['CamelCase'] == Box(new='item')
 
+        bx['CamelCase'] = 4
+        assert bx.camel_case == 4
+
         bx2 = Box(extended_test_dict)
         bx2.Key_2 = 4
+
         assert bx2["Key 2"] == 4
 
     def test_functional_data(self):
@@ -696,15 +754,16 @@ class TestBox:
             bx['_box_config']
 
     def test_pop(self):
-        bx = Box(a=4, c={"d": 3})
+        bx = Box(a=4, c={"d": 3}, sub_box=Box(test=1))
         assert bx.pop('a') == 4
         with pytest.raises(BoxKeyError):
             bx.pop('b')
         assert bx.pop('a', None) is None
         assert bx.pop('a', True) is True
-        assert bx == {'c': {"d": 3}}
         with pytest.raises(BoxError):
             bx.pop(1, 2, 3)
+        bx.pop('sub_box').pop('test')
+        assert bx == {'c': {"d": 3}}
         assert bx.pop('c', True) is not True
 
     def test_pop_items(self):
@@ -743,13 +802,22 @@ class TestBox:
         assert bl == [['foo']], bl
 
     def test_dots(self):
-        b = Box(movie_data, box_dots=True)
+        b = Box(movie_data.copy(), box_dots=True)
         assert b['movies.Spaceballs.rating'] == "PG"
         b['movies.Spaceballs.rating'] = 4
         assert b['movies.Spaceballs.rating'] == 4
         del b['movies.Spaceballs.rating']
         with pytest.raises(BoxKeyError):
             b['movies.Spaceballs.rating']
+        assert b['movies.Spaceballs.Stars[1].role'] == 'Barf'
+        b['movies.Spaceballs.Stars[1].role'] = 'Testing'
+        assert b['movies.Spaceballs.Stars[1].role'] == 'Testing'
+        assert b.movies.Spaceballs.Stars[1].role == 'Testing'
+        with pytest.raises(BoxError):
+            b['.']
+        with pytest.raises(BoxError):
+            from box.box import _parse_box_dots
+            _parse_box_dots('-')
 
     def test_unicode(self):
         bx = Box()
@@ -778,19 +846,18 @@ class TestBox:
         b = Box(notThief=1, sortaThief=0, reallyAThief=True, camel_killer_box=True)
         b['$OhNo!'] = 3
         c = Box(notThief=1, sortaThief=0, reallyAThief=True, camel_killer_box=True, conversion_box=False)
-        del (b.not_thief)
-        del (b._oh_no_)
-        del (b.really_a_thief)
+        del b.not_thief
+        del b._oh_no_
+        del b.really_a_thief
         with pytest.raises(KeyError):
-            del (b.really_a_thief)
+            del b.really_a_thief
         with pytest.raises(KeyError):
-            del (b._oh_no_)
+            del b._oh_no_
 
-        del (c.not_thief)
-        del (c.really_a_thief)
-        print(dir(c))
+        del c.not_thief
+        del c.really_a_thief
         with pytest.raises(KeyError):
-            del (c.really_a_thief)
+            del c.really_a_thief
 
     def test_add_boxes(self):
         b = Box(c=1)

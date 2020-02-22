@@ -5,7 +5,10 @@ from typing import Union
 from json import JSONDecodeError
 
 from toml import TomlDecodeError
-from ruamel.yaml import YAMLError
+try:
+    from ruamel.yaml import YAMLError
+except ImportError:
+    from yaml import YAMLError
 
 from box.exceptions import BoxError
 from box.box import Box

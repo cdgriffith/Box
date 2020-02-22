@@ -96,6 +96,8 @@ class TestBoxList:
     def test_box_list_to_toml(self):
         bl = BoxList([{'item': 1, 'CamelBad': 2}])
         assert toml.loads(bl.to_toml(key_name='test'))['test'][0]['item'] == 1
+        with pytest.raises(BoxError):
+            BoxList.from_toml('[[test]]\nitem = 1\nCamelBad = 2\n\n', key_name="does not exist")
 
     def test_box_list_from_tml(self):
         alist = [{'item': 1}, {'CamelBad': 2}]
@@ -142,3 +144,25 @@ class TestBoxList:
         file = Path(tmp_dir, 'csv_file.csv')
         with pytest.raises(BoxError):
             data.to_csv(file)
+
+    def test_box_list_dots(self):
+        data = BoxList([
+            {'test': 1},
+            {'bad': 2, 'data': 3},
+            [[[0, -1], [77, 88]], {'inner': 'one', 'lister': [[{'down': 'rabbit'}]]}]
+        ], box_dots=True)
+
+        assert data['[0].test'] == 1
+        assert data['[1].data'] == 3
+        assert data[1].data == 3
+        data['[1].data'] = 'new_data'
+        assert data['[1].data'] == 'new_data'
+        assert data['[2][0][0][1]'] == -1
+        assert data[2][0][0][1] == -1
+        data['[2][0][0][1]'] = 1_000_000
+        assert data['[2][0][0][1]'] == 1_000_000
+        assert data[2][0][0][1] == 1_000_000
+        assert data['[2][1].lister[0][0].down'] == 'rabbit'
+        data['[2][1].lister[0][0].down'] = 'hole'
+        assert data['[2][1].lister[0][0].down'] == 'hole'
+        assert data[2][1].lister[0][0].down == 'hole'

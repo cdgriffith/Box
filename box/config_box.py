@@ -23,8 +23,10 @@ class ConfigBox(Box):
                                  'from_json', 'from_yaml']
 
     def __getattr__(self, item):
-        """Config file keys are stored in lower case, be a little more
-        loosey goosey"""
+        """
+        Config file keys are stored in lower case, be a little more
+        loosey goosey
+        """
         try:
             return super(ConfigBox, self).__getattr__(item)
         except AttributeError:
@@ -36,7 +38,8 @@ class ConfigBox(Box):
                                                    'getfloat', 'getint']
 
     def bool(self, item, default=None):
-        """ Return value of key as a boolean
+        """
+        Return value of key as a boolean
 
         :param item: key of value to transform
         :param default: value to return if item does not exist
@@ -59,7 +62,8 @@ class ConfigBox(Box):
         return True if item else False
 
     def int(self, item, default=None):
-        """ Return value of key as an int
+        """
+        Return value of key as an int
 
         :param item: key of value to transform
         :param default: value to return if item does not exist
@@ -74,7 +78,8 @@ class ConfigBox(Box):
         return int(item)
 
     def float(self, item, default=None):
-        """ Return value of key as a float
+        """
+        Return value of key as a float
 
         :param item: key of value to transform
         :param default: value to return if item does not exist
@@ -89,7 +94,8 @@ class ConfigBox(Box):
         return float(item)
 
     def list(self, item, default=None, spliter=",", strip=True, mod=None):
-        """ Return value of key as a list
+        """
+        Return value of key as a list
 
         :param item: key of value to transform
         :param mod: function to map against list
