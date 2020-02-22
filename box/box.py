@@ -92,43 +92,35 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
     return tuple(out_list)
 
 
-def _conversion_checks(item, keys, box_config, check_only=False, pre_check=False):
+def _conversion_checks(item, safe_keys, box_config, check_only=False, pre_check=False):
     """
     Internal use for checking if a duplicate safe attribute already exists
 
     :param item: Item to see if a dup exists
-    :param keys: Keys to check against
+    :param safe_keys: Dict of (safe_key, [keys]) to check against
     :param box_config: Easier to pass in than ask for specific items
     :param check_only: Don't bother doing the conversion work
     :param pre_check: Need to add the item to the list of keys to check
     :return: the original unmodified key, if exists and not check_only
     """
     if box_config['box_duplicates'] != 'ignore':
-        if pre_check:
-            keys = list(keys) + [item]
+        safe_item = _safe_attr(item, camel_killer=box_config['camel_killer_box'],
+                                   replacement_char=box_config['box_safe_prefix']
+            )
 
-        key_list = [(k,
-                     _safe_attr(k, camel_killer=box_config['camel_killer_box'],
-                                replacement_char=box_config['box_safe_prefix']
-                                )) for k in keys]
-        if len(key_list) > len(set(x[1] for x in key_list)):
-            seen, dups = set(), set()
-            for x in key_list:
-                if x[1] in seen:
-                    dups.add(f'{x[0]}({x[1]})')
-                seen.add(x[1])
+        if safe_item in safe_keys:
+            dups = set()
+            for x in (item, safe_item), (safe_keys[safe_item], safe_item):
+                dups.add(f'{x[0]}({x[1]})')
+
             if box_config['box_duplicates'].startswith('warn'):
                 warnings.warn(f'Duplicate conversion attributes exist: {dups}')
             else:
                 raise BoxError(f'Duplicate conversion attributes exist: {dups}')
     if check_only:
         return
-    # This way will be slower for warnings, as it will have double work
-    # But faster for the default 'ignore'
-    for k in keys:
-        if item == _safe_attr(k, camel_killer=box_config['camel_killer_box'],
-                              replacement_char=box_config['box_safe_prefix']):
-            return k
+
+    return safe_keys.get(item)
 
 
 def _get_box_config(heritage):
@@ -159,7 +151,7 @@ class Box(dict):
     :param box_dots: access nested Boxes by period separated keys in string
     """
 
-    _protected_keys = dir({}) + ['to_dict', 'to_json', 'to_yaml', 'from_yaml', 'from_json', 'from_toml', 'to_toml']
+    _protected_keys = set(dir({}) + ['to_dict', 'to_json', 'to_yaml', 'from_yaml', 'from_json', 'from_toml', 'to_toml'])
 
     def __new__(cls, *args: Any, default_box: bool = False, default_box_attr: Any = None,
                 default_box_none_transform: bool = True, frozen_box: bool = False, camel_killer_box: bool = False,
@@ -186,6 +178,7 @@ class Box(dict):
             'box_recast': box_recast,
             'box_dots': box_dots
         })
+        super(Box, obj).__setattr__("_safe_keys", {})
         return obj
 
     def __init__(self, *args: Any, default_box: bool = False, default_box_attr: Any = None,
@@ -194,6 +187,7 @@ class Box(dict):
                  box_duplicates: str = 'ignore', box_intact_types: Union[Tuple, List] = (),
                  box_recast: Dict = None, box_dots: bool = False, **kwargs: Any):
         super(Box, self).__init__()
+        super(Box, self).__setattr__("_safe_keys", {})
         self._box_config = _get_box_config(kwargs.pop('__box_heritage', None))
         self._box_config.update({
             'default_box': default_box,
@@ -338,6 +332,9 @@ class Box(dict):
     def keys(self):
         return super(Box, self).keys()
 
+    def __safe_keys(self):
+        return super(Box, self).__getattribute__("_safe_keys")
+
     def values(self):
         return [self[x] for x in self.keys()]
 
@@ -379,6 +376,10 @@ class Box(dict):
         if isinstance(value, dict) and not isinstance(value, Box):
             value = self.__class__(value, __box_heritage=(self, item), **self.__box_config())
             super(Box, self).__setitem__(item, value)
+            safe_key = _safe_attr(item, camel_killer=self.__box_config()['camel_killer_box'],
+                                  replacement_char=self.__box_config()['box_safe_prefix'])
+
+            self.__safe_keys().__setitem__(safe_key, value)
         elif isinstance(value, list) and not isinstance(value, box.BoxList):
             if self._box_config['frozen_box']:
                 value = _recursive_tuples(value,
@@ -392,6 +393,10 @@ class Box(dict):
             value = _recursive_tuples(value, self.__class__, recreate_tuples=True, __box_heritage=(self, item),
                                       **self.__box_config())
         super(Box, self).__setitem__(item, value)
+        safe_key = _safe_attr(item, camel_killer=self.__box_config()['camel_killer_box'],
+                              replacement_char=self.__box_config()['box_safe_prefix'])
+
+        self.__safe_keys().__setitem__(safe_key, item)
         self._box_config['__converted'].add(item)
 
     def __create_lineage(self):
@@ -414,7 +419,7 @@ class Box(dict):
                 raise BoxError('_box_config key must exist') from None
             kill_camel = self._box_config['camel_killer_box']
             if self._box_config['conversion_box'] and item:
-                k = _conversion_checks(item, self.keys(), self._box_config)
+                k = _conversion_checks(item, self.__safe_keys(), self._box_config)
                 if k:
                     return self.__getitem__(k)
             if kill_camel:
@@ -434,7 +439,7 @@ class Box(dict):
         if key != '_box_config' and self._box_config['__created'] and self._box_config['frozen_box']:
             raise BoxError('Box is frozen')
         if self._box_config['conversion_box']:
-            _conversion_checks(key, self.keys(), self._box_config,
+            _conversion_checks(key, self.__safe_keys(), self._box_config,
                                check_only=True, pre_check=True)
         if self._box_config['box_dots'] and isinstance(key, str) and '.' in key:
             first_item, children = key.split('.', 1)
@@ -442,6 +447,10 @@ class Box(dict):
                 return self[first_item].__setitem__(children, value)
         value = self.__recast(key, value)
         super(Box, self).__setitem__(key, value)
+        safe_key = _safe_attr(key, camel_killer=self.__box_config()['camel_killer_box'],
+                              replacement_char=self.__box_config()['box_safe_prefix'])
+
+        self.__safe_keys().__setitem__(safe_key, value)
         self.__convert_and_store(key, value)
         self.__create_lineage()
 
@@ -455,7 +464,7 @@ class Box(dict):
         value = self.__recast(key, value)
         if key not in self.keys() and (self._box_config['conversion_box'] or self._box_config['camel_killer_box']):
             if self._box_config['conversion_box']:
-                k = _conversion_checks(key, self.keys(), self._box_config)
+                k = _conversion_checks(key, self.__safe_keys(), self._box_config)
                 self[key if not k else k] = value
             elif self._box_config['camel_killer_box']:
                 for each_key in self:
@@ -478,22 +487,34 @@ class Box(dict):
                 return self[first_item].__delitem__(children)
         if key not in self.keys() and (self._box_config['conversion_box'] or self._box_config['camel_killer_box']):
             if self._box_config['conversion_box']:
-                k = _conversion_checks(key, self.keys(), self._box_config)
+                k = _conversion_checks(key, self.__safe_keys(), self._box_config)
                 super(Box, self).__delitem__(key if not k else k)
+                safe_key = _safe_attr(key, camel_killer=self.__box_config()['camel_killer_box'],
+                                      replacement_char=self.__box_config()['box_safe_prefix'])
+
+                self.__safe_keys().__delitem__(safe_key)
             elif self._box_config['camel_killer_box']:
                 for each_key in self:
                     if key == _camel_killer(each_key):
                         super(Box, self).__delitem__(each_key)
+                        safe_key = _safe_attr(each_key, camel_killer=self.__box_config()['camel_killer_box'],
+                                              replacement_char=self.__box_config()['box_safe_prefix'])
+
+                        self.__safe_keys().__delitem__(safe_key)
                         break
                 else:
                     raise BoxKeyError(f'Cannot find {key} to delete')
         else:
             super(Box, self).__delitem__(key)
+            safe_key = _safe_attr(key, camel_killer=self.__box_config()['camel_killer_box'],
+                                  replacement_char=self.__box_config()['box_safe_prefix'])
+
+            self.__safe_keys().__delitem__(safe_key)
 
     def __delattr__(self, item):
         if self._box_config['frozen_box']:
             raise BoxError('Box is frozen')
-        if item == '_box_config':
+        if item  == '_box_config':
             raise BoxError('"_box_config" is protected')
         if item in self._protected_keys:
             raise BoxKeyError(f'Key name "{item}" is protected')
@@ -524,6 +545,7 @@ class Box(dict):
 
     def clear(self):
         super(Box, self).clear()
+        self.__safe_keys().clear()
 
     def popitem(self):
         try:
