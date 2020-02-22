@@ -9,8 +9,7 @@ class SBox(Box):
     ShorthandBox (SBox) allows for
     property access of `dict` `json` and `yaml`
     """
-    _protected_keys = dir({}) + ['to_dict', 'to_json', 'to_yaml',
-                                 'json', 'yaml', 'from_yaml', 'from_json',
+    _protected_keys = dir({}) + ['to_dict', 'to_json', 'to_yaml', 'json', 'yaml', 'from_yaml', 'from_json',
                                  'dict', 'toml', 'from_toml', 'to_toml']
 
     @property

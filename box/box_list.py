@@ -102,9 +102,7 @@ class BoxList(list):
         return str(self.to_list())
 
     def __copy__(self):
-        return BoxList((x for x in self),
-                       self.box_class,
-                       **self.box_options)
+        return BoxList((x for x in self), self.box_class, **self.box_options)
 
     def __deepcopy__(self, memo=None):
         out = self.__class__()

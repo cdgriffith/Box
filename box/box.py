@@ -93,20 +93,17 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
     return tuple(out_list)
 
 
-def _conversion_checks(item, keys, box_config, check_only=False, pre_check=False):
+def _conversion_checks(item, keys, box_config):
     """
     Internal use for checking if a duplicate safe attribute already exists
 
     :param item: Item to see if a dup exists
     :param keys: Keys to check against
     :param box_config: Easier to pass in than ask for specific items
-    :param check_only: Don't bother doing the conversion work
-    :param pre_check: Need to add the item to the list of keys to check
     :return: the original unmodified key, if exists and not check_only
     """
     if box_config['box_duplicates'] != 'ignore':
-        if pre_check:
-            keys = list(keys) + [item]
+        keys = list(keys) + [item]
 
         key_list = [(k,
                      _safe_attr(k, camel_killer=box_config['camel_killer_box'],
@@ -122,8 +119,7 @@ def _conversion_checks(item, keys, box_config, check_only=False, pre_check=False
                 warnings.warn(f'Duplicate conversion attributes exist: {dups}', BoxWarning)
             else:
                 raise BoxError(f'Duplicate conversion attributes exist: {dups}')
-    if check_only:
-        return
+
     # This way will be slower for warnings, as it will have double work
     # But faster for the default 'ignore'
     for k in keys:
@@ -285,9 +281,7 @@ class Box(dict):
     def get(self, key, default=NO_DEFAULT):
         if key not in self:
             if default is NO_DEFAULT:
-                if (
-                    self._box_config['default_box']
-                        and self._box_config['default_box_none_transform']):
+                if self._box_config['default_box'] and self._box_config['default_box_none_transform']:
                     return self.__get_default(key)
                 else:
                     return None
@@ -355,9 +349,9 @@ class Box(dict):
     def __get_default(self, item):
         default_value = self._box_config['default_box_attr']
         if default_value in (self.__class__, dict):
-            value = self.__class__( **self.__box_config())
+            value = self.__class__(**self.__box_config())
         elif isinstance(default_value, dict):
-            value = self.__class__( **self.__box_config(), **default_value)
+            value = self.__class__(**self.__box_config(), **default_value)
         elif isinstance(default_value, list):
             value = box.BoxList(**self.__box_config())
         elif isinstance(default_value, Callable):
@@ -426,9 +420,6 @@ class Box(dict):
     def __setitem__(self, key, value):
         if key != '_box_config' and self._box_config['__created'] and self._box_config['frozen_box']:
             raise BoxError('Box is frozen')
-        if self._box_config['conversion_box']:
-            _conversion_checks(key, self.keys(), self._box_config,
-                               check_only=True, pre_check=True)
         if self._box_config['box_dots'] and isinstance(key, str) and '.' in key:
             first_item, children = _parse_box_dots(key)
             if first_item in self.keys():
