@@ -29,45 +29,6 @@ _list_pos_re = re.compile(r'\[(\d+)\]')
 NO_DEFAULT = object()
 
 
-def _safe_attr(attr, camel_killer=False, replacement_char='x'):
-    """Convert a key into something that is accessible as an attribute"""
-    allowed = string.ascii_letters + string.digits + '_'
-
-    if isinstance(attr, tuple):
-        attr = "_".join([str(x) for x in attr])
-
-    attr = attr.decode('utf-8', 'ignore') if isinstance(attr, bytes) else str(attr)
-
-    if camel_killer:
-        attr = _camel_killer(attr)
-
-    out = []
-    last_safe = 0
-    for i, character in enumerate(attr):
-        if character in allowed:
-            last_safe = i
-            out.append(character)
-        elif not out:
-            continue
-        else:
-            if last_safe == i - 1:
-                out.append('_')
-
-    out = "".join(out)[:last_safe + 1]
-
-    try:
-        int(out[0])
-    except (ValueError, IndexError):
-        pass
-    else:
-        out = f'{replacement_char}{out}'
-
-    if out in kwlist:
-        out = f'{replacement_char}{out}'
-
-    return out
-
-
 def _camel_killer(attr):
     """
     CamelKiller, qu'est-ce que c'est?
@@ -93,39 +54,7 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
     return tuple(out_list)
 
 
-def _conversion_checks(item, keys, box_config):
-    """
-    Internal use for checking if a duplicate safe attribute already exists
 
-    :param item: Item to see if a dup exists
-    :param keys: Keys to check against
-    :param box_config: Easier to pass in than ask for specific items
-    """
-    keys = list(keys) + [item]
-
-    key_list = [(k,
-                 _safe_attr(k, camel_killer=box_config['camel_killer_box'],
-                            replacement_char=box_config['box_safe_prefix']
-                            )) for k in keys]
-    if len(key_list) > len(set(x[1] for x in key_list)):
-        seen, dups = set(), set()
-        for x in key_list:
-            if x[1] in seen:
-                dups.add(f'{x[0]}({x[1]})')
-            seen.add(x[1])
-        if box_config['box_duplicates'].startswith('warn'):
-            warnings.warn(f'Duplicate conversion attributes exist: {dups}', BoxWarning)
-        else:
-            raise BoxError(f'Duplicate conversion attributes exist: {dups}')
-
-
-def _attr_lookup(item, keys, box_config):
-    # This way will be slower for warnings, as it will have double work
-    # But faster for the default 'ignore'
-    for k in keys:
-        if item == _safe_attr(k, camel_killer=box_config['camel_killer_box'],
-                              replacement_char=box_config['box_safe_prefix']):
-            return k
 
 
 def _parse_box_dots(item):
@@ -140,7 +69,8 @@ def _parse_box_dots(item):
 def _get_box_config():
     return {
         # Internal use only
-        '__created': False
+        '__created': False,
+        '__safe_keys': {}
     }
 
 
@@ -271,7 +201,7 @@ class Box(dict):
         for key in self.keys():
             if key not in items:
                 if self._box_config['conversion_box']:
-                    key = _safe_attr(key, replacement_char=self._box_config['box_safe_prefix'])
+                    key = self._safe_attr(key)
                     if key:
                         items.add(key)
 
@@ -292,10 +222,10 @@ class Box(dict):
         return self[key]
 
     def copy(self):
-        return Box(super(Box, self).copy())
+        return Box(super(Box, self).copy(), **self.__box_config())
 
     def __copy__(self):
-        return Box(super(Box, self).copy())
+        return Box(super(Box, self).copy(), **self.__box_config())
 
     def __deepcopy__(self, memodict=None):
         frozen = self._box_config['frozen_box']
@@ -355,6 +285,12 @@ class Box(dict):
         return value
 
     def __convert_and_store(self, item, value):
+        if self._box_config['conversion_box']:
+            safe_key = self._safe_attr(item)
+            if safe_key in self._box_config['__safe_keys']:
+                item = self._box_config['__safe_keys'][safe_key]
+            elif safe_key != item:
+                self._box_config['__safe_keys'][safe_key] = item
         if isinstance(value, (int, float, str, bytes, bytearray, bool, complex, set, frozenset)):
             return super(Box, self).__setitem__(item, value)
         # If the value has already been converted or should not be converted, return it as-is
@@ -407,10 +343,11 @@ class Box(dict):
                 raise BoxError('_box_config key must exist') from None
             if self._box_config['default_box']:
                 return self.__get_default(item)
-            if self._box_config['conversion_box'] and item:
-                k = _attr_lookup(item, self.keys(), self._box_config)
-                if k:
-                    return self.__getitem__(k)
+            if self._box_config['conversion_box']:
+                safe_key = self._safe_attr(item)
+                print(self._box_config['__safe_keys'])
+                if safe_key in self._box_config['__safe_keys']:
+                    return self.__getitem__(self._box_config['__safe_keys'][safe_key])
             raise BoxKeyError(str(err)) from None
         return value
 
@@ -427,7 +364,7 @@ class Box(dict):
             if self._box_config['camel_killer_box'] and isinstance(key, str):
                 key = _camel_killer(key)
         if self._box_config['conversion_box'] and self._box_config['box_duplicates'] != 'ignore':
-            _conversion_checks(key, self.keys(), self._box_config)
+            self._conversion_checks(key)
         self.__convert_and_store(key, value)
 
     def __setattr__(self, key, value):
@@ -437,8 +374,6 @@ class Box(dict):
             raise BoxKeyError(f'Key name "{key}" is protected')
         if key == '_box_config':
             return object.__setattr__(self, key, value)
-        if self._box_config['conversion_box']:
-            key = _attr_lookup(key, self.keys(), self._box_config) or key
         value = self.__recast(key, value)
         self.__setitem__(key, value)
 
@@ -449,7 +384,7 @@ class Box(dict):
             first_item, children = key.split('.', 1)
             if first_item in self.keys() and isinstance(self[first_item], dict):
                 return self[first_item].__delitem__(children)
-        if key not in self.keys() and (self._box_config['conversion_box'] or self._box_config['camel_killer_box']):
+        if key not in self.keys() and self._box_config['camel_killer_box']:
             if self._box_config['camel_killer_box'] and isinstance(key, str):
                 for each_key in self:
                     if _camel_killer(key) == each_key:
@@ -464,9 +399,16 @@ class Box(dict):
             raise BoxError('"_box_config" is protected')
         if item in self._protected_keys:
             raise BoxKeyError(f'Key name "{item}" is protected')
-        if self._box_config['conversion_box']:
-            item = _attr_lookup(item, self.keys(), self._box_config) or item
-        self.__delitem__(item)
+        try:
+            self.__delitem__(item)
+        except KeyError as err:
+            if self._box_config['conversion_box']:
+                safe_key = self._safe_attr(item)
+                if safe_key in self._box_config['__safe_keys']:
+                    self.__delitem__(self._box_config['__safe_keys'][safe_key])
+                    del self._box_config['__safe_keys'][safe_key]
+                    return
+            raise BoxKeyError(err)
 
     def pop(self, key, *args):
         if args:
@@ -489,6 +431,7 @@ class Box(dict):
 
     def clear(self):
         super(Box, self).clear()
+        self._box_config['__safe_keys'].clear()
 
     def popitem(self):
         try:
@@ -572,6 +515,59 @@ class Box(dict):
             default = box.BoxList(default, box_class=self.__class__, **self.__box_config())
         self[item] = default
         return default
+
+    def _safe_attr(self, attr):
+        """Convert a key into something that is accessible as an attribute"""
+        allowed = string.ascii_letters + string.digits + '_'
+
+        if isinstance(attr, tuple):
+            attr = "_".join([str(x) for x in attr])
+
+        attr = attr.decode('utf-8', 'ignore') if isinstance(attr, bytes) else str(attr)
+        if self.__box_config()['camel_killer_box']:
+            attr = _camel_killer(attr)
+
+        out = []
+        last_safe = 0
+        for i, character in enumerate(attr):
+            if character in allowed:
+                last_safe = i
+                out.append(character)
+            elif not out:
+                continue
+            else:
+                if last_safe == i - 1:
+                    out.append('_')
+
+        out = "".join(out)[:last_safe + 1]
+
+        try:
+            int(out[0])
+        except (ValueError, IndexError):
+            pass
+        else:
+            out = f'{self.__box_config()["box_safe_prefix"]}{out}'
+
+        if out in kwlist:
+            out = f'{self.__box_config()["box_safe_prefix"]}{out}'
+
+        return out
+
+    def _conversion_checks(self, item):
+        """
+        Internal use for checking if a duplicate safe attribute already exists
+
+        :param item: Item to see if a dup exists
+        :param keys: Keys to check against
+        """
+        safe_item = self._safe_attr(item)
+
+        if safe_item in self._box_config['__safe_keys']:
+            dups = [f'{item}({safe_item})', f'{self._box_config["__safe_keys"][safe_item]}({safe_item})']
+            if self._box_config['box_duplicates'].startswith('warn'):
+                warnings.warn(f'Duplicate conversion attributes exist: {dups}', BoxWarning)
+            else:
+                raise BoxError(f'Duplicate conversion attributes exist: {dups}')
 
     def to_json(self, filename: Union[str, Path] = None, encoding: str = 'utf-8', errors: str = 'strict',
                 **json_kwargs):

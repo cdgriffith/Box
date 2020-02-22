@@ -37,10 +37,10 @@ class TestBox:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
     def test_safe_attrs(self):
-        assert box._safe_attr("BAD!KEY!1", camel_killer=False) == "BAD_KEY_1"
-        assert box._safe_attr("BAD!KEY!2", camel_killer=True) == "bad_key_2"
-        assert box._safe_attr((5, 6, 7), camel_killer=False) == "x5_6_7"
-        assert box._safe_attr(356, camel_killer=False) == "x356"
+        assert Box()._safe_attr("BAD!KEY!1") == "BAD_KEY_1"
+        assert Box(camel_killer_box=True)._safe_attr("BAD!KEY!2") == "bad_key_2"
+        assert Box()._safe_attr((5, 6, 7)) == "x5_6_7"
+        assert Box()._safe_attr(356) == "x356"
 
     def test_camel_killer(self):
         assert box._camel_killer("CamelCase") == "camel_case"
@@ -583,10 +583,11 @@ class TestBox:
             my_box['^a'] = 3
 
     def test_copy(self):
-        my_box = Box(movie_data)
+        my_box = Box(movie_data, camel_killer_box=True)
         bb = my_box.copy()
         assert my_box == bb
         assert isinstance(bb, Box)
+        assert bb._box_config['camel_killer_box']
 
         aa = copy.deepcopy(my_box)
         assert my_box == aa
@@ -595,6 +596,7 @@ class TestBox:
         cc = my_box.__copy__()
         assert my_box == cc
         assert isinstance(cc, Box)
+        assert cc._box_config['camel_killer_box']
 
         dd = BoxList([my_box])
         assert dd == copy.copy(dd)

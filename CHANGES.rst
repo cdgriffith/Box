@@ -3,7 +3,9 @@ Changelog
 
 Version 4.1.1
 -------------
-* Adding speed ups to creation and inserts up to 10x and non-conversion updates up to 2x
+
+* Adding optimizations for speed ups to creation and inserts
+* Adding internal record of safe attributes for faster lookups, increases memory footprint for speed (thanks to Jonas Irgens Kylling)
 * Fixing `merge_update` from incorrectly calling `__setattr__` which was causing a huge slowdown (thanks to Jonas Irgens Kylling)
 
 Version 4.1.0
