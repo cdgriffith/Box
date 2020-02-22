@@ -105,8 +105,7 @@ def _conversion_checks(item, safe_keys, box_config, check_only=False, pre_check=
     """
     if box_config['box_duplicates'] != 'ignore':
         safe_item = _safe_attr(item, camel_killer=box_config['camel_killer_box'],
-                                   replacement_char=box_config['box_safe_prefix']
-            )
+                               replacement_char=box_config['box_safe_prefix'])
 
         if safe_item in safe_keys:
             dups = set()
@@ -277,8 +276,8 @@ class Box(dict):
         if key not in self:
             if default is NO_DEFAULT:
                 if (
-                    self._box_config['default_box']
-                    and self._box_config['default_box_none_transform']):
+                        self._box_config['default_box']
+                        and self._box_config['default_box_none_transform']):
 
                     return self.__get_default(key)
                 else:
@@ -514,7 +513,7 @@ class Box(dict):
     def __delattr__(self, item):
         if self._box_config['frozen_box']:
             raise BoxError('Box is frozen')
-        if item  == '_box_config':
+        if item == '_box_config':
             raise BoxError('"_box_config" is protected')
         if item in self._protected_keys:
             raise BoxKeyError(f'Key name "{item}" is protected')
