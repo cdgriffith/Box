@@ -54,9 +54,6 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
     return tuple(out_list)
 
 
-
-
-
 def _parse_box_dots(item):
     for idx, char in enumerate(item):
         if char == '[':
@@ -287,10 +284,7 @@ class Box(dict):
     def __convert_and_store(self, item, value):
         if self._box_config['conversion_box']:
             safe_key = self._safe_attr(item)
-            if safe_key in self._box_config['__safe_keys']:
-                item = self._box_config['__safe_keys'][safe_key]
-            elif safe_key != item:
-                self._box_config['__safe_keys'][safe_key] = item
+            self._box_config['__safe_keys'][safe_key] = item
         if isinstance(value, (int, float, str, bytes, bytearray, bool, complex, set, frozenset)):
             return super(Box, self).__setitem__(item, value)
         # If the value has already been converted or should not be converted, return it as-is
@@ -375,6 +369,9 @@ class Box(dict):
         if key == '_box_config':
             return object.__setattr__(self, key, value)
         value = self.__recast(key, value)
+        safe_key = self._safe_attr(key)
+        if safe_key in self._box_config['__safe_keys']:
+             key = self._box_config['__safe_keys'][safe_key]
         self.__setitem__(key, value)
 
     def __delitem__(self, key):
@@ -489,7 +486,10 @@ class Box(dict):
                 # in the `converted` box_config set
                 v = self.__class__(v, **self.__box_config())
                 if k in self and isinstance(self[k], dict):
-                    self[k].update(v)
+                    if isinstance(self[k], Box):
+                        self[k].merge_update(v)
+                    else:
+                        self[k].update(v)
                     return
             if isinstance(v, list) and not intact_type:
                 v = box.BoxList(v, **self.__box_config())

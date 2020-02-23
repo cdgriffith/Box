@@ -1,12 +1,13 @@
 Changelog
 =========
 
-Version 4.1.1
+Version 4.2.0
 -------------
 
 * Adding optimizations for speed ups to creation and inserts
 * Adding internal record of safe attributes for faster lookups, increases memory footprint for speed (thanks to Jonas Irgens Kylling)
 * Fixing `merge_update` from incorrectly calling `__setattr__` which was causing a huge slowdown (thanks to Jonas Irgens Kylling)
+* Fixing `copy` and `__copy__` not copying box options
 
 Version 4.1.0
 -------------
