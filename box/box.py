@@ -5,18 +5,18 @@
 """
 Improved dictionary access through dot notation with additional tools.
 """
-import string
-import re
 import copy
-from keyword import kwlist
+import re
+import string
 import warnings
 from collections.abc import Iterable, Mapping, Callable
-from typing import Any, Union, Tuple, List, Dict
+from keyword import kwlist
 from pathlib import Path
+from typing import Any, Union, Tuple, List, Dict
 
 import box
-from box.exceptions import BoxError, BoxKeyError, BoxTypeError, BoxValueError, BoxWarning
 from box.converters import (_to_json, _from_json, _from_toml, _to_toml, _from_yaml, _to_yaml, BOX_PARAMETERS)
+from box.exceptions import BoxError, BoxKeyError, BoxTypeError, BoxValueError, BoxWarning
 
 __all__ = ['Box']
 
@@ -90,7 +90,11 @@ class Box(dict):
     :param box_dots: access nested Boxes by period separated keys in string
     """
 
-    _protected_keys = dir({}) + ['to_dict', 'to_json', 'to_yaml', 'from_yaml', 'from_json', 'from_toml', 'to_toml']
+    _protected_keys = dir({}) + ['to_dict', 'to_json', 'to_yaml', 'from_yaml', 'from_json', 'from_toml', 'to_toml',
+                                 '_Box__convert_and_store', '_Box__recast', '_Box__get_default', '_protected_keys',
+                                 '_conversion_checks', '__copy__', 'merge_update', '_safe_attr', '__dict__',
+                                 '__getattr__', '__add__', 'to_toml', '__module__',
+                                 '__setstate__', '__weakref__']
 
     def __new__(cls, *args: Any, default_box: bool = False, default_box_attr: Any = NO_DEFAULT,
                 default_box_none_transform: bool = True, frozen_box: bool = False, camel_killer_box: bool = False,
@@ -124,7 +128,7 @@ class Box(dict):
                  conversion_box: bool = True, modify_tuples_box: bool = False, box_safe_prefix: str = 'x',
                  box_duplicates: str = 'ignore', box_intact_types: Union[Tuple, List] = (),
                  box_recast: Dict = None, box_dots: bool = False, **kwargs: Any):
-        super(Box, self).__init__()
+        super().__init__()
         self._box_config = _get_box_config()
         self._box_config.update({
             'default_box': default_box,
@@ -184,7 +188,7 @@ class Box(dict):
 
     def __dir__(self):
         allowed = string.ascii_letters + string.digits + '_'
-        items = set(super(Box, self).__dir__())
+        items = set(super().__dir__())
         # Only show items accessible by dot notation
         for key in self.keys():
             key = str(key)
@@ -219,10 +223,10 @@ class Box(dict):
         return self[key]
 
     def copy(self):
-        return Box(super(Box, self).copy(), **self.__box_config())
+        return Box(super().copy(), **self.__box_config())
 
     def __copy__(self):
-        return Box(super(Box, self).copy(), **self.__box_config())
+        return Box(super().copy(), **self.__box_config())
 
     def __deepcopy__(self, memodict=None):
         frozen = self._box_config['frozen_box']
@@ -241,7 +245,7 @@ class Box(dict):
         self.__dict__.update(state)
 
     def keys(self):
-        return super(Box, self).keys()
+        return super().keys()
 
     def values(self):
         return [self[x] for x in self.keys()]
@@ -286,10 +290,10 @@ class Box(dict):
             safe_key = self._safe_attr(item)
             self._box_config['__safe_keys'][safe_key] = item
         if isinstance(value, (int, float, str, bytes, bytearray, bool, complex, set, frozenset)):
-            return super(Box, self).__setitem__(item, value)
+            return super().__setitem__(item, value)
         # If the value has already been converted or should not be converted, return it as-is
         if self._box_config['box_intact_types'] and isinstance(value, self._box_config['box_intact_types']):
-            return super(Box, self).__setitem__(item, value)
+            return super().__setitem__(item, value)
         # This is the magic sauce that makes sub dictionaries into new box objects
         if isinstance(value, dict) and not isinstance(value, Box):
             value = self.__class__(value, **self.__box_config())
@@ -303,11 +307,11 @@ class Box(dict):
                 value = box.BoxList(value, box_class=self.__class__, **self.__box_config())
         elif self._box_config['modify_tuples_box'] and isinstance(value, tuple):
             value = _recursive_tuples(value, self.__class__, recreate_tuples=True, **self.__box_config())
-        super(Box, self).__setitem__(item, value)
+        super().__setitem__(item, value)
 
     def __getitem__(self, item, _ignore_default=False):
         try:
-            return super(Box, self).__getitem__(item)
+            return super().__getitem__(item)
         except KeyError as err:
             if item == '_box_config':
                 raise BoxKeyError('_box_config should only exist as an attribute and is never defaulted') from None
@@ -319,7 +323,7 @@ class Box(dict):
             if self._box_config['camel_killer_box'] and isinstance(item, str):
                 converted = _camel_killer(item)
                 if converted in self.keys():
-                    return super(Box, self).__getitem__(converted)
+                    return super().__getitem__(converted)
             if self._box_config['default_box'] and not _ignore_default:
                 return self.__get_default(item)
             raise BoxKeyError(str(err)) from None
@@ -371,7 +375,7 @@ class Box(dict):
         value = self.__recast(key, value)
         safe_key = self._safe_attr(key)
         if safe_key in self._box_config['__safe_keys']:
-             key = self._box_config['__safe_keys'][safe_key]
+            key = self._box_config['__safe_keys'][safe_key]
         self.__setitem__(key, value)
 
     def __delitem__(self, key):
@@ -387,7 +391,7 @@ class Box(dict):
                     if _camel_killer(key) == each_key:
                         key = each_key
                         break
-        super(Box, self).__delitem__(key)
+        super().__delitem__(key)
 
     def __delattr__(self, item):
         if self._box_config['frozen_box']:
@@ -427,7 +431,7 @@ class Box(dict):
             return item
 
     def clear(self):
-        super(Box, self).clear()
+        super().clear()
         self._box_config['__safe_keys'].clear()
 
     def popitem(self):

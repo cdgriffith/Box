@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
+from json import JSONDecodeError
 from pathlib import Path
 from typing import Union
-from json import JSONDecodeError
 
 from toml import TomlDecodeError
 try:

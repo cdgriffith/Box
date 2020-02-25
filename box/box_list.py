@@ -2,15 +2,14 @@
 # -*- coding: UTF-8 -*-
 #
 # Copyright (c) 2017-2020 - Chris Griffith - MIT License
-from typing import Iterable
-import re
 import copy
+import re
+from typing import Iterable
 
-
+import box
 from box.converters import (_to_yaml, _from_yaml, _to_json, _from_json,
                             _to_toml, _from_toml, _to_csv, _from_csv, BOX_PARAMETERS)
 from box.exceptions import BoxError, BoxTypeError, BoxKeyError
-import box
 
 _list_pos_re = re.compile(r'\[(\d+)\]')
 

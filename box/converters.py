@@ -3,11 +3,11 @@
 
 # Abstract converter functions for use in any Box class
 
-import sys
 import csv
 import json
-from pathlib import Path
+import sys
 import warnings
+from pathlib import Path
 
 from box.exceptions import BoxError, BoxWarning
 
@@ -17,7 +17,6 @@ except ImportError:
     import yaml
     warnings.warn("ruamel.yaml was not detected, using PyYAML instead, which may not support YAML 1.2", BoxWarning)
 import toml
-
 
 BOX_PARAMETERS = ('default_box', 'default_box_attr', 'conversion_box',
                   'frozen_box', 'camel_killer_box',
