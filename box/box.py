@@ -92,9 +92,7 @@ class Box(dict):
 
     _protected_keys = dir({}) + ['to_dict', 'to_json', 'to_yaml', 'from_yaml', 'from_json', 'from_toml', 'to_toml',
                                  '_Box__convert_and_store', '_Box__recast', '_Box__get_default', '_protected_keys',
-                                 '_conversion_checks', '__copy__', 'merge_update', '_safe_attr', '__dict__',
-                                 '__getattr__', '__add__', 'to_toml', '__module__',
-                                 '__setstate__', '__weakref__']
+                                 '_conversion_checks', 'merge_update', '_safe_attr']
 
     def __new__(cls, *args: Any, default_box: bool = False, default_box_attr: Any = NO_DEFAULT,
                 default_box_none_transform: bool = True, frozen_box: bool = False, camel_killer_box: bool = False,
