@@ -19,6 +19,7 @@ Code contributions:
 - Harun Tuncay (haruntuncay)
 - Jeremiah Lowin (jlowin)
 - (jandelgado)
+- Jonas Irgens Kylling (jkylling)
 
 Suggestions and bug reporting:
 

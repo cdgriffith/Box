@@ -17,10 +17,7 @@ class ConfigBox(Box):
     cns.list('my_list', mod=lambda x: int(x)) # [5, 4, 3, 3, 2]
     """
 
-    _protected_keys = dir({}) + ['to_dict', 'bool', 'int', 'float',
-                                 'list', 'getboolean', 'to_json', 'to_yaml',
-                                 'getfloat', 'getint',
-                                 'from_json', 'from_yaml']
+    _protected_keys = dir(Box) + ['bool', 'int', 'float', 'list', 'getboolean', 'getfloat', 'getint']
 
     def __getattr__(self, item):
         """
@@ -28,14 +25,12 @@ class ConfigBox(Box):
         loosey goosey
         """
         try:
-            return super(ConfigBox, self).__getattr__(item)
+            return super().__getattr__(item)
         except AttributeError:
-            return super(ConfigBox, self).__getattr__(item.lower())
+            return super().__getattr__(item.lower())
 
     def __dir__(self):
-        return super(ConfigBox, self).__dir__() + ['bool', 'int', 'float',
-                                                   'list', 'getboolean',
-                                                   'getfloat', 'getint']
+        return super().__dir__() + ['bool', 'int', 'float', 'list', 'getboolean', 'getfloat', 'getint']
 
     def bool(self, item, default=None):
         """
@@ -132,7 +127,7 @@ class ConfigBox(Box):
         return '<ConfigBox: {0}>'.format(str(self.to_dict()))
 
     def copy(self):
-        return ConfigBox(super(ConfigBox, self).copy())
+        return ConfigBox(super().copy())
 
     def __copy__(self):
-        return ConfigBox(super(ConfigBox, self).copy())
+        return ConfigBox(super().copy())
