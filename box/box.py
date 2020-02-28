@@ -341,7 +341,6 @@ class Box(dict):
                 return self.__get_default(item)
             if self._box_config['conversion_box']:
                 safe_key = self._safe_attr(item)
-                print(self._box_config['__safe_keys'])
                 if safe_key in self._box_config['__safe_keys']:
                     return self.__getitem__(self._box_config['__safe_keys'][safe_key])
             raise BoxKeyError(str(err)) from None
