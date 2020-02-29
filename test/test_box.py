@@ -8,6 +8,7 @@ import pickle
 import shutil
 from multiprocessing import Queue
 from pathlib import Path
+import random
 
 import pytest
 import ruamel.yaml as yaml
@@ -894,3 +895,48 @@ class TestBox:
                            box_safe_prefix='x', box_duplicates='warn', box_intact_types=(),
                            box_recast=None)
         assert bx.uno == 2
+
+    def test_unicode_abuse(self):
+        def get_rand_char():
+            inter = random.randint(32, 1114111)
+            try:
+                character = chr(inter)
+            except Exception:
+                print(inter)
+                raise
+            if not character.isprintable():
+                return get_rand_char()
+            return character
+
+        def get_rand_string(min_length=5, max_length=128) -> str:
+            length = random.randint(min_length, max_length)
+            return ''.join(get_rand_char() for _ in range(length))
+
+        def get_rand_bytes() -> bytes:
+            return get_rand_string().encode('utf-8')
+
+        dict = {get_rand_string(): get_rand_bytes() for _ in range(100)}
+
+        dict.update({get_rand_bytes(): get_rand_string() for _ in range(100)})
+
+        my_box = Box(dict)
+
+        for key in list(my_box.keys()):
+            my_box[key]
+            my_box.get(key)
+            if isinstance(key, str):
+                getattr(my_box, key)
+            setattr(my_box, get_rand_string(), get_rand_string())
+            my_box.update({get_rand_string(): get_rand_string()})
+            my_box.merge_update({get_rand_string(): get_rand_string()})
+            my_box[key] = get_rand_string()
+            setattr(my_box, get_rand_string(), get_rand_bytes())
+            my_box.update({get_rand_bytes(): get_rand_bytes()})
+            my_box.merge_update({get_rand_bytes(): get_rand_bytes()})
+            my_box[key] = get_rand_bytes()
+
+        for i, key in enumerate(list(my_box.keys())):
+            if i % 2 != 0 and isinstance(key, str):
+                delattr(my_box, key)
+            else:
+                del my_box[key]
