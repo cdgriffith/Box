@@ -114,7 +114,7 @@ in the `Box` and access them like a normal dictionary, such as `my_box['keys']`.
 *This is as designed, and will not be changed.*
 
 Common non-magic methods that exist in a `Box` are:
-`box_it_up, clear, copy, from_json, fromkeys, get, items, keys, pop, popitem, setdefault, to_dict, to_json, update, merge_update, values`.
+`clear, copy, from_json, fromkeys, get, items, keys, pop, popitem, setdefault, to_dict, to_json, update, merge_update, values`.
 To view an entire list of what cannot be accessed via dot notation, run the command `dir(Box())`.
 
 
@@ -149,11 +149,11 @@ Box's functions
    to_dict          Recursively transform all Box (and BoxList) objects back into a dict (and lists)
    to_json          Save Box object as a JSON string or write to a file with the `filename` parameter
    to_yaml          Save Box object as a YAML string or write to a file with the `filename` parameter
-   to_toml*          Save Box object as a TOML string or write to a file with the `filename` parameter
-   box_it_up        Recursively create all objects into Box and BoxList objects (to front-load operation)
+   to_toml*         Save Box object as a TOML string or write to a file with the `filename` parameter
    from_json        Classmethod, Create a Box object from a JSON file or string (all Box parameters can be passed)
    from_yaml        Classmethod, Create a Box object from a YAML file or string (all Box parameters can be passed)
-   from_toml*        Classmethod, Create a Box object from a TOML file or string (all Box parameters can be passed)
+   from_toml*       Classmethod, Create a Box object from a TOML file or string (all Box parameters can be passed)
+   merge_update     Recursively merge dictionaries or Boxes together instead of replacing
    ================ ===========
 
 \* Do not work with BoxList, only Box
