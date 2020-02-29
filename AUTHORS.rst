@@ -20,6 +20,7 @@ Code contributions:
 - Jeremiah Lowin (jlowin)
 - (jandelgado)
 - Jonas Irgens Kylling (jkylling)
+- Bruno Rocha (rochacbruno)
 
 Suggestions and bug reporting:
 

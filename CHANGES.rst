@@ -1,6 +1,14 @@
 Changelog
 =========
 
+
+Version 4.2.1
+-------------
+
+* Fixing uncaught print statement (thanks to Bruno Rocha)
+* Fixing old references to `box_it_up` in the documentation
+
+
 Version 4.2.0
 -------------
 
