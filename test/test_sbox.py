@@ -1,8 +1,10 @@
 #!/usr/bin/env python
-try:
-    from test.common import *
-except ImportError:
-    from .common import *
+import json
+
+import ruamel.yaml as yaml
+
+from box import SBox, Box
+from test.common import test_dict
 
 
 class TestSBox:

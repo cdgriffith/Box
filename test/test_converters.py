@@ -1,11 +1,14 @@
 #!/usr/bin/env python
-try:
-    from test.common import *
-except ImportError:
-    from .common import *
+import os
+import shutil
 from pathlib import Path
 
+import pytest
+
+from box import BoxError
 from box.converters import _to_toml, _from_toml
+from test.common import tmp_dir, movie_data
+
 
 toml_string = """[movies.Spaceballs]
 imdb_stars = 7.1

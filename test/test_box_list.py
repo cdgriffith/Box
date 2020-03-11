@@ -2,14 +2,18 @@
 # -*- coding: UTF-8 -*-
 # Test files gathered from json.org and yaml.org
 
-import pytest
+import json
+import os
+import shutil
 from pathlib import Path
 
+import pytest
+import ruamel.yaml as yaml
+import toml
 
-try:
-    from test.common import *
-except ImportError:
-    from .common import *
+from box import BoxList, Box, BoxError
+
+from test.common import tmp_dir, test_root
 
 
 class TestBoxList:

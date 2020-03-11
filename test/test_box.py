@@ -1,16 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 # Test files gathered from json.org and yaml.org
-
-from multiprocessing import Process, Queue
-import pytest
+import copy
+import json
+import os
 import pickle
+import shutil
+from multiprocessing import Queue
 from pathlib import Path
 
-try:
-    from test.common import *
-except ImportError:
-    from .common import *
+import pytest
+import ruamel.yaml as yaml
+
+import box
+from box import *
+from test.common import (test_dict, extended_test_dict, tmp_dir, tmp_json_file, tmp_yaml_file, movie_data,
+                         data_json_file, data_yaml_file, test_root)
 
 
 def mp_queue_test(q):
