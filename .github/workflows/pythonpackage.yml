@@ -28,6 +28,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-test.txt
+        pip install coveralls
     - name: Lint with flake8
       run: |
         pip install flake8 flake8-print
@@ -36,12 +37,11 @@ jobs:
         # exit-zero treats all errors as warnings.
         flake8 . --count --exit-zero --max-complexity=20 --max-line-length=120 --statistics
     - name: Test with pytest
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
       run: |
         pytest --cov=box test/
-    - name: Coveralls
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        coveralls
     - name: Check distrubiton log description
       run: |
         pip install setuptools wheel twine
