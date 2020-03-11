@@ -337,12 +337,12 @@ class Box(dict):
                 raise BoxKeyError(item) from None
             if item == '_box_config':
                 raise BoxError('_box_config key must exist') from None
-            if self._box_config['default_box']:
-                return self.__get_default(item)
             if self._box_config['conversion_box']:
                 safe_key = self._safe_attr(item)
                 if safe_key in self._box_config['__safe_keys']:
                     return self.__getitem__(self._box_config['__safe_keys'][safe_key])
+            if self._box_config['default_box']:
+                return self.__get_default(item)
             raise BoxKeyError(str(err)) from None
         return value
 
