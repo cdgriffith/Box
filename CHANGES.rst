@@ -2,6 +2,11 @@ Changelog
 =========
 
 
+Version 4.2.2
+-------------
+
+* Fixing `default_box` doesn't first look for safe attributes before falling back to default (thanks to Pymancer)
+
 Version 4.2.1
 -------------
 

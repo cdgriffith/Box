@@ -427,6 +427,12 @@ class TestBox:
         assert bx9.test == s
         assert id(bx9.test) != id(s)
 
+        bx10 = Box({'from': 'here'}, default_box=True)
+        assert bx10.xfrom == 'here'
+        bx10.xfrom = 5
+        assert bx10.xfrom == 5
+        assert bx10 == {'from': 5}
+
     # Issue#59 https://github.com/cdgriffith/Box/issues/59 "Treat None values as non existing keys for default_box"
     def test_default_box_none_transforms(self):
         bx4 = Box({"noneValue": None, "inner": {"noneInner": None}}, default_box=True, default_box_attr="issue#59")

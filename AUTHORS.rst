@@ -61,3 +61,4 @@ Suggestions and bug reporting:
 - Wenbo Zhao (zhaowb)
 - Yordan Ivanov (iordanivanov)
 - Lei (NEOOOOOOOOOO)
+- Pymancer
