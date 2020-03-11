@@ -13,7 +13,7 @@ import pytest
 import ruamel.yaml as yaml
 
 import box
-from box import *
+from box import Box, BoxError, BoxKeyError, BoxList, SBox, ConfigBox
 from test.common import (test_dict, extended_test_dict, tmp_dir, tmp_json_file, tmp_yaml_file, movie_data,
                          data_json_file, data_yaml_file, test_root)
 
