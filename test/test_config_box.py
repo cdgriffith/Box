@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-try:
-    from test.common import *
-except ImportError:
-    from .common import *
+
+from box import Box, ConfigBox
+from test.common import test_dict
 
 
 class TestConfigBox:

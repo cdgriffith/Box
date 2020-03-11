@@ -1,16 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 # Test files gathered from json.org and yaml.org
-
-from multiprocessing import Process, Queue
-import pytest
+import copy
+import json
+import os
 import pickle
+import shutil
+from multiprocessing import Queue
 from pathlib import Path
 
-try:
-    from test.common import *
-except ImportError:
-    from .common import *
+import pytest
+import ruamel.yaml as yaml
+
+from box import box
+from box import Box, BoxError, BoxKeyError, BoxList, SBox, ConfigBox
+from test.common import (test_dict, extended_test_dict, tmp_dir, tmp_json_file, tmp_yaml_file, movie_data,
+                         data_json_file, data_yaml_file, test_root)
 
 
 def mp_queue_test(q):
@@ -83,23 +88,6 @@ class TestBox:
         assert isinstance(out[1], tuple)
         assert isinstance(out[1][2], tuple)
         assert out[1][0] == {'second': 'b'}
-
-    def test_to_json(self):
-        m_file = os.path.join(tmp_dir, "movie_data")
-        movie_string = box._to_json(movie_data)
-        assert "Rick Moranis" in movie_string
-        box._to_json(movie_data, filename=m_file)
-        assert "Rick Moranis" in open(m_file).read()
-        assert json.load(open(m_file)) == json.loads(movie_string)
-
-    def test_to_yaml(self):
-        m_file = os.path.join(tmp_dir, "movie_data")
-        movie_string = box._to_yaml(movie_data)
-        assert "Rick Moranis" in movie_string
-        box._to_yaml(movie_data, filename=m_file)
-        assert "Rick Moranis" in open(m_file).read()
-        assert yaml.load(open(m_file), Loader=yaml.SafeLoader) == yaml.load(
-            movie_string, Loader=yaml.SafeLoader)
 
     def test_box(self):
         bx = Box(**test_dict)
@@ -438,6 +426,12 @@ class TestBox:
         assert isinstance(bx9.test, set)
         assert bx9.test == s
         assert id(bx9.test) != id(s)
+
+        bx10 = Box({'from': 'here'}, default_box=True)
+        assert bx10.xfrom == 'here'
+        bx10.xfrom = 5
+        assert bx10.xfrom == 5
+        assert bx10 == {'from': 5}
 
     # Issue#59 https://github.com/cdgriffith/Box/issues/59 "Treat None values as non existing keys for default_box"
     def test_default_box_none_transforms(self):

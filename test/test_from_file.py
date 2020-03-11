@@ -3,9 +3,9 @@
 from pathlib import Path
 
 import pytest
-from box import box_from_file
 
-from test.common import *
+from box import box_from_file, Box, BoxList, BoxError
+from test.common import test_root
 
 
 class TestFromFile:
