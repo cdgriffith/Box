@@ -2,11 +2,13 @@
 import os
 import shutil
 from pathlib import Path
+import json
 
 import pytest
+import ruamel.yaml as yaml
 
 from box import BoxError
-from box.converters import _to_toml, _from_toml
+from box.converters import _to_toml, _from_toml, _to_json, _to_yaml
 from test.common import tmp_dir, movie_data
 
 
@@ -64,3 +66,19 @@ class TestConverters:
     def test_bad_from_toml(self):
         with pytest.raises(BoxError):
             _from_toml()
+
+    def test_to_json(self):
+        m_file = os.path.join(tmp_dir, "movie_data")
+        movie_string = _to_json(movie_data)
+        assert "Rick Moranis" in movie_string
+        _to_json(movie_data, filename=m_file)
+        assert "Rick Moranis" in open(m_file).read()
+        assert json.load(open(m_file)) == json.loads(movie_string)
+
+    def test_to_yaml(self):
+        m_file = os.path.join(tmp_dir, "movie_data")
+        movie_string = _to_yaml(movie_data)
+        assert "Rick Moranis" in movie_string
+        _to_yaml(movie_data, filename=m_file)
+        assert "Rick Moranis" in open(m_file).read()
+        assert yaml.load(open(m_file), Loader=yaml.SafeLoader) == yaml.load(movie_string, Loader=yaml.SafeLoader)

@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 import ruamel.yaml as yaml
 
-import box
+from box import box
 from box import Box, BoxError, BoxKeyError, BoxList, SBox, ConfigBox
 from test.common import (test_dict, extended_test_dict, tmp_dir, tmp_json_file, tmp_yaml_file, movie_data,
                          data_json_file, data_yaml_file, test_root)
@@ -88,23 +88,6 @@ class TestBox:
         assert isinstance(out[1], tuple)
         assert isinstance(out[1][2], tuple)
         assert out[1][0] == {'second': 'b'}
-
-    def test_to_json(self):
-        m_file = os.path.join(tmp_dir, "movie_data")
-        movie_string = box._to_json(movie_data)
-        assert "Rick Moranis" in movie_string
-        box._to_json(movie_data, filename=m_file)
-        assert "Rick Moranis" in open(m_file).read()
-        assert json.load(open(m_file)) == json.loads(movie_string)
-
-    def test_to_yaml(self):
-        m_file = os.path.join(tmp_dir, "movie_data")
-        movie_string = box._to_yaml(movie_data)
-        assert "Rick Moranis" in movie_string
-        box._to_yaml(movie_data, filename=m_file)
-        assert "Rick Moranis" in open(m_file).read()
-        assert yaml.load(open(m_file), Loader=yaml.SafeLoader) == yaml.load(
-            movie_string, Loader=yaml.SafeLoader)
 
     def test_box(self):
         bx = Box(**test_dict)
