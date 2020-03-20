@@ -1,0 +1,16 @@
+repos:
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: ''
+    hooks:
+    - id: mypy
+      additional_dependencies: [ruamel.yaml,toml,msgpack]
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.5.0
+    hooks:
+    - id: mixed-line-ending
+    - id: trailing-whitespace
+    - id: requirements-txt-fixer
+-   repo: https://github.com/ambv/black
+    rev: stable
+    hooks:
+    - id: black

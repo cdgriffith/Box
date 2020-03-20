@@ -1,4 +1,4 @@
-|BuildStatus| |CoverageStatus| |License| |PyPi| |DocStatus|
+|BuildStatus| |CoverageStatus| |License| |PyPi|
 
 |BoxImage|
 
@@ -149,9 +149,11 @@ Box's functions
    to_dict          Recursively transform all Box (and BoxList) objects back into a dict (and lists)
    to_json          Save Box object as a JSON string or write to a file with the `filename` parameter
    to_yaml          Save Box object as a YAML string or write to a file with the `filename` parameter
+   to_msgpack       Save Box object as msgpack bytes or write to a file with the `filename` parameter
    to_toml*         Save Box object as a TOML string or write to a file with the `filename` parameter
    from_json        Classmethod, Create a Box object from a JSON file or string (all Box parameters can be passed)
    from_yaml        Classmethod, Create a Box object from a YAML file or string (all Box parameters can be passed)
+   from_msgpack     Classmethod, Create a Box object from a msgpack file or bytes (all Box parameters can be passed)
    from_toml*       Classmethod, Create a Box object from a TOML file or string (all Box parameters can be passed)
    merge_update     Recursively merge dictionaries or Boxes together instead of replacing
    ================ ===========
@@ -521,8 +523,6 @@ MIT License, Copyright (c) 2017-2020 Chris Griffith. See LICENSE file.
    :target: https://travis-ci.org/cdgriffith/Box
 .. |CoverageStatus| image:: https://img.shields.io/coveralls/cdgriffith/Box/master.svg?maxAge=2592000
    :target: https://coveralls.io/r/cdgriffith/Box?branch=master
-.. |DocStatus| image:: https://readthedocs.org/projects/box/badge/?version=latest
-   :target: http://box.readthedocs.org/en/latest/index.html
 .. |PyPi| image:: https://img.shields.io/pypi/v/python-box.svg?maxAge=2592000
    :target: https://pypi.python.org/pypi/python-box/
 .. |License| image:: https://img.shields.io/pypi/l/python-box.svg

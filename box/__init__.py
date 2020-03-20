@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-__author__ = 'Chris Griffith'
-__version__ = '4.2.2'
+__author__ = "Chris Griffith"
+__version__ = "5.0.0.dev0"
 
 from box.box import Box
 from box.box_list import BoxList

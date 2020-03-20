@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 5.0.0
+-------------
+
+* Adding support for msgpack
+* Adding `mypy` type checking, `black` formatting and other checks on commit
+* Change back to no required external imports
+* Removing readthedocs generation
 
 Version 4.2.2
 -------------

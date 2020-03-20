@@ -1,5 +1,5 @@
-pytest>=5.3.5
 coverage>=5.0.3
 pytest-cov>=2.8.1
+pytest>=5.3.5
 reusables>=0.9.5
 wheel>=0.34.2

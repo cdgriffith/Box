@@ -17,7 +17,7 @@ class ConfigBox(Box):
     cns.list('my_list', mod=lambda x: int(x)) # [5, 4, 3, 3, 2]
     """
 
-    _protected_keys = dir(Box) + ['bool', 'int', 'float', 'list', 'getboolean', 'getfloat', 'getint']
+    _protected_keys = dir(Box) + ["bool", "int", "float", "list", "getboolean", "getfloat", "getint"]
 
     def __getattr__(self, item):
         """
@@ -30,7 +30,7 @@ class ConfigBox(Box):
             return super().__getattr__(item.lower())
 
     def __dir__(self):
-        return super().__dir__() + ['bool', 'int', 'float', 'list', 'getboolean', 'getfloat', 'getint']
+        return super().__dir__() + ["bool", "int", "float", "list", "getboolean", "getfloat", "getint"]
 
     def bool(self, item, default=None):
         """
@@ -50,8 +50,7 @@ class ConfigBox(Box):
         if isinstance(item, (bool, int)):
             return bool(item)
 
-        if (isinstance(item, str)
-                and item.lower() in ('n', 'no', 'false', 'f', '0')):
+        if isinstance(item, str) and item.lower() in ("n", "no", "false", "f", "0"):
             return False
 
         return True if item else False
@@ -106,7 +105,7 @@ class ConfigBox(Box):
                 return default
             raise err
         if strip:
-            item = item.lstrip('[').rstrip(']')
+            item = item.lstrip("[").rstrip("]")
         out = [x.strip() if strip else x for x in item.split(spliter)]
         if mod:
             return list(map(mod, out))
@@ -124,7 +123,7 @@ class ConfigBox(Box):
         return self.float(item, default)
 
     def __repr__(self):
-        return '<ConfigBox: {0}>'.format(str(self.to_dict()))
+        return "<ConfigBox: {0}>".format(str(self.to_dict()))
 
     def copy(self):
         return ConfigBox(super().copy())

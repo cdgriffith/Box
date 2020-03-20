@@ -1,7 +1,7 @@
 Box 4.0 Features and Changes
 ============================
 
-Box 4.0 has brought a lot of great new features, but also some breaking changes. They are documented here to help you upgrade. 
+Box 4.0 has brought a lot of great new features, but also some breaking changes. They are documented here to help you upgrade.
 
 To install the latest 4.x you will need at least Python 3.6 (or current supported python 3.x version)
 
@@ -11,7 +11,7 @@ To install the latest 4.x you will need at least Python 3.6 (or current supporte
 
 
 
-If your application is no longer working, and need a quick fix: 
+If your application is no longer working, and need a quick fix:
 
 ..code:: bash
 
@@ -24,7 +24,7 @@ Additions
 Dot notation access by keys!
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Enabled with `box_dots=True`. 
+Enabled with `box_dots=True`.
 
 .. code:: python
 
@@ -65,7 +65,7 @@ Changes
 Adding merge_update as its own function, update now works like the default dictionary update
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Traditional update is destructive to nested dictionaries. 
+Traditional update is destructive to nested dictionaries.
 
 .. code:: python
 
@@ -77,7 +77,7 @@ Traditional update is destructive to nested dictionaries.
     # <Box: {'inside_dict': {'folly': True}}>
 
 
-Merge update takes existing sub dictionaries into consideration 
+Merge update takes existing sub dictionaries into consideration
 
 .. code:: python
 
@@ -156,7 +156,7 @@ If you do chose to stick with PyYaML, you can suppress the warning on just box's
 Additional changes
 ~~~~~~~~~~~~~~~~~~
 
-* Default Box will also work on `None` placeholders 
+* Default Box will also work on `None` placeholders
 
 Removed
 -------
@@ -169,7 +169,7 @@ Python 2 is soon officially EOL and Box 4 won't support it in anyway. Box 3 will
 Removing Ordered Box
 ~~~~~~~~~~~~~~~~~~~~
 
-As dictionaries are ordered by default in Python 3.6+ there is no point to continue writing and testing code outside of that. 
+As dictionaries are ordered by default in Python 3.6+ there is no point to continue writing and testing code outside of that.
 
 Removing `BoxObject`
 ~~~~~~~~~~~~~~~~~~~~
@@ -179,4 +179,4 @@ As BoxObject was not cross platform compatible and had some `issues <https://git
 Removing `box_it_up`
 ~~~~~~~~~~~~~~~~~~~~
 
-Everything is converted on creation again, as the speed was seldom worth the extra headaches associated with such a design. 
+Everything is converted on creation again, as the speed was seldom worth the extra headaches associated with such a design.

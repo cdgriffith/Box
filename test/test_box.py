@@ -14,8 +14,17 @@ import ruamel.yaml as yaml
 
 from box import box
 from box import Box, BoxError, BoxKeyError, BoxList, SBox, ConfigBox
-from test.common import (test_dict, extended_test_dict, tmp_dir, tmp_json_file, tmp_yaml_file, movie_data,
-                         data_json_file, data_yaml_file, test_root)
+from test.common import (
+    test_dict,
+    extended_test_dict,
+    tmp_dir,
+    tmp_json_file,
+    tmp_yaml_file,
+    movie_data,
+    data_json_file,
+    data_yaml_file,
+    test_root,
+)
 
 
 def mp_queue_test(q):
@@ -30,7 +39,6 @@ def mp_queue_test(q):
 
 
 class TestBox:
-
     @pytest.fixture(autouse=True)
     def temp_dir_cleanup(self):
         shutil.rmtree(tmp_dir, ignore_errors=True)
@@ -53,81 +61,80 @@ class TestBox:
         bx = Box(camel_killer_box=True, conversion_box=False)
 
         bx.DeadCamel = 3
-        assert bx['dead_camel'] == 3
+        assert bx["dead_camel"] == 3
         assert bx.dead_camel == 3
 
-        bx['BigCamel'] = 4
-        assert bx['big_camel'] == 4
+        bx["BigCamel"] = 4
+        assert bx["big_camel"] == 4
         assert bx.big_camel == 4
         assert bx.BigCamel == 4
 
         bx1 = Box(camel_killer_box=True, conversion_box=True)
-        bx1['BigCamel'] = 4
+        bx1["BigCamel"] = 4
         bx1.DeadCamel = 3
-        assert bx1['big_camel'] == 4
-        assert bx1['dead_camel'] == 3
+        assert bx1["big_camel"] == 4
+        assert bx1["dead_camel"] == 3
         assert bx1.big_camel == 4
         assert bx1.dead_camel == 3
         assert bx1.BigCamel == 4
-        assert bx1['BigCamel'] == 4
+        assert bx1["BigCamel"] == 4
 
         del bx1.DeadCamel
-        assert 'dead_camel' not in bx1
-        del bx1['big_camel']
-        assert 'big_camel' not in bx1
+        assert "dead_camel" not in bx1
+        del bx1["big_camel"]
+        assert "big_camel" not in bx1
         assert len(bx1.keys()) == 0
 
     def test_recursive_tuples(self):
-        out = box._recursive_tuples(({'test': 'a'},
-                                     ({'second': 'b'},
-                                      {'third': 'c'}, ('fourth',))),
-                                    dict, recreate_tuples=True)
+        out = box._recursive_tuples(
+            ({"test": "a"}, ({"second": "b"}, {"third": "c"}, ("fourth",))), dict, recreate_tuples=True
+        )
         assert isinstance(out, tuple)
         assert isinstance(out[0], dict)
-        assert out[0] == {'test': 'a'}
+        assert out[0] == {"test": "a"}
         assert isinstance(out[1], tuple)
         assert isinstance(out[1][2], tuple)
-        assert out[1][0] == {'second': 'b'}
+        assert out[1][0] == {"second": "b"}
 
     def test_box(self):
         bx = Box(**test_dict)
-        assert bx.key1 == test_dict['key1']
-        assert dict(getattr(bx, 'Key 2')) == test_dict['Key 2']
-        setattr(bx, 'TEST_KEY', 'VALUE')
-        assert bx.TEST_KEY == 'VALUE'
-        delattr(bx, 'TEST_KEY')
-        assert 'TEST_KEY' not in bx.to_dict(), bx.to_dict()
-        assert isinstance(bx['Key 2'].Key4, Box)
+        assert bx.key1 == test_dict["key1"]
+        assert dict(getattr(bx, "Key 2")) == test_dict["Key 2"]
+        setattr(bx, "TEST_KEY", "VALUE")
+        assert bx.TEST_KEY == "VALUE"
+        delattr(bx, "TEST_KEY")
+        assert "TEST_KEY" not in bx.to_dict(), bx.to_dict()
+        assert isinstance(bx["Key 2"].Key4, Box)
         assert "'key1': 'value1'" in str(bx)
         assert repr(bx).startswith("<Box:")
-        bx2 = Box([((3, 4), "A"), ("_box_config", 'test')])
+        bx2 = Box([((3, 4), "A"), ("_box_config", "test")])
         assert bx2[(3, 4)] == "A"
-        assert bx2['_box_config'] == 'test'
+        assert bx2["_box_config"] == "test"
         bx3 = Box(a=4, conversion_box=False)
-        setattr(bx3, 'key', 2)
+        setattr(bx3, "key", 2)
         assert bx3.key == 2
         bx3.__setattr__("Test", 3)
         assert bx3.Test == 3
 
     def test_box_modify_at_depth(self):
         bx = Box(**test_dict)
-        assert 'key1' in bx
-        assert 'key2' not in bx
-        bx['Key 2'].new_thing = "test"
-        assert bx['Key 2'].new_thing == "test"
-        bx['Key 2'].new_thing += "2"
-        assert bx['Key 2'].new_thing == "test2"
-        assert bx['Key 2'].to_dict()['new_thing'] == "test2"
-        assert bx.to_dict()['Key 2']['new_thing'] == "test2"
-        bx.__setattr__('key1', 1)
-        assert bx['key1'] == 1
-        bx.__delattr__('key1')
-        assert 'key1' not in bx
+        assert "key1" in bx
+        assert "key2" not in bx
+        bx["Key 2"].new_thing = "test"
+        assert bx["Key 2"].new_thing == "test"
+        bx["Key 2"].new_thing += "2"
+        assert bx["Key 2"].new_thing == "test2"
+        assert bx["Key 2"].to_dict()["new_thing"] == "test2"
+        assert bx.to_dict()["Key 2"]["new_thing"] == "test2"
+        bx.__setattr__("key1", 1)
+        assert bx["key1"] == 1
+        bx.__delattr__("key1")
+        assert "key1" not in bx
 
     def test_error_box(self):
         bx = Box(**test_dict)
         with pytest.raises(AttributeError):
-            getattr(bx, 'hello')
+            getattr(bx, "hello")
 
     def test_box_from_dict(self):
         ns = Box({"k1": "v1", "k2": {"k3": "v2"}})
@@ -139,30 +146,30 @@ class TestBox:
 
     def test_basic_box(self):
         a = Box(one=1, two=2, three=3)
-        b = Box({'one': 1, 'two': 2, 'three': 3})
-        c = Box((zip(['one', 'two', 'three'], [1, 2, 3])))
-        d = Box(([('two', 2), ('one', 1), ('three', 3)]))
-        e = Box(({'three': 3, 'one': 1, 'two': 2}))
+        b = Box({"one": 1, "two": 2, "three": 3})
+        c = Box((zip(["one", "two", "three"], [1, 2, 3])))
+        d = Box(([("two", 2), ("one", 1), ("three", 3)]))
+        e = Box(({"three": 3, "one": 1, "two": 2}))
         assert a == b == c == d == e
 
     def test_protected_box_methods(self):
         my_box = Box(a=3)
         with pytest.raises(AttributeError):
-            my_box.to_dict = 'test'
+            my_box.to_dict = "test"
 
         with pytest.raises(AttributeError):
             del my_box.to_json
 
     def test_bad_args(self):
         with pytest.raises(TypeError):
-            Box('123', '432')
+            Box("123", "432")
 
     def test_box_inits(self):
-        a = Box({'data': 2, 'count': 5})
+        a = Box({"data": 2, "count": 5})
         b = Box(data=2, count=5)
-        c = Box({'data': 2, 'count': 1}, count=5)
-        d = Box([('data', 2), ('count', 5)])
-        e = Box({'a': [{'item': 3}, {'item': []}]})
+        c = Box({"data": 2, "count": 1}, count=5)
+        d = Box([("data", 2), ("count", 5)])
+        e = Box({"a": [{"item": 3}, {"item": []}]})
         assert e.a[1].item == []
         assert a == b == c == d
 
@@ -177,16 +184,16 @@ class TestBox:
             Box(22, 33)
 
     def test_create_subdicts(self):
-        a = Box({'data': 2, 'count': 5})
-        a.brand_new = {'subdata': 1}
+        a = Box({"data": 2, "count": 5})
+        a.brand_new = {"subdata": 1}
         assert a.brand_new.subdata == 1
-        a.new_list = [{'sub_list_item': 1}]
+        a.new_list = [{"sub_list_item": 1}]
         assert a.new_list[0].sub_list_item == 1
         assert isinstance(a.new_list, BoxList)
-        a.new_list2 = [[{'sub_list_item': 2}]]
+        a.new_list2 = [[{"sub_list_item": 2}]]
         assert a.new_list2[0][0].sub_list_item == 2
         b = a.to_dict()
-        assert not isinstance(b['new_list'], BoxList)
+        assert not isinstance(b["new_list"], BoxList)
 
     def test_to_json_basic(self):
         a = Box(test_dict)
@@ -210,70 +217,69 @@ class TestBox:
 
     def test_dir(self):
         a = Box(test_dict, camel_killer_box=True)
-        assert 'key1' in dir(a)
-        assert 'not$allowed' not in dir(a)
-        assert 'key4' in a['key 2']
-        for item in ('to_yaml', 'to_dict', 'to_json'):
+        assert "key1" in dir(a)
+        assert "not$allowed" not in dir(a)
+        assert "key4" in a["key 2"]
+        for item in ("to_yaml", "to_dict", "to_json"):
             assert item in dir(a)
 
-        assert a.big_camel == 'hi'
-        assert 'big_camel' in dir(a)
+        assert a.big_camel == "hi"
+        assert "big_camel" in dir(a)
 
     def test_update(self):
         a = Box(test_dict)
         a.grand = 1000
-        a.update({'key1': {'new': 5}, 'Key 2': {"add_key": 6},
-                  'lister': ['a']})
-        a.update([('asdf', 'fdsa')])
+        a.update({"key1": {"new": 5}, "Key 2": {"add_key": 6}, "lister": ["a"]})
+        a.update([("asdf", "fdsa")])
         a.update(testkey=66)
-        a.update({'items': {'test': 'pme'}})
-        a.update({'key1': {'gg': 4}})
+        a.update({"items": {"test": "pme"}})
+        a.update({"key1": {"gg": 4}})
         b = Box()
         b.update(item=1)
         b.update(E=1)
         b.update(__m=1)
         with pytest.raises(ValueError):
-            b.update('test')
+            b.update("test")
 
         assert a.grand == 1000
-        assert a['grand'] == 1000
-        assert isinstance(a['items'], Box)
-        assert a['items'].test == 'pme'
-        assert a['Key 2'].add_key == 6
+        assert a["grand"] == 1000
+        assert isinstance(a["items"], Box)
+        assert a["items"].test == "pme"
+        assert a["Key 2"].add_key == 6
         assert isinstance(a.key1, Box)
         assert isinstance(a.lister, BoxList)
-        assert a.asdf == 'fdsa'
+        assert a.asdf == "fdsa"
         assert a.testkey == 66
         assert a.key1.gg == 4
-        assert 'new' not in a.key1.keys()
+        assert "new" not in a.key1.keys()
 
     def test_merge_update(self):
         a = Box(test_dict)
         a.grand = 1000
-        a.merge_update({'key1': {'new': 5}, 'Key 2': {"add_key": 6}, 'lister': ['a']})
-        a.merge_update([('asdf', 'fdsa')])
+        a.merge_update({"key1": {"new": 5}, "Key 2": {"add_key": 6}, "lister": ["a"]})
+        a.merge_update([("asdf", "fdsa")])
         a.merge_update(testkey=66)
-        a.merge_update({'items': {'test': 'pme'}})
-        a.merge_update({'key1': {'gg': 4}})
+        a.merge_update({"items": {"test": "pme"}})
+        a.merge_update({"key1": {"gg": 4}})
         b = Box()
         b.merge_update(item=1)
         b.merge_update(E=4)
         b.merge_update(__m=1)
 
         assert a.grand == 1000
-        assert a['grand'] == 1000
-        assert isinstance(a['items'], Box)
-        assert a['items'].test == 'pme'
+        assert a["grand"] == 1000
+        assert isinstance(a["items"], Box)
+        assert a["items"].test == "pme"
         assert a.key1.new == 5
-        assert a['Key 2'].add_key == 6
+        assert a["Key 2"].add_key == 6
         assert isinstance(a.key1, Box)
         assert isinstance(a.lister, BoxList)
-        assert a.asdf == 'fdsa'
+        assert a.asdf == "fdsa"
         assert a.testkey == 66
         assert a.key1.new == 5
         assert a.key1.gg == 4
         with pytest.raises(ValueError):
-            b.merge_update('test')
+            b.merge_update("test")
 
     def test_auto_attr(self):
         a = Box(test_dict, default_box=True)
@@ -284,12 +290,12 @@ class TestBox:
     def test_set_default(self):
         a = Box(test_dict)
 
-        new = a.setdefault("key3", {'item': 2})
-        new_list = a.setdefault("lister", [{'gah': 7}])
-        assert a.setdefault("key1", False) == 'value1'
+        new = a.setdefault("key3", {"item": 2})
+        new_list = a.setdefault("lister", [{"gah": 7}])
+        assert a.setdefault("key1", False) == "value1"
 
         assert new == Box(item=2)
-        assert new_list == BoxList([{'gah': 7}])
+        assert new_list == BoxList([{"gah": 7}])
         assert a.key3.item == 2
         assert a.lister[0].gah == 7
 
@@ -306,14 +312,12 @@ class TestBox:
     def test_from_json(self):
         bx = Box.from_json(json.dumps(test_dict))
         assert isinstance(bx, Box)
-        assert bx.key1 == 'value1'
+        assert bx.key1 == "value1"
 
     def test_from_yaml(self):
-        bx = Box.from_yaml(yaml.dump(test_dict),
-                           conversion_box=False,
-                           default_box=True)
+        bx = Box.from_yaml(yaml.dump(test_dict), conversion_box=False, default_box=True)
         assert isinstance(bx, Box)
-        assert bx.key1 == 'value1'
+        assert bx.key1 == "value1"
         assert bx.Key_2 == Box()
 
     def test_bad_from_json(self):
@@ -328,14 +332,14 @@ class TestBox:
             Box.from_yaml()
 
         with pytest.raises(BoxError) as err2:
-            Box.from_yaml('lol')
+            Box.from_yaml("lol")
 
     def test_conversion_box(self):
         bx = Box(extended_test_dict, conversion_box=True)
         assert bx.Key_2.Key_3 == "Value 3"
-        assert bx.x3 == 'howdy'
-        assert bx.xnot == 'true'
-        assert bx.x3_4 == 'test'
+        assert bx.x3 == "howdy"
+        assert bx.xnot == "true"
+        assert bx.x3_4 == "test"
         with pytest.raises(AttributeError):
             getattr(bx, "(3, 4)")
 
@@ -343,15 +347,15 @@ class TestBox:
         bx = Box(extended_test_dict, frozen_box=True)
 
         assert isinstance(bx.alist, tuple)
-        assert bx.alist[0] == {'a': 1}
+        assert bx.alist[0] == {"a": 1}
         with pytest.raises(BoxError):
             bx.new = 3
 
         with pytest.raises(BoxError):
-            bx['new'] = 3
+            bx["new"] = 3
 
         with pytest.raises(BoxError):
-            del bx['not']
+            del bx["not"]
 
         with pytest.raises(BoxError):
             delattr(bx, "key1")
@@ -383,16 +387,16 @@ class TestBox:
 
     def test_config(self):
         bx = Box(extended_test_dict)
-        assert bx['_box_config'] is True
+        assert bx["_box_config"] is True
         assert isinstance(bx._box_config, dict)
         with pytest.raises(BoxError):
-            delattr(bx, '_box_config')
+            delattr(bx, "_box_config")
         bx._box_config
 
     def test_default_box(self):
-        bx = Box(test_dict, default_box=True, default_box_attr={'hi': 'there'})
-        assert bx.key_88 == {'hi': 'there'}
-        assert bx['test'] == {'hi': 'there'}
+        bx = Box(test_dict, default_box=True, default_box_attr={"hi": "there"})
+        assert bx.key_88 == {"hi": "there"}
+        assert bx["test"] == {"hi": "there"}
 
         bx2 = Box(test_dict, default_box=True, default_box_attr=Box)
         assert isinstance(bx2.key_77, Box)
@@ -410,9 +414,9 @@ class TestBox:
         assert bx5.empty_list_please[0] == 1
 
         bx6 = Box(default_box=True, default_box_attr=[])
-        my_list = bx6.get('new_list')
+        my_list = bx6.get("new_list")
         my_list.append(5)
-        assert bx6.get('new_list')[0] == 5
+        assert bx6.get("new_list")[0] == 5
 
         bx7 = Box(default_box=True, default_box_attr=False)
         assert bx7.nothing is False
@@ -427,11 +431,11 @@ class TestBox:
         assert bx9.test == s
         assert id(bx9.test) != id(s)
 
-        bx10 = Box({'from': 'here'}, default_box=True)
-        assert bx10.xfrom == 'here'
+        bx10 = Box({"from": "here"}, default_box=True)
+        assert bx10.xfrom == "here"
         bx10.xfrom = 5
         assert bx10.xfrom == 5
-        assert bx10 == {'from': 5}
+        assert bx10 == {"from": 5}
 
     # Issue#59 https://github.com/cdgriffith/Box/issues/59 "Treat None values as non existing keys for default_box"
     def test_default_box_none_transforms(self):
@@ -439,35 +443,37 @@ class TestBox:
         assert bx4.noneValue == "issue#59"
         assert bx4.inner.noneInner == "issue#59"
 
-        bx5 = Box({"noneValue": None, "inner": {"noneInner": None}},
-                  default_box=True,
-                  default_box_none_transform=False,
-                  default_box_attr="attr")
+        bx5 = Box(
+            {"noneValue": None, "inner": {"noneInner": None}},
+            default_box=True,
+            default_box_none_transform=False,
+            default_box_attr="attr",
+        )
         assert bx5.noneValue is None
         assert bx5.absentKey == "attr"
         assert bx5.inner.noneInner is None
 
     def test_camel_killer_box(self):
         td = extended_test_dict.copy()
-        td['CamelCase'] = 'Item'
-        td['321CamelCaseFever!'] = 'Safe'
+        td["CamelCase"] = "Item"
+        td["321CamelCaseFever!"] = "Safe"
 
         kill_box = Box(td, camel_killer_box=True, conversion_box=False)
-        assert kill_box.camel_case == 'Item'
-        assert kill_box['321CamelCaseFever!'] == 'Safe'
+        assert kill_box.camel_case == "Item"
+        assert kill_box["321CamelCaseFever!"] == "Safe"
 
         con_kill_box = Box(td, conversion_box=True, camel_killer_box=True)
-        assert con_kill_box.camel_case == 'Item'
-        assert con_kill_box.x321_camel_case_fever == 'Safe'
+        assert con_kill_box.camel_case == "Item"
+        assert con_kill_box.x321_camel_case_fever == "Safe"
 
     def test_default_and_camel_killer_box(self):
         td = extended_test_dict.copy()
-        td['CamelCase'] = 'Item'
+        td["CamelCase"] = "Item"
         killer_default_box = Box(td, camel_killer_box=True, default_box=True)
-        assert killer_default_box.camel_case == 'Item'
-        assert killer_default_box.CamelCase == 'Item'
+        assert killer_default_box.camel_case == "Item"
+        assert killer_default_box.CamelCase == "Item"
         assert isinstance(killer_default_box.does_not_exist, Box)
-        assert isinstance(killer_default_box['does_not_exist'], Box)
+        assert isinstance(killer_default_box["does_not_exist"], Box)
 
     def test_box_modify_tuples(self):
         bx = Box(extended_test_dict, modify_tuples_box=True)
@@ -476,12 +482,11 @@ class TestBox:
         assert isinstance(bx.tuples_galore[1], tuple)
 
     def test_box_set_attribs(self):
-        bx = Box(extended_test_dict, conversion_box=False,
-                 camel_killer_box=True)
-        bx.camel_case = {'new': 'item'}
-        assert bx['CamelCase'] == Box(new='item')
+        bx = Box(extended_test_dict, conversion_box=False, camel_killer_box=True)
+        bx.camel_case = {"new": "item"}
+        assert bx["CamelCase"] == Box(new="item")
 
-        bx['CamelCase'] = 4
+        bx["CamelCase"] = 4
         assert bx.camel_case == 4
 
         bx2 = Box(extended_test_dict)
@@ -490,10 +495,7 @@ class TestBox:
         assert bx2["Key 2"] == 4
 
     def test_functional_data(self):
-        data = Box.from_json(filename=data_json_file,
-                             conversion_box=True,
-                             camel_killer_box=True,
-                             default_box=False)
+        data = Box.from_json(filename=data_json_file, conversion_box=True, camel_killer_box=True, default_box=False)
         assert data.widget
 
         with pytest.raises(AttributeError):
@@ -505,24 +507,20 @@ class TestBox:
         base_config = data._Box__box_config()
         widget_config = data.widget._Box__box_config()
 
-        assert base_config == widget_config, "{} != {}".format(base_config,
-                                                               widget_config)
+        assert base_config == widget_config, "{} != {}".format(base_config, widget_config)
 
     def test_functional_spaceballs(self):
         my_box = Box(movie_data)
 
-        my_box.movies.Spaceballs.Stars.append(
-            {"name": "Bill Pullman", "imdb": "nm0000597",
-             "role": "Lone Starr"})
+        my_box.movies.Spaceballs.Stars.append({"name": "Bill Pullman", "imdb": "nm0000597", "role": "Lone Starr"})
         assert my_box.movies.Spaceballs.Stars[-1].role == "Lone Starr"
         assert my_box.movies.Robin_Hood_Men_in_Tights.length == 104
         my_box.movies.Robin_Hood_Men_in_Tights.Stars.pop(0)
-        assert my_box.movies.Robin_Hood_Men_in_Tights.Stars[
-                   0].name == "Richard Lewis"
+        assert my_box.movies.Robin_Hood_Men_in_Tights.Stars[0].name == "Richard Lewis"
 
     def test_circular_references(self):
         circular_dict = {}
-        circular_dict['a'] = circular_dict
+        circular_dict["a"] = circular_dict
         bx = Box(circular_dict)
         assert bx.a.a == bx.a
         circular_dict_2 = bx.a.a.a.to_dict()
@@ -556,7 +554,7 @@ class TestBox:
 
     def test_from_multiline(self):
         content = '{"a": 2}\n{"b": 3}\r\n \n'
-        with open(tmp_json_file, 'w') as f:
+        with open(tmp_json_file, "w") as f:
             f.write(content)
 
         a = BoxList.from_json(filename=tmp_json_file, multiline=True)
@@ -574,14 +572,14 @@ class TestBox:
 
         my_box = Box({"?a": 1}, box_duplicates="error")
         with pytest.raises(BoxError):
-            my_box['^a'] = 3
+            my_box["^a"] = 3
 
     def test_copy(self):
         my_box = Box(movie_data, camel_killer_box=True)
         bb = my_box.copy()
         assert my_box == bb
         assert isinstance(bb, Box)
-        assert bb._box_config['camel_killer_box']
+        assert bb._box_config["camel_killer_box"]
 
         aa = copy.deepcopy(my_box)
         assert my_box == aa
@@ -590,7 +588,7 @@ class TestBox:
         cc = my_box.__copy__()
         assert my_box == cc
         assert isinstance(cc, Box)
-        assert cc._box_config['camel_killer_box']
+        assert cc._box_config["camel_killer_box"]
 
         dd = BoxList([my_box])
         assert dd == copy.copy(dd)
@@ -606,27 +604,27 @@ class TestBox:
             my_box.g
 
         with pytest.raises(KeyError):
-            my_box['g']
+            my_box["g"]
 
         with pytest.raises(BoxKeyError):
-            my_box['g']
+            my_box["g"]
 
         with pytest.raises(BoxError):
-            my_box['g']
+            my_box["g"]
 
     def test_pickle(self):
-        pic_file = os.path.join(tmp_dir, 'test.p')
-        pic2_file = os.path.join(tmp_dir, 'test.p2')
+        pic_file = os.path.join(tmp_dir, "test.p")
+        pic2_file = os.path.join(tmp_dir, "test.p2")
         bb = Box(movie_data, conversion_box=False)
-        pickle.dump(bb, open(pic_file, 'wb'))
-        loaded = pickle.load(open(pic_file, 'rb'))
+        pickle.dump(bb, open(pic_file, "wb"))
+        loaded = pickle.load(open(pic_file, "rb"))
         assert bb == loaded
-        assert loaded._box_config['conversion_box'] is False
+        assert loaded._box_config["conversion_box"] is False
 
-        ll = [[Box({'a': 'b'})], [[{'c': 'g'}]]]
+        ll = [[Box({"a": "b"})], [[{"c": "g"}]]]
         bx = BoxList(ll)
-        pickle.dump(bx, open(pic2_file, 'wb'))
-        loaded2 = pickle.load(open(pic2_file, 'rb'))
+        pickle.dump(bx, open(pic2_file, "wb"))
+        loaded2 = pickle.load(open(pic2_file, "rb"))
         assert bx == loaded2
         loaded2.box_options = bx.box_options
 
@@ -637,7 +635,7 @@ class TestBox:
 
     def test_conversion_dup_only(self):
         with pytest.raises(BoxError):
-            Box(movie_data, conversion_box=False, box_duplicates='error')
+            Box(movie_data, conversion_box=False, box_duplicates="error")
 
     def test_values(self):
         b = Box()
@@ -670,12 +668,11 @@ class TestBox:
 
     def test_get_default_box(self):
         bx = Box(default_box=True)
-        assert bx.get('test', 4) == 4
-        assert isinstance(bx.get('a'), Box)
-        assert bx.get('test', None) is None
+        assert bx.get("test", 4) == 4
+        assert isinstance(bx.get("a"), Box)
+        assert bx.get("test", None) is None
 
     def test_inheritance_copy(self):
-
         class Box2(Box):
             pass
 
@@ -711,13 +708,14 @@ class TestBox:
 
     def test_underscore_removal(self):
         from box import Box
-        b = Box(_out='preserved', test_='safe')
-        b.update({'out': 'updated', 'test': 'unsafe'})
-        assert b.out == 'updated'
-        assert b._out == 'preserved'
-        assert b.to_dict() == {'out': 'updated', 'test': 'unsafe', '_out': 'preserved', 'test_': 'safe'}
-        assert b.test == 'unsafe'
-        assert b.test_ == 'safe'
+
+        b = Box(_out="preserved", test_="safe")
+        b.update({"out": "updated", "test": "unsafe"})
+        assert b.out == "updated"
+        assert b._out == "preserved"
+        assert b.to_dict() == {"out": "updated", "test": "unsafe", "_out": "preserved", "test_": "safe"}
+        assert b.test == "unsafe"
+        assert b.test_ == "safe"
 
     def test_is_in(self):
         bx = Box()
@@ -744,27 +742,27 @@ class TestBox:
 
     def test_get_box_config(self):
         bx = Box()
-        bx_config = bx.__getattr__('_box_config')
+        bx_config = bx.__getattr__("_box_config")
         assert bx_config
         with pytest.raises(BoxKeyError):
-            bx['_box_config']
+            bx["_box_config"]
 
     def test_pop(self):
         bx = Box(a=4, c={"d": 3}, sub_box=Box(test=1))
-        assert bx.pop('a') == 4
+        assert bx.pop("a") == 4
         with pytest.raises(BoxKeyError):
-            bx.pop('b')
-        assert bx.pop('a', None) is None
-        assert bx.pop('a', True) is True
+            bx.pop("b")
+        assert bx.pop("a", None) is None
+        assert bx.pop("a", True) is True
         with pytest.raises(BoxError):
             bx.pop(1, 2, 3)
-        bx.pop('sub_box').pop('test')
-        assert bx == {'c': {"d": 3}}
-        assert bx.pop('c', True) is not True
+        bx.pop("sub_box").pop("test")
+        assert bx == {"c": {"d": 3}}
+        assert bx.pop("c", True) is not True
 
     def test_pop_items(self):
         bx = Box(a=4)
-        assert bx.popitem() == ('a', 4)
+        assert bx.popitem() == ("a", 4)
         with pytest.raises(BoxKeyError):
             assert bx.popitem()
 
@@ -772,21 +770,21 @@ class TestBox:
         bx = Box()
         bx.a = 1
         bx.c = 2
-        assert list(bx.__iter__()) == ['a', 'c']
+        assert list(bx.__iter__()) == ["a", "c"]
 
     def test_revered(self):
         bx = Box()
         bx.a = 1
         bx.c = 2
-        assert list(reversed(bx)) == ['c', 'a']
+        assert list(reversed(bx)) == ["c", "a"]
 
     def test_clear(self):
         bx = Box()
         bx.a = 1
         bx.c = 4
-        bx['g'] = 7
+        bx["g"] = 7
         bx.d = 2
-        assert list(bx.keys()) == ['a', 'c', 'g', 'd']
+        assert list(bx.keys()) == ["a", "c", "g", "d"]
         bx.clear()
         assert bx == {}
         assert not bx.keys()
@@ -795,25 +793,26 @@ class TestBox:
         b = Box()
         bl = b.setdefault("l", [])
         bl.append(["foo"])
-        assert bl == [['foo']], bl
+        assert bl == [["foo"]], bl
 
     def test_dots(self):
         b = Box(movie_data.copy(), box_dots=True)
-        assert b['movies.Spaceballs.rating'] == "PG"
-        b['movies.Spaceballs.rating'] = 4
-        assert b['movies.Spaceballs.rating'] == 4
-        del b['movies.Spaceballs.rating']
+        assert b["movies.Spaceballs.rating"] == "PG"
+        b["movies.Spaceballs.rating"] = 4
+        assert b["movies.Spaceballs.rating"] == 4
+        del b["movies.Spaceballs.rating"]
         with pytest.raises(BoxKeyError):
-            b['movies.Spaceballs.rating']
-        assert b['movies.Spaceballs.Stars[1].role'] == 'Barf'
-        b['movies.Spaceballs.Stars[1].role'] = 'Testing'
-        assert b['movies.Spaceballs.Stars[1].role'] == 'Testing'
-        assert b.movies.Spaceballs.Stars[1].role == 'Testing'
+            b["movies.Spaceballs.rating"]
+        assert b["movies.Spaceballs.Stars[1].role"] == "Barf"
+        b["movies.Spaceballs.Stars[1].role"] = "Testing"
+        assert b["movies.Spaceballs.Stars[1].role"] == "Testing"
+        assert b.movies.Spaceballs.Stars[1].role == "Testing"
         with pytest.raises(BoxError):
-            b['.']
+            b["."]
         with pytest.raises(BoxError):
             from box.box import _parse_box_dots
-            _parse_box_dots('-')
+
+            _parse_box_dots("-")
 
     def test_unicode(self):
         bx = Box()
@@ -822,7 +821,7 @@ class TestBox:
         bx2 = Box(camel_killer_box=True)
         bx2["\U0001f631"] = 4
 
-        assert bx == bx2 == {'😱': 4}
+        assert bx == bx2 == {"😱": 4}
 
     def test_camel_killer_hashables(self):
         bx = Box(camel_killer_box=True)
@@ -831,16 +830,17 @@ class TestBox:
 
     def test_intact_types_dict(self):
         from collections import OrderedDict
-        bx = Box(a=OrderedDict([('y', 1), ('x', 2)]))
+
+        bx = Box(a=OrderedDict([("y", 1), ("x", 2)]))
         assert isinstance(bx.a, Box)
         assert not isinstance(bx.a, OrderedDict)
-        bx = Box(a=OrderedDict([('y', 1), ('x', 2)]), box_intact_types=[OrderedDict])
+        bx = Box(a=OrderedDict([("y", 1), ("x", 2)]), box_intact_types=[OrderedDict])
         assert isinstance(bx.a, OrderedDict)
         assert not isinstance(bx.a, Box)
 
     def test_delete_attributes(self):
         b = Box(notThief=1, sortaThief=0, reallyAThief=True, camel_killer_box=True)
-        b['$OhNo!'] = 3
+        b["$OhNo!"] = 3
         c = Box(notThief=1, sortaThief=0, reallyAThief=True, camel_killer_box=True, conversion_box=False)
         del b.not_thief
         del b._oh_no_
@@ -863,34 +863,43 @@ class TestBox:
             Box() + BoxList()
 
     def test_type_recast(self):
-        b = Box(id='6', box_recast={'id': int})
+        b = Box(id="6", box_recast={"id": int})
         assert isinstance(b.id, int)
         with pytest.raises(ValueError):
-            b['sub_box'] = {'id': 'bad_id'}
+            b["sub_box"] = {"id": "bad_id"}
 
     def test_box_dots(self):
-        b = Box({'my_key': {'does stuff': {'to get to': 'where I want'}}}, box_dots=True)
-        assert b['my_key.does stuff.to get to'] == 'where I want'
-        b['my_key.does stuff.to get to'] = 'test'
-        assert b['my_key.does stuff.to get to'] == 'test'
-        del b['my_key.does stuff']
-        assert b['my_key'] == {}
+        b = Box({"my_key": {"does stuff": {"to get to": "where I want"}}}, box_dots=True)
+        assert b["my_key.does stuff.to get to"] == "where I want"
+        b["my_key.does stuff.to get to"] = "test"
+        assert b["my_key.does stuff.to get to"] == "test"
+        del b["my_key.does stuff"]
+        assert b["my_key"] == {}
         b[4] = 2
         assert b[4] == 2
         del b[4]
 
     def test_toml(self):
         b = Box.from_toml(filename=Path(test_root, "data", "toml_file.tml"), default_box=True)
-        assert b.database.server == '192.168.1.1'
+        assert b.database.server == "192.168.1.1"
         assert b.clients.hosts == ["alpha", "omega"]
         assert b.database.to_toml().startswith('server = "192.168.1.1"')
-        assert b._box_config['default_box'] is True
+        assert b._box_config["default_box"] is True
 
     def test_parameter_pass_through(self):
-        bx = Box.from_yaml('uno: 2', box_dots=True, default_box=True,
-                           default_box_attr=None, default_box_none_transform=True,
-                           frozen_box=False, camel_killer_box=True,
-                           conversion_box=True, modify_tuples_box=True,
-                           box_safe_prefix='x', box_duplicates='warn', box_intact_types=(),
-                           box_recast=None)
+        bx = Box.from_yaml(
+            "uno: 2",
+            box_dots=True,
+            default_box=True,
+            default_box_attr=None,
+            default_box_none_transform=True,
+            frozen_box=False,
+            camel_killer_box=True,
+            conversion_box=True,
+            modify_tuples_box=True,
+            box_safe_prefix="x",
+            box_duplicates="warn",
+            box_intact_types=(),
+            box_recast=None,
+        )
         assert bx.uno == 2

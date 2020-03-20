@@ -30,7 +30,6 @@ role = "Barf"
 
 
 class TestConverters:
-
     @pytest.fixture(autouse=True)
     def temp_dir_cleanup(self):
         shutil.rmtree(tmp_dir, ignore_errors=True)
@@ -54,14 +53,14 @@ class TestConverters:
 
     def test_from_toml(self):
         result = _from_toml(toml_string)
-        assert result['movies']['Spaceballs']['length'] == 96
+        assert result["movies"]["Spaceballs"]["length"] == 96
 
     def test_from_toml_file(self):
         out_file = Path(tmp_dir, "toml_test.tml")
         assert not out_file.exists()
         out_file.write_text(toml_string)
         result = _from_toml(filename=out_file)
-        assert result['movies']['Spaceballs']['length'] == 96
+        assert result["movies"]["Spaceballs"]["length"] == 96
 
     def test_bad_from_toml(self):
         with pytest.raises(BoxError):

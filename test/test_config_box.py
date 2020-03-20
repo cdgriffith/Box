@@ -5,18 +5,19 @@ from test.common import test_dict
 
 
 class TestConfigBox:
-
     def test_config_box(self):
-        g = {"b0": 'no',
-             "b1": 'yes',
-             "b2": 'True',
-             "b3": 'false',
-             "b4": True,
-             "i0": '34',
-             "f0": '5.5',
-             "f1": '3.333',
-             "l0": '4,5,6,7,8',
-             "l1": '[2 3 4 5 6]'}
+        g = {
+            "b0": "no",
+            "b1": "yes",
+            "b2": "True",
+            "b3": "false",
+            "b4": True,
+            "i0": "34",
+            "f0": "5.5",
+            "f1": "3.333",
+            "l0": "4,5,6,7,8",
+            "l1": "[2 3 4 5 6]",
+        }
 
         cns = ConfigBox(bb=g)
         assert cns.bb.list("l1", spliter=" ") == ["2", "3", "4", "5", "6"]
@@ -40,7 +41,7 @@ class TestConfigBox:
     def test_dir(self):
         b = ConfigBox(test_dict)
 
-        for item in ('to_yaml', 'to_dict', 'to_json', 'int', 'list', 'float'):
+        for item in ("to_yaml", "to_dict", "to_json", "int", "list", "float"):
             assert item in dir(b)
 
     def test_config_default(self):

@@ -1,2 +1,5 @@
+black
+msgpack>=1.0.0
+pre-commit>=2.2.0
+ruamel.yaml>=0.16.10
 toml>=0.10.0
-ruamel.yaml>=0.16.5
