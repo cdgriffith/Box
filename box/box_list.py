@@ -29,7 +29,7 @@ class BoxList(list):
     objects as necessary.
     """
 
-    def __init__(self, iterable: Iterable = None, box_class: box.Box = Type[box.Box], **box_options):
+    def __init__(self, iterable: Iterable = None, box_class: Type[box.Box] = box.Box, **box_options):
         self.box_class = box_class
         self.box_options = box_options
         self.box_org_ref = id(iterable) if iterable else 0

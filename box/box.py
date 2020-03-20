@@ -12,7 +12,8 @@ import warnings
 from collections.abc import Iterable, Mapping, Callable
 from keyword import kwlist
 from pathlib import Path
-from typing import Any, Union, Tuple, List, Dict
+from typing import Any, Union, Tuple, List, Dict, Generator
+
 
 import box
 from box.converters import (
@@ -92,6 +93,7 @@ class Box(dict):
     :param default_box_attr: Specify the default replacement.
         WARNING: If this is not the default 'Box', it will not be recursive
     :param default_box_none_transform: When using default_box, treat keys with none values as absent. True by default
+    :param default_box_no_key_error: Don't raise key error during pop, popitems or delete when a default_box
     :param frozen_box: After creation, the box cannot be modified
     :param camel_killer_box: Convert CamelCase to snake_case
     :param conversion_box: Check for near matching keys as attributes
@@ -126,6 +128,7 @@ class Box(dict):
         default_box: bool = False,
         default_box_attr: Any = NO_DEFAULT,
         default_box_none_transform: bool = True,
+        default_box_no_key_error: bool = True,
         frozen_box: bool = False,
         camel_killer_box: bool = False,
         conversion_box: bool = True,
@@ -148,6 +151,7 @@ class Box(dict):
                 "default_box": default_box,
                 "default_box_attr": cls.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
                 "default_box_none_transform": default_box_none_transform,
+                "default_box_no_key_error": default_box_no_key_error,
                 "conversion_box": conversion_box,
                 "box_safe_prefix": box_safe_prefix,
                 "frozen_box": frozen_box,
@@ -167,6 +171,7 @@ class Box(dict):
         default_box: bool = False,
         default_box_attr: Any = NO_DEFAULT,
         default_box_none_transform: bool = True,
+        default_box_no_key_error: bool = True,
         frozen_box: bool = False,
         camel_killer_box: bool = False,
         conversion_box: bool = True,
@@ -185,6 +190,7 @@ class Box(dict):
                 "default_box": default_box,
                 "default_box_attr": self.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
                 "default_box_none_transform": default_box_none_transform,
+                "default_box_no_key_error": default_box_no_key_error,
                 "conversion_box": conversion_box,
                 "box_safe_prefix": box_safe_prefix,
                 "frozen_box": frozen_box,
@@ -274,13 +280,13 @@ class Box(dict):
             return default
         return self[key]
 
-    def copy(self):
+    def copy(self) -> "Box":
         return Box(super().copy(), **self.__box_config())
 
-    def __copy__(self):
+    def __copy__(self) -> "Box":
         return Box(super().copy(), **self.__box_config())
 
-    def __deepcopy__(self, memodict=None):
+    def __deepcopy__(self, memodict=None) -> "Box":
         frozen = self._box_config["frozen_box"]
         config = self.__box_config()
         config["frozen_box"] = False
@@ -296,16 +302,7 @@ class Box(dict):
         self._box_config = state["_box_config"]
         self.__dict__.update(state)
 
-    def keys(self):
-        return super().keys()
-
-    def values(self):
-        return [self[x] for x in self.keys()]
-
-    def items(self):
-        return [(x, self[x]) for x in self.keys()]
-
-    def __get_default(self, item):
+    def __get_default(self, item=None, store=True):
         default_value = self._box_config["default_box_attr"]
         if default_value in (self.__class__, dict):
             value = self.__class__(**self.__box_config())
@@ -319,10 +316,11 @@ class Box(dict):
             value = default_value.copy()
         else:
             value = default_value
-        self.__convert_and_store(item, value)
+        if store:
+            self.__convert_and_store(item, value)
         return value
 
-    def __box_config(self):
+    def __box_config(self) -> Dict:
         out = {}
         for k, v in self._box_config.copy().items():
             if not k.startswith("__"):
@@ -441,7 +439,12 @@ class Box(dict):
                     if _camel_killer(key) == each_key:
                         key = each_key
                         break
-        super().__delitem__(key)
+        try:
+            super().__delitem__(key)
+        except KeyError as err:
+            if self._box_config["default_box"] and self._box_config["default_box_no_key_error"]:
+                return self.__get_default(store=False)
+            raise BoxKeyError(err)
 
     def __delattr__(self, item):
         if self._box_config["frozen_box"]:
@@ -459,6 +462,8 @@ class Box(dict):
                     self.__delitem__(self._box_config["__safe_keys"][safe_key])
                     del self._box_config["__safe_keys"][safe_key]
                     return
+            if self._box_config["default_box"] and self._box_config["default_box_no_key_error"]:
+                return self.__get_default(store=False)
             raise BoxKeyError(err)
 
     def pop(self, key, *args):
@@ -475,6 +480,8 @@ class Box(dict):
         try:
             item = self[key]
         except KeyError:
+            if self._box_config["default_box"] and self._box_config["default_box_no_key_error"]:
+                return self.__get_default(store=False)
             raise BoxKeyError("{0}".format(key)) from None
         else:
             del self[key]
@@ -488,24 +495,26 @@ class Box(dict):
         try:
             key = next(self.__iter__())
         except StopIteration:
+            if self._box_config["default_box"] and self._box_config["default_box_no_key_error"]:
+                return self.__get_default(store=False)
             raise BoxKeyError("Empty box") from None
         return key, self.pop(key)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Box: {self.to_dict()}>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.to_dict())
 
-    def __iter__(self):
+    def __iter__(self) -> Generator:
         for key in self.keys():
             yield key
 
-    def __reversed__(self):
+    def __reversed__(self) -> Generator:
         for key in reversed(list(self.keys())):
             yield key
 
-    def to_dict(self):
+    def to_dict(self) -> Dict:
         """
         Turn the Box and sub Boxes back into a native python dictionary.
 
@@ -807,36 +816,25 @@ class Box(dict):
 
     if msgpack_available:
 
-        def to_msgpack(
-            self, filename: Union[str, Path] = None, encoding: str = "utf-8", errors: str = "strict", **kwargs
-        ):
+        def to_msgpack(self, filename: Union[str, Path] = None, **kwargs):
             """
             Transform the Box object into a msgpack string.
 
             :param filename: File to write msgpack object too
-            :param encoding: File encoding
-            :param errors: How to handle encoding errors
             :param kwargs: parameters to pass to `msgpack.packb`
             :return: bytes of msgpack (if no filename provided)
             """
-            return _to_msgpack(self.to_dict(), filename=filename, encoding=encoding, errors=errors, **kwargs)
+            return _to_msgpack(self.to_dict(), filename=filename, **kwargs)
 
         @classmethod
         def from_msgpack(
-            cls,
-            msgpack_bytes: bytes = None,
-            filename: Union[str, Path] = None,
-            encoding: str = "utf-8",
-            errors: str = "strict",
-            **kwargs,
+            cls, msgpack_bytes: bytes = None, filename: Union[str, Path] = None, **kwargs,
         ):
             """
             Transforms msgpack bytes or file into a Box object
 
             :param msgpack_bytes: string to pass to `toml.load`
             :param filename: filename to open and pass to `toml.load`
-            :param encoding: File encoding
-            :param errors: How to handle encoding errors
             :param kwargs: parameters to pass to `Box()`
             :return:
             """
@@ -845,15 +843,13 @@ class Box(dict):
                 if arg in BOX_PARAMETERS:
                     box_args[arg] = kwargs.pop(arg)
 
-            data = _from_msgpack(
-                msgpack_bytes=msgpack_bytes, filename=filename, encoding=encoding, errors=errors, **kwargs
-            )
+            data = _from_msgpack(msgpack_bytes=msgpack_bytes, filename=filename, **kwargs)
             return cls(data, **box_args)
 
     else:
 
-        def to_toml(self, filename: Union[str, Path] = None, encoding: str = "utf-8", errors: str = "strict"):
-            raise BoxError('toml is unavailable on this system, please install the "toml" package')
+        def to_msgpack(self, filename: Union[str, Path] = None, **kwargs):
+            raise BoxError('msgpack is unavailable on this system, please install the "msgpack" package')
 
         @classmethod
         def from_msgpack(
@@ -864,4 +860,4 @@ class Box(dict):
             errors: str = "strict",
             **kwargs,
         ):
-            raise BoxError('toml is unavailable on this system, please install the  "toml" package')
+            raise BoxError('msgpack is unavailable on this system, please install the  "msgpack" package')

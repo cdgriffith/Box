@@ -139,19 +139,19 @@ def _from_toml(toml_string=None, filename=None, encoding="utf-8", errors="strict
     return data
 
 
-def _to_msgpack(obj, filename=None, encoding="utf-8", errors="strict", **kwargs):
+def _to_msgpack(obj, filename=None, **kwargs):
     if filename:
         _exists(filename, create=True)
-        with open(filename, "w", encoding=encoding, errors=errors) as f:
+        with open(filename, "wb") as f:
             msgpack.pack(obj, f, **kwargs)
     else:
-        return msgpack.pack(obj, **kwargs)
+        return msgpack.packb(obj, **kwargs)
 
 
-def _from_msgpack(msgpack_bytes: bytes = None, filename=None, encoding="utf-8", errors="strict", **kwargs):
+def _from_msgpack(msgpack_bytes: bytes = None, filename=None, **kwargs):
     if filename:
         _exists(filename)
-        with open(filename, "r", encoding=encoding, errors=errors) as f:
+        with open(filename, "rb") as f:
             data = msgpack.unpack(f, **kwargs)
     elif msgpack_bytes:
         data = msgpack.unpackb(msgpack_bytes, **kwargs)
