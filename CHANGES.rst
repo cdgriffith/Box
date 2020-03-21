@@ -7,7 +7,8 @@ Version 5.0.0
 * Adding support for msgpack
 * Adding `default_box_no_key_error` option to not raise key errors on `pop` `popitems` or `del` (thanks to Patrock)
 * Adding `mypy` type checking, `black` formatting and other checks on commit
-* Change back to no required external imports
+* Changing `to_csv` and `from_csv` to have same string and filename options as all other transforms
+* Changing back to no required external imports
 * Removing readthedocs generation
 * Removing overrides for `keys`, `values` and `items` which will return views again
 

@@ -4,7 +4,8 @@
 # Copyright (c) 2017-2020 - Chris Griffith - MIT License
 import copy
 import re
-from typing import Iterable, Type
+from typing import Iterable, Type, Union
+from pathlib import Path
 
 import box
 from box.converters import (
@@ -16,7 +17,12 @@ from box.converters import (
     _from_toml,
     _to_csv,
     _from_csv,
+    _to_msgpack,
+    _from_msgpack,
     BOX_PARAMETERS,
+    yaml_available,
+    toml_available,
+    msgpack_available,
 )
 from box.exceptions import BoxError, BoxTypeError, BoxKeyError
 
@@ -160,7 +166,9 @@ class BoxList(list):
         :return: string of JSON or return of `json.dump`
         """
         if filename and multiline:
-            lines = [_to_json(item, filename=False, encoding=encoding, errors=errors, **json_kwargs) for item in self]
+            lines = [
+                _to_json(item, filename=filename, encoding=encoding, errors=errors, **json_kwargs) for item in self
+            ]
             with open(filename, "w", encoding=encoding, errors=errors) as f:
                 f.write("\n".join(lines))
         else:
@@ -201,105 +209,215 @@ class BoxList(list):
             raise BoxError(f"json data not returned as a list, but rather a {type(data).__name__}")
         return cls(data, **bx_args)
 
-    def to_yaml(
-        self,
-        filename: str = None,
-        default_flow_style: bool = False,
-        encoding: str = "utf-8",
-        errors: str = "strict",
-        **yaml_kwargs,
-    ):
-        """
-        Transform the BoxList object into a YAML string.
+    if yaml_available:
 
-        :param filename:  If provided will save to file
-        :param default_flow_style: False will recursively dump dicts
-        :param encoding: File encoding
-        :param errors: How to handle encoding errors
-        :param yaml_kwargs: additional arguments to pass to yaml.dump
-        :return: string of YAML or return of `yaml.dump`
-        """
-        return _to_yaml(
-            self.to_list(),
-            filename=filename,
-            default_flow_style=default_flow_style,
-            encoding=encoding,
-            errors=errors,
+        def to_yaml(
+            self,
+            filename: Union[str, Path] = None,
+            default_flow_style: bool = False,
+            encoding: str = "utf-8",
+            errors: str = "strict",
             **yaml_kwargs,
-        )
+        ):
+            """
+            Transform the BoxList object into a YAML string.
+
+            :param filename:  If provided will save to file
+            :param default_flow_style: False will recursively dump dicts
+            :param encoding: File encoding
+            :param errors: How to handle encoding errors
+            :param yaml_kwargs: additional arguments to pass to yaml.dump
+            :return: string of YAML or return of `yaml.dump`
+            """
+            return _to_yaml(
+                self.to_list(),
+                filename=filename,
+                default_flow_style=default_flow_style,
+                encoding=encoding,
+                errors=errors,
+                **yaml_kwargs,
+            )
+
+        @classmethod
+        def from_yaml(
+            cls,
+            yaml_string: str = None,
+            filename: Union[str, Path] = None,
+            encoding: str = "utf-8",
+            errors: str = "strict",
+            **kwargs,
+        ):
+            """
+            Transform a yaml object string into a BoxList object.
+
+            :param yaml_string: string to pass to `yaml.load`
+            :param filename: filename to open and pass to `yaml.load`
+            :param encoding: File encoding
+            :param errors: How to handle encoding errors
+            :param kwargs: parameters to pass to `BoxList()` or `yaml.load`
+            :return: BoxList object from yaml data
+            """
+            bx_args = {}
+            for arg in list(kwargs.keys()):
+                if arg in BOX_PARAMETERS:
+                    bx_args[arg] = kwargs.pop(arg)
+
+            data = _from_yaml(yaml_string=yaml_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
+            if not isinstance(data, list):
+                raise BoxError(f"yaml data not returned as a list but rather a {type(data).__name__}")
+            return cls(data, **bx_args)
+
+    else:
+
+        def to_yaml(
+            self,
+            filename: Union[str, Path] = None,
+            default_flow_style: bool = False,
+            encoding: str = "utf-8",
+            errors: str = "strict",
+            **yaml_kwargs,
+        ):
+            raise BoxError('yaml is unavailable on this system, please install the "ruamel.yaml" or "PyYAML" package')
+
+        @classmethod
+        def from_yaml(
+            cls,
+            yaml_string: str = None,
+            filename: Union[str, Path] = None,
+            encoding: str = "utf-8",
+            errors: str = "strict",
+            **kwargs,
+        ):
+            raise BoxError('yaml is unavailable on this system, please install the "ruamel.yaml" or "PyYAML" package')
+
+    if toml_available:
+
+        def to_toml(
+            self,
+            filename: Union[str, Path] = None,
+            key_name: str = "toml",
+            encoding: str = "utf-8",
+            errors: str = "strict",
+        ):
+            """
+            Transform the BoxList object into a toml string.
+
+            :param filename: File to write toml object too
+            :param key_name: Specify the name of the key to store the string under
+                (cannot directly convert to toml)
+            :param encoding: File encoding
+            :param errors: How to handle encoding errors
+            :return: string of TOML (if no filename provided)
+            """
+            return _to_toml({key_name: self.to_list()}, filename=filename, encoding=encoding, errors=errors)
+
+        @classmethod
+        def from_toml(
+            cls,
+            toml_string: str = None,
+            filename: Union[str, Path] = None,
+            key_name: str = "toml",
+            encoding: str = "utf-8",
+            errors: str = "strict",
+            **kwargs,
+        ):
+            """
+            Transforms a toml string or file into a BoxList object
+
+            :param toml_string: string to pass to `toml.load`
+            :param filename: filename to open and pass to `toml.load`
+            :param key_name: Specify the name of the key to pull the list from
+                (cannot directly convert from toml)
+            :param encoding: File encoding
+            :param errors: How to handle encoding errors
+            :param kwargs: parameters to pass to `Box()`
+            :return:
+            """
+            bx_args = {}
+            for arg in list(kwargs.keys()):
+                if arg in BOX_PARAMETERS:
+                    bx_args[arg] = kwargs.pop(arg)
+
+            data = _from_toml(toml_string=toml_string, filename=filename, encoding=encoding, errors=errors)
+            if key_name not in data:
+                raise BoxError(f"{key_name} was not found.")
+            return cls(data[key_name], **bx_args)
+
+    else:
+
+        def to_toml(
+            self,
+            filename: Union[str, Path] = None,
+            key_name: str = "toml",
+            encoding: str = "utf-8",
+            errors: str = "strict",
+        ):
+            raise BoxError('toml is unavailable on this system, please install the "toml" package')
+
+        @classmethod
+        def from_toml(
+            cls,
+            toml_string: str = None,
+            filename: Union[str, Path] = None,
+            key_name: str = "toml",
+            encoding: str = "utf-8",
+            errors: str = "strict",
+            **kwargs,
+        ):
+            raise BoxError('toml is unavailable on this system, please install the "toml" package')
+
+    if msgpack_available:
+
+        def to_msgpack(self, filename: Union[str, Path] = None, **kwargs):
+            """
+            Transform the BoxList object into a toml string.
+
+            :param filename: File to write toml object too
+            :return: string of TOML (if no filename provided)
+            """
+            return _to_msgpack(self.to_list(), filename=filename, **kwargs)
+
+        @classmethod
+        def from_msgpack(cls, msgpack_bytes: bytes = None, filename: str = None, **kwargs):
+            """
+            Transforms a toml string or file into a BoxList object
+
+            :param msgpack_bytes: string to pass to `msgpack.packb`
+            :param filename: filename to open and pass to `msgpack.pack`
+            :param kwargs: parameters to pass to `Box()`
+            :return:
+            """
+            bx_args = {}
+            for arg in list(kwargs.keys()):
+                if arg in BOX_PARAMETERS:
+                    bx_args[arg] = kwargs.pop(arg)
+
+            data = _from_msgpack(msgpack_bytes=msgpack_bytes, filename=filename, **kwargs)
+            if not isinstance(data, list):
+                raise BoxError(f"msgpack data not returned as a list but rather a {type(data).__name__}")
+            return cls(data, **bx_args)
+
+    else:
+
+        def to_msgpack(self, filename: Union[str, Path] = None, **kwargs):
+            raise BoxError('msgpack is unavailable on this system, please install the "msgpack" package')
+
+        @classmethod
+        def from_msgpack(
+            cls,
+            msgpack_bytes: bytes = None,
+            filename: Union[str, Path] = None,
+            encoding: str = "utf-8",
+            errors: str = "strict",
+            **kwargs,
+        ):
+            raise BoxError('msgpack is unavailable on this system, please install the "msgpack" package')
+
+    def to_csv(self, filename: Union[str, Path] = None, encoding: str = "utf-8", errors: str = "strict"):
+        return _to_csv(self, filename=filename, encoding=encoding, errors=errors)
 
     @classmethod
-    def from_yaml(
-        cls, yaml_string: str = None, filename: str = None, encoding: str = "utf-8", errors: str = "strict", **kwargs
+    def from_csv(
+        cls, csv_string: str = None, filename: Union[str, Path] = None, encoding: str = "utf-8", errors: str = "strict"
     ):
-        """
-        Transform a yaml object string into a BoxList object.
-
-        :param yaml_string: string to pass to `yaml.load`
-        :param filename: filename to open and pass to `yaml.load`
-        :param encoding: File encoding
-        :param errors: How to handle encoding errors
-        :param kwargs: parameters to pass to `BoxList()` or `yaml.load`
-        :return: BoxList object from yaml data
-        """
-        bx_args = {}
-        for arg in list(kwargs.keys()):
-            if arg in BOX_PARAMETERS:
-                bx_args[arg] = kwargs.pop(arg)
-
-        data = _from_yaml(yaml_string=yaml_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
-        if not isinstance(data, list):
-            raise BoxError(f"yaml data not returned as a list but rather a {type(data).__name__}")
-        return cls(data, **bx_args)
-
-    def to_toml(self, filename: str = None, key_name: str = "toml", encoding: str = "utf-8", errors: str = "strict"):
-        """
-        Transform the BoxList object into a toml string.
-
-        :param filename: File to write toml object too
-        :param key_name: Specify the name of the key to store the string under
-            (cannot directly convert to toml)
-        :param encoding: File encoding
-        :param errors: How to handle encoding errors
-        :return: string of TOML (if no filename provided)
-        """
-        return _to_toml({key_name: self.to_list()}, filename=filename, encoding=encoding, errors=errors)
-
-    @classmethod
-    def from_toml(
-        cls,
-        toml_string: str = None,
-        filename: str = None,
-        key_name: str = "toml",
-        encoding: str = "utf-8",
-        errors: str = "strict",
-        **kwargs,
-    ):
-        """
-        Transforms a toml string or file into a BoxList object
-
-        :param toml_string: string to pass to `toml.load`
-        :param filename: filename to open and pass to `toml.load`
-        :param key_name: Specify the name of the key to pull the list from
-            (cannot directly convert from toml)
-        :param encoding: File encoding
-        :param errors: How to handle encoding errors
-        :param kwargs: parameters to pass to `Box()`
-        :return:
-        """
-        bx_args = {}
-        for arg in list(kwargs.keys()):
-            if arg in BOX_PARAMETERS:
-                bx_args[arg] = kwargs.pop(arg)
-
-        data = _from_toml(toml_string=toml_string, filename=filename, encoding=encoding, errors=errors)
-        if key_name not in data:
-            raise BoxError(f"{key_name} was not found.")
-        return cls(data[key_name], **bx_args)
-
-    def to_csv(self, filename, encoding: str = "utf-8", errors: str = "strict"):
-        _to_csv(self, filename=filename, encoding=encoding, errors=errors)
-
-    @classmethod
-    def from_csv(cls, filename, encoding: str = "utf-8", errors: str = "strict"):
-        return cls(_from_csv(filename=filename, encoding=encoding, errors=errors))
+        return cls(_from_csv(csv_string=csv_string, filename=filename, encoding=encoding, errors=errors))

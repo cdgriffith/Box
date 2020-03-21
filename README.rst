@@ -151,14 +151,17 @@ Box's functions
    to_yaml          Save Box object as a YAML string or write to a file with the `filename` parameter
    to_msgpack       Save Box object as msgpack bytes or write to a file with the `filename` parameter
    to_toml*         Save Box object as a TOML string or write to a file with the `filename` parameter
+   to_csv**         Save BoxList object as a CSV string or write to a file with the `filename` parameter
    from_json        Classmethod, Create a Box object from a JSON file or string (all Box parameters can be passed)
    from_yaml        Classmethod, Create a Box object from a YAML file or string (all Box parameters can be passed)
    from_msgpack     Classmethod, Create a Box object from a msgpack file or bytes (all Box parameters can be passed)
    from_toml*       Classmethod, Create a Box object from a TOML file or string (all Box parameters can be passed)
+   from_csv**       Classmethod, Create a BoxList object from a TOML file or string (all BoxList parameters can be passed)
    merge_update     Recursively merge dictionaries or Boxes together instead of replacing
    ================ ===========
 
 \* Do not work with BoxList, only Box
+\** Do not work with Box, only BoxList
 
 Conversion Box
 --------------
@@ -509,6 +512,12 @@ Dec 2019: 2.7 EOL
 Box 4.0 was made with python 2.x out of mind. Everything from f-strings to
 type-hinting was added to update the package. The modules grew large enough
 to separate the different objects into their own files and test files.
+
+Apr 2020: Box 5.0
+-----------------
+
+A focus shift from features to safety and usability. Removing the need for
+dependencies 4.0 required to try and be more cross environment friendly again.
 
 
 License

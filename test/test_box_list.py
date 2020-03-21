@@ -134,12 +134,17 @@ class TestBoxList:
         )
 
         file = Path(tmp_dir, "csv_file.csv")
-        data.to_csv(file)
+        data.to_csv(filename=file)
         assert file.read_text().startswith("Number,Name,Country\n1,Chris,US")
+        assert data.to_csv().endswith("2,Sam,US\r\n3,Jess,US\r\n4,Frank,UK\r\n5,Demo,CA\r\n")
 
     def test_from_csv(self):
-        bl = BoxList.from_csv(Path(test_root, "data", "csv_file.csv"))
+        bl = BoxList.from_csv(filename=Path(test_root, "data", "csv_file.csv"))
         assert bl[1].Name == "Sam"
+        b2 = BoxList.from_csv(
+            "Number,Name,Country\r\n1,Chris,US\r\n2,Sam" ",US\r\n3,Jess,US\r\n4,Frank,UK\r\n5,Demo,CA\r\n"
+        )
+        assert b2[2].Name == "Jess"
 
     def test_bad_csv(self):
         data = BoxList([{"test": 1}, {"bad": 2, "data": 3}])

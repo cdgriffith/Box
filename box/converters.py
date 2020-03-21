@@ -5,8 +5,9 @@
 
 import csv
 import json
-import sys
 from pathlib import Path
+from io import StringIO
+from typing import Union
 
 from box.exceptions import BoxError
 
@@ -51,7 +52,7 @@ BOX_PARAMETERS = (
 )
 
 
-def _exists(filename, create=False):
+def _exists(filename: Union[Path, str], create: bool = False) -> Path:
     path = Path(filename)
     if create:
         try:
@@ -59,26 +60,32 @@ def _exists(filename, create=False):
         except OSError as err:
             raise BoxError(f"Could not create file {filename} - {err}")
         else:
-            return
+            return path
     if not path.exists():
         raise BoxError(f'File "{filename}" does not exist')
     if not path.is_file():
         raise BoxError(f"{filename} is not a file")
+    return path
 
 
-def _to_json(obj, filename=None, encoding="utf-8", errors="strict", **json_kwargs):
-    json_dump = json.dumps(obj, ensure_ascii=False, **json_kwargs)
+def _to_json(obj, filename: Union[Path, str] = None, encoding: str = "utf-8", errors: str = "strict", **json_kwargs):
     if filename:
         _exists(filename, create=True)
         with open(filename, "w", encoding=encoding, errors=errors) as f:
-            f.write(json_dump if sys.version_info >= (3, 0) else json_dump.decode("utf-8"))
+            json.dump(obj, f, ensure_ascii=False, **json_kwargs)
     else:
-        return json_dump
+        return json.dumps(obj, ensure_ascii=False, **json_kwargs)
 
 
-def _from_json(json_string=None, filename=None, encoding="utf-8", errors="strict", multiline=False, **kwargs):
+def _from_json(
+    json_string: str = None,
+    filename: Union[Path, str] = None,
+    encoding: str = "utf-8",
+    errors: str = "strict",
+    multiline: bool = False,
+    **kwargs,
+):
     if filename:
-        _exists(filename)
         with open(filename, "r", encoding=encoding, errors=errors) as f:
             if multiline:
                 data = [
@@ -95,7 +102,14 @@ def _from_json(json_string=None, filename=None, encoding="utf-8", errors="strict
     return data
 
 
-def _to_yaml(obj, filename=None, default_flow_style=False, encoding="utf-8", errors="strict", **yaml_kwargs):
+def _to_yaml(
+    obj,
+    filename: Union[Path, str] = None,
+    default_flow_style: bool = False,
+    encoding: str = "utf-8",
+    errors: str = "strict",
+    **yaml_kwargs,
+):
     if filename:
         _exists(filename, create=True)
         with open(filename, "w", encoding=encoding, errors=errors) as f:
@@ -104,7 +118,13 @@ def _to_yaml(obj, filename=None, default_flow_style=False, encoding="utf-8", err
         return yaml.dump(obj, default_flow_style=default_flow_style, **yaml_kwargs)
 
 
-def _from_yaml(yaml_string=None, filename=None, encoding="utf-8", errors="strict", **kwargs):
+def _from_yaml(
+    yaml_string: str = None,
+    filename: Union[Path, str] = None,
+    encoding: str = "utf-8",
+    errors: str = "strict",
+    **kwargs,
+):
     if "Loader" not in kwargs:
         kwargs["Loader"] = yaml.SafeLoader
     if filename:
@@ -118,7 +138,7 @@ def _from_yaml(yaml_string=None, filename=None, encoding="utf-8", errors="strict
     return data
 
 
-def _to_toml(obj, filename=None, encoding="utf-8", errors="strict"):
+def _to_toml(obj, filename: Union[Path, str] = None, encoding: str = "utf-8", errors: str = "strict"):
     if filename:
         _exists(filename, create=True)
         with open(filename, "w", encoding=encoding, errors=errors) as f:
@@ -127,7 +147,9 @@ def _to_toml(obj, filename=None, encoding="utf-8", errors="strict"):
         return toml.dumps(obj)
 
 
-def _from_toml(toml_string=None, filename=None, encoding="utf-8", errors="strict"):
+def _from_toml(
+    toml_string: str = None, filename: Union[Path, str] = None, encoding: str = "utf-8", errors: str = "strict"
+):
     if filename:
         _exists(filename)
         with open(filename, "r", encoding=encoding, errors=errors) as f:
@@ -139,7 +161,7 @@ def _from_toml(toml_string=None, filename=None, encoding="utf-8", errors="strict
     return data
 
 
-def _to_msgpack(obj, filename=None, **kwargs):
+def _to_msgpack(obj, filename: Union[Path, str] = None, **kwargs):
     if filename:
         _exists(filename, create=True)
         with open(filename, "wb") as f:
@@ -148,7 +170,7 @@ def _to_msgpack(obj, filename=None, **kwargs):
         return msgpack.packb(obj, **kwargs)
 
 
-def _from_msgpack(msgpack_bytes: bytes = None, filename=None, **kwargs):
+def _from_msgpack(msgpack_bytes: bytes = None, filename: Union[Path, str] = None, **kwargs):
     if filename:
         _exists(filename)
         with open(filename, "rb") as f:
@@ -160,7 +182,7 @@ def _from_msgpack(msgpack_bytes: bytes = None, filename=None, **kwargs):
     return data
 
 
-def _to_csv(box_list, filename, encoding="utf-8", errors="strict"):
+def _to_csv(box_list, filename: Union[Path, str] = None, encoding: str = "utf-8", errors: str = "strict", **kwargs):
     csv_column_names = list(box_list[0].keys())
     for row in box_list:
         if list(row.keys()) != csv_column_names:
@@ -168,15 +190,26 @@ def _to_csv(box_list, filename, encoding="utf-8", errors="strict"):
 
     if filename:
         _exists(filename, create=True)
-        with open(filename, "w", encoding=encoding, errors=errors, newline="") as csv_file:
-            writer = csv.DictWriter(csv_file, fieldnames=csv_column_names)
-            writer.writeheader()
-            for data in box_list:
-                writer.writerow(data)
+        out_data = open(filename, "w", encoding=encoding, errors=errors, newline="")
+    else:
+        out_data = StringIO("")
+    writer = csv.DictWriter(out_data, fieldnames=csv_column_names, **kwargs)
+    writer.writeheader()
+    for data in box_list:
+        writer.writerow(data)
+    if not filename:
+        return out_data.read()
+    out_data.close()
 
 
-def _from_csv(filename, encoding="utf-8", errors="strict"):
-    _exists(filename)
-    with open(filename, "r", encoding=encoding, errors=errors, newline="") as f:
-        reader = csv.DictReader(f)
+def _from_csv(
+    csv_string: str = None, filename: Union[Path, str] = None, encoding: str = "utf-8", errors: str = "strict", **kwargs
+):
+    if csv_string:
+        with StringIO(csv_string) as cs:
+            reader = csv.DictReader(cs)
+            return [row for row in reader]
+    _exists(filename)  # type: ignore
+    with open(filename, "r", encoding=encoding, errors=errors, newline="") as f:  # type: ignore
+        reader = csv.DictReader(f, **kwargs)
         return [row for row in reader]

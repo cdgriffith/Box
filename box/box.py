@@ -654,7 +654,7 @@ class Box(dict):
         encoding: str = "utf-8",
         errors: str = "strict",
         **kwargs,
-    ):
+    ) -> "Box":
         """
         Transform a json object string into a Box object. If the incoming
         json is a list, you must use BoxList.from_json.
@@ -714,7 +714,7 @@ class Box(dict):
             encoding: str = "utf-8",
             errors: str = "strict",
             **kwargs,
-        ):
+        ) -> "Box":
             """
             Transform a yaml object string into a Box object. By default will use SafeLoader.
 
@@ -736,6 +736,9 @@ class Box(dict):
             return cls(data, **box_args)
 
     else:
+        warnings.warn(
+            "yaml is not found in the environment. `to_yaml` and `from_yaml` transforms will not work", BoxWarning
+        )
 
         def to_yaml(
             self,
@@ -755,7 +758,7 @@ class Box(dict):
             encoding: str = "utf-8",
             errors: str = "strict",
             **kwargs,
-        ):
+        ) -> "Box":
             raise BoxError('yaml is unavailable on this system, please install the "ruamel.yaml" or "PyYAML" package')
 
     if toml_available:
@@ -779,7 +782,7 @@ class Box(dict):
             encoding: str = "utf-8",
             errors: str = "strict",
             **kwargs,
-        ):
+        ) -> "Box":
             """
             Transforms a toml string or file into a Box object
 
@@ -788,7 +791,7 @@ class Box(dict):
             :param encoding: File encoding
             :param errors: How to handle encoding errors
             :param kwargs: parameters to pass to `Box()`
-            :return:
+            :return: Box object
             """
             box_args = {}
             for arg in kwargs.copy():
@@ -799,6 +802,9 @@ class Box(dict):
             return cls(data, **box_args)
 
     else:
+        warnings.warn(
+            "tom is not found in the environment. `to_toml` and `from_toml` transforms will not work", BoxWarning
+        )
 
         def to_toml(self, filename: Union[str, Path] = None, encoding: str = "utf-8", errors: str = "strict"):
             raise BoxError('toml is unavailable on this system, please install the "toml" package')
@@ -811,8 +817,8 @@ class Box(dict):
             encoding: str = "utf-8",
             errors: str = "strict",
             **kwargs,
-        ):
-            raise BoxError('toml is unavailable on this system, please install the  "toml" package')
+        ) -> "Box":
+            raise BoxError('toml is unavailable on this system, please install the "toml" package')
 
     if msgpack_available:
 
@@ -821,22 +827,20 @@ class Box(dict):
             Transform the Box object into a msgpack string.
 
             :param filename: File to write msgpack object too
-            :param kwargs: parameters to pass to `msgpack.packb`
+            :param kwargs: parameters to pass to `msgpack.pack`
             :return: bytes of msgpack (if no filename provided)
             """
             return _to_msgpack(self.to_dict(), filename=filename, **kwargs)
 
         @classmethod
-        def from_msgpack(
-            cls, msgpack_bytes: bytes = None, filename: Union[str, Path] = None, **kwargs,
-        ):
+        def from_msgpack(cls, msgpack_bytes: bytes = None, filename: Union[str, Path] = None, **kwargs,) -> "Box":
             """
             Transforms msgpack bytes or file into a Box object
 
-            :param msgpack_bytes: string to pass to `toml.load`
-            :param filename: filename to open and pass to `toml.load`
+            :param msgpack_bytes: string to pass to `msgpack.unpackb`
+            :param filename: filename to open and pass to `msgpack.unpack`
             :param kwargs: parameters to pass to `Box()`
-            :return:
+            :return: Box object
             """
             box_args = {}
             for arg in kwargs.copy():
@@ -844,9 +848,15 @@ class Box(dict):
                     box_args[arg] = kwargs.pop(arg)
 
             data = _from_msgpack(msgpack_bytes=msgpack_bytes, filename=filename, **kwargs)
+            if not isinstance(data, dict):
+                raise BoxError(f"msgpack data not returned as a dictionary but rather a {type(data).__name__}")
             return cls(data, **box_args)
 
     else:
+        warnings.warn(
+            "msgpack is not found in the environment. " "`to_msgpack` and `from_msgpack` transforms will not work",
+            BoxWarning,
+        )
 
         def to_msgpack(self, filename: Union[str, Path] = None, **kwargs):
             raise BoxError('msgpack is unavailable on this system, please install the "msgpack" package')
@@ -859,5 +869,5 @@ class Box(dict):
             encoding: str = "utf-8",
             errors: str = "strict",
             **kwargs,
-        ):
-            raise BoxError('msgpack is unavailable on this system, please install the  "msgpack" package')
+        ) -> "Box":
+            raise BoxError('msgpack is unavailable on this system, please install the "msgpack" package')

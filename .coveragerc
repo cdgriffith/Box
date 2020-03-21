@@ -12,12 +12,12 @@ exclude_lines =
     raise err
     except ImportError
     yaml = none
-    raise BoxError\('_box_config key must exist
+    raise BoxError\("_box_config key must exist
     raise err
-    if 'box_class' in self.__dict__:
-    raise BoxError\(f'File
+    if "box_class" in self.__dict__:
+    raise BoxError\(f"File
     except OSError
-    raise BoxError\(f'{filename}
-    item._box_config['__box_heritage'] = \(\)
+    raise BoxError\(f"{filename}
+    item._box_config["__box_heritage"] = \(\)
     raise BoxKeyError\(err
-
+    (.*)is unavailable on this system
