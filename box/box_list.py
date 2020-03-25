@@ -167,7 +167,7 @@ class BoxList(list):
         """
         if filename and multiline:
             lines = [
-                _to_json(item, filename=filename, encoding=encoding, errors=errors, **json_kwargs) for item in self
+                _to_json(item, filename=None, encoding=encoding, errors=errors, **json_kwargs) for item in self
             ]
             with open(filename, "w", encoding=encoding, errors=errors) as f:
                 f.write("\n".join(lines))

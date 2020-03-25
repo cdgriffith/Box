@@ -198,7 +198,7 @@ def _to_csv(box_list, filename: Union[Path, str] = None, encoding: str = "utf-8"
     for data in box_list:
         writer.writerow(data)
     if not filename:
-        return out_data.read()
+        return out_data.getvalue()  # type: ignore
     out_data.close()
 
 
