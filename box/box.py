@@ -250,6 +250,8 @@ class Box(dict):
                 output[item] = self[item]
             elif isinstance(self.get(item), Box) and isinstance(other.get(item), Box):
                 output[item] = self[item] - other[item]
+                if not output[item]:
+                    del output[item]
         output._box_config["frozen_box"] = frozen
         return output
 

@@ -903,3 +903,16 @@ class TestBox:
             box_recast=None,
         )
         assert bx.uno == 2
+
+    def test_sub(self):
+        difference = Box(extended_test_dict) - test_dict
+        assert difference == {
+            3: "howdy",
+            "not": "true",
+            (3, 4): "test",
+            "_box_config": True,
+            "CamelCase": "21",
+            "321CamelCase": 321,
+            False: "tree",
+            "tuples_galore": ({"item": 3}, ({"item": 4}, 5)),
+        }

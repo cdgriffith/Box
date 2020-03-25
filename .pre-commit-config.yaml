@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: ''
+    rev: 'v0.770'
     hooks:
     - id: mypy
       additional_dependencies: [ruamel.yaml,toml,msgpack]

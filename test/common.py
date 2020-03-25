@@ -73,7 +73,7 @@ class ClassExample(object):
 
 
 python_example_objects = (
-    None,
+    None,  # type: ignore
     True,
     False,
     1,

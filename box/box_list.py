@@ -166,9 +166,7 @@ class BoxList(list):
         :return: string of JSON or return of `json.dump`
         """
         if filename and multiline:
-            lines = [
-                _to_json(item, filename=None, encoding=encoding, errors=errors, **json_kwargs) for item in self
-            ]
+            lines = [_to_json(item, filename=None, encoding=encoding, errors=errors, **json_kwargs) for item in self]
             with open(filename, "w", encoding=encoding, errors=errors) as f:
                 f.write("\n".join(lines))
         else:
