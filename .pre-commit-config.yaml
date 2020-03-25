@@ -10,6 +10,9 @@ repos:
     - id: mixed-line-ending
     - id: trailing-whitespace
     - id: requirements-txt-fixer
+    - id: fix-encoding-pragma
+    - id: check-byte-order-marker
+    - id: debug-statements
 -   repo: https://github.com/ambv/black
     rev: stable
     hooks:

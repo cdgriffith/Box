@@ -4,7 +4,8 @@ Changelog
 Version 5.0.0
 -------------
 
-* Adding support for msgpack
+* Adding support for msgpack coverters `to_msgpack` and `from_msgpack`
+* Adding support for comparision of `Box` to other boxes or dicts via the `-` sub operator (thanks to Hitz)
 * Adding `default_box_no_key_error` option to not raise key errors on `pop` `popitems` or `del` (thanks to Patrock)
 * Adding `mypy` type checking, `black` formatting and other checks on commit
 * Changing `to_csv` and `from_csv` to have same string and filename options as all other transforms

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import os
 import shutil
 from pathlib import Path
@@ -33,13 +34,13 @@ role = "Barf"
 class TestConverters:
     @pytest.fixture(autouse=True)
     def temp_dir_cleanup(self):
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+        shutil.rmtree(str(tmp_dir), ignore_errors=True)
         try:
-            os.mkdir(tmp_dir)
+            os.mkdir(str(tmp_dir))
         except OSError:
             pass
         yield
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+        shutil.rmtree(str(tmp_dir), ignore_errors=True)
 
     def test_to_toml(self):
         formatted = _to_toml(movie_data)

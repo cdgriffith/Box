@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 # Test files gathered from json.org and yaml.org
 
 import json
@@ -19,13 +19,13 @@ from test.common import tmp_dir, test_root
 class TestBoxList:
     @pytest.fixture(autouse=True)
     def temp_dir_cleanup(self):
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+        shutil.rmtree(str(tmp_dir), ignore_errors=True)
         try:
-            os.mkdir(tmp_dir)
+            os.mkdir(str(tmp_dir))
         except OSError:
             pass
         yield
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+        shutil.rmtree(str(tmp_dir), ignore_errors=True)
 
     def test_box_list(self):
         new_list = BoxList({"item": x} for x in range(0, 10))

@@ -1,0 +1,2 @@
+black
+pre-commit>=2.2.0

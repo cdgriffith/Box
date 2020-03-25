@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2017-2020 - Chris Griffith - MIT License
 """
@@ -235,6 +235,23 @@ class Box(dict):
             raise BoxTypeError(f"Box can only merge two boxes or a box and a dictionary.")
         new_box.merge_update(other)
         return new_box
+
+    def __sub__(self, other: dict):
+        frozen = self._box_config["frozen_box"]
+        config = self.__box_config()
+        config["frozen_box"] = False
+        output = self.__class__(**config)
+        if not isinstance(other, dict):
+            raise BoxError("Box can only compare two boxes or a box and a dictionary.")
+        if not isinstance(other, Box):
+            other = self.__class__(other, **config)
+        for item in self:
+            if item not in other:
+                output[item] = self[item]
+            elif isinstance(self.get(item), Box) and isinstance(other.get(item), Box):
+                output[item] = self[item] - other[item]
+        output._box_config["frozen_box"] = frozen
+        return output
 
     def __hash__(self):
         if self._box_config["frozen_box"]:

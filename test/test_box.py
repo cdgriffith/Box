@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 # Test files gathered from json.org and yaml.org
 import copy
 import json
@@ -41,13 +41,13 @@ def mp_queue_test(q):
 class TestBox:
     @pytest.fixture(autouse=True)
     def temp_dir_cleanup(self):
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+        shutil.rmtree(str(tmp_dir), ignore_errors=True)
         try:
-            os.mkdir(tmp_dir)
+            os.mkdir(str(tmp_dir))
         except OSError:
             pass
         yield
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+        shutil.rmtree(str(tmp_dir), ignore_errors=True)
 
     def test_safe_attrs(self):
         assert Box()._safe_attr("BAD!KEY!1") == "BAD_KEY_1"

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 from box import Box, ConfigBox
 from test.common import test_dict

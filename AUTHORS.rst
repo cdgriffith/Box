@@ -62,3 +62,4 @@ Suggestions and bug reporting:
 - Yordan Ivanov (iordanivanov)
 - Lei (NEOOOOOOOOOO)
 - Pymancer
+- Hitz (hitengajjar)
