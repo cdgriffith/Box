@@ -8,6 +8,7 @@ import pickle
 import shutil
 from multiprocessing import Queue
 from pathlib import Path
+import platform
 
 import pytest
 import ruamel.yaml as yaml
@@ -613,6 +614,8 @@ class TestBox:
             my_box["g"]
 
     def test_pickle(self):
+        if platform.python_implementation() == "PyPy":
+            pytest.skip("Pickling does not work correctly on PyPy")
         pic_file = os.path.join(tmp_dir, "test.p")
         pic2_file = os.path.join(tmp_dir, "test.p2")
         bb = Box(movie_data, conversion_box=False)
@@ -629,6 +632,8 @@ class TestBox:
         loaded2.box_options = bx.box_options
 
     def test_pickle_default_box(self):
+        if platform.python_implementation() == "PyPy":
+            pytest.skip("Pickling does not work correctly on PyPy")
         bb = Box(default_box=True)
         loaded = pickle.loads(pickle.dumps(bb))
         assert bb == loaded
