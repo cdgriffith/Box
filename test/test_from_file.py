@@ -20,6 +20,7 @@ class TestFromFile:
         assert isinstance(box_from_file(Path(test_root, "data", "yaml_list.yaml")), BoxList)
         assert isinstance(box_from_file(Path(test_root, "data", "msgpack_file.msgpack")), Box)
         assert isinstance(box_from_file(Path(test_root, "data", "msgpack_list.msgpack")), BoxList)
+        assert isinstance(box_from_file(Path(test_root, "data", "csv_file.csv")), BoxList)
 
     def test_bad_file(self):
         with pytest.raises(BoxError):

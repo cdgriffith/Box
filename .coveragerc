@@ -25,3 +25,4 @@ exclude_lines =
     def from_
     warnings.warn
     @classmethod
+    no package is available to open it

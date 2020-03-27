@@ -40,10 +40,7 @@ def _to_json(file, encoding, errors, **kwargs):
 
 
 def _to_csv(file, encoding, errors, **kwargs):
-    try:
-        return BoxList.from_json(filename=file, encoding=encoding, errors=errors, **kwargs)
-    except BoxError:
-        raise BoxError("File is not CSV as expected")
+    return BoxList.from_csv(filename=file, encoding=encoding, errors=errors, **kwargs)
 
 
 def _to_yaml(file, encoding, errors, **kwargs):
@@ -73,13 +70,10 @@ def _to_msgpack(file, _, __, **kwargs):
         raise BoxError(f'File "{file}" is msgpack but no package is available to open it. Please install "msgpack"')
     try:
         return Box.from_msgpack(filename=file, **kwargs)
-    except BoxError:
-        try:
-            return BoxList.from_msgpack(filename=file, **kwargs)
-        except BoxError:
-            raise BoxError("File is not msgpack as expected")
     except (UnpackException, ValueError):
         raise BoxError("File is not msgpack as expected")
+    except BoxError:
+        return BoxList.from_msgpack(filename=file, **kwargs)
 
 
 converters = {

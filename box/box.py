@@ -93,7 +93,6 @@ class Box(dict):
     :param default_box_attr: Specify the default replacement.
         WARNING: If this is not the default 'Box', it will not be recursive
     :param default_box_none_transform: When using default_box, treat keys with none values as absent. True by default
-    :param default_box_no_key_error: Don't raise key error during pop, popitems or delete when a default_box
     :param frozen_box: After creation, the box cannot be modified
     :param camel_killer_box: Convert CamelCase to snake_case
     :param conversion_box: Check for near matching keys as attributes
@@ -128,7 +127,6 @@ class Box(dict):
         default_box: bool = False,
         default_box_attr: Any = NO_DEFAULT,
         default_box_none_transform: bool = True,
-        default_box_no_key_error: bool = True,
         frozen_box: bool = False,
         camel_killer_box: bool = False,
         conversion_box: bool = True,
@@ -151,7 +149,6 @@ class Box(dict):
                 "default_box": default_box,
                 "default_box_attr": cls.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
                 "default_box_none_transform": default_box_none_transform,
-                "default_box_no_key_error": default_box_no_key_error,
                 "conversion_box": conversion_box,
                 "box_safe_prefix": box_safe_prefix,
                 "frozen_box": frozen_box,
@@ -171,7 +168,6 @@ class Box(dict):
         default_box: bool = False,
         default_box_attr: Any = NO_DEFAULT,
         default_box_none_transform: bool = True,
-        default_box_no_key_error: bool = True,
         frozen_box: bool = False,
         camel_killer_box: bool = False,
         conversion_box: bool = True,
@@ -190,7 +186,6 @@ class Box(dict):
                 "default_box": default_box,
                 "default_box_attr": self.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
                 "default_box_none_transform": default_box_none_transform,
-                "default_box_no_key_error": default_box_no_key_error,
                 "conversion_box": conversion_box,
                 "box_safe_prefix": box_safe_prefix,
                 "frozen_box": frozen_box,
@@ -461,8 +456,6 @@ class Box(dict):
         try:
             super().__delitem__(key)
         except KeyError as err:
-            if self._box_config["default_box"] and self._box_config["default_box_no_key_error"]:
-                return self.__get_default(store=False)
             raise BoxKeyError(err)
 
     def __delattr__(self, item):
@@ -481,8 +474,6 @@ class Box(dict):
                     self.__delitem__(self._box_config["__safe_keys"][safe_key])
                     del self._box_config["__safe_keys"][safe_key]
                     return
-            if self._box_config["default_box"] and self._box_config["default_box_no_key_error"]:
-                return self.__get_default(store=False)
             raise BoxKeyError(err)
 
     def pop(self, key, *args):
@@ -499,8 +490,6 @@ class Box(dict):
         try:
             item = self[key]
         except KeyError:
-            if self._box_config["default_box"] and self._box_config["default_box_no_key_error"]:
-                return self.__get_default(store=False)
             raise BoxKeyError("{0}".format(key)) from None
         else:
             del self[key]
@@ -514,8 +503,6 @@ class Box(dict):
         try:
             key = next(self.__iter__())
         except StopIteration:
-            if self._box_config["default_box"] and self._box_config["default_box_no_key_error"]:
-                return self.__get_default(store=False)
             raise BoxKeyError("Empty box") from None
         return key, self.pop(key)
 
@@ -568,10 +555,7 @@ class Box(dict):
                 # in the `converted` box_config set
                 v = self.__class__(v, **self.__box_config())
                 if k in self and isinstance(self[k], dict):
-                    if isinstance(self[k], Box):
-                        self[k].merge_update(v)
-                    else:
-                        self[k].update(v)
+                    self[k].merge_update(v)
                     return
             if isinstance(v, list) and not intact_type:
                 v = box.BoxList(v, **self.__box_config())

@@ -941,14 +941,14 @@ class TestBox:
         }
 
     def test_no_key_error_pop(self):
-        box1 = Box(default_box=True, default_box_no_key_error=True)
+        box1 = Box(default_box=True)
         box1.pop("non_exist_key")
         assert box1 == {}
 
-    def test_no_key_error_popitem(self):
-        box1 = Box(default_box=True, default_box_no_key_error=True)
-        box1.popitem()
-        assert box1 == {}
+    def test_key_error_popitem(self):
+        box1 = Box(default_box=True)
+        with pytest.raises(BoxKeyError):
+            box1.popitem()
 
     def test_msgpack_strings(self):
         box1 = Box(test_dict)
@@ -969,3 +969,33 @@ class TestBox:
     def test_msgpack_no_input(self):
         with pytest.raises(BoxError):
             Box.from_msgpack()
+
+    def test_value_view(self):
+        a = Box()
+        my_view = a.values()
+        assert len(my_view) == 0
+        a["test"] = "key_one"
+        a.test2 = "key_two"
+        assert len(my_view) == 2
+        assert "key_one" in my_view
+        assert "key_two" in my_view
+
+    def test_key_view(self):
+        a = Box()
+        my_view = a.keys()
+        assert len(my_view) == 0
+        a["test"] = "key_one"
+        a.test2 = "key_two"
+        assert len(my_view) == 2
+        assert "test" in my_view
+        assert "test2" in my_view
+
+    def test_item_view(self):
+        a = Box()
+        my_view = a.items()
+        assert len(my_view) == 0
+        a["test"] = "key_one"
+        a.test2 = "key_two"
+        assert len(my_view) == 2
+        assert ("test", "key_one") in my_view
+        assert ("test2", "key_two") in my_view

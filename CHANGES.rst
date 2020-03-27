@@ -6,7 +6,7 @@ Version 5.0.0
 
 * Adding support for msgpack coverters `to_msgpack` and `from_msgpack`
 * Adding support for comparision of `Box` to other boxes or dicts via the `-` sub operator (thanks to Hitz)
-* Adding `default_box_no_key_error` option to not raise key errors on `pop` `popitems` or `del` (thanks to Patrock)
+* Changing that default_box will not raise key errors on `pop` or `del` (thanks to Patrock)
 * Adding `mypy` type checking, `black` formatting and other checks on commit
 * Changing `to_csv` and `from_csv` to have same string and filename options as all other transforms
 * Changing back to no required external imports
@@ -18,6 +18,7 @@ Version 4.2.2
 
 * Fixing `default_box` doesn't first look for safe attributes before falling back to default (thanks to Pymancer)
 * Changing from TravisCI to Github Actions
+* Changing that due to `default_box` fix, `pop` or `del` no longer raise BoxKeyErrors on missing items (UNCAUGHT BUG)
 
 Version 4.2.1
 -------------
