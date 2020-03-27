@@ -37,7 +37,7 @@ jobs:
       - name: Run mypy
         run: mypy box
       - name: Check distrubiton log description
-        run:
+        run: |
           python setup.py sdist bdist_wheel
           twine check dist/*
 
