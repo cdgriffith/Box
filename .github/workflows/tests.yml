@@ -28,7 +28,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-test.txt
-        pip install coveralls flake8 flake8-print setuptools wheel twine mypy
+        pip install coveralls flake8 flake8-print
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors, undefined names or print statements
@@ -37,7 +37,10 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=20 --max-line-length=120 --statistics
     - name: Run mypy
       run: |
+        pip install mypy
         mypy box
+      with:
+        python-version: '3.x'
     - name: Test with pytest
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
@@ -46,5 +49,8 @@ jobs:
         coveralls
     - name: Check distrubiton log description
       run: |
+        pip install setuptools wheel twine
         python setup.py sdist bdist_wheel
         twine check dist/*
+      with:
+        python-version: '3.x'
