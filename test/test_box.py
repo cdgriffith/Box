@@ -25,6 +25,7 @@ from test.common import (
     data_json_file,
     data_yaml_file,
     test_root,
+    tmp_msgpack_file,
 )
 
 
@@ -921,3 +922,50 @@ class TestBox:
             False: "tree",
             "tuples_galore": ({"item": 3}, ({"item": 4}, 5)),
         }
+
+    def test_sub_with_non_dict(self):
+        with pytest.raises(BoxError):
+            Box(extended_test_dict) - BoxList([1, 2, 3])
+
+    def test_sub_with_frozen_box(self):
+        difference = Box(extended_test_dict, frozen_box=True) - test_dict
+        assert difference == {
+            3: "howdy",
+            "not": "true",
+            (3, 4): "test",
+            "_box_config": True,
+            "CamelCase": "21",
+            "321CamelCase": 321,
+            False: "tree",
+            "tuples_galore": ({"item": 3}, ({"item": 4}, 5)),
+        }
+
+    def test_no_key_error_pop(self):
+        box1 = Box(default_box=True, default_box_no_key_error=True)
+        box1.pop("non_exist_key")
+        assert box1 == {}
+
+    def test_no_key_error_popitem(self):
+        box1 = Box(default_box=True, default_box_no_key_error=True)
+        box1.popitem()
+        assert box1 == {}
+
+    def test_msgpack_strings(self):
+        box1 = Box(test_dict)
+        packed = box1.to_msgpack()
+        assert Box.from_msgpack(packed) == box1
+
+    def test_msgpack_strings_no_strick_keys(self):
+        box1 = Box(test_dict)
+        box1[5] = 2
+        packed = box1.to_msgpack()
+        assert Box.from_msgpack(packed, strict_map_key=False) == box1
+
+    def test_msgpack_files(self):
+        box1 = Box(test_dict)
+        box1.to_msgpack(filename=tmp_msgpack_file)
+        assert Box.from_msgpack(filename=tmp_msgpack_file) == box1
+
+    def test_msgpack_no_input(self):
+        with pytest.raises(BoxError):
+            Box.from_msgpack()

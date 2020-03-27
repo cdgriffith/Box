@@ -21,3 +21,7 @@ exclude_lines =
     item._box_config["__box_heritage"] = \(\)
     raise BoxKeyError\(err
     (.*)is unavailable on this system
+    def to_
+    def from_
+    warnings.warn
+    @classmethod

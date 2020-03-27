@@ -32,6 +32,7 @@ data_json_file = os.path.join(test_root, "data", "json_file.json")
 data_yaml_file = os.path.join(test_root, "data", "yaml_file.yaml")
 tmp_json_file = os.path.join(test_root, "tmp", "tmp_json_file.json")
 tmp_yaml_file = os.path.join(test_root, "tmp", "tmp_yaml_file.yaml")
+tmp_msgpack_file = os.path.join(test_root, "tmp", "tmp_msgpack_file.msgpack")
 
 movie_data = {
     "movies": {
