@@ -1,2 +1,4 @@
+# Files needed for pre-commit hooks
 black
+mypy
 pre-commit>=2.2.0
