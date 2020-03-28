@@ -10,6 +10,7 @@ Version 5.0.0
 * Adding `mypy` type checking, `black` formatting and other checks on commit
 * Changing `to_csv` and `from_csv` to have same string and filename options as all other transforms
 * Changing back to no required external imports
+* Changing from putting all details in README.rst to a github wiki at https://github.com/cdgriffith/Box/wiki
 * Removing readthedocs generation
 * Removing overrides for `keys`, `values` and `items` which will return views again
 
