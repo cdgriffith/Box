@@ -63,3 +63,4 @@ Suggestions and bug reporting:
 - Lei (NEOOOOOOOOOO)
 - Pymancer
 - Hitz (hitengajjar)
+- Krishna Penukonda (tasercake)
