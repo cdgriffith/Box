@@ -104,7 +104,7 @@ class Box(dict):
     :param box_dots: access nested Boxes by period separated keys in string
     """
 
-    _protected_keys = dir({}) + [
+    _protected_keys = [
         "to_dict",
         "to_json",
         "to_yaml",
@@ -112,14 +112,8 @@ class Box(dict):
         "from_json",
         "from_toml",
         "to_toml",
-        "_Box__convert_and_store",
-        "_Box__recast",
-        "_Box__get_default",
-        "_protected_keys",
-        "_conversion_checks",
         "merge_update",
-        "_safe_attr",
-    ]
+    ] + [attr for attr in dir({}) if not attr.startswith("_")]
 
     def __new__(
         cls,
@@ -142,7 +136,7 @@ class Box(dict):
         Due to the way pickling works in python 3, we need to make sure
         the box config is created as early as possible.
         """
-        obj = super(Box, cls).__new__(cls, *args, **kwargs)
+        obj = super().__new__(cls, *args, **kwargs)
         obj._box_config = _get_box_config()
         obj._box_config.update(
             {
@@ -530,9 +524,9 @@ class Box(dict):
         for k, v in out_dict.items():
             if v is self:
                 out_dict[k] = out_dict
-            elif hasattr(v, "to_dict"):
+            elif isinstance(v, Box):
                 out_dict[k] = v.to_dict()
-            elif hasattr(v, "to_list"):
+            elif isinstance(v, box.BoxList):
                 out_dict[k] = v.to_list()
         return out_dict
 
