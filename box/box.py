@@ -219,11 +219,44 @@ class Box(dict):
         self._box_config["__created"] = True
 
     def __add__(self, other: dict):
-        new_box = self.copy()
         if not isinstance(other, dict):
             raise BoxTypeError(f"Box can only merge two boxes or a box and a dictionary.")
+        new_box = self.copy()
         new_box.merge_update(other)
         return new_box
+
+    def __radd__(self, other: dict):
+        if not isinstance(other, dict):
+            raise BoxTypeError(f"Box can only merge two boxes or a box and a dictionary.")
+        new_box = self.copy()
+        new_box.merge_update(other)
+        return new_box
+
+    def __iadd__(self, other: dict):
+        if not isinstance(other, dict):
+            raise BoxTypeError(f"Box can only merge two boxes or a box and a dictionary.")
+        self.merge_update(other)
+        return self
+
+    def __or__(self, other: dict):
+        if not isinstance(other, dict):
+            raise BoxTypeError(f"Box can only merge two boxes or a box and a dictionary.")
+        new_box = self.copy()
+        new_box.update(other)
+        return new_box
+
+    def __ror__(self, other: dict):
+        if not isinstance(other, dict):
+            raise BoxTypeError(f"Box can only merge two boxes or a box and a dictionary.")
+        new_box = self.copy()
+        new_box.update(other)
+        return new_box
+
+    def __ior__(self, other: dict):
+        if not isinstance(other, dict):
+            raise BoxTypeError(f"Box can only merge two boxes or a box and a dictionary.")
+        self.update(other)
+        return self
 
     def __sub__(self, other: dict):
         frozen = self._box_config["frozen_box"]

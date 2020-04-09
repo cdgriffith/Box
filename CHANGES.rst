@@ -6,8 +6,9 @@ Version 5.0.0
 
 * Adding support for msgpack coverters `to_msgpack` and `from_msgpack`
 * Adding support for comparision of `Box` to other boxes or dicts via the `-` sub operator (thanks to Hitz)
-* Changing that default_box will not raise key errors on `pop` or `del` (thanks to Patrock)
+* Adding support to `|` union boxes like will come default in Python 3.9 from PEP 0584
 * Adding `mypy` type checking, `black` formatting and other checks on commit
+* Changing that default_box will not raise key errors on `pop` or `del` (thanks to Patrock)
 * Changing `to_csv` and `from_csv` to have same string and filename options as all other transforms
 * Changing back to no required external imports
 * Changing from putting all details in README.rst to a github wiki at https://github.com/cdgriffith/Box/wiki

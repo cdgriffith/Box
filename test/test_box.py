@@ -862,11 +862,50 @@ class TestBox:
             del c.really_a_thief
 
     def test_add_boxes(self):
-        b = Box(c=1)
-        c = Box(d=2)
-        assert b + c == Box(c=1, d=2)
+        b = Box(c=1, d={"sub": 1}, e=1)
+        c = dict(d={"val": 2}, e=4)
+        assert b + c == Box(c=1, d={"sub": 1, "val": 2}, e=4)
         with pytest.raises(BoxError):
             Box() + BoxList()
+
+    def test_iadd_boxes(self):
+        b = Box(c=1, d={"sub": 1}, e=1)
+        c = dict(d={"val": 2}, e=4)
+        b += c
+        assert b == Box(c=1, d={"sub": 1, "val": 2}, e=4)
+        with pytest.raises(BoxError):
+            a = Box()
+            a += BoxList()
+
+    def test_radd_boxes(self):
+        b = dict(c=1, d={"sub": 1}, e=1)
+        c = Box(d={"val": 2}, e=4)
+        assert c + b == Box(c=1, d={"sub": 1, "val": 2}, e=1)
+        with pytest.raises(BoxError):
+            BoxList() + Box()
+
+    def test_or_boxes(self):
+        b = Box(c=1, d={"sub": 1}, e=1)
+        c = dict(d={"val": 2}, e=4)
+        assert b | c == Box(c=1, d={"val": 2}, e=4)
+        with pytest.raises(BoxError):
+            Box() | BoxList()
+
+    def test_ior_boxes(self):
+        b = Box(c=1, d={"sub": 1}, e=1)
+        c = dict(d={"val": 2}, e=4)
+        b |= c
+        assert b == Box(c=1, d={"val": 2}, e=4)
+        with pytest.raises(BoxError):
+            a = Box()
+            a |= BoxList()
+
+    def test_ror_boxes(self):
+        b = dict(c=1, d={"sub": 1}, e=1)
+        c = Box(d={"val": 2}, e=4)
+        assert c | b == Box(c=1, d={"sub": 1}, e=1)
+        with pytest.raises(BoxError):
+            BoxList() | Box()
 
     def test_type_recast(self):
         b = Box(id="6", box_recast={"id": int})
