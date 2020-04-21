@@ -878,6 +878,9 @@ class TestBox:
             a += BoxList()
 
     def test_radd_boxes(self):
+        a = dict(a=1)
+        d = Box(e=2)
+        d | a
         b = dict(c=1, d={"sub": 1}, e=1)
         c = Box(d={"val": 2}, e=4)
         assert c + b == Box(c=1, d={"sub": 1, "val": 2}, e=1)
@@ -1038,3 +1041,12 @@ class TestBox:
         assert len(my_view) == 2
         assert ("test", "key_one") in my_view
         assert ("test2", "key_two") in my_view
+
+    def test_box_propagation(self):
+        # Issue 150
+        hash(Box({"x": Box({"y": 2})}, frozen_box=True))
+        hash(Box({"x": [Box({"y": 2})]}, frozen_box=True))
+
+        with pytest.raises(TypeError):
+            hash(Box({"x": Box({"y": 2})}, frozen_box=True, box_inherent_settings=False))
+            hash(Box({"x": [Box({"y": 2})]}, frozen_box=True, box_inherent_settings=False))

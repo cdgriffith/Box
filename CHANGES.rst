@@ -5,14 +5,16 @@ Version 5.0.0
 -------------
 
 * Adding support for msgpack coverters `to_msgpack` and `from_msgpack`
-* Adding support for comparision of `Box` to other boxes or dicts via the `-` sub operator (thanks to Hitz)
+* Adding support for comparision of `Box` to other boxes or dicts via the `-` sub operator #144 (thanks to Hitz)
 * Adding support to `|` union boxes like will come default in Python 3.9 from PEP 0584
 * Adding `mypy` type checking, `black` formatting and other checks on commit
-* Changing that default_box will not raise key errors on `pop` or `del` (thanks to Patrock)
+* Adding new parameter `box_class` for cleaner inheritance #148 (thanks to David Aronchick)
+* Adding new parameter `box_inherent_settings` #150 (thanks to ipcoder)
+* Changing that default_box will not raise key errors on `pop` or `del` #67 (thanks to Patrock)
 * Changing `to_csv` and `from_csv` to have same string and filename options as all other transforms
 * Changing back to no required external imports
 * Changing from putting all details in README.rst to a github wiki at https://github.com/cdgriffith/Box/wiki
-* Changing `protected_keys` to remove magic methods from dict (thanks to Krishna Penukonda)
+* Changing `protected_keys` to remove magic methods from dict #146 (thanks to Krishna Penukonda)
 * Removing readthedocs generation
 * Removing overrides for `keys`, `values` and `items` which will return views again
 

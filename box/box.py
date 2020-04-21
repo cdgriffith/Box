@@ -130,6 +130,8 @@ class Box(dict):
         box_intact_types: Union[Tuple, List] = (),
         box_recast: Dict = None,
         box_dots: bool = False,
+        box_class: Union[Dict, "Box"] = None,
+        box_inherent_settings: bool = True,
         **kwargs: Any,
     ):
         """
@@ -152,6 +154,8 @@ class Box(dict):
                 "box_intact_types": tuple(box_intact_types),
                 "box_recast": box_recast,
                 "box_dots": box_dots,
+                "box_class": box_class if box_class is not None else cls.__class__,
+                "box_inherent_settings": box_inherent_settings,
             }
         )
         return obj
@@ -171,6 +175,8 @@ class Box(dict):
         box_intact_types: Union[Tuple, List] = (),
         box_recast: Dict = None,
         box_dots: bool = False,
+        box_class: Union[Dict, "Box"] = None,
+        box_inherent_settings: bool = True,
         **kwargs: Any,
     ):
         super().__init__()
@@ -189,6 +195,8 @@ class Box(dict):
                 "box_intact_types": tuple(box_intact_types),
                 "box_recast": box_recast,
                 "box_dots": box_dots,
+                "box_class": box_class if box_class is not None else self.__class__,
+                "box_inherent_settings": box_inherent_settings,
             }
         )
         if not self._box_config["conversion_box"] and self._box_config["box_duplicates"] != "ignore":
@@ -262,11 +270,11 @@ class Box(dict):
         frozen = self._box_config["frozen_box"]
         config = self.__box_config()
         config["frozen_box"] = False
-        output = self.__class__(**config)
+        output = self._box_config["box_class"](**config)
         if not isinstance(other, dict):
             raise BoxError("Box can only compare two boxes or a box and a dictionary.")
         if not isinstance(other, Box):
-            other = self.__class__(other, **config)
+            other = self._box_config["box_class"](other, **config)
         for item in self:
             if item not in other:
                 output[item] = self[item]
@@ -331,7 +339,7 @@ class Box(dict):
         frozen = self._box_config["frozen_box"]
         config = self.__box_config()
         config["frozen_box"] = False
-        out = self.__class__(**config)
+        out = self._box_config["box_class"](**config)
         memodict = memodict or {}
         memodict[id(self)] = out
         for k, v in self.items():
@@ -345,10 +353,10 @@ class Box(dict):
 
     def __get_default(self, item=None, store=True):
         default_value = self._box_config["default_box_attr"]
-        if default_value in (self.__class__, dict):
-            value = self.__class__(**self.__box_config())
+        if default_value in (self._box_config["box_class"], dict):
+            value = self._box_config["box_class"](**self.__box_config())
         elif isinstance(default_value, dict):
-            value = self.__class__(**self.__box_config(), **default_value)
+            value = self._box_config["box_class"](**self.__box_config(), **default_value)
         elif isinstance(default_value, list):
             value = box.BoxList(**self.__box_config())
         elif isinstance(default_value, Callable):
@@ -367,6 +375,17 @@ class Box(dict):
             if not k.startswith("__"):
                 out[k] = v
         return out
+
+    def _box_config_propagate(self, box_config, seen=None):
+        if not seen:
+            seen = set()
+        if id(self) in seen:
+            return
+        seen.add(id(self))
+        self._box_config.update(box_config)
+        for v in self.values():
+            if isinstance(v, Box) or isinstance(v, box.BoxList):
+                v._box_config_propagate(box_config, seen=seen)
 
     def __recast(self, item, value):
         if self._box_config["box_recast"] and item in self._box_config["box_recast"]:
@@ -387,16 +406,20 @@ class Box(dict):
             return super().__setitem__(item, value)
         # This is the magic sauce that makes sub dictionaries into new box objects
         if isinstance(value, dict) and not isinstance(value, Box):
-            value = self.__class__(value, **self.__box_config())
+            value = self._box_config["box_class"](value, **self.__box_config())
+        elif isinstance(value, Box) and self._box_config["box_inherent_settings"]:
+            value._box_config_propagate(self._box_config)
         elif isinstance(value, list) and not isinstance(value, box.BoxList):
             if self._box_config["frozen_box"]:
                 value = _recursive_tuples(
-                    value, self.__class__, recreate_tuples=self._box_config["modify_tuples_box"], **self.__box_config()
+                    value, recreate_tuples=self._box_config["modify_tuples_box"], **self.__box_config()
                 )
             else:
-                value = box.BoxList(value, box_class=self.__class__, **self.__box_config())
+                value = box.BoxList(value, **self.__box_config())
+        elif isinstance(value, box.BoxList) and self._box_config["box_inherent_settings"]:
+            value._box_config_propagate(self._box_config)
         elif self._box_config["modify_tuples_box"] and isinstance(value, tuple):
-            value = _recursive_tuples(value, self.__class__, recreate_tuples=True, **self.__box_config())
+            value = _recursive_tuples(value, recreate_tuples=True, **self.__box_config())
         super().__setitem__(item, value)
 
     def __getitem__(self, item, _ignore_default=False):
@@ -580,7 +603,7 @@ class Box(dict):
             if isinstance(v, dict) and not intact_type:
                 # Box objects must be created in case they are already
                 # in the `converted` box_config set
-                v = self.__class__(v, **self.__box_config())
+                v = self._box_config["box_class"](v, **self.__box_config())
                 if k in self and isinstance(self[k], dict):
                     self[k].merge_update(v)
                     return
@@ -603,9 +626,9 @@ class Box(dict):
             return self[item]
 
         if isinstance(default, dict):
-            default = self.__class__(default, **self.__box_config())
+            default = self._box_config["box_class"](default, **self.__box_config())
         if isinstance(default, list):
-            default = box.BoxList(default, box_class=self.__class__, **self.__box_config())
+            default = box.BoxList(default, **self.__box_config())
         self[item] = default
         return default
 

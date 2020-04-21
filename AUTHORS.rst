@@ -64,3 +64,4 @@ Suggestions and bug reporting:
 - Pymancer
 - Hitz (hitengajjar)
 - Krishna Penukonda (tasercake)
+- David Aronchick (aronchick)

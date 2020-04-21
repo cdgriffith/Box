@@ -50,6 +50,19 @@ class BoxList(list):
             for method in ["append", "extend", "insert", "pop", "remove", "reverse", "sort"]:
                 self.__setattr__(method, frozen)
 
+    def _box_config_propagate(self, box_config, seen=None):
+        if not self.box_options.get("box_inherent_settings", True):
+            return
+        if not seen:
+            seen = set()
+        if id(self) in seen:
+            return
+        self.box_options.update(box_config)
+        self.box_class = box_config["box_class"]
+        for item in self:
+            if isinstance(item, box.Box) or isinstance(item, BoxList):
+                item._box_config_propagate(box_config, seen=seen)
+
     def __getitem__(self, item):
         if self.box_options.get("box_dots") and isinstance(item, str) and item.startswith("["):
             list_pos = _list_pos_re.search(item)
