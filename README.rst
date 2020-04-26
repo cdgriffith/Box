@@ -299,8 +299,8 @@ For example, if you wanted to make sure any field labeled 'id' was an integer:
 
     my_box.new_key = {'id': '55', 'example': 'value'}
 
-    print(type(my_box.new_key.id))
-    # 55
+    print(my_box.new_key.id, type(my_box.new_key.id))
+    # 55 <class 'int'>
 
 If it cannot be converted, it will raise a `BoxValueError` (catachable with either `BoxError` or `ValueError` as well)
 

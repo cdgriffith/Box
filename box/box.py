@@ -90,9 +90,16 @@ class Box(dict):
     :param box_dots: access nested Boxes by period separated keys in string
     """
 
-    _protected_keys = dir({}) + ['to_dict', 'to_json', 'to_yaml', 'from_yaml', 'from_json', 'from_toml', 'to_toml',
-                                 '_Box__convert_and_store', '_Box__recast', '_Box__get_default', '_protected_keys',
-                                 '_conversion_checks', 'merge_update', '_safe_attr']
+    _protected_keys = [
+        "to_dict",
+        "to_json",
+        "to_yaml",
+        "from_yaml",
+        "from_json",
+        "from_toml",
+        "to_toml",
+        "merge_update",
+    ] + [attr for attr in dir({}) if not attr.startswith("_")]
 
     def __new__(cls, *args: Any, default_box: bool = False, default_box_attr: Any = NO_DEFAULT,
                 default_box_none_transform: bool = True, frozen_box: bool = False, camel_killer_box: bool = False,
@@ -151,6 +158,7 @@ class Box(dict):
                 for k, v in args[0].items():
                     if v is args[0]:
                         v = self
+
                     if v is None and self._box_config['default_box'] and self._box_config['default_box_none_transform']:
                         continue
                     self.__setitem__(k, v)
@@ -462,9 +470,9 @@ class Box(dict):
         for k, v in out_dict.items():
             if v is self:
                 out_dict[k] = out_dict
-            elif hasattr(v, 'to_dict'):
+            elif isinstance(v, Box):
                 out_dict[k] = v.to_dict()
-            elif hasattr(v, 'to_list'):
+            elif isinstance(v, box.BoxList):
                 out_dict[k] = v.to_list()
         return out_dict
 
