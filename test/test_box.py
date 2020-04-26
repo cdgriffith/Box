@@ -524,15 +524,14 @@ class TestBox:
         circular_dict = {}
         circular_dict["a"] = circular_dict
         bx = Box(circular_dict)
-        assert bx.a.a == bx.a
-        circular_dict_2 = bx.a.a.a.to_dict()
-        assert str(circular_dict_2) == "{'a': {...}}"
+        assert bx.a == {}
+        circular_dict_2 = bx.to_dict()
+        assert str(circular_dict_2) == "{'a': {}}"
 
         bx2 = Box(circular_dict, k=circular_dict)
-        assert bx2.k == bx2.a
+        assert bx2.k.a == bx2.a
 
-        with pytest.raises(ValueError):
-            bx.to_json()
+        bx.to_json()
 
         circular_list = []
         circular_list.append(circular_list)
@@ -883,6 +882,7 @@ class TestBox:
         d | a
         b = dict(c=1, d={"sub": 1}, e=1)
         c = Box(d={"val": 2}, e=4)
+        assert c.__radd__(b) == Box(c=1, d={"sub": 1, "val": 2}, e=1)
         assert c + b == Box(c=1, d={"sub": 1, "val": 2}, e=1)
         with pytest.raises(BoxError):
             BoxList() + Box()
@@ -906,6 +906,7 @@ class TestBox:
     def test_ror_boxes(self):
         b = dict(c=1, d={"sub": 1}, e=1)
         c = Box(d={"val": 2}, e=4)
+        assert c.__ror__(b) == Box(c=1, d={"sub": 1}, e=1)
         assert c | b == Box(c=1, d={"sub": 1}, e=1)
         with pytest.raises(BoxError):
             BoxList() | Box()
@@ -1047,6 +1048,7 @@ class TestBox:
         hash(Box({"x": Box({"y": 2})}, frozen_box=True))
         hash(Box({"x": [Box({"y": 2})]}, frozen_box=True))
 
-        with pytest.raises(TypeError):
-            hash(Box({"x": Box({"y": 2})}, frozen_box=True, box_inherent_settings=False))
-            hash(Box({"x": [Box({"y": 2})]}, frozen_box=True, box_inherent_settings=False))
+    def test_box_safe_references(self):
+        a = Box(c=5)
+        b = Box(a=a)
+        assert id(a) != id(b.a)

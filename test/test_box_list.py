@@ -176,3 +176,14 @@ class TestBoxList:
         data["[2][1].lister[0][0].down"] = "hole"
         assert data["[2][1].lister[0][0].down"] == "hole"
         assert data[2][1].lister[0][0].down == "hole"
+
+    def test_box_config_propagate(self):
+        structure = Box(a=[Box(default_box=False)], default_box=True, box_inherent_settings=True)
+        assert structure._box_config["default_box"] is True
+        assert structure.a[0]._box_config["default_box"] is True
+
+        base = BoxList([BoxList([Box(default_box=False)])], default_box=True)
+        assert base[0].box_options["default_box"] is True
+
+        base2 = BoxList((BoxList([Box()], default_box=False),), default_box=True)
+        assert base2[0][0]._box_config["default_box"] is True

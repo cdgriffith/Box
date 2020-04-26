@@ -154,7 +154,7 @@ class Box(dict):
                 "box_intact_types": tuple(box_intact_types),
                 "box_recast": box_recast,
                 "box_dots": box_dots,
-                "box_class": box_class if box_class is not None else cls.__class__,
+                "box_class": box_class if box_class is not None else Box,
                 "box_inherent_settings": box_inherent_settings,
             }
         )
@@ -351,7 +351,7 @@ class Box(dict):
         self._box_config = state["_box_config"]
         self.__dict__.update(state)
 
-    def __get_default(self, item=None, store=True):
+    def __get_default(self, item):
         default_value = self._box_config["default_box_attr"]
         if default_value in (self._box_config["box_class"], dict):
             value = self._box_config["box_class"](**self.__box_config())
@@ -365,8 +365,7 @@ class Box(dict):
             value = default_value.copy()
         else:
             value = default_value
-        if store:
-            self.__convert_and_store(item, value)
+        super().__setitem__(item, value)
         return value
 
     def __box_config(self) -> Dict:
@@ -375,17 +374,6 @@ class Box(dict):
             if not k.startswith("__"):
                 out[k] = v
         return out
-
-    def _box_config_propagate(self, box_config, seen=None):
-        if not seen:
-            seen = set()
-        if id(self) in seen:
-            return
-        seen.add(id(self))
-        self._box_config.update(box_config)
-        for v in self.values():
-            if isinstance(v, Box) or isinstance(v, box.BoxList):
-                v._box_config_propagate(box_config, seen=seen)
 
     def __recast(self, item, value):
         if self._box_config["box_recast"] and item in self._box_config["box_recast"]:
@@ -405,10 +393,9 @@ class Box(dict):
         if self._box_config["box_intact_types"] and isinstance(value, self._box_config["box_intact_types"]):
             return super().__setitem__(item, value)
         # This is the magic sauce that makes sub dictionaries into new box objects
-        if isinstance(value, dict) and not isinstance(value, Box):
+        if isinstance(value, dict):
+            # We always re-create even if it was already a Box object to pass down configurations correctly
             value = self._box_config["box_class"](value, **self.__box_config())
-        elif isinstance(value, Box) and self._box_config["box_inherent_settings"]:
-            value._box_config_propagate(self._box_config)
         elif isinstance(value, list) and not isinstance(value, box.BoxList):
             if self._box_config["frozen_box"]:
                 value = _recursive_tuples(
@@ -416,8 +403,8 @@ class Box(dict):
                 )
             else:
                 value = box.BoxList(value, **self.__box_config())
-        elif isinstance(value, box.BoxList) and self._box_config["box_inherent_settings"]:
-            value._box_config_propagate(self._box_config)
+        elif isinstance(value, box.BoxList):
+            value.box_options.update(self.__box_config())
         elif self._box_config["modify_tuples_box"] and isinstance(value, tuple):
             value = _recursive_tuples(value, recreate_tuples=True, **self.__box_config())
         super().__setitem__(item, value)
@@ -540,7 +527,7 @@ class Box(dict):
         try:
             item = self[key]
         except KeyError:
-            raise BoxKeyError("{0}".format(key)) from None
+            raise BoxKeyError(f"{key}") from None
         else:
             del self[key]
             return item
