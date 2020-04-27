@@ -14,7 +14,6 @@ Version 5.0.0
 * Changing `to_csv` and `from_csv` to have same string and filename options as all other transforms
 * Changing back to no required external imports
 * Changing from putting all details in README.rst to a github wiki at https://github.com/cdgriffith/Box/wiki
-* Changing `protected_keys` to remove magic methods from dict #146 (thanks to Krishna Penukonda)
 * Changing `BoxList.box_class` to be stored in `BoxList.box_options` dict as `box_class`
 * Removing support for single level circular references
 * Removing readthedocs generation
