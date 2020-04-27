@@ -62,6 +62,7 @@ Suggestions and bug reporting:
 - Yordan Ivanov (iordanivanov)
 - Lei (NEOOOOOOOOOO)
 - Pymancer
-- Hitz (hitengajjar)
 - Krishna Penukonda (tasercake)
+- J Alan Brogan (jalanb)
+- Hitz (hitengajjar)
 - David Aronchick (aronchick)
