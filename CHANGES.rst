@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 4.2.3
+-------------
+
+* Fixing README.md example #149 (thanks to J Alan Brogan)
+* Changing `protected_keys` to remove magic methods from dict #146 (thanks to Krishna Penukonda)
+
 
 Version 4.2.2
 -------------

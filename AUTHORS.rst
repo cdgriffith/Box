@@ -62,3 +62,5 @@ Suggestions and bug reporting:
 - Yordan Ivanov (iordanivanov)
 - Lei (NEOOOOOOOOOO)
 - Pymancer
+- Krishna Penukonda (tasercake)
+- J Alan Brogan (jalanb)
