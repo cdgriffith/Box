@@ -24,9 +24,18 @@ Install
 
 .. code:: bash
 
-        pip install --upgrade python-box[ruamel.yaml,toml,msgpack]
+        pip install --upgrade python-box[all]
 
-Check out `more details <https://github.com/cdgriffith/Box/wiki/Installation>`_ on installation details and what extras are available.
+Box 5 is no longer forcing install of external dependencies such as yaml and toml. Instead you can specify which you want,
+for example, `all` is shorthand for:
+
+.. code:: bash
+
+        pip install --upgrade [ruamel.yaml,toml,msgpack]
+
+But you can also sub out "ruamel.yaml" for "PyYAML".
+
+Check out `more details <https://github.com/cdgriffith/Box/wiki/Installation>`_ on installation details.
 
 Box 5 is tested on python 3.6+ and pypy3, if you are upgrading from previous versions, please look through
 `any breaking changes and new features <https://github.com/cdgriffith/Box/wiki/Major-Version-Breaking-Changes-and-New-Features>`_.
@@ -86,7 +95,7 @@ Also special shout-out to PythonBytes_, who featured Box on their podcast.
 License
 =======
 
-MIT License, Copyright (c) 2017-2020 Chris Griffith. See LICENSE file.
+MIT License, Copyright (c) 2017-2020 Chris Griffith. See LICENSE_ file.
 
 
 .. |BoxImage| image:: https://raw.githubusercontent.com/cdgriffith/Box/master/box_logo.png
@@ -103,3 +112,4 @@ MIT License, Copyright (c) 2017-2020 Chris Griffith. See LICENSE file.
 .. _`Wrapt Documentation`: https://wrapt.readthedocs.io/en/latest
 .. _reusables: https://github.com/cdgriffith/reusables#reusables
 .. _created: https://github.com/cdgriffith/Reusables/commit/df20de4db74371c2fedf1578096f3e29c93ccdf3#diff-e9a0f470ef3e8afb4384dc2824943048R51
+.. _LICENSE: https://github.com/cdgriffith/Box/blob/master/LICENSE

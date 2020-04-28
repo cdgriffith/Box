@@ -102,6 +102,7 @@ class Box(dict):
     :param box_intact_types: tuple of types to ignore converting
     :param box_recast: cast certain keys to a specified type
     :param box_dots: access nested Boxes by period separated keys in string
+    :param box_class: change what type of class sub-boxes will be created as
     """
 
     _protected_keys = [
@@ -131,7 +132,6 @@ class Box(dict):
         box_recast: Dict = None,
         box_dots: bool = False,
         box_class: Union[Dict, "Box"] = None,
-        box_inherent_settings: bool = True,
         **kwargs: Any,
     ):
         """
@@ -155,7 +155,6 @@ class Box(dict):
                 "box_recast": box_recast,
                 "box_dots": box_dots,
                 "box_class": box_class if box_class is not None else Box,
-                "box_inherent_settings": box_inherent_settings,
             }
         )
         return obj
@@ -176,7 +175,6 @@ class Box(dict):
         box_recast: Dict = None,
         box_dots: bool = False,
         box_class: Union[Dict, "Box"] = None,
-        box_inherent_settings: bool = True,
         **kwargs: Any,
     ):
         super().__init__()
@@ -196,7 +194,6 @@ class Box(dict):
                 "box_recast": box_recast,
                 "box_dots": box_dots,
                 "box_class": box_class if box_class is not None else self.__class__,
-                "box_inherent_settings": box_inherent_settings,
             }
         )
         if not self._box_config["conversion_box"] and self._box_config["box_duplicates"] != "ignore":
@@ -493,7 +490,7 @@ class Box(dict):
         try:
             super().__delitem__(key)
         except KeyError as err:
-            raise BoxKeyError(err)
+            raise BoxKeyError(str(err)) from None
 
     def __delattr__(self, item):
         if self._box_config["frozen_box"]:
@@ -511,7 +508,7 @@ class Box(dict):
                     self.__delitem__(self._box_config["__safe_keys"][safe_key])
                     del self._box_config["__safe_keys"][safe_key]
                     return
-            raise BoxKeyError(err)
+            raise BoxKeyError(str(err)) from None
 
     def pop(self, key, *args):
         if args:

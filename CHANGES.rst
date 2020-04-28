@@ -10,11 +10,12 @@ Version 5.0.0
 * Adding `mypy` type checking, `black` formatting and other checks on commit
 * Adding new parameter `box_class` for cleaner inheritance #148 (thanks to David Aronchick)
 * Changing that sub boxes are always created to properly propagate settings and copy objects #150 (thanks to ipcoder)
-* Changing that default_box will not raise key errors on `pop` or `del` #67 (thanks to Patrock)
+* Changing that default_box will not raise key errors on `pop` #67 (thanks to Patrock)
 * Changing `to_csv` and `from_csv` to have same string and filename options as all other transforms
-* Changing back to no required external imports
+* Changing back to no required external imports, instead have extra requires like [all]
 * Changing from putting all details in README.rst to a github wiki at https://github.com/cdgriffith/Box/wiki
 * Changing `BoxList.box_class` to be stored in `BoxList.box_options` dict as `box_class`
+* Changing `del` will raise `BoxKeyError`, subclass of both `KeyError` and `BoxError`
 * Removing support for single level circular references
 * Removing readthedocs generation
 * Removing overrides for `keys`, `values` and `items` which will return views again
