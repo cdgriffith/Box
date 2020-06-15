@@ -9,6 +9,9 @@ Version 5.0.0
 * Adding support to `|` union boxes like will come default in Python 3.9 from PEP 0584
 * Adding `mypy` type checking, `black` formatting and other checks on commit
 * Adding new parameter `box_class` for cleaner inheritance #148 (thanks to David Aronchick)
+* Adding `dotted` and `flat` option for `keys` method to return box_dots style keys (thanks to ipcoder)
+* Fixing box_dots to properly delete items from lists
+* Fixing box_dots to properly find items with dots in their key
 * Changing that sub boxes are always created to properly propagate settings and copy objects #150 (thanks to ipcoder)
 * Changing that default_box will not raise key errors on `pop` #67 (thanks to Patrock)
 * Changing `to_csv` and `from_csv` to have same string and filename options as all other transforms

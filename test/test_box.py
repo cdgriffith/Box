@@ -817,7 +817,7 @@ class TestBox:
         with pytest.raises(BoxError):
             from box.box import _parse_box_dots
 
-            _parse_box_dots("-")
+            _parse_box_dots({}, "-")
 
     def test_unicode(self):
         bx = Box()
@@ -918,7 +918,17 @@ class TestBox:
             b["sub_box"] = {"id": "bad_id"}
 
     def test_box_dots(self):
-        b = Box({"my_key": {"does stuff": {"to get to": "where I want"}}}, box_dots=True)
+        b = Box(
+            {"my_key": {"does stuff": {"to get to": "where I want"}}, "key.with.list": [[[{"test": "value"}]]]},
+            box_dots=True,
+        )
+        for key in b.keys(dotted=True):
+            b[key]
+
+        c = Box(extended_test_dict.copy(), box_dots=True)
+        for key in c.keys(dotted=True):
+            c[key]
+
         assert b["my_key.does stuff.to get to"] == "where I want"
         b["my_key.does stuff.to get to"] = "test"
         assert b["my_key.does stuff.to get to"] == "test"
@@ -927,6 +937,11 @@ class TestBox:
         b[4] = 2
         assert b[4] == 2
         del b[4]
+        assert b["key.with.list[0][0][0].test"] == "value"
+        b["key.with.list[0][0][0].test"] = "new_value"
+        assert b["key.with.list"][0][0][0]["test"] == "new_value"
+        del b["key.with.list[0][0][0].test"]
+        assert not b["key.with.list[0][0][0]"]
 
     def test_toml(self):
         b = Box.from_toml(filename=Path(test_root, "data", "toml_file.tml"), default_box=True)
