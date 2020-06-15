@@ -942,6 +942,16 @@ class TestBox:
         assert b["key.with.list"][0][0][0]["test"] == "new_value"
         del b["key.with.list[0][0][0].test"]
         assert not b["key.with.list[0][0][0]"]
+        del b["key.with.list[0][0]"]
+        with pytest.raises(IndexError):
+            b["key.with.list[0][0][0]"]
+        del b["key.with.list[0]"]
+        with pytest.raises(IndexError):
+            b["key.with.list[0][0]"]
+
+        d = Box()
+        with pytest.raises(BoxError):
+            d.keys(dotted=True)
 
     def test_toml(self):
         b = Box.from_toml(filename=Path(test_root, "data", "toml_file.tml"), default_box=True)
