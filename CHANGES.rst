@@ -12,6 +12,7 @@ Version 5.0.0
 * Adding `dotted` and `flat` option for `keys` method to return box_dots style keys (thanks to ipcoder)
 * Fixing box_dots to properly delete items from lists
 * Fixing box_dots to properly find items with dots in their key
+* Fixing that recast of subclassses of `Box` or `BoxList` were not fed box properties (thanks to Alexander Kapustin)
 * Changing that sub boxes are always created to properly propagate settings and copy objects #150 (thanks to ipcoder)
 * Changing that default_box will not raise key errors on `pop` #67 (thanks to Patrock)
 * Changing `to_csv` and `from_csv` to have same string and filename options as all other transforms

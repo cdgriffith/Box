@@ -66,3 +66,5 @@ Suggestions and bug reporting:
 - J Alan Brogan (jalanb)
 - Hitz (hitengajjar)
 - David Aronchick (aronchick)
+- Alexander Kapustin (dyens)
+

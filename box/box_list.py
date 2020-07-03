@@ -40,6 +40,7 @@ class BoxList(list):
         obj = super().__new__(cls, *args, **kwargs)
         # This is required for pickling to work correctly
         obj.box_options = {"box_class": box.Box}
+        obj.box_options.update(kwargs)
         obj.box_org_ref = 0
         return obj
 
@@ -95,23 +96,26 @@ class BoxList(list):
             return True
         return False
 
-    def append(self, p_object):
+    def _convert(self, p_object):
         if isinstance(p_object, dict) and not self._is_intact_type(p_object):
             p_object = self.box_options["box_class"](p_object, **self.box_options)
-        elif isinstance(p_object, list) and not self._is_intact_type(p_object):
-            p_object = self if id(p_object) == self.box_org_ref else BoxList(p_object, **self.box_options)
-        super(BoxList, self).append(p_object)
+        elif isinstance(p_object, box.Box):
+            p_object._box_config.update(self.box_options)
+        if isinstance(p_object, list) and not self._is_intact_type(p_object):
+            p_object = self if id(p_object) == self.box_org_ref else self.__class__(p_object, **self.box_options)
+        elif isinstance(p_object, BoxList):
+            p_object.box_options.update(self.box_options)
+        return p_object
+
+    def append(self, p_object):
+        super(BoxList, self).append(self._convert(p_object))
 
     def extend(self, iterable):
         for item in iterable:
             self.append(item)
 
     def insert(self, index, p_object):
-        if isinstance(p_object, dict) and not self._is_intact_type(p_object):
-            p_object = self.box_options["box_class"](p_object, **self.box_options)
-        elif isinstance(p_object, list) and not self._is_intact_type(p_object):
-            p_object = self if id(p_object) == self.box_org_ref else BoxList(p_object, **self.box_options)
-        super(BoxList, self).insert(index, p_object)
+        super(BoxList, self).insert(index, self._convert(p_object))
 
     def _dotted_helper(self, dotted=-1, flat=False):
         keys = []
@@ -136,7 +140,7 @@ class BoxList(list):
         return str(self.to_list())
 
     def __copy__(self):
-        return BoxList((x for x in self), **self.box_options)
+        return self.__class__((x for x in self), **self.box_options)
 
     def __deepcopy__(self, memo=None):
         out = self.__class__()

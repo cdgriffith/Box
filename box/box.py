@@ -406,7 +406,10 @@ class Box(dict):
     def __recast(self, item, value):
         if self._box_config["box_recast"] and item in self._box_config["box_recast"]:
             try:
-                return self._box_config["box_recast"][item](value)
+                if issubclass(self._box_config["box_recast"][item], (Box, box.BoxList)):
+                    return self._box_config["box_recast"][item](value, **self.__box_config())
+                else:
+                    return self._box_config["box_recast"][item](value)
             except ValueError:
                 raise BoxValueError(f'Cannot convert {value} to {self._box_config["box_recast"][item]}') from None
         return value
