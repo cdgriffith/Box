@@ -317,29 +317,26 @@ class Box(dict):
 
         return list(items)
 
-    def keys(self, dotted: Union[bool, int] = False, flat=False):
+    def keys(self, dotted: Union[bool] = False):
         if not dotted:
             return super().keys()
 
         if not self._box_config["box_dots"]:
             raise BoxError("Cannot return dotted keys as this Box does not have `box_dots` enabled")
 
-        if isinstance(dotted, bool):
-            dotted = -1
-
         keys = set()
         for key, value in self.items():
             added = False
             if isinstance(key, str):
                 if isinstance(value, Box):
-                    for sub_key in value.keys(dotted=dotted - 1, flat=flat):
+                    for sub_key in value.keys(dotted=True):
                         keys.add(f"{key}.{sub_key}")
                         added = True
                 elif isinstance(value, box.BoxList):
-                    for pos in value._dotted_helper(dotted=dotted - 1, flat=flat):
+                    for pos in value._dotted_helper():
                         keys.add(f"{key}{pos}")
                         added = True
-                if not flat or not added:
+                if not added:
                     keys.add(key)
         return sorted(keys, key=lambda x: str(x))
 

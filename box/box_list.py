@@ -117,19 +117,19 @@ class BoxList(list):
     def insert(self, index, p_object):
         super(BoxList, self).insert(index, self._convert(p_object))
 
-    def _dotted_helper(self, dotted=-1, flat=False):
+    def _dotted_helper(self):
         keys = []
         for idx, item in enumerate(self):
             added = False
             if isinstance(item, box.Box):
-                for key in item.keys(dotted=dotted - 1, flat=flat):
+                for key in item.keys(dotted=True):
                     keys.append(f"[{idx}].{key}")
                     added = True
             elif isinstance(item, BoxList):
-                for key in item._dotted_helper(dotted=dotted - 1, flat=flat):
+                for key in item._dotted_helper():
                     keys.append(f"[{idx}]{key}")
                     added = True
-            if not flat or not added:
+            if not added:
                 keys.append(f"[{idx}]")
         return keys
 
