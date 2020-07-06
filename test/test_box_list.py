@@ -158,6 +158,7 @@ class TestBoxList:
                 {"test": 1},
                 {"bad": 2, "data": 3},
                 [[[0, -1], [77, 88]], {"inner": "one", "lister": [[{"down": "rabbit"}]]}],
+                4,
             ],
             box_dots=True,
         )
@@ -177,6 +178,23 @@ class TestBoxList:
         assert data["[2][1].lister[0][0].down"] == "hole"
         assert data[2][1].lister[0][0].down == "hole"
 
+        db = Box(a=data, box_dots=True)
+        keys = db.keys(dotted=True)
+        assert keys == [
+            "a[0].test",
+            "a[1].bad",
+            "a[1].data",
+            "a[2][0][0][0]",
+            "a[2][0][0][1]",
+            "a[2][0][1][0]",
+            "a[2][0][1][1]",
+            "a[2][1].inner",
+            "a[2][1].lister[0][0].down",
+            "a[3]",
+        ]
+        for key in keys:
+            db[key]
+
     def test_box_config_propagate(self):
         structure = Box(a=[Box(default_box=False)], default_box=True, box_inherent_settings=True)
         assert structure._box_config["default_box"] is True
@@ -187,3 +205,15 @@ class TestBoxList:
 
         base2 = BoxList((BoxList([Box()], default_box=False),), default_box=True)
         assert base2[0][0]._box_config["default_box"] is True
+
+        base3 = Box(
+            a=[Box(default_box=False)], default_box=True, box_inherent_settings=True, box_intact_types=[Box, BoxList]
+        )
+        base3.a.append(Box(default_box=False))
+        base3.a.append(BoxList(default_box=False))
+
+        for item in base3.a:
+            if isinstance(item, Box):
+                assert item._box_config["default_box"] is True
+            elif isinstance(item, BoxList):
+                assert item.box_options["default_box"] is True

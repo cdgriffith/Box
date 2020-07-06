@@ -711,6 +711,20 @@ class TestBox:
         assert g == f
         assert isinstance(g, ConfigBox)
 
+    def test_inheritance(self):
+        data = {
+            "users": [{"users": [{"name": "B"}]},],
+        }
+
+        class UsersBoxList(BoxList):
+            def find_by_name(self, name):
+                return next((i for i in self if i.name == name), None)
+
+        db = Box(data, box_recast={"users": UsersBoxList}, box_intact_types=[UsersBoxList])
+
+        assert isinstance(db.users, UsersBoxList)
+        assert isinstance(db.users[0].users, UsersBoxList)
+
     def test_underscore_removal(self):
         from box import Box
 
