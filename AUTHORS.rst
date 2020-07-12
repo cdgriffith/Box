@@ -64,3 +64,7 @@ Suggestions and bug reporting:
 - Pymancer
 - Krishna Penukonda (tasercake)
 - J Alan Brogan (jalanb)
+- Hitz (hitengajjar)
+- David Aronchick (aronchick)
+- Alexander Kapustin (dyens)
+

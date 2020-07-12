@@ -1,2 +1,3 @@
-toml>=0.10.0
-ruamel.yaml>=0.16.5
+msgpack>=1.0.0
+ruamel.yaml>=0.16.10
+toml>=0.10.1
