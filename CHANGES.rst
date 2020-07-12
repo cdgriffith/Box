@@ -4,19 +4,19 @@ Changelog
 Version 5.0.0
 -------------
 
-* Adding support for msgpack coverters `to_msgpack` and `from_msgpack`
+* Adding support for msgpack converters `to_msgpack` and `from_msgpack`
 * Adding support for comparision of `Box` to other boxes or dicts via the `-` sub operator #144 (thanks to Hitz)
 * Adding support to `|` union boxes like will come default in Python 3.9 from PEP 0584
 * Adding `mypy` type checking, `black` formatting and other checks on commit
 * Adding new parameter `box_class` for cleaner inheritance #148 (thanks to David Aronchick)
-* Adding `dotted` and `flat` option for `keys` method to return box_dots style keys (thanks to ipcoder)
+* Adding `dotted` option for `keys` method to return box_dots style keys (thanks to ipcoder)
 * Fixing box_dots to properly delete items from lists
 * Fixing box_dots to properly find items with dots in their key
 * Fixing that recast of subclassses of `Box` or `BoxList` were not fed box properties (thanks to Alexander Kapustin)
 * Changing that sub boxes are always created to properly propagate settings and copy objects #150 (thanks to ipcoder)
 * Changing that default_box will not raise key errors on `pop` #67 (thanks to Patrock)
 * Changing `to_csv` and `from_csv` to have same string and filename options as all other transforms
-* Changing back to no required external imports, instead have extra requires like [all]
+* Changing back to no required external imports, instead have extra requires like [all] (thanks to wim glenn)
 * Changing from putting all details in README.rst to a github wiki at https://github.com/cdgriffith/Box/wiki
 * Changing `BoxList.box_class` to be stored in `BoxList.box_options` dict as `box_class`
 * Changing `del` will raise `BoxKeyError`, subclass of both `KeyError` and `BoxError`

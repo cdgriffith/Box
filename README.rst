@@ -14,10 +14,11 @@
 
 Box will automatically make otherwise inaccessible keys safe to access as an attribute.
 You can always pass `conversion_box=False` to `Box` to disable that behavior.
-
 Also, all new dict and lists added to a Box or BoxList object are converted automatically.
 
-Check out the new `wiki <https://github.com/cdgriffith/Box/wiki>`_!
+There are over a half dozen ways to customize your Box and make it work for you.
+
+Check out the new `Box github wiki <https://github.com/cdgriffith/Box/wiki>`_ for more details and examples!
 
 Install
 =======
@@ -31,7 +32,7 @@ for example, `all` is shorthand for:
 
 .. code:: bash
 
-        pip install --upgrade [ruamel.yaml,toml,msgpack]
+        pip install --upgrade python-box[ruamel.yaml,toml,msgpack]
 
 But you can also sub out "ruamel.yaml" for "PyYAML".
 
