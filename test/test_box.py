@@ -1091,3 +1091,8 @@ class TestBox:
         a = Box(c=5)
         b = Box(a=a)
         assert id(a) != id(b.a)
+
+    def test_default_box_restricted_calls(self):
+        a = Box(default_box=True)
+        a._test_thing_
+        assert len(list(a.keys())) == 0
