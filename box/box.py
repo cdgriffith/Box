@@ -376,7 +376,7 @@ class Box(dict):
         self._box_config = state["_box_config"]
         self.__dict__.update(state)
 
-    def __get_default(self, item):
+    def __get_default(self, item, attr=False):
         default_value = self._box_config["default_box_attr"]
         if default_value in (self._box_config["box_class"], dict):
             value = self._box_config["box_class"](**self.__box_config())
@@ -390,7 +390,8 @@ class Box(dict):
             value = default_value.copy()
         else:
             value = default_value
-        super().__setitem__(item, value)
+        if not attr or (not item.startswith("_") and not item.endswith("_")):
+            super().__setitem__(item, value)
         return value
 
     def __box_config(self) -> Dict:
@@ -472,7 +473,7 @@ class Box(dict):
                 if safe_key in self._box_config["__safe_keys"]:
                     return self.__getitem__(self._box_config["__safe_keys"][safe_key])
             if self._box_config["default_box"]:
-                return self.__get_default(item)
+                return self.__get_default(item, attr=True)
             raise BoxKeyError(str(err)) from None
         return value
 

@@ -67,4 +67,4 @@ Suggestions and bug reporting:
 - Hitz (hitengajjar)
 - David Aronchick (aronchick)
 - Alexander Kapustin (dyens)
-
+- Marcelo Huerta (richieadler)

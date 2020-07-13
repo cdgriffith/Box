@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 5.0.1
+-------------
+
+* Fixing default box saving internal method calls and restricted options (thanks to Marcelo Huerta)
+
 Version 5.0.0
 -------------
 
