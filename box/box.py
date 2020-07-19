@@ -340,6 +340,15 @@ class Box(dict):
                     keys.add(key)
         return sorted(keys, key=lambda x: str(x))
 
+    def items(self, dotted: Union[bool] = False):
+        if not dotted:
+            return super().keys()
+
+        if not self._box_config["box_dots"]:
+            raise BoxError("Cannot return dotted keys as this Box does not have `box_dots` enabled")
+
+        return [(k, self[k]) for k in self.keys(dotted=True)]
+
     def get(self, key, default=NO_DEFAULT):
         if key not in self:
             if default is NO_DEFAULT:
@@ -876,7 +885,7 @@ class Box(dict):
 
     else:
         warnings.warn(
-            "tom is not found in the environment. `to_toml` and `from_toml` transforms will not work", BoxWarning
+            "toml is not found in the environment. `to_toml` and `from_toml` transforms will not work", BoxWarning
         )
 
         def to_toml(self, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict"):

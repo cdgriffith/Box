@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 5.1.0
+-------------
+
+* Adding `dotted` option for `items` function (thanks to ipcoder)
+* Fixing spelling mistake on `toml` warning
+
 Version 5.0.1
 -------------
 
