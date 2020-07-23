@@ -702,6 +702,8 @@ class TestBox:
             ],
             key=lambda x: x[0],
         )
+        with pytest.raises(BoxError):
+            Box(box_dots=False).items(dotted=True)
 
     def test_get(self):
         bx = Box()
