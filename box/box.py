@@ -660,7 +660,7 @@ class Box(dict):
         if isinstance(default, list):
             default = box.BoxList(default, **self.__box_config())
         self[item] = default
-        return default
+        return self[item]
 
     def _safe_attr(self, attr):
         """Convert a key into something that is accessible as an attribute"""

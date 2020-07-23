@@ -289,6 +289,12 @@ class TestBox:
         a.b.b = 4
         assert a.b.b == 4
 
+    def test_set_default_dict(self):
+        a = Box(test_dict)
+        new = a.setdefault("key3", {})
+        new.yy = 8
+        assert a.key3.yy == 8
+
     def test_set_default(self):
         a = Box(test_dict)
 

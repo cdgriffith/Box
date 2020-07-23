@@ -21,6 +21,7 @@ Code contributions:
 - (jandelgado)
 - Jonas Irgens Kylling (jkylling)
 - Bruno Rocha (rochacbruno)
+- Noam Graetz (NoamGraetz2)
 
 Suggestions and bug reporting:
 
