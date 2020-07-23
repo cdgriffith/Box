@@ -340,6 +340,15 @@ class Box(dict):
                     keys.add(key)
         return sorted(keys, key=lambda x: str(x))
 
+    def items(self, dotted: Union[bool] = False):
+        if not dotted:
+            return super().items()
+
+        if not self._box_config["box_dots"]:
+            raise BoxError("Cannot return dotted keys as this Box does not have `box_dots` enabled")
+
+        return [(k, self[k]) for k in self.keys(dotted=True)]
+
     def get(self, key, default=NO_DEFAULT):
         if key not in self:
             if default is NO_DEFAULT:
@@ -651,7 +660,7 @@ class Box(dict):
         if isinstance(default, list):
             default = box.BoxList(default, **self.__box_config())
         self[item] = default
-        return default
+        return self[item]
 
     def _safe_attr(self, attr):
         """Convert a key into something that is accessible as an attribute"""
@@ -809,9 +818,6 @@ class Box(dict):
             return cls(data, **box_args)
 
     else:
-        warnings.warn(
-            "yaml is not found in the environment. `to_yaml` and `from_yaml` transforms will not work", BoxWarning
-        )
 
         def to_yaml(
             self,
@@ -875,9 +881,6 @@ class Box(dict):
             return cls(data, **box_args)
 
     else:
-        warnings.warn(
-            "tom is not found in the environment. `to_toml` and `from_toml` transforms will not work", BoxWarning
-        )
 
         def to_toml(self, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict"):
             raise BoxError('toml is unavailable on this system, please install the "toml" package')
@@ -926,10 +929,6 @@ class Box(dict):
             return cls(data, **box_args)
 
     else:
-        warnings.warn(
-            "msgpack is not found in the environment. " "`to_msgpack` and `from_msgpack` transforms will not work",
-            BoxWarning,
-        )
 
         def to_msgpack(self, filename: Union[str, PathLike] = None, **kwargs):
             raise BoxError('msgpack is unavailable on this system, please install the "msgpack" package')

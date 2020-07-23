@@ -1,6 +1,14 @@
 Changelog
 =========
 
+
+Version 5.1.0
+-------------
+
+* Adding `dotted` option for `items` function (thanks to ipcoder)
+* Fixing bug in box.set_default where value is dictionary, return the internal value and not detached temporary (thanks to Noam Graetz)
+* Removing warnings on import if optional libraries are missing
+
 Version 5.0.1
 -------------
 
