@@ -1,6 +1,8 @@
 Changelog
 =========
 
+* fixed bug in box.set_default where value is dictionary (return the internal value and not detached temporary)
+
 Version 5.1.0
 -------------
 
