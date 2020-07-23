@@ -342,7 +342,7 @@ class Box(dict):
 
     def items(self, dotted: Union[bool] = False):
         if not dotted:
-            return super().keys()
+            return super().items()
 
         if not self._box_config["box_dots"]:
             raise BoxError("Cannot return dotted keys as this Box does not have `box_dots` enabled")
@@ -818,9 +818,6 @@ class Box(dict):
             return cls(data, **box_args)
 
     else:
-        warnings.warn(
-            "yaml is not found in the environment. `to_yaml` and `from_yaml` transforms will not work", BoxWarning
-        )
 
         def to_yaml(
             self,
@@ -884,9 +881,6 @@ class Box(dict):
             return cls(data, **box_args)
 
     else:
-        warnings.warn(
-            "toml is not found in the environment. `to_toml` and `from_toml` transforms will not work", BoxWarning
-        )
 
         def to_toml(self, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict"):
             raise BoxError('toml is unavailable on this system, please install the "toml" package')
@@ -935,10 +929,6 @@ class Box(dict):
             return cls(data, **box_args)
 
     else:
-        warnings.warn(
-            "msgpack is not found in the environment. " "`to_msgpack` and `from_msgpack` transforms will not work",
-            BoxWarning,
-        )
 
         def to_msgpack(self, filename: Union[str, PathLike] = None, **kwargs):
             raise BoxError('msgpack is unavailable on this system, please install the "msgpack" package')

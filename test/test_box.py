@@ -667,6 +667,41 @@ class TestBox:
         assert isinstance(list(c.items())[0][1], BoxList)
         d = Box(movie_data)
         assert len(movie_data["movies"].items()) == len(d.movies.items())
+        e = Box(movie_data, box_dots=True)
+        assert sorted(e.items(dotted=True), key=lambda x: x[0]) == sorted(
+            [
+                ("movies.Robin Hood: Men in Tights.Director", "Mel Brooks"),
+                ("movies.Robin Hood: Men in Tights.Stars[0].imdb", "nm0000144"),
+                ("movies.Robin Hood: Men in Tights.Stars[0].name", "Cary Elwes"),
+                ("movies.Robin Hood: Men in Tights.Stars[0].role", "Robin Hood"),
+                ("movies.Robin Hood: Men in Tights.Stars[1].imdb", "nm0507659"),
+                ("movies.Robin Hood: Men in Tights.Stars[1].name", "Richard Lewis"),
+                ("movies.Robin Hood: Men in Tights.Stars[1].role", "Prince John"),
+                ("movies.Robin Hood: Men in Tights.Stars[2].imdb", "nm0715953"),
+                ("movies.Robin Hood: Men in Tights.Stars[2].name", "Roger Rees"),
+                ("movies.Robin Hood: Men in Tights.Stars[2].role", "Sheriff of Rottingham"),
+                ("movies.Robin Hood: Men in Tights.Stars[3].imdb", "nm0001865"),
+                ("movies.Robin Hood: Men in Tights.Stars[3].name", "Amy Yasbeck"),
+                ("movies.Robin Hood: Men in Tights.Stars[3].role", "Marian"),
+                ("movies.Robin Hood: Men in Tights.imdb_stars", 6.7),
+                ("movies.Robin Hood: Men in Tights.length", 104),
+                ("movies.Robin Hood: Men in Tights.rating", "PG-13"),
+                ("movies.Spaceballs.Director", "Mel Brooks"),
+                ("movies.Spaceballs.Stars[0].imdb", "nm0000316"),
+                ("movies.Spaceballs.Stars[0].name", "Mel Brooks"),
+                ("movies.Spaceballs.Stars[0].role", "President Skroob"),
+                ("movies.Spaceballs.Stars[1].imdb", "nm0001006"),
+                ("movies.Spaceballs.Stars[1].name", "John Candy"),
+                ("movies.Spaceballs.Stars[1].role", "Barf"),
+                ("movies.Spaceballs.Stars[2].imdb", "nm0001548"),
+                ("movies.Spaceballs.Stars[2].name", "Rick Moranis"),
+                ("movies.Spaceballs.Stars[2].role", "Dark Helmet"),
+                ("movies.Spaceballs.imdb_stars", 7.1),
+                ("movies.Spaceballs.length", 96),
+                ("movies.Spaceballs.rating", "PG"),
+            ],
+            key=lambda x: x[0],
+        )
 
     def test_get(self):
         bx = Box()
