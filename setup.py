@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup
+# Fix for issues with testing, experienced on win10
+import multiprocessing
 import os
 import re
 
-# Fix for issues with testing, experienced on win10
-import multiprocessing
+from setuptools import setup
 
 root = os.path.abspath(os.path.dirname(__file__))
 

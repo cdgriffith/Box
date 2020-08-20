@@ -1,35 +1,39 @@
 Changelog
 =========
 
+Version 5.1.1
+-------------
+
+* Fixing #165 `box_dots` to work with `default_box`
 
 Version 5.1.0
 -------------
 
-* Adding `dotted` option for `items` function (thanks to ipcoder)
-* Fixing bug in box.set_default where value is dictionary, return the internal value and not detached temporary (thanks to Noam Graetz)
+* Adding #152 `dotted` option for `items` function (thanks to ipcoder)
+* Fixing #157 bug in box.set_default where value is dictionary, return the internal value and not detached temporary (thanks to Noam Graetz)
 * Removing warnings on import if optional libraries are missing
 
 Version 5.0.1
 -------------
 
-* Fixing default box saving internal method calls and restricted options (thanks to Marcelo Huerta)
+* Fixing #155 default box saving internal method calls and restricted options (thanks to Marcelo Huerta)
 
 Version 5.0.0
 -------------
 
 * Adding support for msgpack converters `to_msgpack` and `from_msgpack`
-* Adding support for comparision of `Box` to other boxes or dicts via the `-` sub operator #144 (thanks to Hitz)
+* Adding #144 support for comparision of `Box` to other boxes or dicts via the `-` sub operator (thanks to Hitz)
 * Adding support to `|` union boxes like will come default in Python 3.9 from PEP 0584
 * Adding `mypy` type checking, `black` formatting and other checks on commit
-* Adding new parameter `box_class` for cleaner inheritance #148 (thanks to David Aronchick)
-* Adding `dotted` option for `keys` method to return box_dots style keys (thanks to ipcoder)
+* Adding #148 new parameter `box_class` for cleaner inheritance (thanks to David Aronchick)
+* Adding #152 `dotted` option for `keys` method to return box_dots style keys (thanks to ipcoder)
 * Fixing box_dots to properly delete items from lists
 * Fixing box_dots to properly find items with dots in their key
 * Fixing that recast of subclassses of `Box` or `BoxList` were not fed box properties (thanks to Alexander Kapustin)
-* Changing that sub boxes are always created to properly propagate settings and copy objects #150 (thanks to ipcoder)
-* Changing that default_box will not raise key errors on `pop` #67 (thanks to Patrock)
+* Changing #150 that sub boxes are always created to properly propagate settings and copy objects (thanks to ipcoder)
+* Changing #67 that default_box will not raise key errors on `pop` (thanks to Patrock)
 * Changing `to_csv` and `from_csv` to have same string and filename options as all other transforms
-* Changing back to no required external imports, instead have extra requires like [all] (thanks to wim glenn)
+* Changing #127 back to no required external imports, instead have extra requires like [all] (thanks to wim glenn)
 * Changing from putting all details in README.rst to a github wiki at https://github.com/cdgriffith/Box/wiki
 * Changing `BoxList.box_class` to be stored in `BoxList.box_options` dict as `box_class`
 * Changing `del` will raise `BoxKeyError`, subclass of both `KeyError` and `BoxError`
