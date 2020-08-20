@@ -6,14 +6,13 @@ import json
 import os
 import shutil
 from pathlib import Path
+from test.common import test_root, tmp_dir
 
 import pytest
 import ruamel.yaml as yaml
 import toml
 
-from box import BoxList, Box, BoxError
-
-from test.common import tmp_dir, test_root
+from box import Box, BoxError, BoxList
 
 
 class TestBoxList:

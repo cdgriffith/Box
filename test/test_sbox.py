@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import json
+from test.common import test_dict
 
 import ruamel.yaml as yaml
 
-from box import SBox, Box
-from test.common import test_dict
+from box import Box, SBox
 
 
 class TestSBox:

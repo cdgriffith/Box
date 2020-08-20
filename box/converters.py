@@ -5,9 +5,9 @@
 
 import csv
 import json
-from pathlib import Path
 from io import StringIO
 from os import PathLike
+from pathlib import Path
 from typing import Union
 
 from box.exceptions import BoxError

@@ -1,18 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import json
 import os
 import shutil
 from pathlib import Path
-import json
+from test.common import movie_data, tmp_dir
 
+import msgpack
 import pytest
 import ruamel.yaml as yaml
-import msgpack
 
 from box import BoxError
-from box.converters import _to_toml, _from_toml, _to_json, _to_yaml, _to_msgpack
-from test.common import tmp_dir, movie_data
-
+from box.converters import _from_toml, _to_json, _to_msgpack, _to_toml, _to_yaml
 
 toml_string = """[movies.Spaceballs]
 imdb_stars = 7.1

@@ -5,28 +5,27 @@ import copy
 import json
 import os
 import pickle
+import platform
 import shutil
 from multiprocessing import Queue
 from pathlib import Path
-import platform
+from test.common import (
+    data_json_file,
+    data_yaml_file,
+    extended_test_dict,
+    movie_data,
+    test_dict,
+    test_root,
+    tmp_dir,
+    tmp_json_file,
+    tmp_msgpack_file,
+    tmp_yaml_file,
+)
 
 import pytest
 import ruamel.yaml as yaml
 
-from box import box
-from box import Box, BoxError, BoxKeyError, BoxList, SBox, ConfigBox
-from test.common import (
-    test_dict,
-    extended_test_dict,
-    tmp_dir,
-    tmp_json_file,
-    tmp_yaml_file,
-    movie_data,
-    data_json_file,
-    data_yaml_file,
-    test_root,
-    tmp_msgpack_file,
-)
+from box import Box, BoxError, BoxKeyError, BoxList, ConfigBox, SBox, box
 
 
 def mp_queue_test(q):
@@ -1139,3 +1138,16 @@ class TestBox:
         a = Box(default_box=True)
         a._test_thing_
         assert len(list(a.keys())) == 0
+
+    def test_default_dots(self):
+        a = Box(default_box=True, box_dots=True)
+        a["a.a.a"]
+        assert a == {"a.a.a": {}}
+        a["a.a.a."]
+        a["a.a.a.."]
+        assert a == {"a.a.a": {"": {"": {}}}}
+        a["b.b"] = 3
+        assert a == {"a.a.a": {"": {"": {}}}, "b.b": 3}
+        a.b.b = 4
+        assert a == {"a.a.a": {"": {"": {}}}, "b.b": 3, "b": {"b": 4}}
+        assert a["non.existent.key"] == {}
