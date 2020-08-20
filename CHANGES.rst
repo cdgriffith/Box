@@ -4,6 +4,7 @@ Changelog
 Version 5.1.1
 -------------
 
+* Adding testing for Python 3.9
 * Fixing #165 `box_dots` to work with `default_box`
 
 Version 5.1.0
