@@ -9,26 +9,25 @@ import copy
 import re
 import string
 import warnings
-from os import PathLike
-from collections.abc import Iterable, Mapping, Callable
+from collections.abc import Callable, Iterable, Mapping
 from keyword import kwlist
-from typing import Any, Union, Tuple, List, Dict, Generator
-
+from os import PathLike
+from typing import Any, Dict, Generator, List, Tuple, Union
 
 import box
 from box.converters import (
-    _to_json,
-    _from_json,
-    _from_toml,
-    _to_toml,
-    _from_yaml,
-    _to_yaml,
-    _to_msgpack,
-    _from_msgpack,
     BOX_PARAMETERS,
-    yaml_available,
-    toml_available,
+    _from_json,
+    _from_msgpack,
+    _from_toml,
+    _from_yaml,
+    _to_json,
+    _to_msgpack,
+    _to_toml,
+    _to_yaml,
     msgpack_available,
+    toml_available,
+    yaml_available,
 )
 from box.exceptions import BoxError, BoxKeyError, BoxTypeError, BoxValueError, BoxWarning
 
@@ -454,7 +453,12 @@ class Box(dict):
             if item == "_box_config":
                 raise BoxKeyError("_box_config should only exist as an attribute and is never defaulted") from None
             if self._box_config["box_dots"] and isinstance(item, str) and ("." in item or "[" in item):
-                first_item, children = _parse_box_dots(self, item)
+                try:
+                    first_item, children = _parse_box_dots(self, item)
+                except BoxError:
+                    if self._box_config["default_box"] and not _ignore_default:
+                        return self.__get_default(item)
+                    raise
                 if first_item in self.keys():
                     if hasattr(self[first_item], "__getitem__"):
                         return self[first_item][children]

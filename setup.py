@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup
+# Must import multiprocessing as a fix for issues with testing, experienced on win10
+import multiprocessing
 import os
 import re
 
-# Fix for issues with testing, experienced on win10
-import multiprocessing
+from setuptools import setup
 
 root = os.path.abspath(os.path.dirname(__file__))
 
@@ -40,6 +40,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: Implementation :: CPython",
         "Development Status :: 5 - Production/Stable",
         "Natural Language :: English",

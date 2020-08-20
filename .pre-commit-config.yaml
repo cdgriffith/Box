@@ -10,7 +10,7 @@ repos:
     - id: debug-statements
     - id: check-yaml
 -   repo: https://github.com/ambv/black
-    rev: 19.10b0
+    rev: stable
     hooks:
     - id: black
       args: [--config=.black.toml]

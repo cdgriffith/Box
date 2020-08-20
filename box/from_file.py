@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from json import JSONDecodeError
-from pathlib import Path
 from os import PathLike
-from typing import Union, Callable, Dict
+from pathlib import Path
+from typing import Callable, Dict, Union
+
+from box.box import Box
+from box.box_list import BoxList
+from box.converters import msgpack_available, toml_available, yaml_available
+from box.exceptions import BoxError
 
 try:
     from ruamel.yaml import YAMLError
@@ -23,10 +28,6 @@ try:
 except ImportError:
     UnpackException = False  # type: ignore
 
-from box.exceptions import BoxError
-from box.box import Box
-from box.box_list import BoxList
-from box.converters import yaml_available, toml_available, msgpack_available
 
 __all__ = ["box_from_file"]
 
