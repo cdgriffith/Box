@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 5.1.2
+-------------
+
+* Fixing requirements-test.txt (thanks to Fabian Affolter)
+
 Version 5.1.1
 -------------
 
