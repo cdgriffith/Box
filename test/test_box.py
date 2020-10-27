@@ -328,17 +328,17 @@ class TestBox:
         assert bx.Key_2 == Box()
 
     def test_bad_from_json(self):
-        with pytest.raises(BoxError) as err:
+        with pytest.raises(BoxError):
             Box.from_json()
 
-        with pytest.raises(BoxError) as err2:
+        with pytest.raises(BoxError):
             Box.from_json(json_string="[1]")
 
     def test_bad_from_yaml(self):
-        with pytest.raises(BoxError) as err:
+        with pytest.raises(BoxError):
             Box.from_yaml()
 
-        with pytest.raises(BoxError) as err2:
+        with pytest.raises(BoxError):
             Box.from_yaml("lol")
 
     def test_conversion_box(self):
@@ -567,7 +567,7 @@ class TestBox:
         assert a[1].b == 3
 
     def test_duplicate_errors(self):
-        with pytest.raises(BoxError) as err:
+        with pytest.raises(BoxError):
             Box({"?a": 1, "!a": 3}, box_duplicates="error")
 
         Box({"?a": 1, "!a": 3}, box_duplicates="ignore")
@@ -755,7 +755,9 @@ class TestBox:
 
     def test_inheritance(self):
         data = {
-            "users": [{"users": [{"name": "B"}]},],
+            "users": [
+                {"users": [{"name": "B"}]},
+            ],
         }
 
         class UsersBoxList(BoxList):

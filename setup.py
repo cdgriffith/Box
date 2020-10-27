@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Must import multiprocessing as a fix for issues with testing, experienced on win10
-import multiprocessing
+import multiprocessing  # noqa: F401
 import os
 import re
 
