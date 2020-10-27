@@ -1,10 +1,13 @@
 Changelog
 =========
 
-Version 5.1.2
+Version 5.2.0
 -------------
 
+* Adding checks for frozen boxes to `pop`, `popitem` and `clear` (thanks to Varun Madiath)
 * Fixing requirements-test.txt (thanks to Fabian Affolter)
+* Fixing Flake8 conflicts with black (thanks to Varun Madiath)
+* Fixing coveralls update (thanks to Varun Madiath)
 
 Version 5.1.1
 -------------
