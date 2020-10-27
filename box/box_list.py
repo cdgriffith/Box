@@ -5,7 +5,6 @@
 import copy
 import re
 from os import PathLike
-from pathlib import Path
 from typing import Iterable, Type, Union
 
 import box
