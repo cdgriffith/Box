@@ -370,6 +370,21 @@ class TestBox:
         with pytest.raises(TypeError):
             hash(bx)
 
+        with pytest.raises(BoxError):
+            bx.clear()
+
+        with pytest.raises(BoxError):
+            bx.pop("alist")
+
+        with pytest.raises(BoxError):
+            bx.popitem()
+
+        with pytest.raises(BoxError):
+            bx.popitem()
+
+        with pytest.raises(BoxError):
+            bx.update({"another_list": []})
+
         bx2 = Box(test_dict)
         with pytest.raises(TypeError):
             hash(bx2)
@@ -755,7 +770,9 @@ class TestBox:
 
     def test_inheritance(self):
         data = {
-            "users": [{"users": [{"name": "B"}]},],
+            "users": [
+                {"users": [{"name": "B"}]},
+            ],
         }
 
         class UsersBoxList(BoxList):
