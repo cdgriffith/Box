@@ -23,7 +23,7 @@ Code contributions:
 - Bruno Rocha (rochacbruno)
 - Noam Graetz (NoamGraetz2)
 - Fabian Affolter (fabaff)
-
+- Varun Madiath (vamega)
 
 Suggestions and bug reporting:
 
