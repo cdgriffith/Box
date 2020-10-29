@@ -22,6 +22,8 @@ Code contributions:
 - Jonas Irgens Kylling (jkylling)
 - Bruno Rocha (rochacbruno)
 - Noam Graetz (NoamGraetz2)
+- Fabian Affolter (fabaff)
+- Varun Madiath (vamega)
 
 Suggestions and bug reporting:
 

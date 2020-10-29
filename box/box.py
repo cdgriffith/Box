@@ -229,41 +229,41 @@ class Box(dict):
 
     def __add__(self, other: dict):
         if not isinstance(other, dict):
-            raise BoxTypeError(f"Box can only merge two boxes or a box and a dictionary.")
+            raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         new_box = self.copy()
         new_box.merge_update(other)
         return new_box
 
     def __radd__(self, other: dict):
         if not isinstance(other, dict):
-            raise BoxTypeError(f"Box can only merge two boxes or a box and a dictionary.")
+            raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         new_box = self.copy()
         new_box.merge_update(other)
         return new_box
 
     def __iadd__(self, other: dict):
         if not isinstance(other, dict):
-            raise BoxTypeError(f"Box can only merge two boxes or a box and a dictionary.")
+            raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         self.merge_update(other)
         return self
 
     def __or__(self, other: dict):
         if not isinstance(other, dict):
-            raise BoxTypeError(f"Box can only merge two boxes or a box and a dictionary.")
+            raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         new_box = self.copy()
         new_box.update(other)
         return new_box
 
     def __ror__(self, other: dict):
         if not isinstance(other, dict):
-            raise BoxTypeError(f"Box can only merge two boxes or a box and a dictionary.")
+            raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         new_box = self.copy()
         new_box.update(other)
         return new_box
 
     def __ior__(self, other: dict):
         if not isinstance(other, dict):
-            raise BoxTypeError(f"Box can only merge two boxes or a box and a dictionary.")
+            raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         self.update(other)
         return self
 
@@ -561,6 +561,9 @@ class Box(dict):
             raise BoxKeyError(str(err)) from None
 
     def pop(self, key, *args):
+        if self._box_config["frozen_box"]:
+            raise BoxError("Box is frozen")
+
         if args:
             if len(args) != 1:
                 raise BoxError('pop() takes only one optional argument "default"')
@@ -580,6 +583,8 @@ class Box(dict):
             return item
 
     def clear(self):
+        if self._box_config["frozen_box"]:
+            raise BoxError("Box is frozen")
         super().clear()
         self._box_config["__safe_keys"].clear()
 
@@ -621,6 +626,9 @@ class Box(dict):
         return out_dict
 
     def update(self, __m=None, **kwargs):
+        if self._box_config["frozen_box"]:
+            raise BoxError("Box is frozen")
+
         if __m:
             if hasattr(__m, "keys"):
                 for k in __m:
@@ -913,7 +921,12 @@ class Box(dict):
             return _to_msgpack(self.to_dict(), filename=filename, **kwargs)
 
         @classmethod
-        def from_msgpack(cls, msgpack_bytes: bytes = None, filename: Union[str, PathLike] = None, **kwargs,) -> "Box":
+        def from_msgpack(
+            cls,
+            msgpack_bytes: bytes = None,
+            filename: Union[str, PathLike] = None,
+            **kwargs,
+        ) -> "Box":
             """
             Transforms msgpack bytes or file into a Box object
 

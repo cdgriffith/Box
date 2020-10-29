@@ -33,7 +33,7 @@ jobs:
           # stop the build if there are Python syntax errors, undefined names or print statements
           flake8 box --count --select=E9,F63,F7,F82,T001,T002,T003,T004 --show-source --statistics
           # exit-zero treats all errors as warnings.
-          flake8 . --count --exit-zero --max-complexity=20 --max-line-length=120 --statistics
+          flake8 . --count --exit-zero --max-complexity=20 --max-line-length=120 --statistics --extend-ignore E203
       - name: Run mypy
         run: mypy box
       - name: Check distrubiton log description
@@ -61,7 +61,7 @@ jobs:
         pip install coveralls
     - name: Test with pytest
       env:
-        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         pytest --cov=box test/
         coveralls
