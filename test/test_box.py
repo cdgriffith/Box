@@ -990,6 +990,15 @@ class TestBox:
         with pytest.raises(ValueError):
             b["sub_box"] = {"id": "bad_id"}
 
+    def test_nontype_recast(self):
+        def cast_id(val) -> int:
+            return int(val)
+
+        b = Box(id="6", box_recast={"id": cast_id})
+        assert isinstance(b.id, int)
+        with pytest.raises(ValueError):
+            b["sub_box"] = {"id": "bad_id"}
+
     def test_box_dots(self):
         b = Box(
             {"my_key": {"does stuff": {"to get to": "where I want"}}, "key.with.list": [[[{"test": "value"}]]]},
