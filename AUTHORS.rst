@@ -24,6 +24,7 @@ Code contributions:
 - Noam Graetz (NoamGraetz2)
 - Fabian Affolter (fabaff)
 - Varun Madiath (vamega)
+- Jacob Hayes (JacobHayes)
 
 Suggestions and bug reporting:
 
