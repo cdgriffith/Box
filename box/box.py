@@ -411,13 +411,14 @@ class Box(dict):
 
     def __recast(self, item, value):
         if self._box_config["box_recast"] and item in self._box_config["box_recast"]:
+            recast = self._box_config["box_recast"][item]
             try:
-                if issubclass(self._box_config["box_recast"][item], (Box, box.BoxList)):
-                    return self._box_config["box_recast"][item](value, **self.__box_config())
+                if isinstance(recast, type) and issubclass(recast, (Box, box.BoxList)):
+                    return recast(value, **self.__box_config())
                 else:
-                    return self._box_config["box_recast"][item](value)
+                    return recast(value)
             except ValueError:
-                raise BoxValueError(f'Cannot convert {value} to {self._box_config["box_recast"][item]}') from None
+                raise BoxValueError(f'Cannot convert {value} to {recast}') from None
         return value
 
     def __convert_and_store(self, item, value):
