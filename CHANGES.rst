@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 5.3.0
+-------------
+
+* Add support for functions to box_recast (thanks to Jacob Hayes)
+
 Version 5.2.0
 -------------
 
