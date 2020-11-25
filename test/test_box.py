@@ -991,13 +991,19 @@ class TestBox:
             b["sub_box"] = {"id": "bad_id"}
 
     def test_nontype_recast(self):
+        class CustomError(ValueError):
+            pass
+
         def cast_id(val) -> int:
+            if val == "bad_id":
+                raise CustomError()
             return int(val)
 
         b = Box(id="6", box_recast={"id": cast_id})
         assert isinstance(b.id, int)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError) as exc_info:
             b["sub_box"] = {"id": "bad_id"}
+        assert isinstance(exc_info.value.__cause__, CustomError)
 
     def test_box_dots(self):
         b = Box(

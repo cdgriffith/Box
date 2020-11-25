@@ -42,6 +42,15 @@ _list_pos_re = re.compile(r"\[(\d+)\]")
 NO_DEFAULT = object()
 
 
+def _exception_cause(e):
+    """
+    Unwrap BoxKeyError and BoxValueError errors to their cause.
+
+    Use with `raise ... from _exception_cause(err)` to avoid deeply nested stacktraces, but keep the
+    context.
+    """
+    return e.__cause__ if isinstance(e, (BoxKeyError, BoxValueError)) else e
+
 def _camel_killer(attr):
     """
     CamelKiller, qu'est-ce que c'est?
@@ -417,8 +426,8 @@ class Box(dict):
                     return recast(value, **self.__box_config())
                 else:
                     return recast(value)
-            except ValueError:
-                raise BoxValueError(f'Cannot convert {value} to {recast}') from None
+            except ValueError as err:
+                raise BoxValueError(f'Cannot convert {value} to {recast}') from _exception_cause(err)
         return value
 
     def __convert_and_store(self, item, value):
@@ -452,7 +461,8 @@ class Box(dict):
             return super().__getitem__(item)
         except KeyError as err:
             if item == "_box_config":
-                raise BoxKeyError("_box_config should only exist as an attribute and is never defaulted") from None
+                cause = _exception_cause(err)
+                raise BoxKeyError("_box_config should only exist as an attribute and is never defaulted") from cause
             if self._box_config["box_dots"] and isinstance(item, str) and ("." in item or "[" in item):
                 try:
                     first_item, children = _parse_box_dots(self, item)
@@ -469,7 +479,7 @@ class Box(dict):
                     return super().__getitem__(converted)
             if self._box_config["default_box"] and not _ignore_default:
                 return self.__get_default(item)
-            raise BoxKeyError(str(err)) from None
+            raise BoxKeyError(str(err)) from _exception_cause(err)
 
     def __getattr__(self, item):
         try:
@@ -479,16 +489,16 @@ class Box(dict):
                 value = object.__getattribute__(self, item)
         except AttributeError as err:
             if item == "__getstate__":
-                raise BoxKeyError(item) from None
+                raise BoxKeyError(item) from _exception_cause(err)
             if item == "_box_config":
-                raise BoxError("_box_config key must exist") from None
+                raise BoxError("_box_config key must exist") from _exception_cause(err)
             if self._box_config["conversion_box"]:
                 safe_key = self._safe_attr(item)
                 if safe_key in self._box_config["__safe_keys"]:
                     return self.__getitem__(self._box_config["__safe_keys"][safe_key])
             if self._box_config["default_box"]:
                 return self.__get_default(item, attr=True)
-            raise BoxKeyError(str(err)) from None
+            raise BoxKeyError(str(err)) from _exception_cause(err)
         return value
 
     def __setitem__(self, key, value):
@@ -541,7 +551,7 @@ class Box(dict):
         try:
             super().__delitem__(key)
         except KeyError as err:
-            raise BoxKeyError(str(err)) from None
+            raise BoxKeyError(str(err)) from _exception_cause(err)
 
     def __delattr__(self, item):
         if self._box_config["frozen_box"]:
@@ -559,7 +569,7 @@ class Box(dict):
                     self.__delitem__(self._box_config["__safe_keys"][safe_key])
                     del self._box_config["__safe_keys"][safe_key]
                     return
-            raise BoxKeyError(str(err)) from None
+            raise BoxKeyError(str(err)) from _exception_cause(err)
 
     def pop(self, key, *args):
         if self._box_config["frozen_box"]:
