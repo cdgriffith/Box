@@ -600,6 +600,8 @@ class Box(dict):
         self._box_config["__safe_keys"].clear()
 
     def popitem(self):
+        if self._box_config["frozen_box"]:
+            raise BoxError("Box is frozen")
         try:
             key = next(self.__iter__())
         except StopIteration:
@@ -662,6 +664,15 @@ class Box(dict):
                     return
             if isinstance(v, list) and not intact_type:
                 v = box.BoxList(v, **self.__box_config())
+                merge_type = kwargs.get('box_merge_lists')
+                if merge_type == "extend" and k in self and isinstance(self[k], list):
+                    self[k].extend(v)
+                    return
+                if merge_type == "unique" and k in self and isinstance(self[k], list):
+                    for item in v:
+                        if item not in self[k]:
+                            self[k].append(item)
+                    return
             self.__setitem__(k, v)
 
         if __m:
@@ -836,6 +847,8 @@ class Box(dict):
                     box_args[arg] = kwargs.pop(arg)
 
             data = _from_yaml(yaml_string=yaml_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
+            if not data:
+                return cls(**box_args)
             if not isinstance(data, dict):
                 raise BoxError(f"yaml data not returned as a dictionary but rather a {type(data).__name__}")
             return cls(data, **box_args)

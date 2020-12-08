@@ -4,8 +4,11 @@ Changelog
 Version 5.3.0
 -------------
 
-* Add support for functions to box_recast (thanks to Jacob Hayes)
-* Maintain stacktrace cause for BoxKeyError and BoxValueError (thanks to Jacob Hayes)
+* Adding support for functions to box_recast (thanks to Jacob Hayes)
+* Adding #181 support for extending or adding new items to list during `merge_update`  (thanks to Marcos Dione)
+* Fixing maintain stacktrace cause for BoxKeyError and BoxValueError (thanks to Jacob Hayes)
+* Fixing #177 that emtpy yaml files raised errors instead of returning empty objects (thanks to Tim Schwenke)
+* Fixing #171 that `popitems` wasn't first checking if box was frozen (thanks to Varun Madiath)
 
 Version 5.2.0
 -------------
