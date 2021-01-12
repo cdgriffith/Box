@@ -502,7 +502,7 @@ class Box(dict):
         return value
 
     def __setitem__(self, key, value):
-        if key != "_box_config" and self._box_config["__created"] and self._box_config["frozen_box"]:
+        if key != "_box_config" and self._box_config["frozen_box"] and self._box_config["__created"]:
             raise BoxError("Box is frozen")
         if self._box_config["box_dots"] and isinstance(key, str) and ("." in key or "[" in key):
             first_item, children = _parse_box_dots(self, key, setting=True)
@@ -524,7 +524,6 @@ class Box(dict):
             raise BoxKeyError(f'Key name "{key}" is protected')
         if key == "_box_config":
             return object.__setattr__(self, key, value)
-        value = self.__recast(key, value)
         safe_key = self._safe_attr(key)
         if safe_key in self._box_config["__safe_keys"]:
             key = self._box_config["__safe_keys"][safe_key]
