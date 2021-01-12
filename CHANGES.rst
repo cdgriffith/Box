@@ -9,6 +9,7 @@ Version 5.3.0
 * Fixing maintain stacktrace cause for BoxKeyError and BoxValueError (thanks to Jacob Hayes)
 * Fixing #177 that emtpy yaml files raised errors instead of returning empty objects (thanks to Tim Schwenke)
 * Fixing #171 that `popitems` wasn't first checking if box was frozen (thanks to Varun Madiath)
+* Removing duplicate `box_recast` calls (thanks to Jacob Hayes)
 
 Version 5.2.0
 -------------
