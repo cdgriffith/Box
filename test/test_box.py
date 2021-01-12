@@ -1001,9 +1001,8 @@ class TestBox:
 
         b = Box(id="6", box_recast={"id": cast_id})
         assert isinstance(b.id, int)
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(CustomError) as exc_info:
             b["sub_box"] = {"id": "bad_id"}
-        assert isinstance(exc_info.value.__cause__, CustomError)
 
     def test_box_dots(self):
         b = Box(
