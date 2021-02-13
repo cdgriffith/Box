@@ -216,10 +216,10 @@ class BoxList(list):
         :param kwargs: parameters to pass to `Box()` or `json.loads`
         :return: BoxList object from json data
         """
-        bx_args = {}
+        box_args = {}
         for arg in list(kwargs.keys()):
             if arg in BOX_PARAMETERS:
-                bx_args[arg] = kwargs.pop(arg)
+                box_args[arg] = kwargs.pop(arg)
 
         data = _from_json(
             json_string, filename=filename, encoding=encoding, errors=errors, multiline=multiline, **kwargs
@@ -227,7 +227,7 @@ class BoxList(list):
 
         if not isinstance(data, list):
             raise BoxError(f"json data not returned as a list, but rather a {type(data).__name__}")
-        return cls(data, **bx_args)
+        return cls(data, **box_args)
 
     if yaml_available:
 
@@ -277,15 +277,17 @@ class BoxList(list):
             :param kwargs: parameters to pass to `BoxList()` or `yaml.load`
             :return: BoxList object from yaml data
             """
-            bx_args = {}
+            box_args = {}
             for arg in list(kwargs.keys()):
                 if arg in BOX_PARAMETERS:
-                    bx_args[arg] = kwargs.pop(arg)
+                    box_args[arg] = kwargs.pop(arg)
 
             data = _from_yaml(yaml_string=yaml_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
+            if not data:
+                return cls(**box_args)
             if not isinstance(data, list):
                 raise BoxError(f"yaml data not returned as a list but rather a {type(data).__name__}")
-            return cls(data, **bx_args)
+            return cls(data, **box_args)
 
     else:
 
@@ -353,15 +355,15 @@ class BoxList(list):
             :param kwargs: parameters to pass to `Box()`
             :return:
             """
-            bx_args = {}
+            box_args = {}
             for arg in list(kwargs.keys()):
                 if arg in BOX_PARAMETERS:
-                    bx_args[arg] = kwargs.pop(arg)
+                    box_args[arg] = kwargs.pop(arg)
 
             data = _from_toml(toml_string=toml_string, filename=filename, encoding=encoding, errors=errors)
             if key_name not in data:
                 raise BoxError(f"{key_name} was not found.")
-            return cls(data[key_name], **bx_args)
+            return cls(data[key_name], **box_args)
 
     else:
 
@@ -407,15 +409,15 @@ class BoxList(list):
             :param kwargs: parameters to pass to `Box()`
             :return:
             """
-            bx_args = {}
+            box_args = {}
             for arg in list(kwargs.keys()):
                 if arg in BOX_PARAMETERS:
-                    bx_args[arg] = kwargs.pop(arg)
+                    box_args[arg] = kwargs.pop(arg)
 
             data = _from_msgpack(msgpack_bytes=msgpack_bytes, filename=filename, **kwargs)
             if not isinstance(data, list):
                 raise BoxError(f"msgpack data not returned as a list but rather a {type(data).__name__}")
-            return cls(data, **bx_args)
+            return cls(data, **box_args)
 
     else:
 

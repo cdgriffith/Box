@@ -42,6 +42,15 @@ _list_pos_re = re.compile(r"\[(\d+)\]")
 NO_DEFAULT = object()
 
 
+def _exception_cause(e):
+    """
+    Unwrap BoxKeyError and BoxValueError errors to their cause.
+
+    Use with `raise ... from _exception_cause(err)` to avoid deeply nested stacktraces, but keep the
+    context.
+    """
+    return e.__cause__ if isinstance(e, (BoxKeyError, BoxValueError)) else e
+
 def _camel_killer(attr):
     """
     CamelKiller, qu'est-ce que c'est?
@@ -411,13 +420,14 @@ class Box(dict):
 
     def __recast(self, item, value):
         if self._box_config["box_recast"] and item in self._box_config["box_recast"]:
+            recast = self._box_config["box_recast"][item]
             try:
-                if issubclass(self._box_config["box_recast"][item], (Box, box.BoxList)):
-                    return self._box_config["box_recast"][item](value, **self.__box_config())
+                if isinstance(recast, type) and issubclass(recast, (Box, box.BoxList)):
+                    return recast(value, **self.__box_config())
                 else:
-                    return self._box_config["box_recast"][item](value)
-            except ValueError:
-                raise BoxValueError(f'Cannot convert {value} to {self._box_config["box_recast"][item]}') from None
+                    return recast(value)
+            except ValueError as err:
+                raise BoxValueError(f'Cannot convert {value} to {recast}') from _exception_cause(err)
         return value
 
     def __convert_and_store(self, item, value):
@@ -451,7 +461,8 @@ class Box(dict):
             return super().__getitem__(item)
         except KeyError as err:
             if item == "_box_config":
-                raise BoxKeyError("_box_config should only exist as an attribute and is never defaulted") from None
+                cause = _exception_cause(err)
+                raise BoxKeyError("_box_config should only exist as an attribute and is never defaulted") from cause
             if self._box_config["box_dots"] and isinstance(item, str) and ("." in item or "[" in item):
                 try:
                     first_item, children = _parse_box_dots(self, item)
@@ -468,7 +479,7 @@ class Box(dict):
                     return super().__getitem__(converted)
             if self._box_config["default_box"] and not _ignore_default:
                 return self.__get_default(item)
-            raise BoxKeyError(str(err)) from None
+            raise BoxKeyError(str(err)) from _exception_cause(err)
 
     def __getattr__(self, item):
         try:
@@ -478,20 +489,20 @@ class Box(dict):
                 value = object.__getattribute__(self, item)
         except AttributeError as err:
             if item == "__getstate__":
-                raise BoxKeyError(item) from None
+                raise BoxKeyError(item) from _exception_cause(err)
             if item == "_box_config":
-                raise BoxError("_box_config key must exist") from None
+                raise BoxError("_box_config key must exist") from _exception_cause(err)
             if self._box_config["conversion_box"]:
                 safe_key = self._safe_attr(item)
                 if safe_key in self._box_config["__safe_keys"]:
                     return self.__getitem__(self._box_config["__safe_keys"][safe_key])
             if self._box_config["default_box"]:
                 return self.__get_default(item, attr=True)
-            raise BoxKeyError(str(err)) from None
+            raise BoxKeyError(str(err)) from _exception_cause(err)
         return value
 
     def __setitem__(self, key, value):
-        if key != "_box_config" and self._box_config["__created"] and self._box_config["frozen_box"]:
+        if key != "_box_config" and self._box_config["frozen_box"] and self._box_config["__created"]:
             raise BoxError("Box is frozen")
         if self._box_config["box_dots"] and isinstance(key, str) and ("." in key or "[" in key):
             first_item, children = _parse_box_dots(self, key, setting=True)
@@ -513,7 +524,6 @@ class Box(dict):
             raise BoxKeyError(f'Key name "{key}" is protected')
         if key == "_box_config":
             return object.__setattr__(self, key, value)
-        value = self.__recast(key, value)
         safe_key = self._safe_attr(key)
         if safe_key in self._box_config["__safe_keys"]:
             key = self._box_config["__safe_keys"][safe_key]
@@ -540,7 +550,7 @@ class Box(dict):
         try:
             super().__delitem__(key)
         except KeyError as err:
-            raise BoxKeyError(str(err)) from None
+            raise BoxKeyError(str(err)) from _exception_cause(err)
 
     def __delattr__(self, item):
         if self._box_config["frozen_box"]:
@@ -558,7 +568,7 @@ class Box(dict):
                     self.__delitem__(self._box_config["__safe_keys"][safe_key])
                     del self._box_config["__safe_keys"][safe_key]
                     return
-            raise BoxKeyError(str(err)) from None
+            raise BoxKeyError(str(err)) from _exception_cause(err)
 
     def pop(self, key, *args):
         if self._box_config["frozen_box"]:
@@ -589,6 +599,8 @@ class Box(dict):
         self._box_config["__safe_keys"].clear()
 
     def popitem(self):
+        if self._box_config["frozen_box"]:
+            raise BoxError("Box is frozen")
         try:
             key = next(self.__iter__())
         except StopIteration:
@@ -651,6 +663,15 @@ class Box(dict):
                     return
             if isinstance(v, list) and not intact_type:
                 v = box.BoxList(v, **self.__box_config())
+                merge_type = kwargs.get('box_merge_lists')
+                if merge_type == "extend" and k in self and isinstance(self[k], list):
+                    self[k].extend(v)
+                    return
+                if merge_type == "unique" and k in self and isinstance(self[k], list):
+                    for item in v:
+                        if item not in self[k]:
+                            self[k].append(item)
+                    return
             self.__setitem__(k, v)
 
         if __m:
@@ -825,6 +846,8 @@ class Box(dict):
                     box_args[arg] = kwargs.pop(arg)
 
             data = _from_yaml(yaml_string=yaml_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
+            if not data:
+                return cls(**box_args)
             if not isinstance(data, dict):
                 raise BoxError(f"yaml data not returned as a dictionary but rather a {type(data).__name__}")
             return cls(data, **box_args)

@@ -24,6 +24,7 @@ Code contributions:
 - Noam Graetz (NoamGraetz2)
 - Fabian Affolter (fabaff)
 - Varun Madiath (vamega)
+- Jacob Hayes (JacobHayes)
 
 Suggestions and bug reporting:
 
@@ -71,3 +72,6 @@ Suggestions and bug reporting:
 - David Aronchick (aronchick)
 - Alexander Kapustin (dyens)
 - Marcelo Huerta (richieadler)
+- Tim Schwenke (trallnag)
+- Marcos Dione (mdione-cloudian)
+- Varun Madiath (vamega)

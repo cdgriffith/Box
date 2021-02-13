@@ -1,4 +1,4 @@
-|BuildStatus| |CoverageStatus| |License|
+|BuildStatus| |License|
 
 |BoxImage|
 
@@ -103,8 +103,6 @@ MIT License, Copyright (c) 2017-2020 Chris Griffith. See LICENSE_ file.
    :target: https://github.com/cdgriffith/Box
 .. |BuildStatus| image:: https://github.com/cdgriffith/Box/workflows/Tests/badge.svg?branch=master
    :target: https://github.com/cdgriffith/Box/actions?query=workflow%3ATests
-.. |CoverageStatus| image:: https://img.shields.io/coveralls/cdgriffith/Box/master.svg?maxAge=2592000
-   :target: https://coveralls.io/r/cdgriffith/Box?branch=master
 .. |License| image:: https://img.shields.io/pypi/l/python-box.svg
    :target: https://pypi.python.org/pypi/python-box/
 

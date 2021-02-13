@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [3.9]
 
     steps:
       - uses: actions/checkout@v2
@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9.0-rc.1, pypy3]
+        python-version: [3.6, 3.7, 3.8, 3.9, pypy3]
 
     steps:
     - uses: actions/checkout@v2
@@ -58,11 +58,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-test.txt
-        pip install coveralls
     - name: Test with pytest
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         pytest --cov=box test/
-        coveralls
 

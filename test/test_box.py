@@ -990,6 +990,21 @@ class TestBox:
         with pytest.raises(ValueError):
             b["sub_box"] = {"id": "bad_id"}
 
+    def test_nontype_recast(self):
+        class CustomError(ValueError):
+            pass
+
+        def cast_id(val) -> int:
+            if val == "bad_id":
+                raise CustomError()
+            return int(val)
+
+        b = Box(id="6", box_recast={"id": cast_id})
+        assert isinstance(b.id, int)
+        with pytest.raises(ValueError) as exc_info:
+            b["sub_box"] = {"id": "bad_id"}
+        assert isinstance(exc_info.value.__cause__, CustomError)
+
     def test_box_dots(self):
         b = Box(
             {"my_key": {"does stuff": {"to get to": "where I want"}}, "key.with.list": [[[{"test": "value"}]]]},
@@ -1168,3 +1183,22 @@ class TestBox:
         a.b.b = 4
         assert a == {"a.a.a": {"": {"": {}}}, "b.b": 3, "b": {"b": 4}}
         assert a["non.existent.key"] == {}
+
+    def test_merge_list_options(self):
+        a = Box()
+        a.merge_update({"lister": ["a"]})
+        a.merge_update({"lister": ["a", "b", "c"]}, box_merge_lists="extend")
+        assert a.lister == ["a", "a", "b", "c"]
+        a.merge_update({"lister": ["a", "b", "c"]}, box_merge_lists="unique")
+        assert a.lister == ["a", "a", "b", "c"]
+        a.merge_update({"lister": ["a", "d", "b", "c"]}, box_merge_lists="unique")
+        assert a.lister == ["a", "a", "b", "c", "d"]
+        a.merge_update({"key1": {"new": 5}, "Key 2": {"add_key": 6}, "lister": ["a"]})
+        assert a.lister == ["a"]
+
+    def test_box_from_empty_yaml(self):
+        out = Box.from_yaml("---")
+        assert out == Box()
+
+        out2 = BoxList.from_yaml("---")
+        assert out2 == BoxList()
