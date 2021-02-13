@@ -236,47 +236,47 @@ class Box(dict):
 
         self._box_config["__created"] = True
 
-    def __add__(self, other: dict):
+    def __add__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         new_box = self.copy()
         new_box.merge_update(other)
         return new_box
 
-    def __radd__(self, other: dict):
+    def __radd__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         new_box = self.copy()
         new_box.merge_update(other)
         return new_box
 
-    def __iadd__(self, other: dict):
+    def __iadd__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         self.merge_update(other)
         return self
 
-    def __or__(self, other: dict):
+    def __or__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         new_box = self.copy()
         new_box.update(other)
         return new_box
 
-    def __ror__(self, other: dict):
+    def __ror__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         new_box = self.copy()
         new_box.update(other)
         return new_box
 
-    def __ior__(self, other: dict):
+    def __ior__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         self.update(other)
         return self
 
-    def __sub__(self, other: dict):
+    def __sub__(self, other: Mapping[Any, Any]):
         frozen = self._box_config["frozen_box"]
         config = self.__box_config()
         config["frozen_box"] = False

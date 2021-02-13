@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 5.3.1
+-------------
+
+* Fixing #189 mappings for mypy
+
 Version 5.3.0
 -------------
 
