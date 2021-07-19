@@ -9,10 +9,14 @@ import copy
 import re
 import string
 import warnings
-from collections.abc import Callable, Iterable, Mapping
 from keyword import kwlist
 from os import PathLike
 from typing import Any, Dict, Generator, List, Tuple, Union
+
+try:
+    from typing import Callable, Iterable, Mapping
+except ImportError:
+    from collections.abc import Callable, Iterable, Mapping
 
 import box
 from box.converters import (

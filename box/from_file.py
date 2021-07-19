@@ -19,7 +19,7 @@ except ImportError:
         YAMLError = False  # type: ignore
 
 try:
-    from toml import TomlDecodeError
+    from toml import TomlDecodeError  # type: ignore
 except ImportError:
     TomlDecodeError = False  # type: ignore
 

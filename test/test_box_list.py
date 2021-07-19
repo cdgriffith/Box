@@ -10,7 +10,7 @@ from test.common import test_root, tmp_dir
 
 import pytest
 import ruamel.yaml as yaml
-import toml
+import tomli as toml
 
 from box import Box, BoxError, BoxList
 
