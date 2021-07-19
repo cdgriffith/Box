@@ -51,6 +51,7 @@ def _exception_cause(e):
     """
     return e.__cause__ if isinstance(e, (BoxKeyError, BoxValueError)) else e
 
+
 def _camel_killer(attr):
     """
     CamelKiller, qu'est-ce que c'est?
@@ -427,7 +428,7 @@ class Box(dict):
                 else:
                     return recast(value)
             except ValueError as err:
-                raise BoxValueError(f'Cannot convert {value} to {recast}') from _exception_cause(err)
+                raise BoxValueError(f"Cannot convert {value} to {recast}") from _exception_cause(err)
         return value
 
     def __convert_and_store(self, item, value):
@@ -663,7 +664,7 @@ class Box(dict):
                     return
             if isinstance(v, list) and not intact_type:
                 v = box.BoxList(v, **self.__box_config())
-                merge_type = kwargs.get('box_merge_lists')
+                merge_type = kwargs.get("box_merge_lists")
                 if merge_type == "extend" and k in self and isinstance(self[k], list):
                     self[k].extend(v)
                     return

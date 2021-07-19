@@ -87,7 +87,7 @@ class ConfigBox(Box):
             raise err
         return float(item)
 
-    def list(self, item, default=None, spliter=",", strip=True, mod=None):
+    def list(self, item, default=None, spliter: str = ",", strip=True, mod=None):
         """
         Return value of key as a list
 
