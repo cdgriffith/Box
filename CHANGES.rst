@@ -1,10 +1,14 @@
 Changelog
 =========
 
-Version 5.3.1
+Version 5.4.0
 -------------
 
-* Fixing #189 mappings for mypy
+* Adding py.typed for mypy support (thanks to Dominic)
+* Adding testing for Python 3.10-dev
+* Changing to use tomli instead of toml by default as it is faster and toml 1.0.0 compatible
+* Fixing #189 by adding mappings for mypy
+
 
 Version 5.3.0
 -------------

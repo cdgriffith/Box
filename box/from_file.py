@@ -19,9 +19,12 @@ except ImportError:
         YAMLError = False  # type: ignore
 
 try:
-    from toml import TomlDecodeError
+    from tomli import TOMLDecodeError as TomlDecodeError
 except ImportError:
-    TomlDecodeError = False  # type: ignore
+    try:
+        from toml import TomlDecodeError  # type: ignore
+    except ImportError:
+        TomlDecodeError = False  # type: ignore
 
 try:
     from msgpack import UnpackException  # type: ignore

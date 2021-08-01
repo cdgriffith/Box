@@ -14,6 +14,7 @@ from box.exceptions import BoxError
 
 yaml_available = True
 toml_available = True
+tomli_available = True
 msgpack_available = True
 
 try:
@@ -24,12 +25,16 @@ except ImportError:
     except ImportError:
         yaml = None  # type: ignore
         yaml_available = False
-
 try:
     import toml
 except ImportError:
     toml = None  # type: ignore
     toml_available = False
+try:
+    import tomli
+except ImportError:
+    tomli = None  # type: ignore
+    tomli_available = False
 try:
     import msgpack  # type: ignore
 except ImportError:
@@ -156,9 +161,9 @@ def _from_toml(
     if filename:
         _exists(filename)
         with open(filename, "r", encoding=encoding, errors=errors) as f:
-            data = toml.load(f)
+            data = tomli.load(f) if tomli_available else toml.load(f)
     elif toml_string:
-        data = toml.loads(toml_string)
+        data = tomli.loads(toml_string) if tomli_available else toml.loads(toml_string)
     else:
         raise BoxError("from_toml requires a string or filename")
     return data
