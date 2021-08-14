@@ -1169,7 +1169,19 @@ class TestBox:
     def test_default_box_restricted_calls(self):
         a = Box(default_box=True)
         a._test_thing_
+        del(a._test_thing_)
+        del(a._test_another_)
         assert len(list(a.keys())) == 0
+
+        # Based on argparse.parse_args internal behavior, the following
+        # creates the attribute in hasattr due to default_box=True, then
+        # deletes it in delattr.
+        if hasattr(a, "_unrecognized_args"):
+            delattr(a, "_unrecognized_args")
+
+        a._allowed_prefix
+        a.allowed_postfix_
+        assert len(list(a.keys())) == 2
 
     def test_default_dots(self):
         a = Box(default_box=True, box_dots=True)

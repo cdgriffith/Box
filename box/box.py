@@ -412,7 +412,7 @@ class Box(dict):
             value = default_value.copy()
         else:
             value = default_value
-        if not attr or (not item.startswith("_") and not item.endswith("_")):
+        if not attr or not (item.startswith("_") and item.endswith("_")):
             super().__setitem__(item, value)
         return value
 
@@ -573,6 +573,8 @@ class Box(dict):
                     self.__delitem__(self._box_config["__safe_keys"][safe_key])
                     del self._box_config["__safe_keys"][safe_key]
                     return
+            if self._box_config["default_box"] and item.startswith("_") and item.endswith("_"):
+                return
             raise BoxKeyError(str(err)) from _exception_cause(err)
 
     def pop(self, key, *args):
