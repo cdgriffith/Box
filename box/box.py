@@ -502,6 +502,8 @@ class Box(dict):
                 if safe_key in self._box_config["__safe_keys"]:
                     return self.__getitem__(self._box_config["__safe_keys"][safe_key])
             if self._box_config["default_box"]:
+                if item.startswith("_") and item.endswith("_"):
+                    raise BoxKeyError(f"{item}: Does not exist and internal methods are never defaulted")
                 return self.__get_default(item, attr=True)
             raise BoxKeyError(str(err)) from _exception_cause(err)
         return value
@@ -573,8 +575,6 @@ class Box(dict):
                     self.__delitem__(self._box_config["__safe_keys"][safe_key])
                     del self._box_config["__safe_keys"][safe_key]
                     return
-            if self._box_config["default_box"] and item.startswith("_") and item.endswith("_"):
-                return
             raise BoxKeyError(str(err)) from _exception_cause(err)
 
     def pop(self, key, *args):
