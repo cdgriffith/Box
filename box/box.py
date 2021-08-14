@@ -692,15 +692,16 @@ class Box(dict):
             convert_and_set(key, kwargs[key])
 
     def setdefault(self, item, default=None):
-        if item in self:
+        # Have to use a try except instead of "item in self" as box_dots may not be in iterable
+        try:
             return self[item]
-
-        if isinstance(default, dict):
-            default = self._box_config["box_class"](default, **self.__box_config())
-        if isinstance(default, list):
-            default = box.BoxList(default, **self.__box_config())
-        self[item] = default
-        return self[item]
+        except KeyError:
+            if isinstance(default, dict):
+                default = self._box_config["box_class"](default, **self.__box_config())
+            if isinstance(default, list):
+                default = box.BoxList(default, **self.__box_config())
+            self[item] = default
+            return self[item]
 
     def _safe_attr(self, attr):
         """Convert a key into something that is accessible as an attribute"""
