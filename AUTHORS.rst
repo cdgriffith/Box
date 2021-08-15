@@ -25,6 +25,7 @@ Code contributions:
 - Fabian Affolter (fabaff)
 - Varun Madiath (vamega)
 - Jacob Hayes (JacobHayes)
+- Dominic (Yobmod)
 
 Suggestions and bug reporting:
 
@@ -75,3 +76,4 @@ Suggestions and bug reporting:
 - Tim Schwenke (trallnag)
 - Marcos Dione (mdione-cloudian)
 - Varun Madiath (vamega)
+- Rexbard
