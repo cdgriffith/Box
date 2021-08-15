@@ -9,10 +9,14 @@ import copy
 import re
 import string
 import warnings
-from collections.abc import Callable, Iterable, Mapping
 from keyword import kwlist
 from os import PathLike
 from typing import Any, Dict, Generator, List, Tuple, Union
+
+try:
+    from typing import Callable, Iterable, Mapping
+except ImportError:
+    from collections.abc import Callable, Iterable, Mapping
 
 import box
 from box.converters import (
@@ -50,6 +54,7 @@ def _exception_cause(e):
     context.
     """
     return e.__cause__ if isinstance(e, (BoxKeyError, BoxValueError)) else e
+
 
 def _camel_killer(attr):
     """
@@ -236,47 +241,47 @@ class Box(dict):
 
         self._box_config["__created"] = True
 
-    def __add__(self, other: dict):
+    def __add__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         new_box = self.copy()
         new_box.merge_update(other)
         return new_box
 
-    def __radd__(self, other: dict):
+    def __radd__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         new_box = self.copy()
         new_box.merge_update(other)
         return new_box
 
-    def __iadd__(self, other: dict):
+    def __iadd__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         self.merge_update(other)
         return self
 
-    def __or__(self, other: dict):
+    def __or__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         new_box = self.copy()
         new_box.update(other)
         return new_box
 
-    def __ror__(self, other: dict):
+    def __ror__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         new_box = self.copy()
         new_box.update(other)
         return new_box
 
-    def __ior__(self, other: dict):
+    def __ior__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         self.update(other)
         return self
 
-    def __sub__(self, other: dict):
+    def __sub__(self, other: Mapping[Any, Any]):
         frozen = self._box_config["frozen_box"]
         config = self.__box_config()
         config["frozen_box"] = False
@@ -407,7 +412,7 @@ class Box(dict):
             value = default_value.copy()
         else:
             value = default_value
-        if not attr or (not item.startswith("_") and not item.endswith("_")):
+        if not attr or not (item.startswith("_") and item.endswith("_")):
             super().__setitem__(item, value)
         return value
 
@@ -427,7 +432,7 @@ class Box(dict):
                 else:
                     return recast(value)
             except ValueError as err:
-                raise BoxValueError(f'Cannot convert {value} to {recast}') from _exception_cause(err)
+                raise BoxValueError(f"Cannot convert {value} to {recast}") from _exception_cause(err)
         return value
 
     def __convert_and_store(self, item, value):
@@ -497,6 +502,8 @@ class Box(dict):
                 if safe_key in self._box_config["__safe_keys"]:
                     return self.__getitem__(self._box_config["__safe_keys"][safe_key])
             if self._box_config["default_box"]:
+                if item.startswith("_") and item.endswith("_"):
+                    raise BoxKeyError(f"{item}: Does not exist and internal methods are never defaulted")
                 return self.__get_default(item, attr=True)
             raise BoxKeyError(str(err)) from _exception_cause(err)
         return value
@@ -663,7 +670,7 @@ class Box(dict):
                     return
             if isinstance(v, list) and not intact_type:
                 v = box.BoxList(v, **self.__box_config())
-                merge_type = kwargs.get('box_merge_lists')
+                merge_type = kwargs.get("box_merge_lists")
                 if merge_type == "extend" and k in self and isinstance(self[k], list):
                     self[k].extend(v)
                     return
@@ -685,15 +692,16 @@ class Box(dict):
             convert_and_set(key, kwargs[key])
 
     def setdefault(self, item, default=None):
-        if item in self:
+        # Have to use a try except instead of "item in self" as box_dots may not be in iterable
+        try:
             return self[item]
-
-        if isinstance(default, dict):
-            default = self._box_config["box_class"](default, **self.__box_config())
-        if isinstance(default, list):
-            default = box.BoxList(default, **self.__box_config())
-        self[item] = default
-        return self[item]
+        except KeyError:
+            if isinstance(default, dict):
+                default = self._box_config["box_class"](default, **self.__box_config())
+            if isinstance(default, list):
+                default = box.BoxList(default, **self.__box_config())
+            self[item] = default
+            return self[item]
 
     def _safe_attr(self, attr):
         """Convert a key into something that is accessible as an attribute"""

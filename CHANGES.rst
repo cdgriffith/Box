@@ -1,6 +1,16 @@
 Changelog
 =========
 
+Version 5.4.0
+-------------
+
+* Adding py.typed for mypy support (thanks to Dominic)
+* Adding testing for Python 3.10-dev
+* Fixing #189 by adding mappings for mypy
+* Fixing setdefault behavior with box_dots (thanks to ipcoder)
+* Changing #193 how magic methods are handled with default_box (thanks to Rexbard)
+
+
 Version 5.3.0
 -------------
 

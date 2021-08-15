@@ -306,6 +306,12 @@ class TestBox:
         assert a.key3.item == 2
         assert a.lister[0].gah == 7
 
+    def test_set_default_box_dots(self):
+        a = Box(box_dots=True)
+        a["x"] = {"y": 10}
+        a.setdefault("x.y", 20)
+        assert a["x.y"] == 10
+
     def test_from_json_file(self):
         bx = Box.from_json(filename=data_json_file)
         assert isinstance(bx, Box)
@@ -1168,8 +1174,19 @@ class TestBox:
 
     def test_default_box_restricted_calls(self):
         a = Box(default_box=True)
-        a._test_thing_
+        with pytest.raises(BoxKeyError):
+            a._test_thing_
         assert len(list(a.keys())) == 0
+
+        # Based on argparse.parse_args internal behavior, the following
+        # creates the attribute in hasattr due to default_box=True, then
+        # deletes it in delattr.
+        if hasattr(a, "_unrecognized_args"):
+            delattr(a, "_unrecognized_args")
+
+        a._allowed_prefix
+        a.allowed_postfix_
+        assert len(list(a.keys())) == 2
 
     def test_default_dots(self):
         a = Box(default_box=True, box_dots=True)

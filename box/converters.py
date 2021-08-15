@@ -24,12 +24,12 @@ except ImportError:
     except ImportError:
         yaml = None  # type: ignore
         yaml_available = False
-
 try:
     import toml
 except ImportError:
     toml = None  # type: ignore
     toml_available = False
+
 try:
     import msgpack  # type: ignore
 except ImportError:

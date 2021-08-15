@@ -1,3 +1,4 @@
 include LICENSE
 include AUTHORS.rst
 include CHANGES.rst
+include box/py.typed

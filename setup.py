@@ -53,6 +53,7 @@ setup(
     ],
     extras_require={
         "all": ["ruamel.yaml", "toml", "msgpack"],
+        "yaml": ["ruamel.yaml"],
         "ruamel.yaml": ["ruamel.yaml"],
         "PyYAML": ["PyYAML"],
         "toml": ["toml"],
