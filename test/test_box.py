@@ -312,6 +312,10 @@ class TestBox:
         a.setdefault("x.y", 20)
         assert a["x.y"] == 10
 
+        t = Box({"a": 1}, default_box=True, box_dots=True, default_box_none_transform=False)
+        assert t.setdefault("b", [1, 2]) == [1, 2]
+        assert t == Box(a=1, b=[1, 2])
+
     def test_from_json_file(self):
         bx = Box.from_json(filename=data_json_file)
         assert isinstance(bx, Box)

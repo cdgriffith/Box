@@ -93,6 +93,17 @@ def _parse_box_dots(bx, item, setting=False):
     raise BoxError("Could not split box dots properly")
 
 
+def _get_dot_paths(bx, current=""):
+    """A generator of all the end node keys in a box in box_dots format"""
+    for key, value in bx.items():
+        yield ".".join([current, key]) if current else key
+        if isinstance(value, dict):
+            yield from _get_dot_paths(value, f"{current}.{key}" if current else key)
+        elif isinstance(value, list):
+            for i in value:
+                yield from _get_dot_paths(i, f"{current}[{key}]")
+
+
 def _get_box_config():
     return {
         # Internal use only
@@ -693,15 +704,19 @@ class Box(dict):
 
     def setdefault(self, item, default=None):
         # Have to use a try except instead of "item in self" as box_dots may not be in iterable
-        try:
+        if item in self:
             return self[item]
-        except KeyError:
-            if isinstance(default, dict):
-                default = self._box_config["box_class"](default, **self.__box_config())
-            if isinstance(default, list):
-                default = box.BoxList(default, **self.__box_config())
-            self[item] = default
-            return self[item]
+
+        if self._box_config["box_dots"]:
+            if item in _get_dot_paths(self):
+                return self[item]
+
+        if isinstance(default, dict):
+            default = self._box_config["box_class"](default, **self.__box_config())
+        if isinstance(default, list):
+            default = box.BoxList(default, **self.__box_config())
+        self[item] = default
+        return self[item]
 
     def _safe_attr(self, attr):
         """Convert a key into something that is accessible as an attribute"""

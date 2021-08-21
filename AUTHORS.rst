@@ -77,3 +77,4 @@ Suggestions and bug reporting:
 - Marcos Dione (mdione-cloudian)
 - Varun Madiath (vamega)
 - Rexbard
+- Ivan Pepelnjak (ipspace)
