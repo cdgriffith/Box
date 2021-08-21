@@ -4,7 +4,7 @@ Changelog
 Version 5.4.1
 -------------
 
-* Fixing setdefault behavior with box_dots (thanks to  Ivan Pepelnjak)
+* Fixing #205 setdefault behavior with box_dots (thanks to  Ivan Pepelnjak)
 
 Version 5.4.0
 -------------
