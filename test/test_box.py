@@ -26,6 +26,7 @@ import pytest
 import ruamel.yaml as yaml
 
 from box import Box, BoxError, BoxKeyError, BoxList, ConfigBox, SBox, box
+from box.box import _get_dot_paths
 
 
 def mp_queue_test(q):
@@ -312,9 +313,23 @@ class TestBox:
         a.setdefault("x.y", 20)
         assert a["x.y"] == 10
 
+        a["lists"] = [[[{"test": "here"}], {1, 2}], (4, 5)]
+        assert list(_get_dot_paths(a)) == [
+            "x",
+            "x.y",
+            "lists",
+            "lists[0]",
+            "lists[0][0]",
+            "lists[0][0][0]",
+            "lists[0][0][0].test",
+            "lists[0][1]",
+            "lists[1]",
+        ]
+
         t = Box({"a": 1}, default_box=True, box_dots=True, default_box_none_transform=False)
         assert t.setdefault("b", [1, 2]) == [1, 2]
         assert t == Box(a=1, b=[1, 2])
+        assert t.setdefault("c", [{"d": 2}]) == BoxList([{"d": 2}])
 
     def test_from_json_file(self):
         bx = Box.from_json(filename=data_json_file)

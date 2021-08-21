@@ -95,13 +95,24 @@ def _parse_box_dots(bx, item, setting=False):
 
 def _get_dot_paths(bx, current=""):
     """A generator of all the end node keys in a box in box_dots format"""
-    for key, value in bx.items():
-        yield ".".join([current, key]) if current else key
-        if isinstance(value, dict):
-            yield from _get_dot_paths(value, f"{current}.{key}" if current else key)
-        elif isinstance(value, list):
-            for i in value:
-                yield from _get_dot_paths(i, f"{current}[{key}]")
+
+    def handle_dicts(sub_bx, paths=""):
+        for key, value in sub_bx.items():
+            yield f"{paths}.{key}" if paths else key
+            if isinstance(value, dict):
+                yield from handle_dicts(value, f"{paths}.{key}" if paths else key)
+            elif isinstance(value, list):
+                yield from handle_lists(value, f"{paths}.{key}" if paths else key)
+
+    def handle_lists(bx_list, paths=""):
+        for i, value in enumerate(bx_list):
+            yield f"{paths}[{i}]"
+            if isinstance(value, list):
+                yield from handle_lists(value, f"{paths}[{i}]")
+            if isinstance(value, dict):
+                yield from handle_dicts(value, f"{paths}[{i}]")
+
+    yield from handle_dicts(bx, current)
 
 
 def _get_box_config():
