@@ -703,7 +703,6 @@ class Box(dict):
             convert_and_set(key, kwargs[key])
 
     def setdefault(self, item, default=None):
-        # Have to use a try except instead of "item in self" as box_dots may not be in iterable
         if item in self:
             return self[item]
 
