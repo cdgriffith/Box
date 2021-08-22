@@ -26,6 +26,7 @@ Code contributions:
 - Varun Madiath (vamega)
 - Jacob Hayes (JacobHayes)
 - Dominic (Yobmod)
+- Ivan Pepelnjak (ipspace)
 
 Suggestions and bug reporting:
 
