@@ -26,6 +26,7 @@ Code contributions:
 - Varun Madiath (vamega)
 - Jacob Hayes (JacobHayes)
 - Dominic (Yobmod)
+- Ivan Pepelnjak (ipspace)
 
 Suggestions and bug reporting:
 
@@ -77,4 +78,3 @@ Suggestions and bug reporting:
 - Marcos Dione (mdione-cloudian)
 - Varun Madiath (vamega)
 - Rexbard
-- Ivan Pepelnjak (ipspace)
