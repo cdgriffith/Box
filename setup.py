@@ -18,7 +18,7 @@ except ImportError:
     extra = None
 else:
     extra = cythonize(
-        [str(file.relative_to(root)) for file in Path(root, "box").glob("*.py")],
+        [str(file.relative_to(root)) for file in Path(root, "box").glob("*.py") if file.name != "__init__.py"],
         compiler_directives={"language_level": 3},
     )
 

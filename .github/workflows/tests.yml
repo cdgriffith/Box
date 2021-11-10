@@ -40,6 +40,11 @@ jobs:
         run: |
           python setup.py sdist bdist_wheel
           twine check dist/*
+      - name: Test packaged wheel
+        run: |
+          pip install dist/*.whl
+          rm -rf box
+          python -m pytest
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v2
         with:
