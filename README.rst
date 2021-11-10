@@ -38,9 +38,28 @@ But you can also sub out "ruamel.yaml" for "PyYAML".
 
 Check out `more details <https://github.com/cdgriffith/Box/wiki/Installation>`_ on installation details.
 
-Box 5 is tested on python 3.6+ and pypy3, if you are upgrading from previous versions, please look through
+Box 5 is tested on python 3.6+, if you are upgrading from previous versions, please look through
 `any breaking changes and new features <https://github.com/cdgriffith/Box/wiki/Major-Version-Breaking-Changes-and-New-Features>`_.
 
+Optimized Version
+-----------------
+
+Box 5.5 is introducing Cython optimizations for major platforms by default.
+Loading large data sets can be up to 10x faster!
+
+If you are **not** on a x86_64 supported system you will need to do some extra work to install the optimized version.
+There will be an warning of "WARNING: Cython not installed, could not optimize box" during install.
+You will need python development files, system compiler, and the python packages `Cython` and `wheel`.
+
+**Linux Example:**
+
+First make sure you have python development files installed (`python3-dev` or `python3-devel` in most repos).
+You will then need `Cython` and `wheel` installed and then install (or re-install with `--force`) `python-box`.
+
+.. code:: bash
+
+        pip install Cython wheel
+        pip install python-box[all] --force
 
 If you have any issues please open a github issue with the error you are experiencing!
 

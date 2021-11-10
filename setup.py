@@ -5,6 +5,7 @@
 import multiprocessing  # noqa: F401
 import os
 import re
+import sys
 from pathlib import Path
 
 from setuptools import setup
@@ -14,7 +15,6 @@ root = os.path.abspath(os.path.dirname(__file__))
 try:
     from Cython.Build import cythonize
 except ImportError:
-    print("Cython not installed, cannot optimize box")
     extra = None
 else:
     extra = cythonize(
@@ -74,3 +74,6 @@ setup(
         "msgpack": ["msgpack"],
     },
 )
+
+if not extra:
+    print("WARNING: Cython not installed, could not optimize box", file=sys.stderr)
