@@ -5,8 +5,8 @@
 import multiprocessing  # noqa: F401
 import os
 import re
-import sys
 from pathlib import Path
+import warnings
 
 from setuptools import setup
 
@@ -76,4 +76,4 @@ setup(
 )
 
 if not extra:
-    print("WARNING: Cython not installed, could not optimize box", file=sys.stderr)
+    warnings.warn("WARNING: Cython not installed, could not optimize box.")
