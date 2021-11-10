@@ -10,12 +10,12 @@ on:
     branches: [ master, development, develop, test, tests ]
 
 jobs:
-  package_checks:
-    runs-on: ubuntu-latest
+  package-checks:
     strategy:
       matrix:
-        python-version: [3.9]
-
+        python-version: [3.6, 3.10]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -27,7 +27,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-test.txt
-          pip install coveralls flake8 flake8-print mypy setuptools wheel twine
+          pip install coveralls flake8 flake8-print mypy setuptools wheel twine Cython
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors, undefined names or print statements
@@ -40,13 +40,18 @@ jobs:
         run: |
           python setup.py sdist bdist_wheel
           twine check dist/*
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: python_box
+          path: dist/*.whl
 
   test:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9, 3.10-dev, pypy3]
-
+        python-version: [3.6, 3.7, 3.8, 3.9, 3.10, pypy3]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
@@ -58,6 +63,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-test.txt
+        pip install setuptools wheel Cython
+        python setup.py build_ext --inplace
     - name: Test with pytest
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

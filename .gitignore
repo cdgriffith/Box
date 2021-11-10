@@ -94,3 +94,5 @@ ENV/
 .pypirc
 release.bat
 coverage/
+# don't upload cython files
+box/*.c

@@ -1,4 +1,5 @@
 # Files needed for pre-commit hooks
 black>=21.7b0
+Cython>=0.29
 mypy>=0.910
 pre-commit>=4.0.1

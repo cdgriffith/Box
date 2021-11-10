@@ -5,10 +5,22 @@
 import multiprocessing  # noqa: F401
 import os
 import re
+from pathlib import Path
 
 from setuptools import setup
 
 root = os.path.abspath(os.path.dirname(__file__))
+
+try:
+    from Cython.Build import cythonize
+except ImportError:
+    print("Cython not installed, cannot optimize box")
+    extra = None
+else:
+    extra = cythonize(
+        [str(file.relative_to(root)) for file in Path(root, "box").glob("*.py")],
+        compiler_directives={"language_level": 3},
+    )
 
 with open(os.path.join(root, "box", "__init__.py"), "r") as init_file:
     init_content = init_file.read()
@@ -31,6 +43,7 @@ setup(
     long_description_content_type="text/x-rst",
     py_modules=["box"],
     packages=["box"],
+    ext_modules=extra,
     python_requires=">=3.6",
     include_package_data=True,
     platforms="any",
@@ -41,6 +54,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: CPython",
         "Development Status :: 5 - Production/Stable",
         "Natural Language :: English",
