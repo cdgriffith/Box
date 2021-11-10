@@ -13,7 +13,7 @@ jobs:
   package-checks:
     strategy:
       matrix:
-        python-version: ["3.6", "3.10"]
+        python-version: ["3.6", "3.8", "3.10"]
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
@@ -36,14 +36,21 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=20 --max-line-length=120 --statistics --extend-ignore E203
       - name: Run mypy
         run: mypy box
-      - name: Check distrubiton log description
+      - name: Build Wheel and check distrubiton log description
         run: |
           python setup.py sdist bdist_wheel
           twine check dist/*
-      - name: Test packaged wheel
+      - name: Test packaged wheel on *nix
+        if: matrix.os != windows-latest
         run: |
           pip install dist/*.whl
           rm -rf box
+          python -m pytest
+      - name: Test packaged wheel on Windows
+        if: matrix.os == windows-latest
+        run: |
+          pip install dist\*.whl
+          Remove-item box -recurse -force
           python -m pytest
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v2
