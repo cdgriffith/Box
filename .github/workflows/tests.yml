@@ -47,14 +47,14 @@ jobs:
       - name: Test packaged wheel on *nix
         if: matrix.os != 'windows-latest'
         run: |
-          $wheel = (Get-ChildItem dist\*.whl | Sort lastWriteTime | Select-Object -last 1).Name
-          pip install $wheel
+          pip install dist/*.whl
           rm -rf box
           python -m pytest
       - name: Test packaged wheel on Windows
         if: matrix.os == 'windows-latest'
         run: |
-          pip install dist\*.whl
+          $wheel = (Get-ChildItem dist\*.whl | Sort lastWriteTime | Select-Object -last 1).Name
+          pip install $wheel
           Remove-item box -recurse -force
           python -m pytest
       - name: Upload wheel artifact
