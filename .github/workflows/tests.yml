@@ -41,13 +41,13 @@ jobs:
           python setup.py sdist bdist_wheel
           twine check dist/*
       - name: Test packaged wheel on *nix
-        if: matrix.os != windows-latest
+        if: matrix.os != "windows-latest"
         run: |
           pip install dist/*.whl
           rm -rf box
           python -m pytest
       - name: Test packaged wheel on Windows
-        if: matrix.os == windows-latest
+        if: matrix.os == "windows-latest"
         run: |
           pip install dist\*.whl
           Remove-item box -recurse -force
