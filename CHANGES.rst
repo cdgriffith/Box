@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 5.5.0
+-------------
+
+* Adding Cython support to greatly speed up normal Box operations on supported systems
+* Fixing `update` and `merge_update` used a keyword that could cause issues in rare circumstances
+
 Version 5.4.1
 -------------
 

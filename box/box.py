@@ -666,21 +666,27 @@ class Box(dict):
                 out_dict[k] = v.to_list()
         return out_dict
 
-    def update(self, __m=None, **kwargs):
+    def update(self, *args, **kwargs):
         if self._box_config["frozen_box"]:
             raise BoxError("Box is frozen")
-
-        if __m:
-            if hasattr(__m, "keys"):
-                for k in __m:
-                    self.__convert_and_store(k, __m[k])
+        if (len(args) + int(bool(kwargs))) > 1:
+            raise BoxTypeError(f"update expected at most 1 argument, got {len(args) + int(bool(kwargs))}")
+        single_arg = next(iter(args), None)
+        if single_arg:
+            if hasattr(single_arg, "keys"):
+                for k in single_arg:
+                    self.__convert_and_store(k, single_arg[k])
             else:
-                for k, v in __m:
+                for k, v in single_arg:
                     self.__convert_and_store(k, v)
         for k in kwargs:
             self.__convert_and_store(k, kwargs[k])
 
-    def merge_update(self, __m=None, **kwargs):
+    def merge_update(self, *args, **kwargs):
+        merge_type = None
+        if "box_merge_lists" in kwargs:
+            merge_type = kwargs.pop("box_merge_lists")
+
         def convert_and_set(k, v):
             intact_type = self._box_config["box_intact_types"] and isinstance(v, self._box_config["box_intact_types"])
             if isinstance(v, dict) and not intact_type:
@@ -692,7 +698,6 @@ class Box(dict):
                     return
             if isinstance(v, list) and not intact_type:
                 v = box.BoxList(v, **self.__box_config())
-                merge_type = kwargs.get("box_merge_lists")
                 if merge_type == "extend" and k in self and isinstance(self[k], list):
                     self[k].extend(v)
                     return
@@ -703,13 +708,17 @@ class Box(dict):
                     return
             self.__setitem__(k, v)
 
-        if __m:
-            if hasattr(__m, "keys"):
-                for key in __m:
-                    convert_and_set(key, __m[key])
+        if (len(args) + int(bool(kwargs))) > 1:
+            raise BoxTypeError(f"merge_update expected at most 1 argument, got {len(args) + int(bool(kwargs))}")
+        single_arg = next(iter(args), None)
+        if single_arg:
+            if hasattr(single_arg, "keys"):
+                for k in single_arg:
+                    convert_and_set(k, single_arg[k])
             else:
-                for key, value in __m:
-                    convert_and_set(key, value)
+                for k, v in single_arg:
+                    convert_and_set(k, v)
+
         for key in kwargs:
             convert_and_set(key, kwargs[key])
 
