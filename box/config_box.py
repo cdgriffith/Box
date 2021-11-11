@@ -123,7 +123,7 @@ class ConfigBox(Box):
         return self.float(item, default)
 
     def __repr__(self):
-        return "<ConfigBox: {0}>".format(str(self.to_dict()))
+        return "ConfigBox({0})".format(str(self.to_dict()))
 
     def copy(self):
         return ConfigBox(super().copy())

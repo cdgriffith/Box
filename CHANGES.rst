@@ -1,11 +1,13 @@
 Changelog
 =========
 
-Version 5.5.0
+Version 6.0.0
 -------------
 
 * Adding Cython support to greatly speed up normal Box operations on supported systems
-* Fixing `update` and `merge_update` used a keyword that could cause issues in rare circumstances
+* Changing #208 __repr__ to produce `eval`-able text (thanks to Jeff Robbins)
+* Changing `update` and `merge_update` to not use a keyword that could cause issues in rare circumstances
+* Fixing internal `_safe_key` logic to be twice as fast
 
 Version 5.4.1
 -------------

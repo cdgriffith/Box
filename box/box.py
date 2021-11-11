@@ -7,9 +7,8 @@ Improved dictionary access through dot notation with additional tools.
 """
 import copy
 import re
-import string
 import warnings
-from keyword import kwlist
+from keyword import iskeyword
 from os import PathLike
 from typing import Any, Dict, Generator, List, Tuple, Union
 
@@ -331,17 +330,12 @@ class Box(dict):
         raise BoxTypeError('unhashable type: "Box"')
 
     def __dir__(self):
-        allowed = string.ascii_letters + string.digits + "_"
         items = set(super().__dir__())
         # Only show items accessible by dot notation
         for key in self.keys():
             key = str(key)
-            if " " not in key and key[0] not in string.digits and key not in kwlist:
-                for letter in key:
-                    if letter not in allowed:
-                        break
-                else:
-                    items.add(key)
+            if key.isidentifier() and not iskeyword(key):
+                items.add(key)
 
         for key in self.keys():
             if key not in items:
@@ -547,12 +541,13 @@ class Box(dict):
         self.__convert_and_store(key, value)
 
     def __setattr__(self, key, value):
-        if key != "_box_config" and self._box_config["frozen_box"] and self._box_config["__created"]:
+        if key == "_box_config":
+            return object.__setattr__(self, key, value)
+        if self._box_config["frozen_box"] and self._box_config["__created"]:
             raise BoxError("Box is frozen")
         if key in self._protected_keys:
             raise BoxKeyError(f'Key name "{key}" is protected')
-        if key == "_box_config":
-            return object.__setattr__(self, key, value)
+
         safe_key = self._safe_attr(key)
         if safe_key in self._box_config["__safe_keys"]:
             key = self._box_config["__safe_keys"][safe_key]
@@ -637,7 +632,7 @@ class Box(dict):
         return key, self.pop(key)
 
     def __repr__(self) -> str:
-        return f"<Box: {self.to_dict()}>"
+        return f"Box({self})"
 
     def __str__(self) -> str:
         return str(self.to_dict())
@@ -739,7 +734,10 @@ class Box(dict):
 
     def _safe_attr(self, attr):
         """Convert a key into something that is accessible as an attribute"""
-        allowed = string.ascii_letters + string.digits + "_"
+        if isinstance(attr, str):
+            # By assuming most people are using string first we get substantial speed ups
+            if attr.isidentifier() and not iskeyword(attr):
+                return attr
 
         if isinstance(attr, tuple):
             attr = "_".join([str(x) for x in attr])
@@ -748,10 +746,18 @@ class Box(dict):
         if self.__box_config()["camel_killer_box"]:
             attr = _camel_killer(attr)
 
+        if attr.isidentifier() and not iskeyword(attr):
+            return attr
+
+        if sum(1 for character in attr if character.isidentifier() and not iskeyword(character)) == 0:
+            attr = f'{self.__box_config()["box_safe_prefix"]}{attr}'
+            if attr.isidentifier() and not iskeyword(attr):
+                return attr
+
         out = []
         last_safe = 0
         for i, character in enumerate(attr):
-            if character in allowed:
+            if f"x{character}".isidentifier():
                 last_safe = i
                 out.append(character)
             elif not out:
@@ -769,7 +775,7 @@ class Box(dict):
         else:
             out = f'{self.__box_config()["box_safe_prefix"]}{out}'
 
-        if out in kwlist:
+        if iskeyword(out):
             out = f'{self.__box_config()["box_safe_prefix"]}{out}'
 
         return out

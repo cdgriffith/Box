@@ -108,7 +108,7 @@ class TestBox:
         assert "TEST_KEY" not in bx.to_dict(), bx.to_dict()
         assert isinstance(bx["Key 2"].Key4, Box)
         assert "'key1': 'value1'" in str(bx)
-        assert repr(bx).startswith("<Box:")
+        assert repr(bx).startswith("Box(")
         bx2 = Box([((3, 4), "A"), ("_box_config", "test")])
         assert bx2[(3, 4)] == "A"
         assert bx2["_box_config"] == "test"

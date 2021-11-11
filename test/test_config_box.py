@@ -38,7 +38,7 @@ class TestConfigBox:
         assert cns.bb.getfloat("Wooo", 4.4) == 4.4
         assert cns.bb.getboolean("huh", True) is True
         assert cns.bb.list("Waaaa", [1]) == [1]
-        assert repr(cns).startswith("<ConfigBox")
+        assert repr(cns).startswith("ConfigBox(")
 
     def test_dir(self):
         b = ConfigBox(test_dict)
