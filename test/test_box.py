@@ -28,6 +28,7 @@ from ruamel.yaml import YAML
 
 from box import Box, BoxError, BoxKeyError, BoxList, ConfigBox, SBox, box
 from box.box import _get_dot_paths  # type: ignore
+from box.converters import BOX_PARAMETERS
 
 
 def mp_queue_test(q):
@@ -210,8 +211,6 @@ class TestBox:
     def test_to_yaml_basic(self):
         a = Box(test_dict)
         yaml = YAML(typ="safe")
-        print("HERE")
-        print(a.to_yaml())
         assert yaml.load(a.to_yaml()) == test_dict
 
     def test_to_yaml_file(self):
@@ -1287,10 +1286,33 @@ class TestBox:
         assert box["b.c.d"].e == 2
         assert box.c.e == "test"
         assert isinstance(box["d.e.f"], Box)
-        assert box.d.e["f.g"] == True
+        assert box.d.e["f.g"] is True
         assert isinstance(box["e.f"], BoxList)
         assert box.e.f[1] == 2
 
     def test_box_slice(self):
         data = Box(qwe=123, asd=234, q=1)
         assert data[:-1] == Box(qwe=123, asd=234)
+
+    def test_box_kwargs_should_not_be_included(self):
+        params = {
+            "default_box": True,
+            "default_box_attr": True,
+            "conversion_box": True,
+            "frozen_box": True,
+            "camel_killer_box": True,
+            "box_safe_prefix": "x",
+            "box_duplicates": "error",
+            "default_box_none_transform": True,
+            "box_dots": True,
+            "modify_tuples_box": True,
+            "box_intact_types": (),
+            "box_recast": True,
+        }
+
+        bx = Box(**params)
+        assert bx == Box()
+
+        for param in BOX_PARAMETERS:
+            print(param)
+            assert param in params

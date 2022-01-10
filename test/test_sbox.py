@@ -3,7 +3,7 @@
 import json
 from test.common import test_dict
 
-import ruamel.yaml as yaml
+from ruamel.yaml import YAML
 
 from box import Box, SBox
 
@@ -17,7 +17,8 @@ class TestSBox:
         assert isinstance(pbox.inner, SBox)
         assert pbox.inner.camel_case == "Item"
         assert json.loads(pbox.json)["inner"]["camel_case"] == "Item"
-        test_item = yaml.load(pbox.yaml, Loader=yaml.SafeLoader)
+        yaml = YAML()
+        test_item = yaml.load(pbox.yaml)
         assert test_item["inner"]["camel_case"] == "Item"
         assert repr(pbox["inner"]).startswith("ShorthandBox(")
         assert not isinstance(pbox.dict, Box)

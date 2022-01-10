@@ -52,7 +52,6 @@ BOX_PARAMETERS = (
     "camel_killer_box",
     "box_safe_prefix",
     "box_duplicates",
-    "ordered_box",
     "default_box_none_transform",
     "box_dots",
     "modify_tuples_box",

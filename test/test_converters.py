@@ -8,7 +8,7 @@ from test.common import movie_data, tmp_dir
 
 import msgpack
 import pytest
-import ruamel.yaml as yaml
+from ruamel.yaml import YAML
 
 from box import BoxError
 from box.converters import _from_toml, _to_json, _to_msgpack, _to_toml, _to_yaml
@@ -81,7 +81,8 @@ class TestConverters:
         assert "Rick Moranis" in movie_string
         _to_yaml(movie_data, filename=m_file)
         assert "Rick Moranis" in open(m_file).read()
-        assert yaml.load(open(m_file), Loader=yaml.SafeLoader) == yaml.load(movie_string, Loader=yaml.SafeLoader)
+        yaml = YAML()
+        assert yaml.load(open(m_file)) == yaml.load(movie_string)
 
     def test_to_msgpack(self):
         m_file = os.path.join(tmp_dir, "movie_data")
