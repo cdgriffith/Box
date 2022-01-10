@@ -501,6 +501,13 @@ class Box(dict):
             if self._box_config["default_box"] and not _ignore_default:
                 return self.__get_default(item)
             raise BoxKeyError(str(err)) from _exception_cause(err)
+        except TypeError as err:
+            if isinstance(item, slice):
+                new_box = self._box_config["box_class"](**self.__box_config())
+                for x in list(super().keys())[item.start : item.stop : item.step]:
+                    new_box[x] = self[x]
+                return new_box
+            raise BoxTypeError(str(err)) from _exception_cause(err)
 
     def __getattr__(self, item):
         try:

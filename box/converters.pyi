@@ -25,6 +25,7 @@ def _to_yaml(
     default_flow_style: bool = False,
     encoding: str = "utf-8",
     errors: str = "strict",
+    ruamel_typ: str = "rt",
     **yaml_kwargs,
 ) -> Any: ...
 def _from_yaml(
@@ -32,6 +33,7 @@ def _from_yaml(
     filename: Union[str, PathLike] = None,
     encoding: str = "utf-8",
     errors: str = "strict",
+    ruamel_typ: str = "rt",
     **kwargs,
 ) -> Any: ...
 def _to_toml(obj, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict") -> Any: ...

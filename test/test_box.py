@@ -9,6 +9,7 @@ import platform
 import shutil
 from multiprocessing import Queue
 from pathlib import Path
+from io import StringIO
 from test.common import (
     data_json_file,
     data_yaml_file,
@@ -23,7 +24,7 @@ from test.common import (
 )
 
 import pytest
-import ruamel.yaml as yaml
+from ruamel.yaml import YAML
 
 from box import Box, BoxError, BoxKeyError, BoxList, ConfigBox, SBox, box
 from box.box import _get_dot_paths  # type: ignore
@@ -208,13 +209,17 @@ class TestBox:
 
     def test_to_yaml_basic(self):
         a = Box(test_dict)
-        assert yaml.load(a.to_yaml(), Loader=yaml.SafeLoader) == test_dict
+        yaml = YAML(typ="safe")
+        print("HERE")
+        print(a.to_yaml())
+        assert yaml.load(a.to_yaml()) == test_dict
 
     def test_to_yaml_file(self):
         a = Box(test_dict)
         a.to_yaml(tmp_yaml_file)
         with open(tmp_yaml_file) as f:
-            data = yaml.load(f, Loader=yaml.SafeLoader)
+            yaml = YAML(typ="safe")
+            data = yaml.load(f)
             assert data == test_dict
 
     def test_dir(self):
@@ -347,7 +352,11 @@ class TestBox:
         assert bx.key1 == "value1"
 
     def test_from_yaml(self):
-        bx = Box.from_yaml(yaml.dump(test_dict), conversion_box=False, default_box=True)
+        yaml = YAML(typ="safe")
+        with StringIO() as sio:
+            yaml.dump(test_dict, sio)
+            data = sio.getvalue()
+        bx = Box.from_yaml(data, conversion_box=False, default_box=True)
         assert isinstance(bx, Box)
         assert bx.key1 == "value1"
         assert bx.Key_2 == Box()
@@ -1281,3 +1290,7 @@ class TestBox:
         assert box.d.e["f.g"] == True
         assert isinstance(box["e.f"], BoxList)
         assert box.e.f[1] == 2
+
+    def test_box_slice(self):
+        data = Box(qwe=123, asd=234, q=1)
+        assert data[:-1] == Box(qwe=123, asd=234)

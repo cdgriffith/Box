@@ -5,7 +5,9 @@ Version 6.0.0
 -------------
 
 * Adding Cython support to greatly speed up normal Box operations on supported systems
+* Adding support for sliceable boxes (thanks to Dias)
 * Changing #208 __repr__ to produce `eval`-able text (thanks to Jeff Robbins)
+* Changing #215 support ruamel.yaml new syntax (thanks to Ivan Pepelnjak)
 * Changing `update` and `merge_update` to not use a keyword that could cause issues in rare circumstances
 * Fixing internal `_safe_key` logic to be twice as fast
 

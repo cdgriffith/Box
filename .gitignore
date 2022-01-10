@@ -96,3 +96,4 @@ release.bat
 coverage/
 # don't upload cython files
 box/*.c
+.pytest_cache/

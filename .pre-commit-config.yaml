@@ -38,7 +38,7 @@ repos:
   hooks:
     - id: cythonize-check
       name: Cythonize
-      entry: bash -c 'python setup.py build_ext --inplace'
+      entry: python setup.py build_ext --inplace
       language: system
       types: [python]
       pass_filenames: false

@@ -12,18 +12,24 @@ from typing import Union
 
 from box.exceptions import BoxError
 
-yaml_available = True
+pyyaml_available = True
+ruamel_available = True
 toml_available = True
 msgpack_available = True
 
 try:
-    import ruamel.yaml as yaml
+    from ruamel.yaml import version_info, YAML
 except ImportError:
-    try:
-        import yaml  # type: ignore
-    except ImportError:
-        yaml = None  # type: ignore
-        yaml_available = False
+    ruamel_available = False
+else:
+    if version_info[1] < 17:
+        ruamel_available = False
+
+try:
+    import yaml
+except ImportError:
+    pyyaml_available = False
+
 try:
     import toml
 except ImportError:
@@ -35,6 +41,8 @@ try:
 except ImportError:
     msgpack = None  # type: ignore
     msgpack_available = False
+
+yaml_available = pyyaml_available or ruamel_available
 
 BOX_PARAMETERS = (
     "default_box",
@@ -111,14 +119,32 @@ def _to_yaml(
     default_flow_style: bool = False,
     encoding: str = "utf-8",
     errors: str = "strict",
+    ruamel_typ: str = "rt",
     **yaml_kwargs,
 ):
     if filename:
         _exists(filename, create=True)
         with open(filename, "w", encoding=encoding, errors=errors) as f:
-            yaml.dump(obj, stream=f, default_flow_style=default_flow_style, **yaml_kwargs)
+            if ruamel_available:
+                yaml_dumper = YAML(typ=ruamel_typ)
+                yaml_dumper.default_flow_style = default_flow_style
+                return yaml_dumper.dump(obj, stream=f, **yaml_kwargs)
+            elif pyyaml_available:
+                return yaml.dump(obj, stream=f, default_flow_style=default_flow_style, **yaml_kwargs)
+            else:
+                raise BoxError("No YAML Parser available, please install ruamel.yaml>0.17 or PyYAML")
+
     else:
-        return yaml.dump(obj, default_flow_style=default_flow_style, **yaml_kwargs)
+        if ruamel_available:
+            yaml_dumper = YAML(typ=ruamel_typ)
+            yaml_dumper.default_flow_style = default_flow_style
+            with StringIO() as string_stream:
+                yaml_dumper.dump(obj, stream=string_stream, **yaml_kwargs)
+                return string_stream.getvalue()
+        elif pyyaml_available:
+            return yaml.dump(obj, default_flow_style=default_flow_style, **yaml_kwargs)
+        else:
+            raise BoxError("No YAML Parser available, please install ruamel.yaml>0.15 or PyYAML")
 
 
 def _from_yaml(
@@ -126,16 +152,31 @@ def _from_yaml(
     filename: Union[str, PathLike] = None,
     encoding: str = "utf-8",
     errors: str = "strict",
+    ruamel_typ: str = "rt",
     **kwargs,
 ):
-    if "Loader" not in kwargs:
-        kwargs["Loader"] = yaml.SafeLoader
     if filename:
         _exists(filename)
         with open(filename, "r", encoding=encoding, errors=errors) as f:
-            data = yaml.load(f, **kwargs)
+            if ruamel_available:
+                yaml_loader = YAML(typ=ruamel_typ)
+                data = yaml_loader.load(stream=f)
+            elif pyyaml_available:
+                if "Loader" not in kwargs:
+                    kwargs["Loader"] = yaml.SafeLoader
+                data = yaml.load(f, **kwargs)
+            else:
+                raise BoxError("No YAML Parser available, please install ruamel.yaml>0.15 or PyYAML")
     elif yaml_string:
-        data = yaml.load(yaml_string, **kwargs)
+        if ruamel_available:
+            yaml_loader = YAML(typ=ruamel_typ)
+            data = yaml_loader.load(stream=yaml_string)
+        elif pyyaml_available:
+            if "Loader" not in kwargs:
+                kwargs["Loader"] = yaml.SafeLoader
+            data = yaml.load(yaml_string, **kwargs)
+        else:
+            raise BoxError("No YAML Parser available, please install ruamel.yaml>0.17 or PyYAML")
     else:
         raise BoxError("from_yaml requires a string or filename")
     return data
