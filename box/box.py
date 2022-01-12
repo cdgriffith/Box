@@ -346,6 +346,21 @@ class Box(dict):
 
         return list(items)
 
+    def __contains__(self, item):
+        in_me = super().__contains__(item)
+        if not self._box_config["box_dots"] or not isinstance(item, str):
+            return in_me
+        if in_me:
+            return True
+        if "." not in item:
+            return False
+        try:
+            first_item, children = _parse_box_dots(self, item)
+        except BoxError:
+            return False
+        else:
+            return children in self[first_item]
+
     def keys(self, dotted: Union[bool] = False):
         if not dotted:
             return super().keys()

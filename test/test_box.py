@@ -760,6 +760,13 @@ class TestBox:
         assert isinstance(bx.get("b", {}), Box)
         assert "a" in bx.get("a", Box(a=1, conversion_box=False))
         assert isinstance(bx.get("a", [1, 2]), BoxList)
+        bx_dot = Box(a=Box(b=Box(c="me!")), box_dots=True)
+        assert bx_dot.get("a.b.c") == "me!"
+
+    def test_contains(self):
+        bx_dot = Box(a=Box(b=Box(c=Box())), box_dots=True)
+        assert "a.b.c" in bx_dot
+        assert "a.b.c.d" not in bx_dot
 
     def test_get_default_box(self):
         bx = Box(default_box=True)
@@ -1316,3 +1323,10 @@ class TestBox:
         for param in BOX_PARAMETERS:
             print(param)
             assert param in params
+
+    def test_box_greek(self):
+        # WARNING μ is ord 956 whereas µ is ord 181 and will not work due to python NFKC normalization
+        a = Box()
+        a.σeq = 1
+        a.µeq = 2
+        assert a == Box({"σeq": 1, "μeq": 2})
