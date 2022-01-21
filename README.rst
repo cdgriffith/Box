@@ -38,7 +38,7 @@ But you can also sub out "ruamel.yaml" for "PyYAML".
 
 Check out `more details <https://github.com/cdgriffith/Box/wiki/Installation>`_ on installation details.
 
-Box 5 is tested on python 3.6+, if you are upgrading from previous versions, please look through
+Box 5 is tested on python 3.7+, if you are upgrading from previous versions, please look through
 `any breaking changes and new features <https://github.com/cdgriffith/Box/wiki/Major-Version-Breaking-Changes-and-New-Features>`_.
 
 Optimized Version
