@@ -13,6 +13,7 @@ Version 6.0.0
 * Changing `update` and `merge_update` to not use a keyword that could cause issues in rare circumstances
 * Fixing internal `_safe_key` logic to be twice as fast
 * Removing support for 3.6 as it is EOL
+* Removing support for ruamel.yaml < 0.17
 
 Version 5.4.1
 -------------
