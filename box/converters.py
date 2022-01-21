@@ -143,7 +143,7 @@ def _to_yaml(
         elif pyyaml_available:
             return yaml.dump(obj, default_flow_style=default_flow_style, **yaml_kwargs)
         else:
-            raise BoxError("No YAML Parser available, please install ruamel.yaml>0.15 or PyYAML")
+            raise BoxError("No YAML Parser available, please install ruamel.yaml>0.17 or PyYAML")
 
 
 def _from_yaml(

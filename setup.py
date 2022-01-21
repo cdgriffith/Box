@@ -65,9 +65,9 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     extras_require={
-        "all": ["ruamel.yaml", "toml", "msgpack"],
-        "yaml": ["ruamel.yaml"],
-        "ruamel.yaml": ["ruamel.yaml"],
+        "all": ["ruamel.yaml>=0.17", "toml", "msgpack"],
+        "yaml": ["ruamel.yaml>=0.17"],
+        "ruamel.yaml": ["ruamel.yaml>=0.17"],
         "PyYAML": ["PyYAML"],
         "toml": ["toml"],
         "msgpack": ["msgpack"],
