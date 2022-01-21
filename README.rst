@@ -38,13 +38,13 @@ But you can also sub out "ruamel.yaml" for "PyYAML".
 
 Check out `more details <https://github.com/cdgriffith/Box/wiki/Installation>`_ on installation details.
 
-Box 5 is tested on python 3.7+, if you are upgrading from previous versions, please look through
+Box 6 is tested on python 3.7+, if you are upgrading from previous versions, please look through
 `any breaking changes and new features <https://github.com/cdgriffith/Box/wiki/Major-Version-Breaking-Changes-and-New-Features>`_.
 
 Optimized Version
 -----------------
 
-Box 5.5 is introducing Cython optimizations for major platforms by default.
+Box 6 is introducing Cython optimizations for major platforms by default.
 Loading large data sets can be up to 10x faster!
 
 If you are **not** on a x86_64 supported system you will need to do some extra work to install the optimized version.
@@ -115,7 +115,7 @@ Also special shout-out to PythonBytes_, who featured Box on their podcast.
 License
 =======
 
-MIT License, Copyright (c) 2017-2020 Chris Griffith. See LICENSE_ file.
+MIT License, Copyright (c) 2017-2022 Chris Griffith. See LICENSE_ file.
 
 
 .. |BoxImage| image:: https://raw.githubusercontent.com/cdgriffith/Box/master/box_logo.png
