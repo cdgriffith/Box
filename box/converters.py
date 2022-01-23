@@ -8,7 +8,7 @@ import json
 from io import StringIO
 from os import PathLike
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional, Dict
 
 from box.exceptions import BoxError
 
@@ -119,14 +119,19 @@ def _to_yaml(
     encoding: str = "utf-8",
     errors: str = "strict",
     ruamel_typ: str = "rt",
+    ruamel_attrs: Optional[Dict] = None,
     **yaml_kwargs,
 ):
+    if not ruamel_attrs:
+        ruamel_attrs = {}
     if filename:
         _exists(filename, create=True)
         with open(filename, "w", encoding=encoding, errors=errors) as f:
             if ruamel_available:
                 yaml_dumper = YAML(typ=ruamel_typ)
                 yaml_dumper.default_flow_style = default_flow_style
+                for attr, value in ruamel_attrs.items():
+                    setattr(yaml_dumper, attr, value)
                 return yaml_dumper.dump(obj, stream=f, **yaml_kwargs)
             elif pyyaml_available:
                 return yaml.dump(obj, stream=f, default_flow_style=default_flow_style, **yaml_kwargs)
@@ -137,6 +142,8 @@ def _to_yaml(
         if ruamel_available:
             yaml_dumper = YAML(typ=ruamel_typ)
             yaml_dumper.default_flow_style = default_flow_style
+            for attr, value in ruamel_attrs.items():
+                setattr(yaml_dumper, attr, value)
             with StringIO() as string_stream:
                 yaml_dumper.dump(obj, stream=string_stream, **yaml_kwargs)
                 return string_stream.getvalue()
@@ -152,13 +159,18 @@ def _from_yaml(
     encoding: str = "utf-8",
     errors: str = "strict",
     ruamel_typ: str = "rt",
+    ruamel_attrs: Optional[Dict] = None,
     **kwargs,
 ):
+    if not ruamel_attrs:
+        ruamel_attrs = {}
     if filename:
         _exists(filename)
         with open(filename, "r", encoding=encoding, errors=errors) as f:
             if ruamel_available:
                 yaml_loader = YAML(typ=ruamel_typ)
+                for attr, value in ruamel_attrs.items():
+                    setattr(yaml_loader, attr, value)
                 data = yaml_loader.load(stream=f)
             elif pyyaml_available:
                 if "Loader" not in kwargs:
@@ -169,6 +181,8 @@ def _from_yaml(
     elif yaml_string:
         if ruamel_available:
             yaml_loader = YAML(typ=ruamel_typ)
+            for attr, value in ruamel_attrs.items():
+                setattr(yaml_loader, attr, value)
             data = yaml_loader.load(stream=yaml_string)
         elif pyyaml_available:
             if "Loader" not in kwargs:

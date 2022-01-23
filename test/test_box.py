@@ -26,8 +26,8 @@ from test.common import (
 import pytest
 from ruamel.yaml import YAML
 
-from box import Box, BoxError, BoxKeyError, BoxList, ConfigBox, SBox, box
-from box.box import _get_dot_paths  # type: ignore
+from box import Box, BoxError, BoxKeyError, BoxList, ConfigBox, SBox
+from box.box import _get_dot_paths, _camel_killer, _recursive_tuples  # type: ignore
 from box.converters import BOX_PARAMETERS
 
 
@@ -60,8 +60,8 @@ class TestBox:
         assert Box()._safe_attr(356) == "x356"
 
     def test_camel_killer(self):
-        assert box._camel_killer("CamelCase") == "camel_case"
-        assert box._camel_killer("Terrible321KeyA") == "terrible321_key_a"
+        assert _camel_killer("CamelCase") == "camel_case"
+        assert _camel_killer("Terrible321KeyA") == "terrible321_key_a"
         bx = Box(camel_killer_box=True, conversion_box=False)
 
         bx.DeadCamel = 3
@@ -90,7 +90,7 @@ class TestBox:
         assert len(bx1.keys()) == 0
 
     def test_recursive_tuples(self):
-        out = box._recursive_tuples(
+        out = _recursive_tuples(
             ({"test": "a"}, ({"second": "b"}, {"third": "c"}, ("fourth",))), dict, recreate_tuples=True
         )
         assert isinstance(out, tuple)
@@ -1321,7 +1321,6 @@ class TestBox:
         assert bx == Box()
 
         for param in BOX_PARAMETERS:
-            print(param)
             assert param in params
 
     def test_box_greek(self):

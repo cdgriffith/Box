@@ -91,3 +91,14 @@ class TestConverters:
         _to_msgpack(movie_data, filename=m_file)
         assert b"Rick Moranis" in open(m_file, "rb").read()
         assert msgpack.unpack(open(m_file, "rb")) == msgpack.unpackb(msg_data)
+
+    def test_to_yaml_ruamel(self):
+        movie_string = _to_yaml(movie_data, ruamel_attrs={"width": 12})
+        multiline_except = """    - name: Roger
+        Rees
+      imdb: nm0715953
+      role: Sheriff
+        of Rottingham
+    - name: Amy
+        Yasbeck"""
+        assert multiline_except in movie_string
