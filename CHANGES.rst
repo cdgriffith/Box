@@ -11,7 +11,7 @@ Version 6.0.0
 * Changing #208 __repr__ to produce `eval`-able text (thanks to Jeff Robbins)
 * Changing #215 support ruamel.yaml new syntax (thanks to Ivan Pepelnjak)
 * Changing `update` and `merge_update` to not use a keyword that could cause issues in rare circumstances
-* Fixing internal `_safe_key` logic to be twice as fast
+* Changing internal `_safe_key` logic to be twice as fast
 * Removing support for 3.6 as it is EOL
 * Removing support for ruamel.yaml < 0.17
 
