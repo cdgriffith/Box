@@ -10,7 +10,7 @@ import re
 import warnings
 from keyword import iskeyword
 from os import PathLike
-from typing import Any, Dict, Generator, List, Tuple, Union
+from typing import Any, Dict, Generator, List, Tuple, Union, Type
 
 try:
     from typing import Callable, Iterable, Mapping
@@ -161,6 +161,7 @@ class Box(dict):
         default_box: bool = False,
         default_box_attr: Any = NO_DEFAULT,
         default_box_none_transform: bool = True,
+        default_box_create_on_get: bool = True,
         frozen_box: bool = False,
         camel_killer_box: bool = False,
         conversion_box: bool = True,
@@ -170,7 +171,7 @@ class Box(dict):
         box_intact_types: Union[Tuple, List] = (),
         box_recast: Dict = None,
         box_dots: bool = False,
-        box_class: Union[Dict, "Box"] = None,
+        box_class: Union[Dict, Type["Box"]] = None,
         **kwargs: Any,
     ):
         """
@@ -184,6 +185,7 @@ class Box(dict):
                 "default_box": default_box,
                 "default_box_attr": cls.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
                 "default_box_none_transform": default_box_none_transform,
+                "default_box_create_on_get": default_box_create_on_get,
                 "conversion_box": conversion_box,
                 "box_safe_prefix": box_safe_prefix,
                 "frozen_box": frozen_box,
@@ -204,6 +206,7 @@ class Box(dict):
         default_box: bool = False,
         default_box_attr: Any = NO_DEFAULT,
         default_box_none_transform: bool = True,
+        default_box_create_on_get: bool = True,
         frozen_box: bool = False,
         camel_killer_box: bool = False,
         conversion_box: bool = True,
@@ -213,7 +216,7 @@ class Box(dict):
         box_intact_types: Union[Tuple, List] = (),
         box_recast: Dict = None,
         box_dots: bool = False,
-        box_class: Union[Dict, "Box"] = None,
+        box_class: Union[Dict, Type["Box"]] = None,
         **kwargs: Any,
     ):
         super().__init__()
@@ -223,6 +226,7 @@ class Box(dict):
                 "default_box": default_box,
                 "default_box_attr": self.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
                 "default_box_none_transform": default_box_none_transform,
+                "default_box_create_on_get": default_box_create_on_get,
                 "conversion_box": conversion_box,
                 "box_safe_prefix": box_safe_prefix,
                 "frozen_box": frozen_box,
@@ -346,11 +350,24 @@ class Box(dict):
 
         return list(items)
 
+    def _box_dots_item(self, item):
+        if isinstance(item, str):
+            return item
+        if isinstance(item, (bytes, bytearray)):
+            return item.decode(encoding="utf-8", errors="ignore")
+        if isinstance(item, int):
+            return str(item)
+
     def __contains__(self, item):
         in_me = super().__contains__(item)
-        if not self._box_config["box_dots"] or not isinstance(item, str):
+        if not self._box_config["box_dots"]:
             return in_me
         if in_me:
+            return True
+        if not isinstance(item, (bytearray, bytes, str, int)):
+            return in_me
+        item = self._box_dots_item(item)
+        if item in [self._box_dots_item(key) for key in self.keys()]:
             return True
         if "." not in item:
             return False
@@ -443,8 +460,9 @@ class Box(dict):
             value = default_value.copy()
         else:
             value = default_value
-        if not attr or not (item.startswith("_") and item.endswith("_")):
-            super().__setitem__(item, value)
+        if self._box_config["default_box_create_on_get"]:
+            if not attr or not (item.startswith("_") and item.endswith("_")):
+                super().__setitem__(item, value)
         return value
 
     def __box_config(self) -> Dict:
@@ -499,16 +517,18 @@ class Box(dict):
             if item == "_box_config":
                 cause = _exception_cause(err)
                 raise BoxKeyError("_box_config should only exist as an attribute and is never defaulted") from cause
-            if self._box_config["box_dots"] and isinstance(item, str) and ("." in item or "[" in item):
-                try:
-                    first_item, children = _parse_box_dots(self, item)
-                except BoxError:
-                    if self._box_config["default_box"] and not _ignore_default:
-                        return self.__get_default(item)
-                    raise
-                if first_item in self.keys():
-                    if hasattr(self[first_item], "__getitem__"):
-                        return self[first_item][children]
+            if self._box_config["box_dots"]:
+                box_dots_items = self._box_dots_item(item)
+                if isinstance(box_dots_items, str) and ("." in box_dots_items or "[" in box_dots_items):
+                    try:
+                        first_item, children = _parse_box_dots(self, box_dots_items)
+                    except BoxError:
+                        if self._box_config["default_box"] and not _ignore_default:
+                            return self.__get_default(box_dots_items)
+                        raise
+                    if first_item in self.keys():
+                        if hasattr(self[first_item], "__getitem__"):
+                            return self[first_item][children]
             if self._box_config["camel_killer_box"] and isinstance(item, str):
                 converted = _camel_killer(item)
                 if converted in self.keys():
@@ -549,11 +569,32 @@ class Box(dict):
     def __setitem__(self, key, value):
         if key != "_box_config" and self._box_config["frozen_box"] and self._box_config["__created"]:
             raise BoxError("Box is frozen")
-        if self._box_config["box_dots"] and isinstance(key, str) and ("." in key or "[" in key):
-            first_item, children = _parse_box_dots(self, key, setting=True)
-            if first_item in self.keys():
-                if hasattr(self[first_item], "__setitem__"):
+        if self._box_config["box_dots"]:
+            box_dots_items = self._box_dots_item(key)
+            if isinstance(box_dots_items, str) and ("." in box_dots_items or "[" in box_dots_items):
+                first_item, children = _parse_box_dots(self, box_dots_items, setting=True)
+
+                is_first_numeric = first_item.isnumeric()
+
+                if isinstance(key, (bytes, bytearray)):
+                    first_item = first_item.encode(encoding="utf-8", errors="ignore")
+                    children = children.encode(encoding="utf-8", errors="ignore")
+
+                if is_first_numeric and int(first_item) in self.keys():
+                    if hasattr(self[int(first_item)], "__setitem__"):
+                        return self[int(first_item)].__setitem__(children, value)
+
+                if first_item in self.keys():
+                    if hasattr(self[first_item], "__setitem__"):
+                        return self[first_item].__setitem__(children, value)
+
+                if self._box_config["default_box"]:
+                    if is_first_numeric:
+                        first_item = int(first_item)
+
+                    self[first_item] = self._box_config["box_class"](**self.__box_config())
                     return self[first_item].__setitem__(children, value)
+
         value = self.__recast(key, value)
         if key not in self.keys() and self._box_config["camel_killer_box"]:
             if self._box_config["camel_killer_box"] and isinstance(key, str):

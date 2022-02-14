@@ -8,6 +8,9 @@ Version 6.0.0
 * Adding #161 support for access box dots with `get` and checking with `in` (thanks to scott-createplay)
 * Adding #183 support for all allowed character sets (thanks to Giulio Malventi)
 * Adding #196 support for sliceable boxes (thanks to Dias)
+* Adding #164 default_box_create_on_get toggle to disable setting box variable on get request (thanks to ipcoder)
+* Changing #123 box_dots to convert ints and bytes as needed (thanks to Marcelo Huerta)
+* Changing #192 box_dots and box_default to split and create sub dictionaries as needed for insertion (thanks to Rexbard)
 * Changing #208 __repr__ to produce `eval`-able text (thanks to Jeff Robbins)
 * Changing #215 support ruamel.yaml new syntax (thanks to Ivan Pepelnjak)
 * Changing `update` and `merge_update` to not use a keyword that could cause issues in rare circumstances

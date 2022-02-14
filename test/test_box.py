@@ -1230,9 +1230,9 @@ class TestBox:
         a["a.a.a.."]
         assert a == {"a.a.a": {"": {"": {}}}}
         a["b.b"] = 3
-        assert a == {"a.a.a": {"": {"": {}}}, "b.b": 3}
+        assert a == {"a.a.a": {"": {"": {}}}, "b": {"b": 3}}
         a.b.b = 4
-        assert a == {"a.a.a": {"": {"": {}}}, "b.b": 3, "b": {"b": 4}}
+        assert a == {"a.a.a": {"": {"": {}}}, "b": {"b": 4}}
         assert a["non.existent.key"] == {}
 
     def test_merge_list_options(self):
@@ -1329,3 +1329,37 @@ class TestBox:
         a.σeq = 1
         a.µeq = 2
         assert a == Box({"σeq": 1, "μeq": 2})
+
+    def test_box_dots_numbered_keys(self):
+        box = Box(a={2: {"c": "done"}}, box_dots=True)
+
+        assert "a.2" in box
+        assert box.a == Box({2: {"c": "done"}})
+
+    def test_box_dots_defaults(self):
+        box = Box(a={2: {"c": "done"}}, box_dots=True)
+        with pytest.raises(BoxKeyError):
+            box.d.e = 5
+
+        box["d.e"] = 5
+        assert "d.e" in list(box.keys())  # Do this because box.__contains__ looks for box_dot stuff
+
+        box2 = Box(box_dots=True, default_box=True)
+        box2[b"4.7.8.e"] = 5
+        assert box2 == Box({4: {7: {8: {b"e": 5}}}})
+
+    def test_box_default_not_create_on_get(self):
+        box = Box(default_box=True)
+
+        assert box.a.b.c == Box()
+
+        assert box == Box(a=Box(b=Box(c=Box())))
+        assert "c" in box.a.b
+
+        box2 = Box(default_box=True, default_box_create_on_get=False)
+
+        assert box2.a.b.c == Box()
+
+        assert "c" not in box2.a.b
+
+        assert box2 == Box()
