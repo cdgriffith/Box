@@ -1329,3 +1329,19 @@ class TestBox:
         a.σeq = 1
         a.µeq = 2
         assert a == Box({"σeq": 1, "μeq": 2})
+
+    def test_box_default_not_create_on_get(self):
+        box = Box(default_box=True)
+
+        assert box.a.b.c == Box()
+
+        assert box == Box(a=Box(b=Box(c=Box())))
+        assert "c" in box.a.b
+
+        box2 = Box(default_box=True, default_box_create_on_get=False)
+
+        assert box2.a.b.c == Box()
+
+        assert "c" not in box2.a.b
+
+        assert box2 == Box()

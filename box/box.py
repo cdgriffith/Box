@@ -10,7 +10,7 @@ import re
 import warnings
 from keyword import iskeyword
 from os import PathLike
-from typing import Any, Dict, Generator, List, Tuple, Union
+from typing import Any, Dict, Generator, List, Tuple, Union, Type
 
 try:
     from typing import Callable, Iterable, Mapping
@@ -161,6 +161,7 @@ class Box(dict):
         default_box: bool = False,
         default_box_attr: Any = NO_DEFAULT,
         default_box_none_transform: bool = True,
+        default_box_create_on_get: bool = True,
         frozen_box: bool = False,
         camel_killer_box: bool = False,
         conversion_box: bool = True,
@@ -170,7 +171,7 @@ class Box(dict):
         box_intact_types: Union[Tuple, List] = (),
         box_recast: Dict = None,
         box_dots: bool = False,
-        box_class: Union[Dict, "Box"] = None,
+        box_class: Union[Dict, Type["Box"]] = None,
         **kwargs: Any,
     ):
         """
@@ -184,6 +185,7 @@ class Box(dict):
                 "default_box": default_box,
                 "default_box_attr": cls.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
                 "default_box_none_transform": default_box_none_transform,
+                "default_box_create_on_get": default_box_create_on_get,
                 "conversion_box": conversion_box,
                 "box_safe_prefix": box_safe_prefix,
                 "frozen_box": frozen_box,
@@ -204,6 +206,7 @@ class Box(dict):
         default_box: bool = False,
         default_box_attr: Any = NO_DEFAULT,
         default_box_none_transform: bool = True,
+        default_box_create_on_get: bool = True,
         frozen_box: bool = False,
         camel_killer_box: bool = False,
         conversion_box: bool = True,
@@ -213,7 +216,7 @@ class Box(dict):
         box_intact_types: Union[Tuple, List] = (),
         box_recast: Dict = None,
         box_dots: bool = False,
-        box_class: Union[Dict, "Box"] = None,
+        box_class: Union[Dict, Type["Box"]] = None,
         **kwargs: Any,
     ):
         super().__init__()
@@ -223,6 +226,7 @@ class Box(dict):
                 "default_box": default_box,
                 "default_box_attr": self.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
                 "default_box_none_transform": default_box_none_transform,
+                "default_box_create_on_get": default_box_create_on_get,
                 "conversion_box": conversion_box,
                 "box_safe_prefix": box_safe_prefix,
                 "frozen_box": frozen_box,
@@ -443,8 +447,9 @@ class Box(dict):
             value = default_value.copy()
         else:
             value = default_value
-        if not attr or not (item.startswith("_") and item.endswith("_")):
-            super().__setitem__(item, value)
+        if self._box_config["default_box_create_on_get"]:
+            if not attr or not (item.startswith("_") and item.endswith("_")):
+                super().__setitem__(item, value)
         return value
 
     def __box_config(self) -> Dict:
