@@ -366,17 +366,27 @@ class Box(dict):
             return True
         if not isinstance(item, (bytearray, bytes, str, int)):
             return in_me
-        item = self._box_dots_item(item)
-        if item in [self._box_dots_item(key) for key in self.keys()]:
+        dots_item = self._box_dots_item(item)
+        if dots_item in [self._box_dots_item(key) for key in self.keys()]:
             return True
-        if "." not in item:
+        if "." not in dots_item:
             return False
         try:
-            first_item, children = _parse_box_dots(self, item)
+            first_item, children = _parse_box_dots(self, dots_item)
         except BoxError:
             return False
-        else:
+
+        if isinstance(item, (bytes, bytearray)):
+            return children in self[first_item.decode(encoding="utf-8", errors="ignore")]
+
+        try:
             return children in self[first_item]
+        except BoxKeyError:
+            if first_item.isnumeric():
+                try:
+                    return children in self[int(first_item)]
+                except BoxKeyError:
+                    return False
 
     def keys(self, dotted: Union[bool] = False):
         if not dotted:
@@ -787,6 +797,30 @@ class Box(dict):
         if self._box_config["box_dots"]:
             if item in _get_dot_paths(self):
                 return self[item]
+            box_dots_items = self._box_dots_item(item)
+            if isinstance(box_dots_items, str) and ("." in box_dots_items or "[" in box_dots_items):
+                first_item, children = _parse_box_dots(self, box_dots_items, setting=True)
+
+                is_first_numeric = first_item.isnumeric()
+
+                if isinstance(item, (bytes, bytearray)):
+                    first_item = first_item.encode(encoding="utf-8", errors="ignore")
+                    children = children.encode(encoding="utf-8", errors="ignore")
+
+                if is_first_numeric and int(first_item) in self.keys():
+                    if hasattr(self[int(first_item)], "__setitem__"):
+                        return self[int(first_item)].setdefault(children, default)
+
+                if first_item in self.keys():
+                    if hasattr(self[first_item], "__setitem__"):
+                        return self[first_item].setdefault(children, default)
+
+                if self._box_config["default_box"]:
+                    if is_first_numeric:
+                        first_item = int(first_item)
+
+                    self[first_item] = self._box_config["box_class"](**self.__box_config())
+                    return self[first_item].setdefault(children, default)
 
         if isinstance(default, dict):
             default = self._box_config["box_class"](default, **self.__box_config())

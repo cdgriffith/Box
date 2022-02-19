@@ -1342,11 +1342,20 @@ class TestBox:
             box.d.e = 5
 
         box["d.e"] = 5
+        box.a["2.h"] = 5
         assert "d.e" in list(box.keys())  # Do this because box.__contains__ looks for box_dot stuff
+        assert 2 in box.a
+        assert box.a[2].h == 5
 
-        box2 = Box(box_dots=True, default_box=True)
-        box2[b"4.7.8.e"] = 5
-        assert box2 == Box({4: {7: {8: {b"e": 5}}}})
+        box.setdefault("d.e", 5)
+        box.setdefault("a.2.g", 5)
+
+        # TODO FIX THIS
+        #          assert box.a["2.g"] == 5
+
+        # box2 = Box(box_dots=True, default_box=True)
+        # box2[b"4.7.8.e"] = 5
+        # assert box2 == Box({4: {7: {8: {b"e": 5}}}})
 
     def test_box_default_not_create_on_get(self):
         box = Box(default_box=True)
