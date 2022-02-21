@@ -44,7 +44,7 @@ setup(
     py_modules=["box"],
     packages=["box"],
     ext_modules=extra,
-    python_requires=">=3.7",
+    python_requires=">=3.6",
     include_package_data=True,
     platforms="any",
     classifiers=[
