@@ -26,7 +26,7 @@ Install
 **Version Pin Your Box!**
 
 If you aren't in the habit of version pinning your libraries, it will eventually bite you.
-Box has a `list of breaking change <https://github.com/cdgriffith/Box/wiki/Major-Version-Breaking-Changes-and-New-Features>`_ between major versions you should always check out before updating.
+Box has a `list of breaking change <https://github.com/cdgriffith/Box/wiki/Major-Version-Breaking-Changes>`_ between major versions you should always check out before updating.
 
 requirements.txt
 ----------------
@@ -60,7 +60,7 @@ But you can also sub out `ruamel.yaml` for `PyYAML`.
 Check out `more details <https://github.com/cdgriffith/Box/wiki/Installation>`_ on installation details.
 
 Box 6 is tested on python 3.6+, if you are upgrading from previous versions, please look through
-`any breaking changes and new features <https://github.com/cdgriffith/Box/wiki/Major-Version-Breaking-Changes-and-New-Features>`_.
+`any breaking changes and new features <https://github.com/cdgriffith/Box/wiki/Major-Version-Breaking-Changes>`_.
 
 Optimized Version
 -----------------
