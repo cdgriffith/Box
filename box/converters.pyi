@@ -1,6 +1,6 @@
 from box.exceptions import BoxError as BoxError
 from os import PathLike as PathLike
-from typing import Any, Union
+from typing import Any, Union, Optional, Dict
 
 yaml_available: bool
 toml_available: bool
@@ -25,6 +25,8 @@ def _to_yaml(
     default_flow_style: bool = False,
     encoding: str = "utf-8",
     errors: str = "strict",
+    ruamel_typ: str = "rt",
+    ruamel_attrs: Optional[Dict] = None,
     **yaml_kwargs,
 ) -> Any: ...
 def _from_yaml(
@@ -32,6 +34,8 @@ def _from_yaml(
     filename: Union[str, PathLike] = None,
     encoding: str = "utf-8",
     errors: str = "strict",
+    ruamel_typ: str = "rt",
+    ruamel_attrs: Optional[Dict] = None,
     **kwargs,
 ) -> Any: ...
 def _to_toml(obj, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict") -> Any: ...

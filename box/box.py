@@ -1,17 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2017-2020 - Chris Griffith - MIT License
+# Copyright (c) 2017-2022 - Chris Griffith - MIT License
 """
 Improved dictionary access through dot notation with additional tools.
 """
 import copy
 import re
-import string
 import warnings
-from keyword import kwlist
+from keyword import iskeyword
 from os import PathLike
-from typing import Any, Dict, Generator, List, Tuple, Union
+from typing import Any, Dict, Generator, List, Tuple, Union, Type
 
 try:
     from typing import Callable, Iterable, Mapping
@@ -162,6 +161,7 @@ class Box(dict):
         default_box: bool = False,
         default_box_attr: Any = NO_DEFAULT,
         default_box_none_transform: bool = True,
+        default_box_create_on_get: bool = True,
         frozen_box: bool = False,
         camel_killer_box: bool = False,
         conversion_box: bool = True,
@@ -171,7 +171,7 @@ class Box(dict):
         box_intact_types: Union[Tuple, List] = (),
         box_recast: Dict = None,
         box_dots: bool = False,
-        box_class: Union[Dict, "Box"] = None,
+        box_class: Union[Dict, Type["Box"]] = None,
         **kwargs: Any,
     ):
         """
@@ -185,6 +185,7 @@ class Box(dict):
                 "default_box": default_box,
                 "default_box_attr": cls.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
                 "default_box_none_transform": default_box_none_transform,
+                "default_box_create_on_get": default_box_create_on_get,
                 "conversion_box": conversion_box,
                 "box_safe_prefix": box_safe_prefix,
                 "frozen_box": frozen_box,
@@ -205,6 +206,7 @@ class Box(dict):
         default_box: bool = False,
         default_box_attr: Any = NO_DEFAULT,
         default_box_none_transform: bool = True,
+        default_box_create_on_get: bool = True,
         frozen_box: bool = False,
         camel_killer_box: bool = False,
         conversion_box: bool = True,
@@ -214,7 +216,7 @@ class Box(dict):
         box_intact_types: Union[Tuple, List] = (),
         box_recast: Dict = None,
         box_dots: bool = False,
-        box_class: Union[Dict, "Box"] = None,
+        box_class: Union[Dict, Type["Box"]] = None,
         **kwargs: Any,
     ):
         super().__init__()
@@ -224,6 +226,7 @@ class Box(dict):
                 "default_box": default_box,
                 "default_box_attr": self.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
                 "default_box_none_transform": default_box_none_transform,
+                "default_box_create_on_get": default_box_create_on_get,
                 "conversion_box": conversion_box,
                 "box_safe_prefix": box_safe_prefix,
                 "frozen_box": frozen_box,
@@ -331,17 +334,12 @@ class Box(dict):
         raise BoxTypeError('unhashable type: "Box"')
 
     def __dir__(self):
-        allowed = string.ascii_letters + string.digits + "_"
         items = set(super().__dir__())
         # Only show items accessible by dot notation
         for key in self.keys():
             key = str(key)
-            if " " not in key and key[0] not in string.digits and key not in kwlist:
-                for letter in key:
-                    if letter not in allowed:
-                        break
-                else:
-                    items.add(key)
+            if key.isidentifier() and not iskeyword(key):
+                items.add(key)
 
         for key in self.keys():
             if key not in items:
@@ -351,6 +349,21 @@ class Box(dict):
                         items.add(key)
 
         return list(items)
+
+    def __contains__(self, item):
+        in_me = super().__contains__(item)
+        if not self._box_config["box_dots"] or not isinstance(item, str):
+            return in_me
+        if in_me:
+            return True
+        if "." not in item:
+            return False
+        try:
+            first_item, children = _parse_box_dots(self, item)
+        except BoxError:
+            return False
+        else:
+            return children in self[first_item]
 
     def keys(self, dotted: Union[bool] = False):
         if not dotted:
@@ -434,8 +447,9 @@ class Box(dict):
             value = default_value.copy()
         else:
             value = default_value
-        if not attr or not (item.startswith("_") and item.endswith("_")):
-            super().__setitem__(item, value)
+        if self._box_config["default_box_create_on_get"]:
+            if not attr or not (item.startswith("_") and item.endswith("_")):
+                super().__setitem__(item, value)
         return value
 
     def __box_config(self) -> Dict:
@@ -507,6 +521,13 @@ class Box(dict):
             if self._box_config["default_box"] and not _ignore_default:
                 return self.__get_default(item)
             raise BoxKeyError(str(err)) from _exception_cause(err)
+        except TypeError as err:
+            if isinstance(item, slice):
+                new_box = self._box_config["box_class"](**self.__box_config())
+                for x in list(super().keys())[item.start : item.stop : item.step]:
+                    new_box[x] = self[x]
+                return new_box
+            raise BoxTypeError(str(err)) from _exception_cause(err)
 
     def __getattr__(self, item):
         try:
@@ -547,12 +568,13 @@ class Box(dict):
         self.__convert_and_store(key, value)
 
     def __setattr__(self, key, value):
-        if key != "_box_config" and self._box_config["frozen_box"] and self._box_config["__created"]:
+        if key == "_box_config":
+            return object.__setattr__(self, key, value)
+        if self._box_config["frozen_box"] and self._box_config["__created"]:
             raise BoxError("Box is frozen")
         if key in self._protected_keys:
             raise BoxKeyError(f'Key name "{key}" is protected')
-        if key == "_box_config":
-            return object.__setattr__(self, key, value)
+
         safe_key = self._safe_attr(key)
         if safe_key in self._box_config["__safe_keys"]:
             key = self._box_config["__safe_keys"][safe_key]
@@ -637,7 +659,7 @@ class Box(dict):
         return key, self.pop(key)
 
     def __repr__(self) -> str:
-        return f"<Box: {self.to_dict()}>"
+        return f"Box({self})"
 
     def __str__(self) -> str:
         return str(self.to_dict())
@@ -666,21 +688,27 @@ class Box(dict):
                 out_dict[k] = v.to_list()
         return out_dict
 
-    def update(self, __m=None, **kwargs):
+    def update(self, *args, **kwargs):
         if self._box_config["frozen_box"]:
             raise BoxError("Box is frozen")
-
-        if __m:
-            if hasattr(__m, "keys"):
-                for k in __m:
-                    self.__convert_and_store(k, __m[k])
+        if (len(args) + int(bool(kwargs))) > 1:
+            raise BoxTypeError(f"update expected at most 1 argument, got {len(args) + int(bool(kwargs))}")
+        single_arg = next(iter(args), None)
+        if single_arg:
+            if hasattr(single_arg, "keys"):
+                for k in single_arg:
+                    self.__convert_and_store(k, single_arg[k])
             else:
-                for k, v in __m:
+                for k, v in single_arg:
                     self.__convert_and_store(k, v)
         for k in kwargs:
             self.__convert_and_store(k, kwargs[k])
 
-    def merge_update(self, __m=None, **kwargs):
+    def merge_update(self, *args, **kwargs):
+        merge_type = None
+        if "box_merge_lists" in kwargs:
+            merge_type = kwargs.pop("box_merge_lists")
+
         def convert_and_set(k, v):
             intact_type = self._box_config["box_intact_types"] and isinstance(v, self._box_config["box_intact_types"])
             if isinstance(v, dict) and not intact_type:
@@ -692,7 +720,6 @@ class Box(dict):
                     return
             if isinstance(v, list) and not intact_type:
                 v = box.BoxList(v, **self.__box_config())
-                merge_type = kwargs.get("box_merge_lists")
                 if merge_type == "extend" and k in self and isinstance(self[k], list):
                     self[k].extend(v)
                     return
@@ -703,13 +730,17 @@ class Box(dict):
                     return
             self.__setitem__(k, v)
 
-        if __m:
-            if hasattr(__m, "keys"):
-                for key in __m:
-                    convert_and_set(key, __m[key])
+        if (len(args) + int(bool(kwargs))) > 1:
+            raise BoxTypeError(f"merge_update expected at most 1 argument, got {len(args) + int(bool(kwargs))}")
+        single_arg = next(iter(args), None)
+        if single_arg:
+            if hasattr(single_arg, "keys"):
+                for k in single_arg:
+                    convert_and_set(k, single_arg[k])
             else:
-                for key, value in __m:
-                    convert_and_set(key, value)
+                for k, v in single_arg:
+                    convert_and_set(k, v)
+
         for key in kwargs:
             convert_and_set(key, kwargs[key])
 
@@ -730,7 +761,10 @@ class Box(dict):
 
     def _safe_attr(self, attr):
         """Convert a key into something that is accessible as an attribute"""
-        allowed = string.ascii_letters + string.digits + "_"
+        if isinstance(attr, str):
+            # By assuming most people are using string first we get substantial speed ups
+            if attr.isidentifier() and not iskeyword(attr):
+                return attr
 
         if isinstance(attr, tuple):
             attr = "_".join([str(x) for x in attr])
@@ -739,10 +773,18 @@ class Box(dict):
         if self.__box_config()["camel_killer_box"]:
             attr = _camel_killer(attr)
 
+        if attr.isidentifier() and not iskeyword(attr):
+            return attr
+
+        if sum(1 for character in attr if character.isidentifier() and not iskeyword(character)) == 0:
+            attr = f'{self.__box_config()["box_safe_prefix"]}{attr}'
+            if attr.isidentifier() and not iskeyword(attr):
+                return attr
+
         out = []
         last_safe = 0
         for i, character in enumerate(attr):
-            if character in allowed:
+            if f"x{character}".isidentifier():
                 last_safe = i
                 out.append(character)
             elif not out:
@@ -760,7 +802,7 @@ class Box(dict):
         else:
             out = f'{self.__box_config()["box_safe_prefix"]}{out}'
 
-        if out in kwlist:
+        if iskeyword(out):
             out = f'{self.__box_config()["box_safe_prefix"]}{out}'
 
         return out

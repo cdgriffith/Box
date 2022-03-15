@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2017-2020 - Chris Griffith - MIT License
+# Copyright (c) 2017-2022 - Chris Griffith - MIT License
 import copy
 import re
 from os import PathLike
@@ -133,7 +133,7 @@ class BoxList(list):
         return keys
 
     def __repr__(self):
-        return f"<BoxList: {self.to_list()}>"
+        return f"BoxList({self.to_list()})"
 
     def __str__(self):
         return str(self.to_list())

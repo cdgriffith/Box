@@ -83,7 +83,7 @@ python_example_objects = (
     [1, 2, 3],
     {},
     ([], {}),
-    lambda x: x ** 2,
+    lambda x: x**2,
     function_example,
     ClassExample(),
 )  # type: ignore

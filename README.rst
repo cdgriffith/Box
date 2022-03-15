@@ -23,24 +23,64 @@ Check out the new `Box github wiki <https://github.com/cdgriffith/Box/wiki>`_ fo
 Install
 =======
 
+**Version Pin Your Box!**
+
+If you aren't in the habit of version pinning your libraries, it will eventually bite you.
+Box has a `list of breaking change <https://github.com/cdgriffith/Box/wiki/Major-Version-Breaking-Changes>`_ between major versions you should always check out before updating.
+
+requirements.txt
+----------------
+
+.. code:: text
+
+        python-box[all]~=6.0
+
+As Box adheres to semantic versioning (aka API changes will only occur on between major version),
+it is best to use `Compatible release <https://www.python.org/dev/peps/pep-0440/#compatible-release>`_ matching using the `~=` clause.
+
+Install from command line
+-------------------------
+
 .. code:: bash
 
-        pip install --upgrade python-box[all]
+        pip install python-box[all]~=6.0 --upgrade
 
-Box 5 is no longer forcing install of external dependencies such as yaml and toml. Instead you can specify which you want,
-for example, `all` is shorthand for:
+Install with selected dependencies
+----------------------------------
+
+Box is no longer forcing install of external dependencies such as yaml and toml. Instead you can specify which you want,
+for example, `[all]` is shorthand for:
 
 .. code:: bash
 
-        pip install --upgrade python-box[ruamel.yaml,toml,msgpack]
+        pip install python-box[ruamel.yaml,toml,msgpack]~=6.0 --upgrade
 
-But you can also sub out "ruamel.yaml" for "PyYAML".
+But you can also sub out `ruamel.yaml` for `PyYAML`.
 
 Check out `more details <https://github.com/cdgriffith/Box/wiki/Installation>`_ on installation details.
 
-Box 5 is tested on python 3.6+ and pypy3, if you are upgrading from previous versions, please look through
-`any breaking changes and new features <https://github.com/cdgriffith/Box/wiki/Major-Version-Breaking-Changes-and-New-Features>`_.
+Box 6 is tested on python 3.6+, if you are upgrading from previous versions, please look through
+`any breaking changes and new features <https://github.com/cdgriffith/Box/wiki/Major-Version-Breaking-Changes>`_.
 
+Optimized Version
+-----------------
+
+Box 6 is introducing Cython optimizations for major platforms by default.
+Loading large data sets can be up to 10x faster!
+
+If you are **not** on a x86_64 supported system you will need to do some extra work to install the optimized version.
+There will be an warning of "WARNING: Cython not installed, could not optimize box" during install.
+You will need python development files, system compiler, and the python packages `Cython` and `wheel`.
+
+**Linux Example:**
+
+First make sure you have python development files installed (`python3-dev` or `python3-devel` in most repos).
+You will then need `Cython` and `wheel` installed and then install (or re-install with `--force`) `python-box`.
+
+.. code:: bash
+
+        pip install Cython wheel
+        pip install python-box[all]~=6.0 --upgrade --force
 
 If you have any issues please open a github issue with the error you are experiencing!
 
@@ -96,7 +136,7 @@ Also special shout-out to PythonBytes_, who featured Box on their podcast.
 License
 =======
 
-MIT License, Copyright (c) 2017-2020 Chris Griffith. See LICENSE_ file.
+MIT License, Copyright (c) 2017-2022 Chris Griffith. See LICENSE_ file.
 
 
 .. |BoxImage| image:: https://raw.githubusercontent.com/cdgriffith/Box/master/box_logo.png

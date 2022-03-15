@@ -1,6 +1,20 @@
 Changelog
 =========
 
+Version 6.0.0
+-------------
+
+* Adding Cython support to greatly speed up normal Box operations on supported systems
+* Adding #161 support for access box dots with `get` and checking with `in` (thanks to scott-createplay)
+* Adding #183 support for all allowed character sets (thanks to Giulio Malventi)
+* Adding #196 support for sliceable boxes (thanks to Dias)
+* Adding #164 default_box_create_on_get toggle to disable setting box variable on get request (thanks to ipcoder)
+* Changing #208 __repr__ to produce `eval`-able text (thanks to Jeff Robbins)
+* Changing #215 support ruamel.yaml new syntax (thanks to Ivan Pepelnjak)
+* Changing `update` and `merge_update` to not use a keyword that could cause issues in rare circumstances
+* Changing internal `_safe_key` logic to be twice as fast
+* Removing support for ruamel.yaml < 0.17
+
 Version 5.4.1
 -------------
 

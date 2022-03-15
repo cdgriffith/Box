@@ -41,7 +41,7 @@ class SBox(Box):
         return self.to_toml()
 
     def __repr__(self):
-        return "<ShorthandBox: {0}>".format(str(self.to_dict()))
+        return "ShorthandBox({0})".format(str(self.to_dict()))
 
     def copy(self):
         return SBox(super(SBox, self).copy())

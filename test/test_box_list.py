@@ -6,10 +6,11 @@ import json
 import os
 import shutil
 from pathlib import Path
+from io import StringIO
 from test.common import test_root, tmp_dir
 
 import pytest
-import ruamel.yaml as yaml
+from ruamel.yaml import YAML
 import toml
 
 from box import Box, BoxError, BoxList
@@ -32,7 +33,7 @@ class TestBoxList:
         assert new_list[-1].item == 22
         new_list.append([{"bad_item": 33}])
         assert new_list[-1][0].bad_item == 33
-        assert repr(new_list).startswith("<BoxList:")
+        assert repr(new_list).startswith("BoxList(")
         for x in new_list.to_list():
             assert not isinstance(x, (BoxList, Box))
         new_list.insert(0, {"test": 5})
@@ -83,17 +84,20 @@ class TestBoxList:
 
     def test_box_list_to_yaml(self):
         bl = BoxList([{"item": 1, "CamelBad": 2}])
-        assert yaml.load(bl.to_yaml(), Loader=yaml.SafeLoader)[0]["item"] == 1
+        yaml = YAML()
+        assert yaml.load(bl.to_yaml())[0]["item"] == 1
 
     def test_box_list_from_yaml(self):
         alist = [{"item": 1}, {"CamelBad": 2}]
-        yaml_list = yaml.dump(alist)
-        bl = BoxList.from_yaml(yaml_list, camel_killer_box=True)
+        yaml = YAML()
+        with StringIO() as sio:
+            yaml.dump(alist, stream=sio)
+            bl = BoxList.from_yaml(sio.getvalue(), camel_killer_box=True)
         assert bl[0].item == 1
         assert bl[1].camel_bad == 2
 
         with pytest.raises(BoxError):
-            BoxList.from_yaml(yaml.dump({"a": 2}))
+            BoxList.from_yaml("a: 2")
 
     def test_box_list_to_toml(self):
         bl = BoxList([{"item": 1, "CamelBad": 2}])

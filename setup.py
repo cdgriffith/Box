@@ -5,10 +5,22 @@
 import multiprocessing  # noqa: F401
 import os
 import re
+from pathlib import Path
+import sys
 
 from setuptools import setup
 
 root = os.path.abspath(os.path.dirname(__file__))
+
+try:
+    from Cython.Build import cythonize
+except ImportError:
+    extra = None
+else:
+    extra = cythonize(
+        [str(file.relative_to(root)) for file in Path(root, "box").glob("*.py") if file.name != "__init__.py"],
+        compiler_directives={"language_level": 3},
+    )
 
 with open(os.path.join(root, "box", "__init__.py"), "r") as init_file:
     init_content = init_file.read()
@@ -31,6 +43,7 @@ setup(
     long_description_content_type="text/x-rst",
     py_modules=["box"],
     packages=["box"],
+    ext_modules=extra,
     python_requires=">=3.6",
     include_package_data=True,
     platforms="any",
@@ -41,6 +54,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: CPython",
         "Development Status :: 5 - Production/Stable",
         "Natural Language :: English",
@@ -52,11 +66,14 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     extras_require={
-        "all": ["ruamel.yaml", "toml", "msgpack"],
-        "yaml": ["ruamel.yaml"],
-        "ruamel.yaml": ["ruamel.yaml"],
+        "all": ["ruamel.yaml>=0.17", "toml", "msgpack"],
+        "yaml": ["ruamel.yaml>=0.17"],
+        "ruamel.yaml": ["ruamel.yaml>=0.17"],
         "PyYAML": ["PyYAML"],
         "toml": ["toml"],
         "msgpack": ["msgpack"],
     },
 )
+
+if not extra:
+    print("WARNING: Cython not installed, could not optimize box.", file=sys.stderr)

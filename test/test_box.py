@@ -9,6 +9,7 @@ import platform
 import shutil
 from multiprocessing import Queue
 from pathlib import Path
+from io import StringIO
 from test.common import (
     data_json_file,
     data_yaml_file,
@@ -23,10 +24,11 @@ from test.common import (
 )
 
 import pytest
-import ruamel.yaml as yaml
+from ruamel.yaml import YAML
 
-from box import Box, BoxError, BoxKeyError, BoxList, ConfigBox, SBox, box
-from box.box import _get_dot_paths  # type: ignore
+from box import Box, BoxError, BoxKeyError, BoxList, ConfigBox, SBox
+from box.box import _get_dot_paths, _camel_killer, _recursive_tuples  # type: ignore
+from box.converters import BOX_PARAMETERS
 
 
 def mp_queue_test(q):
@@ -58,8 +60,8 @@ class TestBox:
         assert Box()._safe_attr(356) == "x356"
 
     def test_camel_killer(self):
-        assert box._camel_killer("CamelCase") == "camel_case"
-        assert box._camel_killer("Terrible321KeyA") == "terrible321_key_a"
+        assert _camel_killer("CamelCase") == "camel_case"
+        assert _camel_killer("Terrible321KeyA") == "terrible321_key_a"
         bx = Box(camel_killer_box=True, conversion_box=False)
 
         bx.DeadCamel = 3
@@ -88,7 +90,7 @@ class TestBox:
         assert len(bx1.keys()) == 0
 
     def test_recursive_tuples(self):
-        out = box._recursive_tuples(
+        out = _recursive_tuples(
             ({"test": "a"}, ({"second": "b"}, {"third": "c"}, ("fourth",))), dict, recreate_tuples=True
         )
         assert isinstance(out, tuple)
@@ -108,7 +110,7 @@ class TestBox:
         assert "TEST_KEY" not in bx.to_dict(), bx.to_dict()
         assert isinstance(bx["Key 2"].Key4, Box)
         assert "'key1': 'value1'" in str(bx)
-        assert repr(bx).startswith("<Box:")
+        assert repr(bx).startswith("Box(")
         bx2 = Box([((3, 4), "A"), ("_box_config", "test")])
         assert bx2[(3, 4)] == "A"
         assert bx2["_box_config"] == "test"
@@ -208,13 +210,15 @@ class TestBox:
 
     def test_to_yaml_basic(self):
         a = Box(test_dict)
-        assert yaml.load(a.to_yaml(), Loader=yaml.SafeLoader) == test_dict
+        yaml = YAML(typ="safe")
+        assert yaml.load(a.to_yaml()) == test_dict
 
     def test_to_yaml_file(self):
         a = Box(test_dict)
         a.to_yaml(tmp_yaml_file)
         with open(tmp_yaml_file) as f:
-            data = yaml.load(f, Loader=yaml.SafeLoader)
+            yaml = YAML(typ="safe")
+            data = yaml.load(f)
             assert data == test_dict
 
     def test_dir(self):
@@ -347,7 +351,11 @@ class TestBox:
         assert bx.key1 == "value1"
 
     def test_from_yaml(self):
-        bx = Box.from_yaml(yaml.dump(test_dict), conversion_box=False, default_box=True)
+        yaml = YAML(typ="safe")
+        with StringIO() as sio:
+            yaml.dump(test_dict, sio)
+            data = sio.getvalue()
+        bx = Box.from_yaml(data, conversion_box=False, default_box=True)
         assert isinstance(bx, Box)
         assert bx.key1 == "value1"
         assert bx.Key_2 == Box()
@@ -752,6 +760,13 @@ class TestBox:
         assert isinstance(bx.get("b", {}), Box)
         assert "a" in bx.get("a", Box(a=1, conversion_box=False))
         assert isinstance(bx.get("a", [1, 2]), BoxList)
+        bx_dot = Box(a=Box(b=Box(c="me!")), box_dots=True)
+        assert bx_dot.get("a.b.c") == "me!"
+
+    def test_contains(self):
+        bx_dot = Box(a=Box(b=Box(c=Box())), box_dots=True)
+        assert "a.b.c" in bx_dot
+        assert "a.b.c.d" not in bx_dot
 
     def test_get_default_box(self):
         bx = Box(default_box=True)
@@ -1278,6 +1293,55 @@ class TestBox:
         assert box["b.c.d"].e == 2
         assert box.c.e == "test"
         assert isinstance(box["d.e.f"], Box)
-        assert box.d.e["f.g"] == True
+        assert box.d.e["f.g"] is True
         assert isinstance(box["e.f"], BoxList)
         assert box.e.f[1] == 2
+
+    def test_box_slice(self):
+        data = Box(qwe=123, asd=234, q=1)
+        assert data[:-1] == Box(qwe=123, asd=234)
+
+    def test_box_kwargs_should_not_be_included(self):
+        params = {
+            "default_box": True,
+            "default_box_attr": True,
+            "conversion_box": True,
+            "frozen_box": True,
+            "camel_killer_box": True,
+            "box_safe_prefix": "x",
+            "box_duplicates": "error",
+            "default_box_none_transform": True,
+            "box_dots": True,
+            "modify_tuples_box": True,
+            "box_intact_types": (),
+            "box_recast": True,
+        }
+
+        bx = Box(**params)
+        assert bx == Box()
+
+        for param in BOX_PARAMETERS:
+            assert param in params
+
+    def test_box_greek(self):
+        # WARNING μ is ord 956 whereas µ is ord 181 and will not work due to python NFKC normalization
+        a = Box()
+        a.σeq = 1
+        a.µeq = 2
+        assert a == Box({"σeq": 1, "μeq": 2})
+
+    def test_box_default_not_create_on_get(self):
+        box = Box(default_box=True)
+
+        assert box.a.b.c == Box()
+
+        assert box == Box(a=Box(b=Box(c=Box())))
+        assert "c" in box.a.b
+
+        box2 = Box(default_box=True, default_box_create_on_get=False)
+
+        assert box2.a.b.c == Box()
+
+        assert "c" not in box2.a.b
+
+        assert box2 == Box()

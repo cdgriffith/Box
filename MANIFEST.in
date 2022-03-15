@@ -2,3 +2,6 @@ include LICENSE
 include AUTHORS.rst
 include CHANGES.rst
 include box/py.typed
+include box/*.c
+include box/*.so
+include box/*.pyd
