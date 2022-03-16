@@ -931,10 +931,16 @@ class TestBox:
             from box.box import _parse_box_dots
 
             _parse_box_dots({}, "-")
+
         with pytest.raises(KeyError):
             b["a.b"]
         with pytest.raises(BoxKeyError):
             b["a.b"]
+
+        with pytest.raises(KeyError):
+            del b["a.b"]
+        with pytest.raises(BoxKeyError):
+            del b["a.b"]
 
     def test_unicode(self):
         bx = Box()

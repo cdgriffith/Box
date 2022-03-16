@@ -510,7 +510,7 @@ class Box(dict):
                 except BoxError:
                     if self._box_config["default_box"] and not _ignore_default:
                         return self.__get_default(item)
-                    raise BoxKeyError(f'"{item}" does not exist') from _exception_cause(err)
+                    raise BoxKeyError(str(item)) from _exception_cause(err)
                 if first_item in self.keys():
                     if hasattr(self[first_item], "__getitem__"):
                         return self[first_item][children]
@@ -592,7 +592,7 @@ class Box(dict):
             try:
                 first_item, children = _parse_box_dots(self, key)
             except BoxError:
-                raise BoxKeyError(f'"{key}" is not in box') from None
+                raise BoxKeyError(str(key)) from None
             if hasattr(self[first_item], "__delitem__"):
                 return self[first_item].__delitem__(children)
         if key not in self.keys() and self._box_config["camel_killer_box"]:
