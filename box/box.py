@@ -130,6 +130,7 @@ class Box(dict):
     :param default_box_attr: Specify the default replacement.
         WARNING: If this is not the default 'Box', it will not be recursive
     :param default_box_none_transform: When using default_box, treat keys with none values as absent. True by default
+    :param default_box_create_on_get: On lookup of a key that doesn't exist, create it if missing
     :param frozen_box: After creation, the box cannot be modified
     :param camel_killer_box: Convert CamelCase to snake_case
     :param conversion_box: Check for near matching keys as attributes
@@ -510,7 +511,7 @@ class Box(dict):
                 except BoxError:
                     if self._box_config["default_box"] and not _ignore_default:
                         return self.__get_default(item)
-                    raise
+                    raise BoxKeyError(str(item)) from _exception_cause(err)
                 if first_item in self.keys():
                     if hasattr(self[first_item], "__getitem__"):
                         return self[first_item][children]
@@ -589,7 +590,10 @@ class Box(dict):
             and isinstance(key, str)
             and ("." in key or "[" in key)
         ):
-            first_item, children = _parse_box_dots(self, key)
+            try:
+                first_item, children = _parse_box_dots(self, key)
+            except BoxError:
+                raise BoxKeyError(str(key)) from None
             if hasattr(self[first_item], "__delitem__"):
                 return self[first_item].__delitem__(children)
         if key not in self.keys() and self._box_config["camel_killer_box"]:

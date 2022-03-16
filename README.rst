@@ -87,12 +87,14 @@ If you have any issues please open a github issue with the error you are experie
 Overview
 ========
 
-`Box` is designed to be an easy drop in transparently replacements for
-dictionaries, thanks to Python's
-duck typing capabilities, which adds dot notation access. Any sub
-dictionaries or ones set after initiation will be automatically converted to
-a `Box` object. You can always run `.to_dict()` on it to return the object
-and all sub objects back into a regular dictionary.
+`Box` is designed to be a near transparent drop in replacements for
+dictionaries that add dot notation access and other powerful feature.
+
+There are a lot of `types of boxes <https://github.com/cdgriffith/Box/wiki/Types-of-Boxes>`_
+to customize it for your needs, as well as handy `converters <https://github.com/cdgriffith/Box/wiki/Converters>`_!
+
+Keep in mind any sub dictionaries or ones set after initiation will be automatically converted to
+a `Box` object, and lists will be converted to `BoxList`, all other objects stay intact.
 
 Check out the `Quick Start <https://github.com/cdgriffith/Box/wiki/Quick-Start>`_  for more in depth details.
 
@@ -116,7 +118,7 @@ sure everything stored in the dict can be accessed as an attribute or key value.
       small_box = Box({'data': 2, 'count': 5})
       small_box.data == small_box['data'] == getattr(small_box, 'data')
 
-All dicts (and lists) added to a `Box` will be converted on lookup to a `Box` (or `BoxList`),
+All dicts (and lists) added to a `Box` will be converted on insertion to a `Box` (or `BoxList`),
 allowing for recursive dot notation access.
 
 `Box` also includes helper functions to transform it back into a `dict`,
