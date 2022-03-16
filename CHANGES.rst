@@ -5,6 +5,7 @@ Version 6.0.1
 -------------
 
 * Fixing #218 Box dots would not raise KeyError on bad key (thanks to Cliff Wells)
+* Fixing #217 wording in readme overview needed updated (thanks to Julie Jones)
 
 Version 6.0.0
 -------------

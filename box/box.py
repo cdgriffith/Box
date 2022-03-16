@@ -130,6 +130,7 @@ class Box(dict):
     :param default_box_attr: Specify the default replacement.
         WARNING: If this is not the default 'Box', it will not be recursive
     :param default_box_none_transform: When using default_box, treat keys with none values as absent. True by default
+    :param default_box_create_on_get: On lookup of a key that doesn't exist, create it if missing
     :param frozen_box: After creation, the box cannot be modified
     :param camel_killer_box: Convert CamelCase to snake_case
     :param conversion_box: Check for near matching keys as attributes
