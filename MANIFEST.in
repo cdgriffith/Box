@@ -5,3 +5,4 @@ include box/py.typed
 include box/*.c
 include box/*.so
 include box/*.pyd
+include box/*.pyi

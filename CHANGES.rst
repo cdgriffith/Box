@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 6.0.2
+-------------
+
+* Fixing that the typing `pyi` files were not included in the manifest (thanks to Julian Torres)
+
 Version 6.0.1
 -------------
 
