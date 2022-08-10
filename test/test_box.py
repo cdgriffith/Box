@@ -560,7 +560,9 @@ class TestBox:
             data.widget._bad_value
 
         base_config = data._Box__box_config()
+        assert base_config.pop("box_namespace") == ()
         widget_config = data.widget._Box__box_config()
+        assert widget_config.pop("box_namespace") == ("widget",)
 
         assert base_config == widget_config, "{} != {}".format(base_config, widget_config)
 
@@ -1385,3 +1387,31 @@ class TestBox:
         assert box._field == 5
         del box.field
         assert not "_field" in box
+
+    def test_box_namespace(self):
+        box = Box(default_box=True)
+        assert box._box_config["box_namespace"] == ()
+        box.a.b.c = 5
+        assert box.a._box_config["box_namespace"] == ("a",)
+        assert box.a.b._box_config["box_namespace"] == ("a", "b")
+        box.x = {"y": {"z": 5}}
+        assert box.x._box_config["box_namespace"] == ("x",)
+        assert box.x.y._box_config["box_namespace"] == ("x", "y")
+
+        for modified_box in [
+            box.a + box.x,
+            box.a - box.x,
+            box.a | box.x,
+        ]:
+            assert modified_box._box_config["box_namespace"] == ()
+            assert modified_box.b._box_config["box_namespace"] == ("b",)
+            assert modified_box.y._box_config["box_namespace"] == ("y",)
+
+        box.modified = {}
+        assert box.modified._box_config["box_namespace"] == ("modified",)
+        box.modified += box.a
+        assert box.modified.b._box_config["box_namespace"] == ("modified", "b")
+        box.modified |= box.x
+        assert box.modified.y._box_config["box_namespace"] == ("modified", "y")
+        box.modified -= box.a
+        assert box.modified._box_config["box_namespace"] == ("modified",)
