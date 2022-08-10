@@ -10,7 +10,7 @@ import re
 import warnings
 from keyword import iskeyword
 from os import PathLike
-from typing import Any, Dict, Generator, List, Tuple, Union, Type
+from typing import Any, Dict, Generator, List, Tuple, Union, Type, Optional
 
 try:
     from typing import Callable, Iterable, Mapping
@@ -141,6 +141,7 @@ class Box(dict):
     :param box_recast: cast certain keys to a specified type
     :param box_dots: access nested Boxes by period separated keys in string
     :param box_class: change what type of class sub-boxes will be created as
+    :param box_namespace: the namespace this (nested) Box lives within
     """
 
     _box_config: Dict[str, Any]
@@ -173,6 +174,7 @@ class Box(dict):
         box_recast: Dict = None,
         box_dots: bool = False,
         box_class: Union[Dict, Type["Box"]] = None,
+        box_namespace: Tuple[str, ...] = (),
         **kwargs: Any,
     ):
         """
@@ -197,6 +199,7 @@ class Box(dict):
                 "box_recast": box_recast,
                 "box_dots": box_dots,
                 "box_class": box_class if box_class is not None else Box,
+                "box_namespace": box_namespace,
             }
         )
         return obj
@@ -218,6 +221,7 @@ class Box(dict):
         box_recast: Dict = None,
         box_dots: bool = False,
         box_class: Union[Dict, Type["Box"]] = None,
+        box_namespace: Tuple[str, ...] = (),
         **kwargs: Any,
     ):
         super().__init__()
@@ -238,6 +242,7 @@ class Box(dict):
                 "box_recast": box_recast,
                 "box_dots": box_dots,
                 "box_class": box_class if box_class is not None else self.__class__,
+                "box_namespace": box_namespace,
             }
         )
         if not self._box_config["conversion_box"] and self._box_config["box_duplicates"] != "ignore":
@@ -311,6 +316,7 @@ class Box(dict):
         frozen = self._box_config["frozen_box"]
         config = self.__box_config()
         config["frozen_box"] = False
+        config.pop("box_namespace") # Detach namespace; it will be reassigned if we nest again
         output = self._box_config["box_class"](**config)
         if not isinstance(other, dict):
             raise BoxError("Box can only compare two boxes or a box and a dictionary.")
@@ -413,10 +419,12 @@ class Box(dict):
         return self[key]
 
     def copy(self) -> "Box":
-        return Box(super().copy(), **self.__box_config())
+        config = self.__box_config()
+        config.pop("box_namespace") # Detach namespace; it will be reassigned if we nest again
+        return Box(super().copy(), **config)
 
     def __copy__(self) -> "Box":
-        return Box(super().copy(), **self.__box_config())
+        return self.copy()
 
     def __deepcopy__(self, memodict=None) -> "Box":
         frozen = self._box_config["frozen_box"]
@@ -436,12 +444,13 @@ class Box(dict):
 
     def __get_default(self, item, attr=False):
         default_value = self._box_config["default_box_attr"]
+        config = self.__box_config(extra_namespace=item)
         if default_value in (self._box_config["box_class"], dict):
-            value = self._box_config["box_class"](**self.__box_config())
+            value = self._box_config["box_class"](**config)
         elif isinstance(default_value, dict):
-            value = self._box_config["box_class"](**self.__box_config(), **default_value)
+            value = self._box_config["box_class"](**config, **default_value)
         elif isinstance(default_value, list):
-            value = box.BoxList(**self.__box_config())
+            value = box.BoxList(**config)
         elif isinstance(default_value, Callable):
             value = default_value()
         elif hasattr(default_value, "copy"):
@@ -453,11 +462,13 @@ class Box(dict):
                 super().__setitem__(item, value)
         return value
 
-    def __box_config(self) -> Dict:
+    def __box_config(self, extra_namespace: Optional[str] = None) -> Dict:
         out = {}
         for k, v in self._box_config.copy().items():
             if not k.startswith("__"):
                 out[k] = v
+        if extra_namespace is not None:
+            out["box_namespace"] = (*out["box_namespace"], extra_namespace)
         return out
 
     def __recast(self, item, value):
@@ -482,20 +493,21 @@ class Box(dict):
         if self._box_config["box_intact_types"] and isinstance(value, self._box_config["box_intact_types"]):
             return super().__setitem__(item, value)
         # This is the magic sauce that makes sub dictionaries into new box objects
+        config = self.__box_config(extra_namespace=item)
         if isinstance(value, dict):
             # We always re-create even if it was already a Box object to pass down configurations correctly
-            value = self._box_config["box_class"](value, **self.__box_config())
+            value = self._box_config["box_class"](value, **config)
         elif isinstance(value, list) and not isinstance(value, box.BoxList):
             if self._box_config["frozen_box"]:
                 value = _recursive_tuples(
-                    value, recreate_tuples=self._box_config["modify_tuples_box"], **self.__box_config()
+                    value, recreate_tuples=self._box_config["modify_tuples_box"], **config
                 )
             else:
-                value = box.BoxList(value, **self.__box_config())
+                value = box.BoxList(value, **config)
         elif isinstance(value, box.BoxList):
-            value.box_options.update(self.__box_config())
+            value.box_options.update(config)
         elif self._box_config["modify_tuples_box"] and isinstance(value, tuple):
-            value = _recursive_tuples(value, recreate_tuples=True, **self.__box_config())
+            value = _recursive_tuples(value, recreate_tuples=True, **config)
         super().__setitem__(item, value)
 
     def __getitem__(self, item, _ignore_default=False):
@@ -714,16 +726,17 @@ class Box(dict):
             merge_type = kwargs.pop("box_merge_lists")
 
         def convert_and_set(k, v):
+            config = self.__box_config(extra_namespace=k)
             intact_type = self._box_config["box_intact_types"] and isinstance(v, self._box_config["box_intact_types"])
             if isinstance(v, dict) and not intact_type:
                 # Box objects must be created in case they are already
                 # in the `converted` box_config set
-                v = self._box_config["box_class"](v, **self.__box_config())
+                v = self._box_config["box_class"](v, **config)
                 if k in self and isinstance(self[k], dict):
                     self[k].merge_update(v)
                     return
             if isinstance(v, list) and not intact_type:
-                v = box.BoxList(v, **self.__box_config())
+                v = box.BoxList(v, **config)
                 if merge_type == "extend" and k in self and isinstance(self[k], list):
                     self[k].extend(v)
                     return
@@ -756,10 +769,11 @@ class Box(dict):
             if item in _get_dot_paths(self):
                 return self[item]
 
+        config = self.__box_config(extra_namespace=item)
         if isinstance(default, dict):
-            default = self._box_config["box_class"](default, **self.__box_config())
+            default = self._box_config["box_class"](default, **config)
         if isinstance(default, list):
-            default = box.BoxList(default, **self.__box_config())
+            default = box.BoxList(default, **config)
         self[item] = default
         return self[item]
 
