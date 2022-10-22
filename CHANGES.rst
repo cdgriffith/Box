@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 6.0.3
+-------------
+
+* Fixing mypy __ior__ type (thanks to Jacob Hayes)
+* Fixing line endings with a pre-commit update
+* Fixing BoxList was using old style of `super` in internal code usage
+
 Version 6.0.2
 -------------
 
