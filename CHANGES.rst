@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 6.0.3
+-------------
+
+* Replacing the deprecated ``toml`` package with modern ``tomllib``, ``tomli`` and ``tomli-w`` usage
+
 Version 6.0.2
 -------------
 

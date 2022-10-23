@@ -5,6 +5,7 @@
 
 import csv
 import json
+import sys
 from io import StringIO
 from os import PathLike
 from pathlib import Path
@@ -14,7 +15,8 @@ from box.exceptions import BoxError
 
 pyyaml_available = True
 ruamel_available = True
-toml_available = True
+toml_dump_available = True
+toml_load_available = True
 msgpack_available = True
 
 try:
@@ -30,11 +32,20 @@ try:
 except ImportError:
     pyyaml_available = False
 
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    try:
+        import tomli as tomllib
+    except ImportError:
+        tomllib = None  # type: ignore
+        toml_load_available = False
+
 try:
-    import toml
+    import tomli_w
 except ImportError:
-    toml = None  # type: ignore
-    toml_available = False
+    tomli_w = None
+    toml_dump_available = False
 
 try:
     import msgpack  # type: ignore
@@ -42,6 +53,7 @@ except ImportError:
     msgpack = None  # type: ignore
     msgpack_available = False
 
+toml_available = toml_dump_available and toml_load_available
 yaml_available = pyyaml_available or ruamel_available
 
 BOX_PARAMETERS = (
@@ -195,24 +207,22 @@ def _from_yaml(
     return data
 
 
-def _to_toml(obj, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict"):
+def _to_toml(obj, filename: Union[str, PathLike] = None):
     if filename:
         _exists(filename, create=True)
-        with open(filename, "w", encoding=encoding, errors=errors) as f:
-            toml.dump(obj, f)
+        with open(filename, "wb") as f:
+            tomli_w.dump(obj, f)
     else:
-        return toml.dumps(obj)
+        return tomli_w.dumps(obj)
 
 
-def _from_toml(
-    toml_string: str = None, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict"
-):
+def _from_toml(toml_string: str = None, filename: Union[str, PathLike] = None):
     if filename:
         _exists(filename)
-        with open(filename, "r", encoding=encoding, errors=errors) as f:
-            data = toml.load(f)
+        with open(filename, "rb") as f:
+            data = tomllib.load(f)
     elif toml_string:
-        data = toml.loads(toml_string)
+        data = tomllib.loads(toml_string)
     else:
         raise BoxError("from_toml requires a string or filename")
     return data

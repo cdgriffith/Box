@@ -4,10 +4,11 @@ from json import JSONDecodeError
 from os import PathLike
 from pathlib import Path
 from typing import Callable, Dict, Union
+import sys
 
 from box.box import Box
 from box.box_list import BoxList
-from box.converters import msgpack_available, toml_available, yaml_available
+from box.converters import msgpack_available, toml_load_available, yaml_available
 from box.exceptions import BoxError
 
 try:
@@ -18,10 +19,13 @@ except ImportError:
     except ImportError:
         YAMLError = False  # type: ignore
 
-try:
-    from toml import TomlDecodeError  # type: ignore
-except ImportError:
-    TomlDecodeError = False  # type: ignore
+if sys.version_info >= (3, 11):
+    from tomllib import TOMLDecodeError  # type: ignore
+else:
+    try:
+        from tomli import TOMLDecodeError  # type: ignore
+    except ImportError:
+        TOMLDecodeError = False  # type: ignore
 
 try:
     from msgpack import UnpackException  # type: ignore
@@ -59,11 +63,11 @@ def _to_yaml(file, encoding, errors, **kwargs):
 
 
 def _to_toml(file, encoding, errors, **kwargs):
-    if not toml_available:
-        raise BoxError(f'File "{file}" is toml but no package is available to open it. Please install "toml"')
+    if not toml_load_available:
+        raise BoxError(f'File "{file}" is toml but no package is available to open it. Please install "tomli"')
     try:
         return Box.from_toml(filename=file, encoding=encoding, errors=errors, **kwargs)
-    except TomlDecodeError:
+    except TOMLDecodeError:
         raise BoxError("File is not TOML as expected")
 
 
