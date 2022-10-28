@@ -61,11 +61,11 @@ class BoxList(list):
     def __getitem__(self, item):
         if self.box_options.get("box_dots") and isinstance(item, str) and item.startswith("["):
             list_pos = _list_pos_re.search(item)
-            value = super(BoxList, self).__getitem__(int(list_pos.groups()[0]))
+            value = super().__getitem__(int(list_pos.groups()[0]))
             if len(list_pos.group()) == len(item):
                 return value
             return value.__getitem__(item[len(list_pos.group()) :].lstrip("."))
-        return super(BoxList, self).__getitem__(item)
+        return super().__getitem__(item)
 
     def __delitem__(self, key):
         if self.box_options.get("frozen_box"):
@@ -74,10 +74,10 @@ class BoxList(list):
             list_pos = _list_pos_re.search(key)
             pos = int(list_pos.groups()[0])
             if len(list_pos.group()) == len(key):
-                return super(BoxList, self).__delitem__(pos)
+                return super().__delitem__(pos)
             if hasattr(self[pos], "__delitem__"):
                 return self[pos].__delitem__(key[len(list_pos.group()) :].lstrip("."))  # type: ignore
-        super(BoxList, self).__delitem__(key)
+        super().__delitem__(key)
 
     def __setitem__(self, key, value):
         if self.box_options.get("frozen_box"):
@@ -86,9 +86,9 @@ class BoxList(list):
             list_pos = _list_pos_re.search(key)
             pos = int(list_pos.groups()[0])
             if len(list_pos.group()) == len(key):
-                return super(BoxList, self).__setitem__(pos, value)
-            return super(BoxList, self).__getitem__(pos).__setitem__(key[len(list_pos.group()) :].lstrip("."), value)
-        super(BoxList, self).__setitem__(key, value)
+                return super().__setitem__(pos, value)
+            return super().__getitem__(pos).__setitem__(key[len(list_pos.group()) :].lstrip("."), value)
+        super().__setitem__(key, value)
 
     def _is_intact_type(self, obj):
         if self.box_options.get("box_intact_types") and isinstance(obj, self.box_options["box_intact_types"]):
@@ -107,14 +107,14 @@ class BoxList(list):
         return p_object
 
     def append(self, p_object):
-        super(BoxList, self).append(self._convert(p_object))
+        super().append(self._convert(p_object))
 
     def extend(self, iterable):
         for item in iterable:
             self.append(item)
 
     def insert(self, index, p_object):
-        super(BoxList, self).insert(index, self._convert(p_object))
+        super().insert(index, self._convert(p_object))
 
     def _dotted_helper(self):
         keys = []

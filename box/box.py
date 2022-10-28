@@ -301,7 +301,7 @@ class Box(dict):
         new_box.update(other)
         return new_box
 
-    def __ior__(self, other: Mapping[Any, Any]):
+    def __ior__(self, other: Mapping[Any, Any]):  # type: ignore[override]
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         self.update(other)
