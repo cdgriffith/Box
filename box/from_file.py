@@ -130,15 +130,15 @@ def box_from_string(content: str, string_type: str = "json") -> Union[Box, BoxLi
     elif string_type == "toml":
         try:
             return Box.from_toml(toml_string=content)
-        except JSONDecodeError:
-            raise BoxError("File is not JSON as expected")
+        except toml_decode_error:  # type: ignore
+            raise BoxError("File is not TOML as expected")
         except BoxError:
             return BoxList.from_toml(toml_string=content)
     elif string_type == "yaml":
         try:
             return Box.from_yaml(yaml_string=content)
-        except JSONDecodeError:
-            raise BoxError("File is not JSON as expected")
+        except YAMLError:
+            raise BoxError("File is not YAML as expected")
         except BoxError:
             return BoxList.from_yaml(yaml_string=content)
     else:
