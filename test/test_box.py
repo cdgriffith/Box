@@ -1092,6 +1092,7 @@ class TestBox:
             d.keys(dotted=True)
 
     def test_toml(self):
+        pytest.importorskip("toml")
         b = Box.from_toml(filename=Path(test_root, "data", "toml_file.tml"), default_box=True)
         assert b.database.server == "192.168.1.1"
         assert b.clients.hosts == ["alpha", "omega"]
