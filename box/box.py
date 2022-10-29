@@ -969,6 +969,7 @@ class Box(dict):
             return _to_toml(self.to_dict(), filename=filename, encoding=encoding, errors=errors)
 
     else:
+
         def to_toml(self, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict"):
             raise BoxError('toml is unavailable on this system, please install the "tomli-w" package')
 

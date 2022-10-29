@@ -5,6 +5,7 @@ Version 6.1.0
 -------------
 
 * Adding Python 3.11 support
+* Adding #195 box_from_string function (thanks to Marcelo Huerta)
 * Changing the deprecated ``toml`` package with modern ``tomllib``, ``tomli`` and ``tomli-w`` usage
 * Changing the tests requiring `toml` if it is not available (thanks to Michał Górny)
 * Fixing mypy __ior__ type (thanks to Jacob Hayes)
