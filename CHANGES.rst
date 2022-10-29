@@ -8,6 +8,7 @@ Version 6.1.0
 * Fixing mypy __ior__ type (thanks to Jacob Hayes)
 * Fixing line endings with a pre-commit update
 * Fixing BoxList was using old style of `super` in internal code usage
+* Skipping the tests requiring `toml` if it is not available
 
 Version 6.0.2
 -------------

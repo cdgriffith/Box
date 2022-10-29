@@ -3,6 +3,8 @@
 import json
 from test.common import test_dict
 
+import pytest
+
 from ruamel.yaml import YAML
 
 from box import Box, SBox
@@ -10,6 +12,7 @@ from box import Box, SBox
 
 class TestSBox:
     def test_property_box(self):
+        pytest.importorskip("toml")
         td = test_dict.copy()
         td["inner"] = {"CamelCase": "Item"}
 
