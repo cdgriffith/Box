@@ -5,7 +5,7 @@ from test.common import test_root
 
 import pytest
 
-from box import Box, BoxError, BoxList, box_from_file
+from box import Box, BoxError, BoxList, box_from_file, box_from_string
 
 
 class TestFromFile:
@@ -37,3 +37,13 @@ class TestFromFile:
             box_from_file(Path(test_root, "data", "bad_file.txt"))
         with pytest.raises(BoxError):
             box_from_file("does not exist")
+
+    def test_from_string_all(self):
+        with open(Path(test_root, "data", "json_file.json"), "r") as f:
+            box_from_string(f.read())
+
+        with open(Path(test_root, "data", "toml_file.tml"), "r") as f:
+            box_from_string(f.read(), string_type="toml")
+
+        with open(Path(test_root, "data", "yaml_file.yaml"), "r") as f:
+            box_from_string(f.read(), string_type="yaml")

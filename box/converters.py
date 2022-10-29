@@ -5,16 +5,16 @@
 
 import csv
 import json
+import sys
 from io import StringIO
 from os import PathLike
 from pathlib import Path
-from typing import Union, Optional, Dict
+from typing import Union, Optional, Dict, Any, Callable
 
 from box.exceptions import BoxError
 
 pyyaml_available = True
 ruamel_available = True
-toml_available = True
 msgpack_available = True
 
 try:
@@ -30,11 +30,59 @@ try:
 except ImportError:
     pyyaml_available = False
 
+toml_read_library: Optional[Any] = None
+toml_write_library: Optional[Any] = None
+toml_decode_error: Optional[Callable] = None
+
+
+class BoxTomlDecodeError(BoxError):
+    """Toml Decode Error"""
+
+
 try:
     import toml
 except ImportError:
-    toml = None  # type: ignore
-    toml_available = False
+    pass
+else:
+    toml_read_library = toml
+    toml_write_library = toml
+    toml_decode_error = toml.TomlDecodeError
+
+    class BoxTomlDecodeError(BoxError, toml.TomlDecodeError):  # type: ignore
+        """Toml Decode Error"""
+
+
+try:
+    import tomllib
+except ImportError:
+    pass
+else:
+    toml_read_library = tomllib
+    toml_decode_error = tomllib.TOMLDecodeError
+
+    class BoxTomlDecodeError(BoxError, tomllib.TOMLDecodeError):  # type: ignore
+        """Toml Decode Error"""
+
+
+try:
+    import tomli
+except ImportError:
+    pass
+else:
+    toml_read_library = tomli
+    toml_decode_error = tomli.TOMLDecodeError
+
+    class BoxTomlDecodeError(BoxError, tomli.TOMLDecodeError):  # type: ignore
+        """Toml Decode Error"""
+
+
+try:
+    import tomli_w
+except ImportError:
+    pass
+else:
+    toml_write_library = tomli_w
+
 
 try:
     import msgpack  # type: ignore
@@ -198,21 +246,41 @@ def _from_yaml(
 def _to_toml(obj, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict"):
     if filename:
         _exists(filename, create=True)
-        with open(filename, "w", encoding=encoding, errors=errors) as f:
-            toml.dump(obj, f)
+        if toml_write_library.__name__ == "toml":  # type: ignore
+            with open(filename, "w", encoding=encoding, errors=errors) as f:
+                try:
+                    toml_write_library.dump(obj, f)  # type: ignore
+                except toml_decode_error as err:  # type: ignore
+                    raise BoxTomlDecodeError(err) from err
+        else:
+            with open(filename, "wb") as f:
+                try:
+                    toml_write_library.dump(obj, f)  # type: ignore
+                except toml_decode_error as err:  # type: ignore
+                    raise BoxTomlDecodeError(err) from err
     else:
-        return toml.dumps(obj)
+        try:
+            return toml_write_library.dumps(obj)  # type: ignore
+        except toml_decode_error as err:  # type: ignore
+            raise BoxTomlDecodeError(err) from err
 
 
 def _from_toml(
-    toml_string: str = None, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict"
+    toml_string: str = None,
+    filename: Union[str, PathLike] = None,
+    encoding: str = "utf-8",
+    errors: str = "strict",
 ):
     if filename:
         _exists(filename)
-        with open(filename, "r", encoding=encoding, errors=errors) as f:
-            data = toml.load(f)
+        if toml_read_library.__name__ == "toml":  # type: ignore
+            with open(filename, "r", encoding=encoding, errors=errors) as f:
+                data = toml_read_library.load(f)  # type: ignore
+        else:
+            with open(filename, "rb") as f:
+                data = toml_read_library.load(f)  # type: ignore
     elif toml_string:
-        data = toml.loads(toml_string)
+        data = toml_read_library.loads(toml_string)  # type: ignore
     else:
         raise BoxError("from_toml requires a string or filename")
     return data

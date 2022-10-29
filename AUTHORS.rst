@@ -27,6 +27,7 @@ Code contributions:
 - Jacob Hayes (JacobHayes)
 - Dominic (Yobmod)
 - Ivan Pepelnjak (ipspace)
+- Michał Górny (mgorny)
 
 Suggestions and bug reporting:
 

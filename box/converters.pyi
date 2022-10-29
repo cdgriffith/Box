@@ -1,11 +1,14 @@
 from box.exceptions import BoxError as BoxError
 from os import PathLike as PathLike
-from typing import Any, Union, Optional, Dict
+from typing import Any, Union, Optional, Dict, Callable
 
 yaml_available: bool
 toml_available: bool
 msgpack_available: bool
 BOX_PARAMETERS: Any
+toml_read_library: Optional[Any]
+toml_write_library: Optional[Any]
+toml_decode_error: Optional[Callable]
 
 def _exists(filename: Union[str, PathLike], create: bool = False) -> Any: ...
 def _to_json(

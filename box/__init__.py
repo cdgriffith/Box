@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 
 __author__ = "Chris Griffith"
-__version__ = "6.0.2"
+__version__ = "6.1.0"
 
 from box.box import Box
 from box.box_list import BoxList
 from box.config_box import ConfigBox
 from box.exceptions import BoxError, BoxKeyError
-from box.from_file import box_from_file
+from box.from_file import box_from_file, box_from_string
 from box.shorthand_box import SBox
 import box.converters
 

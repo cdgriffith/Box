@@ -3,6 +3,8 @@
 import json
 from test.common import test_dict
 
+import pytest
+
 from ruamel.yaml import YAML
 
 from box import Box, SBox

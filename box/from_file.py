@@ -4,10 +4,11 @@ from json import JSONDecodeError
 from os import PathLike
 from pathlib import Path
 from typing import Callable, Dict, Union
+import sys
 
 from box.box import Box
 from box.box_list import BoxList
-from box.converters import msgpack_available, toml_available, yaml_available
+from box.converters import msgpack_available, toml_read_library, yaml_available, toml_decode_error
 from box.exceptions import BoxError
 
 try:
@@ -19,17 +20,12 @@ except ImportError:
         YAMLError = False  # type: ignore
 
 try:
-    from toml import TomlDecodeError  # type: ignore
-except ImportError:
-    TomlDecodeError = False  # type: ignore
-
-try:
     from msgpack import UnpackException  # type: ignore
 except ImportError:
     UnpackException = False  # type: ignore
 
 
-__all__ = ["box_from_file"]
+__all__ = ["box_from_file", "box_from_string"]
 
 
 def _to_json(file, encoding, errors, **kwargs):
@@ -59,11 +55,11 @@ def _to_yaml(file, encoding, errors, **kwargs):
 
 
 def _to_toml(file, encoding, errors, **kwargs):
-    if not toml_available:
-        raise BoxError(f'File "{file}" is toml but no package is available to open it. Please install "toml"')
+    if not toml_read_library:
+        raise BoxError(f'File "{file}" is toml but no package is available to open it. Please install "tomli"')
     try:
         return Box.from_toml(filename=file, encoding=encoding, errors=errors, **kwargs)
-    except TomlDecodeError:
+    except toml_decode_error:
         raise BoxError("File is not TOML as expected")
 
 
@@ -113,3 +109,37 @@ def box_from_file(
     if file_type.lower() in converters:
         return converters[file_type.lower()](file, encoding, errors, **kwargs)  # type: ignore
     raise BoxError(f'"{file_type}" is an unknown type. Please use either csv, toml, msgpack, yaml or json')
+
+
+def box_from_string(content: str, string_type: str = "json") -> Union[Box, BoxList]:
+    """
+    Parse the provided string into a Box or BoxList object as appropriate.
+
+    :param content: String to parse
+    :param string_type: manually specify file type: json, toml or yaml
+    :return: Box or BoxList
+    """
+
+    if string_type == "json":
+        try:
+            return Box.from_json(json_string=content)
+        except JSONDecodeError:
+            raise BoxError("File is not JSON as expected")
+        except BoxError:
+            return BoxList.from_json(json_string=content)
+    elif string_type == "toml":
+        try:
+            return Box.from_toml(toml_string=content)
+        except toml_decode_error:  # type: ignore
+            raise BoxError("File is not TOML as expected")
+        except BoxError:
+            return BoxList.from_toml(toml_string=content)
+    elif string_type == "yaml":
+        try:
+            return Box.from_yaml(yaml_string=content)
+        except YAMLError:
+            raise BoxError("File is not YAML as expected")
+        except BoxError:
+            return BoxList.from_yaml(yaml_string=content)
+    else:
+        raise BoxError(f"Unsupported string_string of {string_type}")
