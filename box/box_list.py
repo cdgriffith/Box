@@ -21,7 +21,8 @@ from box.converters import (
     _to_toml,
     _to_yaml,
     msgpack_available,
-    toml_available,
+    toml_dump_available,
+    toml_load_available,
     yaml_available,
 )
 from box.exceptions import BoxError, BoxTypeError
@@ -312,7 +313,7 @@ class BoxList(list):
         ):
             raise BoxError('yaml is unavailable on this system, please install the "ruamel.yaml" or "PyYAML" package')
 
-    if toml_available:
+    if toml_dump_available:
 
         def to_toml(
             self,
@@ -331,7 +332,20 @@ class BoxList(list):
             :param errors: How to handle encoding errors
             :return: string of TOML (if no filename provided)
             """
-            return _to_toml({key_name: self.to_list()}, filename=filename, encoding=encoding, errors=errors)
+            return _to_toml({key_name: self.to_list()}, filename=filename)
+
+    else:
+
+        def to_toml(
+            self,
+            filename: Union[str, PathLike] = None,
+            key_name: str = "toml",
+            encoding: str = "utf-8",
+            errors: str = "strict",
+        ):
+            raise BoxError('toml is unavailable on this system, please install the "tomli-w" package')
+
+    if toml_load_available:
 
         @classmethod
         def from_toml(
@@ -360,21 +374,12 @@ class BoxList(list):
                 if arg in BOX_PARAMETERS:
                     box_args[arg] = kwargs.pop(arg)
 
-            data = _from_toml(toml_string=toml_string, filename=filename, encoding=encoding, errors=errors)
+            data = _from_toml(toml_string=toml_string, filename=filename)
             if key_name not in data:
                 raise BoxError(f"{key_name} was not found.")
             return cls(data[key_name], **box_args)
 
     else:
-
-        def to_toml(
-            self,
-            filename: Union[str, PathLike] = None,
-            key_name: str = "toml",
-            encoding: str = "utf-8",
-            errors: str = "strict",
-        ):
-            raise BoxError('toml is unavailable on this system, please install the "toml" package')
 
         @classmethod
         def from_toml(
@@ -386,7 +391,7 @@ class BoxList(list):
             errors: str = "strict",
             **kwargs,
         ):
-            raise BoxError('toml is unavailable on this system, please install the "toml" package')
+            raise BoxError('toml is unavailable on this system, please install the "tomli" package')
 
     if msgpack_available:
 

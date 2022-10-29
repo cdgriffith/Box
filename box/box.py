@@ -29,7 +29,8 @@ from box.converters import (
     _to_toml,
     _to_yaml,
     msgpack_available,
-    toml_available,
+    toml_dump_available,
+    toml_load_available,
     yaml_available,
 )
 from box.exceptions import BoxError, BoxKeyError, BoxTypeError, BoxValueError, BoxWarning
@@ -954,7 +955,7 @@ class Box(dict):
         ) -> "Box":
             raise BoxError('yaml is unavailable on this system, please install the "ruamel.yaml" or "PyYAML" package')
 
-    if toml_available:
+    if toml_dump_available:
 
         def to_toml(self, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict"):
             """
@@ -965,7 +966,14 @@ class Box(dict):
             :param errors: How to handle encoding errors
             :return: string of TOML (if no filename provided)
             """
-            return _to_toml(self.to_dict(), filename=filename, encoding=encoding, errors=errors)
+            return _to_toml(self.to_dict(), filename=filename)
+
+    else:
+
+        def to_toml(self, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict"):
+            raise BoxError('toml is unavailable on this system, please install the "tomli-w" package')
+
+    if toml_load_available:
 
         @classmethod
         def from_toml(
@@ -991,13 +999,10 @@ class Box(dict):
                 if arg in BOX_PARAMETERS:
                     box_args[arg] = kwargs.pop(arg)
 
-            data = _from_toml(toml_string=toml_string, filename=filename, encoding=encoding, errors=errors)
+            data = _from_toml(toml_string=toml_string, filename=filename)
             return cls(data, **box_args)
 
     else:
-
-        def to_toml(self, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict"):
-            raise BoxError('toml is unavailable on this system, please install the "toml" package')
 
         @classmethod
         def from_toml(
@@ -1008,7 +1013,7 @@ class Box(dict):
             errors: str = "strict",
             **kwargs,
         ) -> "Box":
-            raise BoxError('toml is unavailable on this system, please install the "toml" package')
+            raise BoxError('toml is unavailable on this system, please install the "tomli" package')
 
     if msgpack_available:
 

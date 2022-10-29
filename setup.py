@@ -66,11 +66,11 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     extras_require={
-        "all": ["ruamel.yaml>=0.17", "toml", "msgpack"],
+        "all": ["ruamel.yaml>=0.17", "tomli; python_version < '3.11'", "tomli-w", "msgpack"],
         "yaml": ["ruamel.yaml>=0.17"],
         "ruamel.yaml": ["ruamel.yaml>=0.17"],
         "PyYAML": ["PyYAML"],
-        "toml": ["toml"],
+        "toml": ["tomli; python_version < '3.11'", "tomli-w"],
         "msgpack": ["msgpack"],
     },
 )

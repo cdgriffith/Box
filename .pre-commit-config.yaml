@@ -55,4 +55,4 @@ repos:
   hooks:
     - id: mypy
       types: [python]
-      additional_dependencies: [ruamel.yaml,toml,msgpack,types-PyYAML,types-toml]
+      additional_dependencies: [ruamel.yaml,tomli,tomli-w,msgpack,types-PyYAML]
