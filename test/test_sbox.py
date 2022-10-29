@@ -12,7 +12,6 @@ from box import Box, SBox
 
 class TestSBox:
     def test_property_box(self):
-        pytest.importorskip("toml")
         td = test_dict.copy()
         td["inner"] = {"CamelCase": "Item"}
 

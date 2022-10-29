@@ -42,12 +42,10 @@ class TestConverters:
         shutil.rmtree(str(tmp_dir), ignore_errors=True)
 
     def test_to_toml(self):
-        pytest.importorskip("toml")
         formatted = _to_toml(movie_data)
         assert formatted.startswith("[movies.Spaceballs]")
 
     def test_to_toml_file(self):
-        pytest.importorskip("toml")
         out_file = Path(tmp_dir, "toml_test.tml")
         assert not out_file.exists()
         _to_toml(movie_data, filename=out_file)
@@ -55,12 +53,10 @@ class TestConverters:
         assert out_file.read_text().startswith("[movies.Spaceballs]")
 
     def test_from_toml(self):
-        pytest.importorskip("toml")
         result = _from_toml(toml_string)
         assert result["movies"]["Spaceballs"]["length"] == 96
 
     def test_from_toml_file(self):
-        pytest.importorskip("toml")
         out_file = Path(tmp_dir, "toml_test.tml")
         assert not out_file.exists()
         out_file.write_text(toml_string)

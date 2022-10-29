@@ -44,7 +44,7 @@ setup(
     py_modules=["box"],
     packages=["box"],
     ext_modules=extra,
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     include_package_data=True,
     platforms="any",
     classifiers=[
@@ -55,6 +55,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: Implementation :: CPython",
         "Development Status :: 5 - Production/Stable",
         "Natural Language :: English",
@@ -66,11 +67,12 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     extras_require={
-        "all": ["ruamel.yaml>=0.17", "tomli; python_version < '3.11'", "tomli-w", "msgpack"],
+        "all": ["ruamel.yaml>=0.17", "toml", "tomli-w", "msgpack"],
         "yaml": ["ruamel.yaml>=0.17"],
         "ruamel.yaml": ["ruamel.yaml>=0.17"],
         "PyYAML": ["PyYAML"],
-        "toml": ["tomli; python_version < '3.11'", "tomli-w"],
+        "tomli": ["tomli; python_version < '3.11'", "tomli-w"],
+        "toml": ["toml"],
         "msgpack": ["msgpack"],
     },
 )

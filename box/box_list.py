@@ -21,8 +21,8 @@ from box.converters import (
     _to_toml,
     _to_yaml,
     msgpack_available,
-    toml_dump_available,
-    toml_load_available,
+    toml_read_library,
+    toml_write_library,
     yaml_available,
 )
 from box.exceptions import BoxError, BoxTypeError
@@ -313,7 +313,7 @@ class BoxList(list):
         ):
             raise BoxError('yaml is unavailable on this system, please install the "ruamel.yaml" or "PyYAML" package')
 
-    if toml_dump_available:
+    if toml_read_library is not None:
 
         def to_toml(
             self,
@@ -332,7 +332,7 @@ class BoxList(list):
             :param errors: How to handle encoding errors
             :return: string of TOML (if no filename provided)
             """
-            return _to_toml({key_name: self.to_list()}, filename=filename)
+            return _to_toml({key_name: self.to_list()}, filename=filename, encoding=encoding, errors=errors)
 
     else:
 
@@ -345,7 +345,7 @@ class BoxList(list):
         ):
             raise BoxError('toml is unavailable on this system, please install the "tomli-w" package')
 
-    if toml_load_available:
+    if toml_read_library is not None:
 
         @classmethod
         def from_toml(
@@ -374,7 +374,7 @@ class BoxList(list):
                 if arg in BOX_PARAMETERS:
                     box_args[arg] = kwargs.pop(arg)
 
-            data = _from_toml(toml_string=toml_string, filename=filename)
+            data = _from_toml(toml_string=toml_string, filename=filename, encoding=encoding, errors=errors)
             if key_name not in data:
                 raise BoxError(f"{key_name} was not found.")
             return cls(data[key_name], **box_args)
@@ -391,7 +391,7 @@ class BoxList(list):
             errors: str = "strict",
             **kwargs,
         ):
-            raise BoxError('toml is unavailable on this system, please install the "tomli" package')
+            raise BoxError('toml is unavailable on this system, please install the "toml" package')
 
     if msgpack_available:
 

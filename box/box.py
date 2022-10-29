@@ -29,8 +29,8 @@ from box.converters import (
     _to_toml,
     _to_yaml,
     msgpack_available,
-    toml_dump_available,
-    toml_load_available,
+    toml_read_library,
+    toml_write_library,
     yaml_available,
 )
 from box.exceptions import BoxError, BoxKeyError, BoxTypeError, BoxValueError, BoxWarning
@@ -955,7 +955,7 @@ class Box(dict):
         ) -> "Box":
             raise BoxError('yaml is unavailable on this system, please install the "ruamel.yaml" or "PyYAML" package')
 
-    if toml_dump_available:
+    if toml_write_library is not None:
 
         def to_toml(self, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict"):
             """
@@ -966,14 +966,13 @@ class Box(dict):
             :param errors: How to handle encoding errors
             :return: string of TOML (if no filename provided)
             """
-            return _to_toml(self.to_dict(), filename=filename)
+            return _to_toml(self.to_dict(), filename=filename, encoding=encoding, errors=errors)
 
     else:
-
         def to_toml(self, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict"):
             raise BoxError('toml is unavailable on this system, please install the "tomli-w" package')
 
-    if toml_load_available:
+    if toml_read_library is not None:
 
         @classmethod
         def from_toml(
@@ -999,7 +998,7 @@ class Box(dict):
                 if arg in BOX_PARAMETERS:
                     box_args[arg] = kwargs.pop(arg)
 
-            data = _from_toml(toml_string=toml_string, filename=filename)
+            data = _from_toml(toml_string=toml_string, filename=filename, encoding=encoding, errors=errors)
             return cls(data, **box_args)
 
     else:

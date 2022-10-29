@@ -8,7 +8,7 @@ import sys
 
 from box.box import Box
 from box.box_list import BoxList
-from box.converters import msgpack_available, toml_load_available, yaml_available
+from box.converters import msgpack_available, toml_read_library, yaml_available
 from box.exceptions import BoxError
 
 try:
@@ -63,7 +63,7 @@ def _to_yaml(file, encoding, errors, **kwargs):
 
 
 def _to_toml(file, encoding, errors, **kwargs):
-    if not toml_load_available:
+    if not toml_read_library:
         raise BoxError(f'File "{file}" is toml but no package is available to open it. Please install "tomli"')
     try:
         return Box.from_toml(filename=file, encoding=encoding, errors=errors, **kwargs)

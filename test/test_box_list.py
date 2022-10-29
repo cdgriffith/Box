@@ -5,21 +5,15 @@
 import json
 import os
 import shutil
-import sys
 from pathlib import Path
 from io import StringIO
 from test.common import test_root, tmp_dir
 
 import pytest
-import tomli_w
 from ruamel.yaml import YAML
 
 from box import Box, BoxError, BoxList
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
+from box.converters import toml_read_library, toml_write_library
 
 
 class TestBoxList:
@@ -106,22 +100,20 @@ class TestBoxList:
             BoxList.from_yaml("a: 2")
 
     def test_box_list_to_toml(self):
-        toml = pytest.importorskip("toml")
         bl = BoxList([{"item": 1, "CamelBad": 2}])
-        assert tomllib.loads(bl.to_toml(key_name="test"))["test"][0]["item"] == 1
+        assert toml_read_library.loads(bl.to_toml(key_name="test"))["test"][0]["item"] == 1
         with pytest.raises(BoxError):
             BoxList.from_toml("[[test]]\nitem = 1\nCamelBad = 2\n\n", key_name="does not exist")
 
     def test_box_list_from_tml(self):
-        toml = pytest.importorskip("toml")
         alist = [{"item": 1}, {"CamelBad": 2}]
-        toml_list = tomli_w.dumps({"key": alist})
+        toml_list = toml_write_library.dumps({"key": alist})
         bl = BoxList.from_toml(toml_string=toml_list, key_name="key", camel_killer_box=True)
         assert bl[0].item == 1
         assert bl[1].camel_bad == 2
 
         with pytest.raises(BoxError):
-            BoxList.from_toml(tomli_w.dumps({"a": 2}), "a")
+            BoxList.from_toml(toml_write_library.dumps({"a": 2}), "a")
 
         with pytest.raises(BoxError):
             BoxList.from_toml(toml_list, "bad_key")
