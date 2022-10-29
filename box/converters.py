@@ -58,9 +58,9 @@ except ImportError:
     pass
 else:
     toml_read_library = tomllib
-    toml_decode_error = tomllib.TomlDecodeError
+    toml_decode_error = tomllib.TOMLDecodeError
 
-    class BoxTomlDecodeError(BoxError, tomllib.TomlDecodeError):  # type: ignore
+    class BoxTomlDecodeError(BoxError, tomllib.TOMLDecodeError):  # type: ignore
         """Toml Decode Error"""
 
 
