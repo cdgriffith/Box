@@ -1355,3 +1355,33 @@ class TestBox:
         assert "c" not in box2.a.b
 
         assert box2 == Box()
+
+    def test_box_property_support(self):
+        class BoxWithProperty(Box):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+            @property
+            def field(self):
+                return self._field
+
+            @field.setter
+            def field(self, value):
+                self._field = value
+
+            @field.deleter
+            def field(self):
+                """
+                This is required to make `del box.field` work properly otherwise a `BoxKeyError` would be thrown.
+                """
+                del self._field
+
+        box = BoxWithProperty()
+        box.field = 5
+
+        assert 'field' not in box
+        assert '_field' in box
+        assert box.field == 5
+        assert box._field == 5
+        del box.field
+        assert not '_field' in box
