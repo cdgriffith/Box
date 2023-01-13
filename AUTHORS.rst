@@ -80,3 +80,4 @@ Suggestions and bug reporting:
 - Marcos Dione (mdione-cloudian)
 - Varun Madiath (vamega)
 - Rexbard
+- Martin Schorfmann (schorfma)

@@ -12,11 +12,11 @@ toml_decode_error: Optional[Callable]
 
 def _exists(filename: Union[str, PathLike], create: bool = False) -> Any: ...
 def _to_json(
-    obj, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict", **json_kwargs
+    obj, filename: Optional[Union[str, PathLike]] = None, encoding: str = "utf-8", errors: str = "strict", **json_kwargs
 ) -> Any: ...
 def _from_json(
-    json_string: str = None,
-    filename: Union[str, PathLike] = None,
+    json_string: Optional[str] = None,
+    filename: Optional[Union[str, PathLike]] = None,
     encoding: str = "utf-8",
     errors: str = "strict",
     multiline: bool = False,
@@ -24,7 +24,7 @@ def _from_json(
 ) -> Any: ...
 def _to_yaml(
     obj,
-    filename: Union[str, PathLike] = None,
+    filename: Optional[Union[str, PathLike]] = None,
     default_flow_style: bool = False,
     encoding: str = "utf-8",
     errors: str = "strict",
@@ -33,26 +33,33 @@ def _to_yaml(
     **yaml_kwargs,
 ) -> Any: ...
 def _from_yaml(
-    yaml_string: str = None,
-    filename: Union[str, PathLike] = None,
+    yaml_string: Optional[str] = None,
+    filename: Optional[Union[str, PathLike]] = None,
     encoding: str = "utf-8",
     errors: str = "strict",
     ruamel_typ: str = "rt",
     ruamel_attrs: Optional[Dict] = None,
     **kwargs,
 ) -> Any: ...
-def _to_toml(obj, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict") -> Any: ...
-def _from_toml(
-    toml_string: str = None, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict"
+def _to_toml(
+    obj, filename: Optional[Union[str, PathLike]] = None, encoding: str = "utf-8", errors: str = "strict"
 ) -> Any: ...
-def _to_msgpack(obj, filename: Union[str, PathLike] = None, **kwargs) -> Any: ...
-def _from_msgpack(msgpack_bytes: bytes = None, filename: Union[str, PathLike] = None, **kwargs) -> Any: ...
+def _from_toml(
+    toml_string: Optional[str] = None,
+    filename: Optional[Union[str, PathLike]] = None,
+    encoding: str = "utf-8",
+    errors: str = "strict",
+) -> Any: ...
+def _to_msgpack(obj, filename: Optional[Union[str, PathLike]] = None, **kwargs) -> Any: ...
+def _from_msgpack(
+    msgpack_bytes: Optional[bytes] = None, filename: Optional[Union[str, PathLike]] = None, **kwargs
+) -> Any: ...
 def _to_csv(
-    box_list, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict", **kwargs
+    box_list, filename: Optional[Union[str, PathLike]] = None, encoding: str = "utf-8", errors: str = "strict", **kwargs
 ) -> Any: ...
 def _from_csv(
-    csv_string: str = None,
-    filename: Union[str, PathLike] = None,
+    csv_string: Optional[str] = None,
+    filename: Optional[Union[str, PathLike]] = None,
     encoding: str = "utf-8",
     errors: str = "strict",
     **kwargs,

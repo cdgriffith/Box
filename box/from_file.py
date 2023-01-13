@@ -3,7 +3,7 @@
 from json import JSONDecodeError
 from os import PathLike
 from pathlib import Path
-from typing import Callable, Dict, Union
+from typing import Optional, Callable, Dict, Union
 import sys
 
 from box.box import Box
@@ -88,7 +88,11 @@ converters = {
 
 
 def box_from_file(
-    file: Union[str, PathLike], file_type: str = None, encoding: str = "utf-8", errors: str = "strict", **kwargs
+    file: Union[str, PathLike],
+    file_type: Optional[str] = None,
+    encoding: str = "utf-8",
+    errors: str = "strict",
+    **kwargs,
 ) -> Union[Box, BoxList]:
     """
     Loads the provided file and tries to parse it into a Box or BoxList object as appropriate.

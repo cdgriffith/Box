@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 6.2.0
+-------------
+
+* Adding support for properties and setters in subclasses (thanks to Serge Lu)
+* Fixing typos (thanks to Martin Schorfmann)
+* Fixing no implicit optionals with type hinting
+
 Version 6.1.0
 -------------
 

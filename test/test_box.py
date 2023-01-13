@@ -1379,9 +1379,9 @@ class TestBox:
         box = BoxWithProperty()
         box.field = 5
 
-        assert 'field' not in box
-        assert '_field' in box
+        assert "field" not in box
+        assert "_field" in box
         assert box.field == 5
         assert box._field == 5
         del box.field
-        assert not '_field' in box
+        assert not "_field" in box

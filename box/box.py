@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2017-2022 - Chris Griffith - MIT License
+# Copyright (c) 2017-2023 - Chris Griffith - MIT License
 """
 Improved dictionary access through dot notation with additional tools.
 """
@@ -10,7 +10,7 @@ import re
 import warnings
 from keyword import iskeyword
 from os import PathLike
-from typing import Any, Dict, Generator, List, Tuple, Union, Type
+from typing import Optional, Any, Dict, Generator, List, Tuple, Union, Type
 
 try:
     from typing import Callable, Iterable, Mapping
@@ -122,6 +122,7 @@ def _get_box_config():
         "__safe_keys": {},
     }
 
+
 def _get_property_func(obj, key):
     """
     Try to get property helper functions of given object and property name.
@@ -136,6 +137,7 @@ def _get_property_func(obj, key):
         return None, None, None
     attr = getattr(obj_type, key)
     return attr.fget, attr.fset, attr.fdel
+
 
 class Box(dict):
     """
@@ -185,9 +187,9 @@ class Box(dict):
         box_safe_prefix: str = "x",
         box_duplicates: str = "ignore",
         box_intact_types: Union[Tuple, List] = (),
-        box_recast: Dict = None,
+        box_recast: Optional[Dict] = None,
         box_dots: bool = False,
-        box_class: Union[Dict, Type["Box"]] = None,
+        box_class: Optional[Union[Dict, Type["Box"]]] = None,
         **kwargs: Any,
     ):
         """
@@ -230,9 +232,9 @@ class Box(dict):
         box_safe_prefix: str = "x",
         box_duplicates: str = "ignore",
         box_intact_types: Union[Tuple, List] = (),
-        box_recast: Dict = None,
+        box_recast: Optional[Dict] = None,
         box_dots: bool = False,
-        box_class: Union[Dict, Type["Box"]] = None,
+        box_class: Optional[Union[Dict, Type["Box"]]] = None,
         **kwargs: Any,
     ):
         super().__init__()
@@ -854,7 +856,11 @@ class Box(dict):
                 raise BoxError(f"Duplicate conversion attributes exist: {dups}")
 
     def to_json(
-        self, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict", **json_kwargs
+        self,
+        filename: Optional[Union[str, PathLike]] = None,
+        encoding: str = "utf-8",
+        errors: str = "strict",
+        **json_kwargs,
     ):
         """
         Transform the Box object into a JSON string.
@@ -870,8 +876,8 @@ class Box(dict):
     @classmethod
     def from_json(
         cls,
-        json_string: str = None,
-        filename: Union[str, PathLike] = None,
+        json_string: Optional[str] = None,
+        filename: Optional[Union[str, PathLike]] = None,
         encoding: str = "utf-8",
         errors: str = "strict",
         **kwargs,
@@ -902,7 +908,7 @@ class Box(dict):
 
         def to_yaml(
             self,
-            filename: Union[str, PathLike] = None,
+            filename: Optional[Union[str, PathLike]] = None,
             default_flow_style: bool = False,
             encoding: str = "utf-8",
             errors: str = "strict",
@@ -930,8 +936,8 @@ class Box(dict):
         @classmethod
         def from_yaml(
             cls,
-            yaml_string: str = None,
-            filename: Union[str, PathLike] = None,
+            yaml_string: Optional[str] = None,
+            filename: Optional[Union[str, PathLike]] = None,
             encoding: str = "utf-8",
             errors: str = "strict",
             **kwargs,
@@ -962,7 +968,7 @@ class Box(dict):
 
         def to_yaml(
             self,
-            filename: Union[str, PathLike] = None,
+            filename: Optional[Union[str, PathLike]] = None,
             default_flow_style: bool = False,
             encoding: str = "utf-8",
             errors: str = "strict",
@@ -973,8 +979,8 @@ class Box(dict):
         @classmethod
         def from_yaml(
             cls,
-            yaml_string: str = None,
-            filename: Union[str, PathLike] = None,
+            yaml_string: Optional[str] = None,
+            filename: Optional[Union[str, PathLike]] = None,
             encoding: str = "utf-8",
             errors: str = "strict",
             **kwargs,
@@ -983,7 +989,9 @@ class Box(dict):
 
     if toml_write_library is not None:
 
-        def to_toml(self, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict"):
+        def to_toml(
+            self, filename: Optional[Union[str, PathLike]] = None, encoding: str = "utf-8", errors: str = "strict"
+        ):
             """
             Transform the Box object into a toml string.
 
@@ -996,7 +1004,9 @@ class Box(dict):
 
     else:
 
-        def to_toml(self, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict"):
+        def to_toml(
+            self, filename: Optional[Union[str, PathLike]] = None, encoding: str = "utf-8", errors: str = "strict"
+        ):
             raise BoxError('toml is unavailable on this system, please install the "tomli-w" package')
 
     if toml_read_library is not None:
@@ -1004,8 +1014,8 @@ class Box(dict):
         @classmethod
         def from_toml(
             cls,
-            toml_string: str = None,
-            filename: Union[str, PathLike] = None,
+            toml_string: Optional[str] = None,
+            filename: Optional[Union[str, PathLike]] = None,
             encoding: str = "utf-8",
             errors: str = "strict",
             **kwargs,
@@ -1033,8 +1043,8 @@ class Box(dict):
         @classmethod
         def from_toml(
             cls,
-            toml_string: str = None,
-            filename: Union[str, PathLike] = None,
+            toml_string: Optional[str] = None,
+            filename: Optional[Union[str, PathLike]] = None,
             encoding: str = "utf-8",
             errors: str = "strict",
             **kwargs,
@@ -1043,7 +1053,7 @@ class Box(dict):
 
     if msgpack_available:
 
-        def to_msgpack(self, filename: Union[str, PathLike] = None, **kwargs):
+        def to_msgpack(self, filename: Optional[Union[str, PathLike]] = None, **kwargs):
             """
             Transform the Box object into a msgpack string.
 
@@ -1056,8 +1066,8 @@ class Box(dict):
         @classmethod
         def from_msgpack(
             cls,
-            msgpack_bytes: bytes = None,
-            filename: Union[str, PathLike] = None,
+            msgpack_bytes: Optional[bytes] = None,
+            filename: Optional[Union[str, PathLike]] = None,
             **kwargs,
         ) -> "Box":
             """
@@ -1080,14 +1090,14 @@ class Box(dict):
 
     else:
 
-        def to_msgpack(self, filename: Union[str, PathLike] = None, **kwargs):
+        def to_msgpack(self, filename: Optional[Union[str, PathLike]] = None, **kwargs):
             raise BoxError('msgpack is unavailable on this system, please install the "msgpack" package')
 
         @classmethod
         def from_msgpack(
             cls,
-            msgpack_bytes: bytes = None,
-            filename: Union[str, PathLike] = None,
+            msgpack_bytes: Optional[bytes] = None,
+            filename: Optional[Union[str, PathLike]] = None,
             encoding: str = "utf-8",
             errors: str = "strict",
             **kwargs,

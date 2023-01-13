@@ -125,7 +125,7 @@ def _exists(filename: Union[str, PathLike], create: bool = False) -> Path:
 
 
 def _to_json(
-    obj, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict", **json_kwargs
+    obj, filename: Optional[Union[str, PathLike]] = None, encoding: str = "utf-8", errors: str = "strict", **json_kwargs
 ):
     if filename:
         _exists(filename, create=True)
@@ -136,8 +136,8 @@ def _to_json(
 
 
 def _from_json(
-    json_string: str = None,
-    filename: Union[str, PathLike] = None,
+    json_string: Optional[str] = None,
+    filename: Optional[Union[str, PathLike]] = None,
     encoding: str = "utf-8",
     errors: str = "strict",
     multiline: bool = False,
@@ -162,7 +162,7 @@ def _from_json(
 
 def _to_yaml(
     obj,
-    filename: Union[str, PathLike] = None,
+    filename: Optional[Union[str, PathLike]] = None,
     default_flow_style: bool = False,
     encoding: str = "utf-8",
     errors: str = "strict",
@@ -202,8 +202,8 @@ def _to_yaml(
 
 
 def _from_yaml(
-    yaml_string: str = None,
-    filename: Union[str, PathLike] = None,
+    yaml_string: Optional[str] = None,
+    filename: Optional[Union[str, PathLike]] = None,
     encoding: str = "utf-8",
     errors: str = "strict",
     ruamel_typ: str = "rt",
@@ -243,7 +243,7 @@ def _from_yaml(
     return data
 
 
-def _to_toml(obj, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict"):
+def _to_toml(obj, filename: Optional[Union[str, PathLike]] = None, encoding: str = "utf-8", errors: str = "strict"):
     if filename:
         _exists(filename, create=True)
         if toml_write_library.__name__ == "toml":  # type: ignore
@@ -266,8 +266,8 @@ def _to_toml(obj, filename: Union[str, PathLike] = None, encoding: str = "utf-8"
 
 
 def _from_toml(
-    toml_string: str = None,
-    filename: Union[str, PathLike] = None,
+    toml_string: Optional[str] = None,
+    filename: Optional[Union[str, PathLike]] = None,
     encoding: str = "utf-8",
     errors: str = "strict",
 ):
@@ -286,7 +286,7 @@ def _from_toml(
     return data
 
 
-def _to_msgpack(obj, filename: Union[str, PathLike] = None, **kwargs):
+def _to_msgpack(obj, filename: Optional[Union[str, PathLike]] = None, **kwargs):
     if filename:
         _exists(filename, create=True)
         with open(filename, "wb") as f:
@@ -295,7 +295,7 @@ def _to_msgpack(obj, filename: Union[str, PathLike] = None, **kwargs):
         return msgpack.packb(obj, **kwargs)
 
 
-def _from_msgpack(msgpack_bytes: bytes = None, filename: Union[str, PathLike] = None, **kwargs):
+def _from_msgpack(msgpack_bytes: Optional[bytes] = None, filename: Optional[Union[str, PathLike]] = None, **kwargs):
     if filename:
         _exists(filename)
         with open(filename, "rb") as f:
@@ -307,7 +307,9 @@ def _from_msgpack(msgpack_bytes: bytes = None, filename: Union[str, PathLike] = 
     return data
 
 
-def _to_csv(box_list, filename: Union[str, PathLike] = None, encoding: str = "utf-8", errors: str = "strict", **kwargs):
+def _to_csv(
+    box_list, filename: Optional[Union[str, PathLike]] = None, encoding: str = "utf-8", errors: str = "strict", **kwargs
+):
     csv_column_names = list(box_list[0].keys())
     for row in box_list:
         if list(row.keys()) != csv_column_names:
@@ -328,8 +330,8 @@ def _to_csv(box_list, filename: Union[str, PathLike] = None, encoding: str = "ut
 
 
 def _from_csv(
-    csv_string: str = None,
-    filename: Union[str, PathLike] = None,
+    csv_string: Optional[str] = None,
+    filename: Optional[Union[str, PathLike]] = None,
     encoding: str = "utf-8",
     errors: str = "strict",
     **kwargs,
