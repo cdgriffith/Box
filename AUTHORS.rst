@@ -28,6 +28,7 @@ Code contributions:
 - Dominic (Yobmod)
 - Ivan Pepelnjak (ipspace)
 - Michał Górny (mgorny)
+- Serge Lu (Serge45)
 
 Suggestions and bug reporting:
 

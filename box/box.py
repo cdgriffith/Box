@@ -122,6 +122,20 @@ def _get_box_config():
         "__safe_keys": {},
     }
 
+def _get_property_func(obj, key):
+    """
+    Try to get property helper functions of given object and property name.
+
+    :param obj: object to be checked for property
+    :param key: property name
+    :return: a tuple for helper functions(fget, fset, fdel). If no such property, a (None, None, None) returns
+    """
+    obj_type = type(obj)
+
+    if not hasattr(obj_type, key):
+        return None, None, None
+    attr = getattr(obj_type, key)
+    return attr.fget, attr.fset, attr.fdel
 
 class Box(dict):
     """
@@ -580,7 +594,12 @@ class Box(dict):
         safe_key = self._safe_attr(key)
         if safe_key in self._box_config["__safe_keys"]:
             key = self._box_config["__safe_keys"][safe_key]
-        self.__setitem__(key, value)
+
+        # if user has customized property setter, fall back to default implementation
+        if _get_property_func(self, key)[1] is not None:
+            super().__setattr__(key, value)
+        else:
+            self.__setitem__(key, value)
 
     def __delitem__(self, key):
         if self._box_config["frozen_box"]:
@@ -615,6 +634,13 @@ class Box(dict):
             raise BoxError('"_box_config" is protected')
         if item in self._protected_keys:
             raise BoxKeyError(f'Key name "{item}" is protected')
+
+        property_fdel = _get_property_func(self, item)[2]
+
+        # if user has customized property deleter, route to it
+        if property_fdel is not None:
+            property_fdel(self)
+            return
         try:
             self.__delitem__(item)
         except KeyError as err:
