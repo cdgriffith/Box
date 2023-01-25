@@ -1397,6 +1397,8 @@ class TestBox:
         box.x = {"y": {"z": 5}}
         assert box.x._box_config["box_namespace"] == ("x",)
         assert box.x.y._box_config["box_namespace"] == ("x", "y")
+        box[None][1][2] = 3
+        assert box[None][1]._box_config["box_namespace"] == (None, 1)
 
         for modified_box in [
             box.a + box.x,

@@ -10,8 +10,7 @@ import re
 import warnings
 from keyword import iskeyword
 from os import PathLike
-from typing import Optional, Any, Dict, Generator, List, Tuple, Union, Type
-from typing import Any, Dict, Generator, List, Tuple, Union, Type, Optional
+from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union
 
 try:
     from typing import Callable, Iterable, Mapping
@@ -45,6 +44,8 @@ _list_pos_re = re.compile(r"\[(\d+)\]")
 # a sentinel object for indicating no default, in order to allow users
 # to pass `None` as a valid default value
 NO_DEFAULT = object()
+# a sentinel object for indicating when to skip adding a new namespace, allowing `None` keys
+NO_NAMESPACE = object()
 
 
 def _exception_cause(e):
@@ -479,12 +480,12 @@ class Box(dict):
                 super().__setitem__(item, value)
         return value
 
-    def __box_config(self, extra_namespace: Optional[str] = None) -> Dict:
+    def __box_config(self, extra_namespace: Any = NO_NAMESPACE) -> Dict:
         out = {}
         for k, v in self._box_config.copy().items():
             if not k.startswith("__"):
                 out[k] = v
-        if extra_namespace is not None:
+        if extra_namespace is not NO_NAMESPACE:
             out["box_namespace"] = (*out["box_namespace"], extra_namespace)
         return out
 
