@@ -11,6 +11,7 @@ import warnings
 from keyword import iskeyword
 from os import PathLike
 from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union
+from inspect import signature
 
 try:
     from typing import Callable, Iterable, Mapping
@@ -482,6 +483,8 @@ class Box(dict):
         self.__dict__.update(state)
 
     def __get_default(self, item, attr=False):
+        if ipython and item in ("getdoc", "shape"):
+            return None
         default_value = self._box_config["default_box_attr"]
         if default_value in (self._box_config["box_class"], dict):
             value = self._box_config["box_class"](**self.__box_config(extra_namespace=item))
@@ -490,15 +493,32 @@ class Box(dict):
         elif isinstance(default_value, list):
             value = box.BoxList(**self.__box_config(extra_namespace=item))
         elif isinstance(default_value, Callable):
-            value = default_value()
+            args = []
+            kwargs = {}
+            p_sigs = [
+                p.name
+                for p in signature(default_value).parameters.values()
+                if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
+            ]
+            k_sigs = [p.name for p in signature(default_value).parameters.values() if p.kind is p.KEYWORD_ONLY]
+            for name in p_sigs:
+                if name not in ("key", "box_instance"):
+                    raise BoxError("default_box_attr can only have the arguments 'key' and 'box_instance'")
+            if "key" in p_sigs:
+                args.append(item)
+            if "box_instance" in p_sigs:
+                args.insert(p_sigs.index("box_instance"), self)
+            if "key" in k_sigs:
+                kwargs["key"] = item
+            if "box_instance" in k_sigs:
+                kwargs["box_instance"] = self
+            value = default_value(*args, **kwargs)
         elif hasattr(default_value, "copy"):
             value = default_value.copy()
         else:
             value = default_value
         if self._box_config["default_box_create_on_get"]:
             if not attr or not (item.startswith("_") and item.endswith("_")):
-                if ipython and item in ("getdoc", "shape"):
-                    return value
                 if self._box_config["box_dots"] and isinstance(item, str) and ("." in item or "[" in item):
                     first_item, children = _parse_box_dots(self, item, setting=True)
                     if first_item in self.keys():

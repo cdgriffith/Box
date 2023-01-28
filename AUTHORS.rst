@@ -85,3 +85,5 @@ Suggestions and bug reporting:
 - aviveh21
 - Nishikant Parmar (nishikantparmariam)
 - Peter B (barmettl)
+- Ash A. (dragonpaw)
+- Коптев Роман Викторович (romikforest)

@@ -26,7 +26,7 @@ from test.common import (
 import pytest
 from ruamel.yaml import YAML
 
-from box import Box, BoxError, BoxKeyError, BoxList, ConfigBox, SBox
+from box import Box, BoxError, BoxKeyError, BoxList, ConfigBox, SBox, DDBox
 from box.box import _get_dot_paths, _camel_killer, _recursive_tuples  # type: ignore
 from box.converters import BOX_PARAMETERS
 
@@ -1434,3 +1434,11 @@ class TestBox:
 
         assert my_box | {"a": 1} == {"a": 1}
         assert {"a": 1} | my_box == {"a": 5}
+
+    def test_default_box_callable(self):
+        def func(box_instance, key):
+            return DDBox(bi=str(box_instance), key=key)
+
+        my_box = DDBox(default_box_attr=func)
+
+        assert my_box.a == {"bi": "{}", "key": "a"}

@@ -4,6 +4,8 @@ Changelog
 Version 7.0.0
 -------------
 
+* Adding #169 default functions with the box_instance and key parameter (thanks to Коптев Роман Викторович)
+* Adding #170 Be able to initialize with a flattened dict - by using DDBox (thanks to Ash A.)
 * Adding #192 box_dots treats all keys with periods in them as separate keys (thanks to Rexbard)
 * Adding #211 support for properties and setters in subclasses (thanks to Serge Lu and David Aronchick)
 * Adding #226 namespace to track changes to the box (thanks to Jacob Hayes)
