@@ -302,16 +302,21 @@ class Box(dict):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         new_box = self.copy()
-        new_box.merge_update(other)
+        new_box._box_config["frozen_box"] = False
+        new_box.merge_update(other)  # type: ignore[attr-defined]
+        new_box._box_config["frozen_box"] = self._box_config["frozen_box"]
         return new_box
 
     def __radd__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
+
         new_box = other.copy()
         if not isinstance(other, Box):
             new_box = self._box_config["box_class"](new_box)
+        new_box._box_config["frozen_box"] = False  # type: ignore[attr-defined]
         new_box.merge_update(self)  # type: ignore[attr-defined]
+        new_box._box_config["frozen_box"] = self._box_config["frozen_box"]  # type: ignore[attr-defined]
         return new_box
 
     def __iadd__(self, other: Mapping[Any, Any]):
@@ -324,7 +329,9 @@ class Box(dict):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         new_box = self.copy()
-        new_box.update(other)
+        new_box._box_config["frozen_box"] = False
+        new_box.update(other)  # type: ignore[attr-defined]
+        new_box._box_config["frozen_box"] = self._box_config["frozen_box"]
         return new_box
 
     def __ror__(self, other: Mapping[Any, Any]):
@@ -333,7 +340,9 @@ class Box(dict):
         new_box = other.copy()
         if not isinstance(other, Box):
             new_box = self._box_config["box_class"](new_box)
-        new_box.update(self)
+        new_box._box_config["frozen_box"] = False  # type: ignore[attr-defined]
+        new_box.update(self)  # type: ignore[attr-defined]
+        new_box._box_config["frozen_box"] = self._box_config["frozen_box"]  # type: ignore[attr-defined]
         return new_box
 
     def __ior__(self, other: Mapping[Any, Any]):  # type: ignore[override]

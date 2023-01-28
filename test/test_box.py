@@ -1428,3 +1428,9 @@ class TestBox:
         bx2["x"] = {"y": {"z": 5}}
         assert bx2._box_config["box_namespace"] is False
         assert bx2["x"]._box_config["box_namespace"] is False
+
+    def test_union_frozen_box(self):
+        my_box = Box(a=5, frozen_box=True)
+
+        assert my_box | {"a": 1} == {"a": 1}
+        assert {"a": 1} | my_box == {"a": 5}

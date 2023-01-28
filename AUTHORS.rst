@@ -84,3 +84,4 @@ Suggestions and bug reporting:
 - Martin Schorfmann (schorfma)
 - aviveh21
 - Nishikant Parmar (nishikantparmariam)
+- Peter B (barmettl)
