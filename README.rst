@@ -33,7 +33,7 @@ requirements.txt
 
 .. code:: text
 
-        python-box[all]~=6.0
+        python-box[all]~=7.0
 
 As Box adheres to semantic versioning (aka API changes will only occur on between major version),
 it is best to use `Compatible release <https://www.python.org/dev/peps/pep-0440/#compatible-release>`_ matching using the `~=` clause.
@@ -43,29 +43,29 @@ Install from command line
 
 .. code:: bash
 
-        pip install python-box[all]~=6.0 --upgrade
+        pip install python-box[all]~=7.0 --upgrade
 
 Install with selected dependencies
 ----------------------------------
 
-Box is no longer forcing install of external dependencies such as yaml and toml. Instead you can specify which you want,
+Box does not install external dependencies such as yaml and toml writers. Instead you can specify which you want,
 for example, `[all]` is shorthand for:
 
 .. code:: bash
 
-        pip install python-box[ruamel.yaml,toml,msgpack]~=6.0 --upgrade
+        pip install python-box[ruamel.yaml,tomli_w,msgpack]~=7.0 --upgrade
 
 But you can also sub out `ruamel.yaml` for `PyYAML`.
 
 Check out `more details <https://github.com/cdgriffith/Box/wiki/Installation>`_ on installation details.
 
-Box 6 is tested on python 3.7+, if you are upgrading from previous versions, please look through
+Box 7 is tested on python 3.7+, if you are upgrading from previous versions, please look through
 `any breaking changes and new features <https://github.com/cdgriffith/Box/wiki/Major-Version-Breaking-Changes>`_.
 
 Optimized Version
 -----------------
 
-Box 6 is introducing Cython optimizations for major platforms by default.
+Box has introduced Cython optimizations for major platforms by default.
 Loading large data sets can be up to 10x faster!
 
 If you are **not** on a x86_64 supported system you will need to do some extra work to install the optimized version.
@@ -80,7 +80,7 @@ You will then need `Cython` and `wheel` installed and then install (or re-instal
 .. code:: bash
 
         pip install Cython wheel
-        pip install python-box[all]~=6.0 --upgrade --force
+        pip install python-box[all]~=7.0 --upgrade --force
 
 If you have any issues please open a github issue with the error you are experiencing!
 

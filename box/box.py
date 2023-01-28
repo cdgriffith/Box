@@ -8,7 +8,6 @@ Improved dictionary access through dot notation with additional tools.
 import copy
 import re
 import warnings
-import sys
 from keyword import iskeyword
 from os import PathLike
 from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union
@@ -175,6 +174,7 @@ class Box(dict):
         "from_toml",
         "to_toml",
         "merge_update",
+        "getdoc",
     ] + [attr for attr in dir({}) if not attr.startswith("_")]
 
     def __new__(
@@ -317,8 +317,6 @@ class Box(dict):
     def __or__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
-        if sys.version_info >= (3, 9):
-            return super().__or__(other)
         new_box = self.copy()
         new_box.update(other)
         return new_box
@@ -326,8 +324,6 @@ class Box(dict):
     def __ror__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
-        if sys.version_info >= (3, 9) and isinstance(other, Box):
-            return super().__ror__(other)
         new_box = other.copy()
         if not isinstance(other, Box):
             new_box = self._box_config["box_class"](new_box)
@@ -337,8 +333,6 @@ class Box(dict):
     def __ior__(self, other: Mapping[Any, Any]):  # type: ignore[override]
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
-        if sys.version_info >= (3, 9):
-            return super().__ior__(other)
         self.update(other)
         return self
 
@@ -496,7 +490,7 @@ class Box(dict):
         for k, v in self._box_config.copy().items():
             if not k.startswith("__"):
                 out[k] = v
-        if extra_namespace is not NO_NAMESPACE:
+        if extra_namespace is not NO_NAMESPACE and self._box_config["box_namespace"] is not False:
             out["box_namespace"] = (*out["box_namespace"], extra_namespace)
         return out
 
@@ -1128,3 +1122,6 @@ class Box(dict):
             **kwargs,
         ) -> "Box":
             raise BoxError('msgpack is unavailable on this system, please install the "msgpack" package')
+
+        def getdoc(self):
+            return Box.__doc__

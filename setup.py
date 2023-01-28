@@ -50,7 +50,6 @@ setup(
     classifiers=[
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
@@ -67,7 +66,7 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     extras_require={
-        "all": ["ruamel.yaml>=0.17", "toml", "msgpack"],
+        "all": ["ruamel.yaml>=0.17", "tomli; python_version < '3.11'", "tomli-w", "msgpack"],
         "yaml": ["ruamel.yaml>=0.17"],
         "ruamel.yaml": ["ruamel.yaml>=0.17"],
         "PyYAML": ["PyYAML"],
