@@ -298,7 +298,7 @@ class Box(dict):
         new_box = other.copy()
         if not isinstance(other, Box):
             new_box = self._box_config["box_class"](new_box)
-        new_box.merge_update(self)
+        new_box.merge_update(self)  # type: ignore[attr-defined]
         return new_box
 
     def __iadd__(self, other: Mapping[Any, Any]):
@@ -308,19 +308,19 @@ class Box(dict):
         return self
 
     def __or__(self, other: Mapping[Any, Any]):
-        if sys.version_info >= (3, 10):
-            return super().__or__(other)
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
+        if sys.version_info >= (3, 9):
+            return super().__or__(other)
         new_box = self.copy()
         new_box.update(other)
         return new_box
 
     def __ror__(self, other: Mapping[Any, Any]):
-        if sys.version_info >= (3, 10) and isinstance(other, Box):
-            return super().__ror__(other)
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
+        if sys.version_info >= (3, 9) and isinstance(other, Box):
+            return super().__ror__(other)
         new_box = other.copy()
         if not isinstance(other, Box):
             new_box = self._box_config["box_class"](new_box)
@@ -328,10 +328,10 @@ class Box(dict):
         return new_box
 
     def __ior__(self, other: Mapping[Any, Any]):  # type: ignore[override]
-        if sys.version_info >= (3, 10):
-            return super().__ior__(other)
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
+        if sys.version_info >= (3, 9):
+            return super().__ior__(other)
         self.update(other)
         return self
 

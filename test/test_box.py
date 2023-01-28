@@ -1005,8 +1005,9 @@ class TestBox:
         d | a
         b = dict(c=1, d={"sub": 1}, e=1)
         c = Box(d={"val": 2}, e=4)
-        assert c.__radd__(b) == Box(c=1, d={"sub": 1, "val": 2}, e=1)
+        assert (b + c) == Box(c=1, d={"sub": 1, "val": 2}, e=4)
         assert c + b == Box(c=1, d={"sub": 1, "val": 2}, e=1)
+        assert isinstance(b | c, Box)
         with pytest.raises(BoxError):
             BoxList() + Box()
 
@@ -1029,8 +1030,9 @@ class TestBox:
     def test_ror_boxes(self):
         b = dict(c=1, d={"sub": 1}, e=1)
         c = Box(d={"val": 2}, e=4)
-        assert c.__ror__(b) == Box(c=1, d={"sub": 1}, e=1)
+        assert c.__ror__(b) == Box(c=1, d={"val": 2}, e=4)
         assert c | b == Box(c=1, d={"sub": 1}, e=1)
+        assert isinstance(b | c, Box)
         with pytest.raises(BoxError):
             BoxList() | Box()
 
