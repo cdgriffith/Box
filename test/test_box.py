@@ -1063,7 +1063,7 @@ class TestBox:
         b = Box(
             {"my_key": {"does stuff": {"to get to": "where I want"}}, "key.with.list": [[[{"test": "value"}]]]},
             box_dots=True,
-            default_box=True
+            default_box=True,
         )
         for key in b.keys(dotted=True):
             b[key]
@@ -1240,7 +1240,7 @@ class TestBox:
     def test_default_dots(self):
         bx1 = Box(default_box=True, box_dots=True)
         bx1["a.a.a"]
-        assert bx1 == {"a": {"a":{"a":{}}}}
+        assert bx1 == {"a": {"a": {"a": {}}}}
 
         a = Box(default_box=True, box_dots=True)
         a["a."]

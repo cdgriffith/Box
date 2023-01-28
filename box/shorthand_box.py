@@ -53,7 +53,6 @@ class SBox(Box):
 
 
 class DDBox(SBox):
-
     def __init__(self, *args, **kwargs):
         kwargs["box_dots"] = True
         kwargs["default_box"] = True

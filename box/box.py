@@ -18,11 +18,11 @@ except ImportError:
     from collections.abc import Callable, Iterable, Mapping
 
 try:
-    get_ipython()
-except NameError:
+    from IPython import get_ipython
+except ImportError:
     ipython = False
 else:
-    ipython = True
+    ipython = True if get_ipython() else False
 
 import box
 from box.converters import (
@@ -146,7 +146,6 @@ def _get_property_func(obj, key):
         return None, None, None
     attr = getattr(obj_type, key)
     return attr.fget, attr.fset, attr.fdel
-
 
 
 class Box(dict):
@@ -497,8 +496,9 @@ class Box(dict):
                         if hasattr(self[first_item], "__setitem__"):
                             self[first_item].__setitem__(children, value)
                     else:
-                        super().__setitem__(first_item, self._box_config["box_class"](
-                            **self.__box_config(extra_namespace=first_item)))
+                        super().__setitem__(
+                            first_item, self._box_config["box_class"](**self.__box_config(extra_namespace=first_item))
+                        )
                         self[first_item].__setitem__(children, value)
                 else:
                     super().__setitem__(item, value)
@@ -616,7 +616,9 @@ class Box(dict):
                 if hasattr(self[first_item], "__setitem__"):
                     return self[first_item].__setitem__(children, value)
             elif self._box_config["default_box"]:
-                super().__setitem__(first_item, self._box_config["box_class"](**self.__box_config(extra_namespace=first_item)))
+                super().__setitem__(
+                    first_item, self._box_config["box_class"](**self.__box_config(extra_namespace=first_item))
+                )
                 return self[first_item].__setitem__(children, value)
             else:
                 raise BoxKeyError(f"'{self.__class__}' object has no attribute {first_item}")
@@ -1146,4 +1148,3 @@ class Box(dict):
             **kwargs,
         ) -> "Box":
             raise BoxError('msgpack is unavailable on this system, please install the "msgpack" package')
-
