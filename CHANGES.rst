@@ -1,10 +1,12 @@
 Changelog
 =========
 
-Version 6.2.0
+Version 7.0.0
 -------------
 
 * Adding support for properties and setters in subclasses (thanks to Serge Lu)
+* Adding way to track changes to the box (thanks to Jacob Hayes)
+* Fixing how `|` and `+` updates were performed for right operations (thanks to aviveh21)
 * Fixing typos (thanks to Martin Schorfmann)
 * Fixing no implicit optionals with type hinting
 
