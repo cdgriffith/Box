@@ -17,6 +17,13 @@ try:
 except ImportError:
     from collections.abc import Callable, Iterable, Mapping
 
+try:
+    get_ipython()
+except NameError:
+    ipython = False
+else:
+    ipython = True
+
 import box
 from box.converters import (
     BOX_PARAMETERS,
@@ -141,6 +148,7 @@ def _get_property_func(obj, key):
     return attr.fget, attr.fset, attr.fdel
 
 
+
 class Box(dict):
     """
     Improved dictionary access through dot notation with additional tools.
@@ -174,7 +182,6 @@ class Box(dict):
         "from_toml",
         "to_toml",
         "merge_update",
-        "getdoc",
     ] + [attr for attr in dir({}) if not attr.startswith("_")]
 
     def __new__(
@@ -482,7 +489,19 @@ class Box(dict):
             value = default_value
         if self._box_config["default_box_create_on_get"]:
             if not attr or not (item.startswith("_") and item.endswith("_")):
-                super().__setitem__(item, value)
+                if ipython and item in ("getdoc", "shape"):
+                    return value
+                if self._box_config["box_dots"] and isinstance(item, str) and ("." in item or "[" in item):
+                    first_item, children = _parse_box_dots(self, item, setting=True)
+                    if first_item in self.keys():
+                        if hasattr(self[first_item], "__setitem__"):
+                            self[first_item].__setitem__(children, value)
+                    else:
+                        super().__setitem__(first_item, self._box_config["box_class"](
+                            **self.__box_config(extra_namespace=first_item)))
+                        self[first_item].__setitem__(children, value)
+                else:
+                    super().__setitem__(item, value)
         return value
 
     def __box_config(self, extra_namespace: Any = NO_NAMESPACE) -> Dict:
@@ -596,6 +615,11 @@ class Box(dict):
             if first_item in self.keys():
                 if hasattr(self[first_item], "__setitem__"):
                     return self[first_item].__setitem__(children, value)
+            elif self._box_config["default_box"]:
+                super().__setitem__(first_item, self._box_config["box_class"](**self.__box_config(extra_namespace=first_item)))
+                return self[first_item].__setitem__(children, value)
+            else:
+                raise BoxKeyError(f"'{self.__class__}' object has no attribute {first_item}")
         value = self.__recast(key, value)
         if key not in self.keys() and self._box_config["camel_killer_box"]:
             if self._box_config["camel_killer_box"] and isinstance(key, str):
@@ -1123,5 +1147,3 @@ class Box(dict):
         ) -> "Box":
             raise BoxError('msgpack is unavailable on this system, please install the "msgpack" package')
 
-        def getdoc(self):
-            return Box.__doc__

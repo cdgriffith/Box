@@ -4,9 +4,11 @@ Changelog
 Version 7.0.0
 -------------
 
-* Adding #239 support for properties and setters in subclasses (thanks to Serge Lu)
+* Adding #192 box_dots treats all keys with periods in them as separate keys (thanks to Rexbard)
+* Adding #211 support for properties and setters in subclasses (thanks to Serge Lu and David Aronchick)
 * Adding #226 namespace to track changes to the box (thanks to Jacob Hayes)
-* Adding #236 ``getdoc`` method to prevent iPython from adding extra key (thanks to Nishikant Parmar)
+* Adding #236 iPython detection to prevent adding attribute lookup words (thanks to Nishikant Parmar)
+* Adding new DDBox class (Default Dots Box) that is a subclass of SBox
 * Fixing #235 how ``|`` and ``+`` updates were performed for right operations (thanks to aviveh21)
 * Fixing #234 typos (thanks to Martin Schorfmann)
 * Fixing no implicit optionals with type hinting

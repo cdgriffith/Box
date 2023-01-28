@@ -9,7 +9,7 @@ from box.box_list import BoxList
 from box.config_box import ConfigBox
 from box.exceptions import BoxError, BoxKeyError
 from box.from_file import box_from_file, box_from_string
-from box.shorthand_box import SBox
+from box.shorthand_box import SBox, DDBox
 import box.converters
 
 __all__ = [
@@ -20,4 +20,5 @@ __all__ = [
     "BoxKeyError",
     "box_from_file",
     "SBox",
+    "DDBox",
 ]

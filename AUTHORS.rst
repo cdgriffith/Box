@@ -29,7 +29,6 @@ Code contributions:
 - Ivan Pepelnjak (ipspace)
 - Michał Górny (mgorny)
 - Serge Lu (Serge45)
-- Nishikant Parmar (nishikantparmariam)
 
 
 Suggestions and bug reporting:
@@ -84,3 +83,4 @@ Suggestions and bug reporting:
 - Rexbard
 - Martin Schorfmann (schorfma)
 - aviveh21
+- Nishikant Parmar (nishikantparmariam)

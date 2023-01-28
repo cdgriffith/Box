@@ -1063,6 +1063,7 @@ class TestBox:
         b = Box(
             {"my_key": {"does stuff": {"to get to": "where I want"}}, "key.with.list": [[[{"test": "value"}]]]},
             box_dots=True,
+            default_box=True
         )
         for key in b.keys(dotted=True):
             b[key]
@@ -1237,16 +1238,18 @@ class TestBox:
         assert len(list(a.keys())) == 2
 
     def test_default_dots(self):
+        bx1 = Box(default_box=True, box_dots=True)
+        bx1["a.a.a"]
+        assert bx1 == {"a": {"a":{"a":{}}}}
+
         a = Box(default_box=True, box_dots=True)
-        a["a.a.a"]
-        assert a == {"a.a.a": {}}
-        a["a.a.a."]
-        a["a.a.a.."]
-        assert a == {"a.a.a": {"": {"": {}}}}
+        a["a."]
+        a["a.."]
+        assert a == {"a": {"": {"": {}}}}
         a["b.b"] = 3
-        assert a == {"a.a.a": {"": {"": {}}}, "b.b": 3}
+        assert a == {"a": {"": {"": {}}}, "b": {"b": 3}}
         a.b.b = 4
-        assert a == {"a.a.a": {"": {"": {}}}, "b.b": 3, "b": {"b": 4}}
+        assert a == {"a": {"": {"": {}}}, "b": {"b": 4}}
         assert a["non.existent.key"] == {}
 
     def test_merge_list_options(self):
