@@ -15,6 +15,7 @@ Version 7.0.0
 * Fixing #235 how ``|`` and ``+`` updates were performed for right operations (thanks to aviveh21)
 * Fixing #234 typos (thanks to Martin Schorfmann)
 * Fixing no implicit optionals with type hinting
+* Removing Cython builds for mac until we can build universal2 wheels for arm M1 macs
 
 Version 6.1.0
 -------------

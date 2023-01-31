@@ -30,12 +30,11 @@ jobs:
         python setup.py sdist bdist_wheel
         twine upload dist/*
 
-  deploy-cython:
+  deploy-cython-windows:
     strategy:
       matrix:
-        os: [macos-latest, windows-latest]
         python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v3
