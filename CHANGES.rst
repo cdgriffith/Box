@@ -12,6 +12,7 @@ Version 7.0.0
 * Adding #236 iPython detection to prevent adding attribute lookup words (thanks to Nishikant Parmar)
 * Adding #238 allow ``|`` and ``+`` for frozen boxes (thanks to Peter B)
 * Adding new DDBox class (Default Dots Box) that is a subclass of SBox
+* Adding #242 more Cython builds using cibuildwheel (thanks to Jacob Hayes)
 * Fixing #235 how ``|`` and ``+`` updates were performed for right operations (thanks to aviveh21)
 * Fixing #234 typos (thanks to Martin Schorfmann)
 * Fixing no implicit optionals with type hinting

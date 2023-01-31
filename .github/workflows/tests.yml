@@ -5,102 +5,85 @@ name: Tests
 
 on:
   push:
-    branches: [ master, development, develop, test, tests ]
+    branches: [ test, tests ]
   pull_request:
     branches: [ master, development, develop, test, tests ]
 
 jobs:
-  package-checks:
+  build-checks:
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "pypy-3.8"]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-12, windows-latest]
     runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
+
+      - name: Set up Python 3.11
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v2
-        with:
-          path: ~/.cache/pip
-          key: package-check-${{ hashFiles('requirements.txt') }}-${{ hashFiles('requirements-test.txt') }}
-      - name: Install dependencies
+          python-version: "3.11"
+
+      - name: Build Wheels
+        env:
+          CIBW_SKIP: "cp36-* pp* *i686"
+          CIBW_BUILD_VERBOSITY: 1
+          CIBW_TEST_REQUIRES: "pytest msgpack ruamel.yaml tomli tomli-w"
+          CIBW_TEST_COMMAND: "pytest {package}/test"
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements-test.txt
-          pip install coveralls flake8 flake8-print mypy setuptools wheel twine Cython
-      - name: Lint with flake8
-        run: |
-          # stop the build if there are Python syntax errors, undefined names or print statements
-          flake8 box --count --select=E9,F63,F7,F82,T001,T002,T003,T004 --show-source --statistics
-          # exit-zero treats all errors as warnings.
-          flake8 . --count --exit-zero --max-complexity=20 --max-line-length=120 --statistics --extend-ignore E203
-      - name: Run mypy
-        run: mypy box
-      - name: Build Wheel and check distrubiton log description
-        run: |
-          python setup.py sdist bdist_wheel
-          twine check dist/*
-      - name: Test packaged wheel on *nix
-        if: matrix.os != 'windows-latest'
-        run: |
-          pip install dist/*.whl
-          rm -rf box
-          python -m pytest
-      - name: Test packaged wheel on Windows
-        if: matrix.os == 'windows-latest'
-        run: |
-          $wheel = (Get-ChildItem dist\*.whl | Sort lastWriteTime | Select-Object -last 1).Name
-          pip install dist\${wheel}
-          Remove-item box -recurse -force
-          python -m pytest
+          python -m pip install cibuildwheel --upgrade
+          python -m cibuildwheel --output-dir wheels
+
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v2
         with:
           name: python_box
-          path: dist/*.whl
+          path: wheels/*.whl
 
-  package-manylinux-checks:
+  lint-and-mypy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
+    - uses: actions/checkout@v3
 
-      - uses: actions/cache@v2
-        with:
-          path: ~/.cache/pip
-          key: package-manylinux-check-${{ hashFiles('requirements.txt') }}-${{ hashFiles('requirements-test.txt') }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements-test.txt
-          pip install coveralls flake8 flake8-print mypy setuptools wheel twine Cython
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
 
-      - uses: RalfG/python-wheels-manylinux-build@v0.4.2-manylinux2014_x86_64
-        with:
-          python-versions: 'cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310 cp311-cp311'
-          build-requirements: 'cython'
+    - uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: lint-and-mypy-${{ hashFiles('pyproject.toml') }}
 
-      - name: Test packaged wheel on linux
-        run: |
-          pip install dist/*cp310-manylinux*.whl
-          rm -rf box
-          python -m pytest
+    - name: Install dependencies
+      run: |
+        python -m pip install poetry --upgrade
+        poetry config virtualenvs.create false --local
 
-      - name: Upload wheel artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: python_box
-          path: dist/*-manylinux*.whl
+    - name: Poetry Install
+      run: poetry install --with dev
+      continue-on-error: true
 
-  test:
+    - name: Poetry Install 2
+      run: poetry install --with dev
+
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors, undefined names or print statements
+        python -m flake8 box --count --select=E9,F63,F7,F82,T001,T002,T003,T004 --show-source --statistics
+        # exit-zero treats all errors as warnings.
+        python -m flake8 . --count --exit-zero --max-complexity=20 --max-line-length=120 --statistics --extend-ignore E203
+
+    - name: Run mypy
+      run: python -m mypy box
+
+    - name: Build Wheel and check distribution log description
+      run: |
+        poetry build
+        python -m twine check dist/*
+
+  test-non-cython:
     strategy:
       matrix:
         python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
@@ -108,23 +91,36 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+
     - uses: actions/cache@v2
       with:
         path: ~/.cache/pip
-        key: test-${{ hashFiles('requirements.txt') }}-${{ hashFiles('requirements-test.txt') }}
+        key: test-${{ hashFiles('pyproject.toml') }}
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-test.txt
-        pip install setuptools wheel Cython
-        python setup.py build_ext --inplace
+        pip install poetry --upgrade
+        poetry config virtualenvs.create false --local
+
+    - name: Poetry Install
+      run: poetry install --with dev --with test
+      continue-on-error: true
+
+    - name: Poetry Install 2
+      run: poetry install --with dev --with test
+
+    - name: Poetry Build
+      run: poetry build
+      continue-on-error: true
+
     - name: Test with pytest
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        pytest --cov=box test/
+        python -m pytest --cov=box test/

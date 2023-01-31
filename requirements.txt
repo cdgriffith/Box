@@ -1,4 +1,0 @@
-msgpack>=1.0.0
-ruamel.yaml>=0.17
-tomli>=1.2.3; python_version < '3.11'
-tomli-w
