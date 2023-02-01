@@ -84,11 +84,11 @@ wheel = ">=0.34.2"
 
 
 [tool.poetry.extras]
-all = ["ruamel.yaml>=0.17", "tomli; python_version < '3.11'", "tomli-w", "msgpack"]
-yaml = ["ruamel.yaml>=0.17"]
-"ruamel.yaml" = ["ruamel.yaml>=0.17"]
+all = ["ruamel.yaml", "tomli", "tomli-w", "msgpack"]
+yaml = ["ruamel.yaml"]
+"ruamel.yaml" = ["ruamel.yaml"]
 PyYAML = ["PyYAML"]
-tomli = ["tomli; python_version < '3.11'", "tomli-w"]
+tomli = ["tomli", "tomli-w"]
 toml = ["toml"]
 msgpack=  ["msgpack"]
 
