@@ -56,7 +56,7 @@ jobs:
         path: ~/.cache/pip
         key: lint-and-mypy-${{ hashFiles('pyproject.toml') }}
 
-    - name: Install dependencies
+    - name: Install Dependencies
       run: |
         python -m pip install poetry --upgrade
         poetry config virtualenvs.create false --local
@@ -78,7 +78,7 @@ jobs:
     - name: Run mypy
       run: python -m mypy box
 
-    - name: Build Wheel and check distribution log description
+    - name: Build Wheel and Check Distribution Log Description
       run: |
         poetry build
         python -m twine check dist/*
@@ -102,7 +102,7 @@ jobs:
         path: ~/.cache/pip
         key: test-${{ hashFiles('pyproject.toml') }}
 
-    - name: Install dependencies
+    - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install poetry --upgrade
