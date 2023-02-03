@@ -43,6 +43,7 @@ Install from command line
 
 .. code:: bash
 
+        python -m pip install --upgrade pip
         pip install python-box[all]~=7.0 --upgrade
 
 Install with selected dependencies

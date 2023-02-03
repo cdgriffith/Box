@@ -16,7 +16,7 @@ exclude = '''
 
 [tool.poetry]
 name = "python-box"
-version = "7.0.0rc4"
+version = "7.0.0"
 description = "Advanced Python dictionaries with dot notation access"
 license = "MIT"
 authors = ["Chris Griffith <chris@cdgriffith.com>", ]
