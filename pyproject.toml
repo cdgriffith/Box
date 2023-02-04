@@ -20,7 +20,12 @@ version = "7.0.0"
 description = "Advanced Python dictionaries with dot notation access"
 license = "MIT"
 authors = ["Chris Griffith <chris@cdgriffith.com>", ]
-include = ["box_logo.png", "AUTHORS.rst", "CHANGES.rst", "LICENSE"]
+include = [
+        { path = "box_logo.png", format = "sdist" },
+        { path = "AUTHORS.rst", format = "sdist" },
+        { path = "CHANGES.rst", format = "sdist" },
+        { path = "LICENSE", format = "sdist" },
+]
 readme = "README.rst"
 repository = "https://github.com/cdgriffith/Box"
 build = "build.py"
