@@ -97,3 +97,7 @@ coverage/
 # don't upload cython files
 box/*.c
 .pytest_cache/
+
+box/*.rst
+box/LICENSE
+box/*png

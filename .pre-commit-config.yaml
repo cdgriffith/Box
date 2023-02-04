@@ -32,13 +32,12 @@ repos:
   rev: 22.12.0
   hooks:
     - id: black
-      args: [--config=.black.toml]
 
 - repo: local
   hooks:
     - id: cythonize-check
       name: Cythonize
-      entry: python -m poetry build
+      entry: pip install .
       language: system
       types: [python]
       pass_filenames: false

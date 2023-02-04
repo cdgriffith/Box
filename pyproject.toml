@@ -16,19 +16,19 @@ exclude = '''
 
 [tool.poetry]
 name = "python-box"
-version = "7.0.0"
+version = "7.0.1"
 description = "Advanced Python dictionaries with dot notation access"
 license = "MIT"
 authors = ["Chris Griffith <chris@cdgriffith.com>", ]
 include = [
-        { path = "box_logo.png", format = "sdist" },
-        { path = "AUTHORS.rst", format = "sdist" },
-        { path = "CHANGES.rst", format = "sdist" },
-        { path = "LICENSE", format = "sdist" },
+        "box/box_logo.png",
+        "box/AUTHORS.rst",
+        "box/CHANGES.rst",
+        "box/LICENSE",
+        "box/*"
 ]
 readme = "README.rst"
 repository = "https://github.com/cdgriffith/Box"
-build = "build.py"
 packages = [ { include = "box" }]
 classifiers = [
         "Programming Language :: Python",
@@ -97,6 +97,10 @@ tomli = ["tomli", "tomli-w"]
 toml = ["toml"]
 msgpack=  ["msgpack"]
 
+[tool.poetry.build]
+script = "build.py"
+generate-setup-file = true
+
 [build-system]
-requires = ["poetry>=0.12", "Cython", "setuptools", "wheel"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry-core>=1.5", "Cython", "setuptools", "wheel"]
+build-backend = "poetry.core.masonry.api"

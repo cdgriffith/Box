@@ -1,24 +1,35 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
-from distutils.command.build_ext import build_ext
+from setuptools.command.build_ext import build_ext
 
 from pathlib import Path
+import shutil
 
-root = os.path.abspath(os.path.dirname(__file__))
+root = Path(__file__).parent
+
+
+def copy_files():
+    # Why does poetry put include files at the root of site-packages? So bad! Copy them inside the package
+    shutil.copy(root / "AUTHORS.rst", root / "box" / "AUTHORS.rst")
+    shutil.copy(root / "CHANGES.rst", root / "box" / "CHANGES.rst")
+    shutil.copy(root / "LICENSE", root / "box" / "LICENSE")
+    shutil.copy(root / "box_logo.png", root / "box" / "box_logo.png")
+
 
 try:
     from Cython.Build import cythonize
 except ImportError:
     # Got to provide this function. Otherwise, poetry will fail
     def build(setup_kwargs):
-        pass
+        copy_files()
 
 
 # Cython is installed. Compile
 else:
     # This function will be executed in setup.py:
     def build(setup_kwargs):
+        copy_files()
         # Build
         setup_kwargs.update(
             {

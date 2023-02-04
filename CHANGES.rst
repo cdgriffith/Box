@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 7.0.1
+-------------
+
+* Fixing build system behavior (thanks to Michał Górny)
+
 Version 7.0.0
 -------------
 
