@@ -1,6 +1,23 @@
 Changelog
 =========
 
+Version 7.0.0
+-------------
+
+* Adding #169 default functions with the box_instance and key parameter (thanks to Коптев Роман Викторович)
+* Adding #170 Be able to initialize with a flattened dict - by using DDBox (thanks to Ash A.)
+* Adding #192 box_dots treats all keys with periods in them as separate keys (thanks to Rexbard)
+* Adding #211 support for properties and setters in subclasses (thanks to Serge Lu and David Aronchick)
+* Adding #226 namespace to track changes to the box (thanks to Jacob Hayes)
+* Adding #236 iPython detection to prevent adding attribute lookup words (thanks to Nishikant Parmar)
+* Adding #238 allow ``|`` and ``+`` for frozen boxes (thanks to Peter B)
+* Adding new DDBox class (Default Dots Box) that is a subclass of SBox
+* Adding #242 more Cython builds using cibuildwheel (thanks to Jacob Hayes)
+* Fixing #235 how ``|`` and ``+`` updates were performed for right operations (thanks to aviveh21)
+* Fixing #234 typos (thanks to Martin Schorfmann)
+* Fixing no implicit optionals with type hinting
+* Removing Cython builds for mac until we can build universal2 wheels for arm M1 macs
+
 Version 6.1.0
 -------------
 

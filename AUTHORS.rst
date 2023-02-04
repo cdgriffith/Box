@@ -28,6 +28,8 @@ Code contributions:
 - Dominic (Yobmod)
 - Ivan Pepelnjak (ipspace)
 - Michał Górny (mgorny)
+- Serge Lu (Serge45)
+
 
 Suggestions and bug reporting:
 
@@ -79,3 +81,9 @@ Suggestions and bug reporting:
 - Marcos Dione (mdione-cloudian)
 - Varun Madiath (vamega)
 - Rexbard
+- Martin Schorfmann (schorfma)
+- aviveh21
+- Nishikant Parmar (nishikantparmariam)
+- Peter B (barmettl)
+- Ash A. (dragonpaw)
+- Коптев Роман Викторович (romikforest)

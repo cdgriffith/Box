@@ -23,7 +23,7 @@ Pull Requests
 
 - Follow PEP8
 
-- Select to merge into `development` branch, NOT `master`
+- Select to merge into `develop` branch, NOT `master`
 
 - New features should have
     - Reasoning for addition in pull request

@@ -26,7 +26,7 @@ from test.common import (
 import pytest
 from ruamel.yaml import YAML
 
-from box import Box, BoxError, BoxKeyError, BoxList, ConfigBox, SBox
+from box import Box, BoxError, BoxKeyError, BoxList, ConfigBox, SBox, DDBox
 from box.box import _get_dot_paths, _camel_killer, _recursive_tuples  # type: ignore
 from box.converters import BOX_PARAMETERS
 
@@ -560,7 +560,9 @@ class TestBox:
             data.widget._bad_value
 
         base_config = data._Box__box_config()
+        assert base_config.pop("box_namespace") == ()
         widget_config = data.widget._Box__box_config()
+        assert widget_config.pop("box_namespace") == ("widget",)
 
         assert base_config == widget_config, "{} != {}".format(base_config, widget_config)
 
@@ -1005,8 +1007,9 @@ class TestBox:
         d | a
         b = dict(c=1, d={"sub": 1}, e=1)
         c = Box(d={"val": 2}, e=4)
-        assert c.__radd__(b) == Box(c=1, d={"sub": 1, "val": 2}, e=1)
+        assert (b + c) == Box(c=1, d={"sub": 1, "val": 2}, e=4)
         assert c + b == Box(c=1, d={"sub": 1, "val": 2}, e=1)
+        assert isinstance(b | c, Box)
         with pytest.raises(BoxError):
             BoxList() + Box()
 
@@ -1029,8 +1032,9 @@ class TestBox:
     def test_ror_boxes(self):
         b = dict(c=1, d={"sub": 1}, e=1)
         c = Box(d={"val": 2}, e=4)
-        assert c.__ror__(b) == Box(c=1, d={"sub": 1}, e=1)
+        assert c.__ror__(b) == Box(c=1, d={"val": 2}, e=4)
         assert c | b == Box(c=1, d={"sub": 1}, e=1)
+        assert isinstance(b | c, Box)
         with pytest.raises(BoxError):
             BoxList() | Box()
 
@@ -1059,6 +1063,7 @@ class TestBox:
         b = Box(
             {"my_key": {"does stuff": {"to get to": "where I want"}}, "key.with.list": [[[{"test": "value"}]]]},
             box_dots=True,
+            default_box=True,
         )
         for key in b.keys(dotted=True):
             b[key]
@@ -1233,16 +1238,18 @@ class TestBox:
         assert len(list(a.keys())) == 2
 
     def test_default_dots(self):
+        bx1 = Box(default_box=True, box_dots=True)
+        bx1["a.a.a"]
+        assert bx1 == {"a": {"a": {"a": {}}}}
+
         a = Box(default_box=True, box_dots=True)
-        a["a.a.a"]
-        assert a == {"a.a.a": {}}
-        a["a.a.a."]
-        a["a.a.a.."]
-        assert a == {"a.a.a": {"": {"": {}}}}
+        a["a."]
+        a["a.."]
+        assert a == {"a": {"": {"": {}}}}
         a["b.b"] = 3
-        assert a == {"a.a.a": {"": {"": {}}}, "b.b": 3}
+        assert a == {"a": {"": {"": {}}}, "b": {"b": 3}}
         a.b.b = 4
-        assert a == {"a.a.a": {"": {"": {}}}, "b.b": 3, "b": {"b": 4}}
+        assert a == {"a": {"": {"": {}}}, "b": {"b": 4}}
         assert a["non.existent.key"] == {}
 
     def test_merge_list_options(self):
@@ -1355,3 +1362,83 @@ class TestBox:
         assert "c" not in box2.a.b
 
         assert box2 == Box()
+
+    def test_box_property_support(self):
+        class BoxWithProperty(Box):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+            @property
+            def field(self):
+                return self._field
+
+            @field.setter
+            def field(self, value):
+                self._field = value
+
+            @field.deleter
+            def field(self):
+                """
+                This is required to make `del box.field` work properly otherwise a `BoxKeyError` would be thrown.
+                """
+                del self._field
+
+        box = BoxWithProperty()
+        box.field = 5
+
+        assert "field" not in box
+        assert "_field" in box
+        assert box.field == 5
+        assert box._field == 5
+        del box.field
+        assert not "_field" in box
+
+    def test_box_namespace(self):
+        bx = Box(default_box=True)
+        assert bx._box_config["box_namespace"] == ()
+        bx.a.b.c = 5
+        assert bx.a._box_config["box_namespace"] == ("a",)
+        assert bx.a.b._box_config["box_namespace"] == ("a", "b")
+        bx.x = {"y": {"z": 5}}
+        assert bx.x._box_config["box_namespace"] == ("x",)
+        assert bx.x.y._box_config["box_namespace"] == ("x", "y")
+        bx[None][1][2] = 3
+        assert bx[None][1]._box_config["box_namespace"] == (None, 1)
+
+        for modified_box in [
+            bx.a + bx.x,
+            bx.a - bx.x,
+            bx.a | bx.x,
+        ]:
+            assert modified_box._box_config["box_namespace"] == ()
+            assert modified_box.b._box_config["box_namespace"] == ("b",)
+            assert modified_box.y._box_config["box_namespace"] == ("y",)
+
+        bx.modified = {}
+        assert bx.modified._box_config["box_namespace"] == ("modified",)
+        bx.modified += bx.a
+        assert bx.modified.b._box_config["box_namespace"] == ("modified", "b")
+        bx.modified |= bx.x
+        assert bx.modified.y._box_config["box_namespace"] == ("modified", "y")
+        bx.modified -= bx.a
+        assert bx.modified._box_config["box_namespace"] == ("modified",)
+
+        bx2 = Box(box_namespace=False)
+        assert bx2._box_config["box_namespace"] is False
+        bx2["x"] = {"y": {"z": 5}}
+        assert bx2._box_config["box_namespace"] is False
+        assert bx2["x"]._box_config["box_namespace"] is False
+
+    def test_union_frozen_box(self):
+        my_box = Box(a=5, frozen_box=True)
+
+        assert my_box | {"a": 1} == {"a": 1}
+        assert {"a": 1} | my_box == {"a": 5}
+
+    def test_default_box_callable(self):
+        def func(box_instance, key):
+            return DDBox(bi=str(box_instance), key=key)
+
+        my_box = DDBox(default_box_attr=func)
+
+        assert my_box.a == {"bi": "{}", "key": "a"}

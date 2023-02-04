@@ -3,6 +3,8 @@
 
 from box.box import Box
 
+__all__ = ["SBox", "DDBox"]
+
 
 class SBox(Box):
     """
@@ -41,10 +43,26 @@ class SBox(Box):
         return self.to_toml()
 
     def __repr__(self):
-        return "ShorthandBox({0})".format(str(self.to_dict()))
+        return f"SBox({self})"
 
     def copy(self):
         return SBox(super(SBox, self).copy())
 
     def __copy__(self):
         return SBox(super(SBox, self).copy())
+
+
+class DDBox(SBox):
+    def __init__(self, *args, **kwargs):
+        kwargs["box_dots"] = True
+        kwargs["default_box"] = True
+        super().__init__(*args, **kwargs)
+
+    def __new__(cls, *args, **kwargs):
+        obj = super().__new__(cls, *args, **kwargs)
+        obj._box_config["box_dots"] = True
+        obj._box_config["default_box"] = True
+        return obj
+
+    def __repr__(self):
+        return f"DDBox({self})"

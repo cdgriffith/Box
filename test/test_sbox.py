@@ -22,7 +22,7 @@ class TestSBox:
         yaml = YAML()
         test_item = yaml.load(pbox.yaml)
         assert test_item["inner"]["camel_case"] == "Item"
-        assert repr(pbox["inner"]).startswith("ShorthandBox(")
+        assert repr(pbox["inner"]).startswith("SBox(")
         assert not isinstance(pbox.dict, Box)
         assert pbox.dict["inner"]["camel_case"] == "Item"
         assert pbox.toml.startswith('key1 = "value1"')

@@ -1,0 +1,97 @@
+[tool.black]
+line-length = 120
+target-version = ['py37', 'py38', 'py39', 'py310', 'py311']
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.idea
+  | \.pytest_cache
+  | _build
+  | build
+  | dist
+  | venv
+)/
+'''
+
+[tool.poetry]
+name = "python-box"
+version = "7.0.0"
+description = "Advanced Python dictionaries with dot notation access"
+license = "MIT"
+authors = ["Chris Griffith <chris@cdgriffith.com>", ]
+include = ["box_logo.png", "AUTHORS.rst", "CHANGES.rst", "LICENSE"]
+readme = "README.rst"
+repository = "https://github.com/cdgriffith/Box"
+build = "build.py"
+packages = [ { include = "box" }]
+classifiers = [
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Development Status :: 5 - Production/Stable",
+        "Natural Language :: English",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+        "Topic :: Utilities",
+        "Topic :: Software Development",
+        "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+[tool.poetry.dependencies]
+python = ">=3.7"
+msgpack = {version = ">=1.0.0", optional = true}
+"ruamel.yaml" = {version = ">=0.17", optional = true}
+tomli = {version = ">=1.2.3", python = '<3.11', optional = true}
+tomli-w = {version = ">=1.0.0", optional = true}
+PyYAML = {version = ">=6.0", optional = true}
+toml = {version = ">=0.10.2", optional = true}
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+black = ">=22.10.0"
+Cython = ">=0.29"
+pre-commit = ">=2.20"
+coveralls = ">=3.3.1"
+flake8 = ">=5.0.4"
+flake8-print = ">=5.0.0"
+mypy = ">=0.991"
+setuptools = ">=67.0.0"
+wheel = ">=0.38.4"
+twine = ">=4.0.2"
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+coverage = ">=5.0.4"
+pytest = ">=7.1.3"
+pytest-cov = ">=2.8.1"
+msgpack = ">=1.0.0"
+"ruamel.yaml" =">=0.17"
+tomli = {version = ">=1.2.3", python = '<3.11'}
+tomli-w = ">=1.0.0"
+types-PyYAML = ">=6.0.3"
+wheel = ">=0.34.2"
+
+
+[tool.poetry.extras]
+all = ["ruamel.yaml", "tomli", "tomli-w", "msgpack"]
+yaml = ["ruamel.yaml"]
+"ruamel.yaml" = ["ruamel.yaml"]
+PyYAML = ["PyYAML"]
+tomli = ["tomli", "tomli-w"]
+toml = ["toml"]
+msgpack=  ["msgpack"]
+
+[build-system]
+requires = ["poetry>=0.12", "Cython", "setuptools", "wheel"]
+build-backend = "poetry.masonry.api"
