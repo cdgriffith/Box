@@ -93,5 +93,5 @@ toml = ["toml"]
 msgpack=  ["msgpack"]
 
 [build-system]
-requires = ["poetry>=0.12", "Cython", "setuptools", "wheel"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry-core>=1.0.0", "Cython", "setuptools", "wheel"]
+build-backend = "poetry.core.masonry.api"
