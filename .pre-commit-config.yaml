@@ -37,7 +37,7 @@ repos:
   hooks:
     - id: cythonize-check
       name: Cythonize
-      entry: pip install .
+      entry: pip install -e .
       language: system
       types: [python]
       pass_filenames: false
