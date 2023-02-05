@@ -62,10 +62,11 @@ jobs:
 
       - name: Build Wheels
         env:
-          CIBW_SKIP: "cp36-* pp* *i686"
+          CIBW_SKIP: "cp36-* pp* *i686 cp37-macosx_x86_64"
           CIBW_BUILD_VERBOSITY: 1
           CIBW_TEST_REQUIRES: "pytest msgpack ruamel.yaml tomli tomli-w"
           CIBW_TEST_COMMAND: "pytest {package}/test"
+          CIBW_ARCHS_MACOS: "x86_64 universal2 arm64"
         run: python -m cibuildwheel --output-dir wheels
 
       - name: Publish Wheels
