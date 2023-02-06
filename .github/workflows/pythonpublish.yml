@@ -68,7 +68,7 @@ jobs:
           CIBW_TEST_COMMAND: "pytest {package}/test"
           CIBW_BEFORE_BUILD: "python -m pip install pip --upgrade"
           CIBW_BEFORE_TEST: "python -m pip install pip --upgrade"
-          CIBW_ARCHS_MACOS: "x86_64"
+          CIBW_ARCHS_MACOS: "universal2"
         run: python -m cibuildwheel --output-dir wheels
 
       - name: Publish Wheels
