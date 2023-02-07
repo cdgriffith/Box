@@ -38,13 +38,14 @@ jobs:
           CIBW_BEFORE_BUILD: "python -m pip install pip --upgrade"
           CIBW_BEFORE_TEST: "python -m pip install pip --upgrade"
           CIBW_ARCHS_MACOS: "universal2"
+          MACOSX_DEPLOYMENT_TARGET: "10.9"
         run: |
           python -m pip install --upgrade pip
           python -m pip install cibuildwheel --upgrade
           python -m cibuildwheel --output-dir wheels
 
       - name: Upload wheel artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: python_box
           path: wheels/*.whl

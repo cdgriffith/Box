@@ -69,6 +69,7 @@ jobs:
           CIBW_BEFORE_BUILD: "python -m pip install pip --upgrade"
           CIBW_BEFORE_TEST: "python -m pip install pip --upgrade"
           CIBW_ARCHS_MACOS: "universal2"
+          MACOSX_DEPLOYMENT_TARGET: "10.9"
         run: python -m cibuildwheel --output-dir wheels
 
       - name: Publish Wheels
