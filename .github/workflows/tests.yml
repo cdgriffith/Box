@@ -36,7 +36,7 @@ jobs:
           CIBW_TEST_REQUIRES: "pytest msgpack ruamel.yaml tomli tomli-w"
           CIBW_TEST_COMMAND: "pytest {package}/test"
           CIBW_BEFORE_BUILD: "python -m pip install pip --upgrade"
-          CIBW_BEFORE_TEST: "python -m pip install pip --upgrade"
+          CIBW_BEFORE_TEST: "python -m pip install pip --upgrade && python -m pip debug --verbose && SYSTEM_VERSION_COMPAT=0 python -m pip debug --verbose"
           CIBW_ARCHS_MACOS: "universal2"
           MACOSX_DEPLOYMENT_TARGET: "10.9"
         run: |
