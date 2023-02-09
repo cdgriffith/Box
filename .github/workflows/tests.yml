@@ -31,7 +31,7 @@ jobs:
 
       - name: Build Wheels
         env:
-          CIBW_SKIP: "cp36-* pp* *i686 cp37-macosx* cp38-macosx*"
+          CIBW_SKIP: "cp36-* pp* *i686 cp37-macosx*"
           CIBW_BUILD_VERBOSITY: 1
           CIBW_TEST_REQUIRES: "pytest msgpack ruamel.yaml tomli tomli-w"
           CIBW_TEST_COMMAND: "pytest {package}/test"
