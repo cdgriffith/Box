@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 7.0.1
+-------------
+
+* Switching off of poetry due to multiple build issues
+
 Version 7.0.0
 -------------
 
