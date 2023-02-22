@@ -32,6 +32,7 @@ repos:
   rev: 23.1.0
   hooks:
     - id: black
+      args: [--config=.black.toml]
 
 - repo: local
   hooks:
