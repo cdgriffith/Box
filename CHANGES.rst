@@ -4,7 +4,7 @@ Changelog
 Version 7.0.1
 -------------
 
-* Fixing build system behavior (thanks to Michał Górny)
+* Switching off of poetry due to multiple build issues
 
 Version 7.0.0
 -------------
