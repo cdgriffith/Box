@@ -22,7 +22,6 @@ from box.converters import (
     _to_yaml,
     msgpack_available,
     toml_read_library,
-    toml_write_library,
     yaml_available,
 )
 from box.exceptions import BoxError, BoxTypeError
@@ -102,7 +101,7 @@ class BoxList(list):
         elif isinstance(p_object, box.Box):
             p_object._box_config.update(self.box_options)
         if isinstance(p_object, list) and not self._is_intact_type(p_object):
-            p_object = self if id(p_object) == self.box_org_ref else self.__class__(p_object, **self.box_options)
+            p_object = self.__class__(p_object, **self.box_options)
         elif isinstance(p_object, BoxList):
             p_object.box_options.update(self.box_options)
         return p_object

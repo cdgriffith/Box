@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 7.1.0
+-------------
+
+* Removing #251 support for circular references in lists
+
+
 Version 7.0.1
 -------------
 

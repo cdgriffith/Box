@@ -588,15 +588,6 @@ class TestBox:
 
         bx.to_json()
 
-        circular_list = []
-        circular_list.append(circular_list)
-        bl = BoxList(circular_list)
-        assert bl == bl[0]
-        assert isinstance(bl[0], BoxList)
-        circular_list_2 = bl.to_list()
-        assert circular_list_2 == circular_list_2[0]
-        assert isinstance(circular_list_2, list)
-
     def test_to_multiline(self):
         a = BoxList([Box(a=1), Box(b=2), Box(three=5)])
 
