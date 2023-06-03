@@ -18,12 +18,6 @@ try:
 except ImportError:
     from collections.abc import Callable, Iterable, Mapping
 
-try:
-    from IPython import get_ipython
-except ImportError:
-    ipython = False
-else:
-    ipython = True if get_ipython() else False
 
 import box
 from box.converters import (
@@ -54,6 +48,17 @@ _list_pos_re = re.compile(r"\[(\d+)\]")
 NO_DEFAULT = object()
 # a sentinel object for indicating when to skip adding a new namespace, allowing `None` keys
 NO_NAMESPACE = object()
+
+
+def _is_ipython():
+    try:
+        from IPython import get_ipython
+    except ImportError:
+        ipython = False
+    else:
+        ipython = True if get_ipython() else False
+    
+    return ipython
 
 
 def _exception_cause(e):
@@ -483,7 +488,7 @@ class Box(dict):
         self.__dict__.update(state)
 
     def __get_default(self, item, attr=False):
-        if ipython and item in ("getdoc", "shape"):
+        if item in ("getdoc", "shape") and _is_ipython():
             return None
         default_value = self._box_config["default_box_attr"]
         if default_value in (self._box_config["box_class"], dict):
