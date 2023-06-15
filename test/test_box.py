@@ -1255,6 +1255,19 @@ class TestBox:
         a.merge_update({"key1": {"new": 5}, "Key 2": {"add_key": 6}, "lister": ["a"]})
         assert a.lister == ["a"]
 
+        d1 = {'app': {'S3': {'S3Service': [{'bucket': 'bucket001'}]}}}
+
+        d2 = {'app': {'S3': {'S3Service': [{'expirationDate': '2099-10-25'}]}}}
+
+        box1 = Box(d1)
+
+        box1.merge_update(d2, box_merge_lists='extend')
+
+        assert box1 == Box({'app': {'S3': {'S3Service': [{'bucket': 'bucket001'}, {'expirationDate': '2099-10-25'}]}}}), box1
+
+
+
+
     def test_box_from_empty_yaml(self):
         out = Box.from_yaml("---")
         assert out == Box()

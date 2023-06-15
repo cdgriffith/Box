@@ -4,8 +4,8 @@ Changelog
 Version 7.1.0
 -------------
 
+* Fixing #253 merge_update box list merge types not populated to sub dictionaries (thanks to lei wang)
 * Removing #251 support for circular references in lists
-
 
 Version 7.0.1
 -------------

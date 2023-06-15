@@ -823,7 +823,7 @@ class Box(dict):
                 # in the `converted` box_config set
                 v = self._box_config["box_class"](v, **self.__box_config(extra_namespace=k))
                 if k in self and isinstance(self[k], dict):
-                    self[k].merge_update(v)
+                    self[k].merge_update(v, box_merge_lists=merge_type)
                     return
             if isinstance(v, list) and not intact_type:
                 v = box.BoxList(v, **self.__box_config(extra_namespace=k))
