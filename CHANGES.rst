@@ -4,8 +4,9 @@ Changelog
 Version 7.1.0
 -------------
 
+* Adding #255 defer ipython import for large import speed improvements (thanks to Eric Prestat)
 * Fixing #253 merge_update box list merge types not populated to sub dictionaries (thanks to lei wang)
-* Removing #251 support for circular references in lists
+* Removing #251 support for circular references in lists (thanks to d00m514y3r)
 
 Version 7.0.1
 -------------
