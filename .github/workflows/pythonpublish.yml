@@ -18,7 +18,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.11'
 
     - name: Install Dependencies
       run: |
@@ -67,11 +67,11 @@ jobs:
     - name: Set up Python 3.10
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10"
+        python-version: "3.11"
 
     - uses: RalfG/python-wheels-manylinux-build@v0.7.1-manylinux2010_x86_64
       with:
-        python-versions: 'cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310'
+        python-versions: 'cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310 cp311-cp311'
         build-requirements: 'cython'
 
     - name: Install dependencies

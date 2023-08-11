@@ -5,7 +5,7 @@
 import copy
 import re
 from os import PathLike
-from typing import Optional, Iterable, Type, Union
+from typing import Optional, Iterable, Type, Union, List, Any
 
 import box
 from box.converters import (
@@ -149,15 +149,15 @@ class BoxList(list):
             out.append(copy.deepcopy(k, memo=memo))
         return out
 
-    def __hash__(self):
+    def __hash__(self) -> int:  # type: ignore[override]
         if self.box_options.get("frozen_box"):
             hashing = 98765
             hashing ^= hash(tuple(self))
             return hashing
         raise BoxTypeError("unhashable type: 'BoxList'")
 
-    def to_list(self):
-        new_list = []
+    def to_list(self) -> List:
+        new_list: List[Any] = []
         for x in self:
             if x is self:
                 new_list.append(new_list)

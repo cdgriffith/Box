@@ -224,7 +224,7 @@ class TestBoxList:
     def test_no_recursion_errors(self):
         a = Box({"list_of_dicts": [[{"example1": 1}]]})
         a.list_of_dicts.append([{"example2": 2}])
-        assert a['list_of_dicts'][1] == [{"example2": 2}]
+        assert a["list_of_dicts"][1] == [{"example2": 2}]
 
     def test_no_circular_references(self):
         circular_list = []

@@ -10,7 +10,7 @@ import re
 import warnings
 from keyword import iskeyword
 from os import PathLike
-from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union, Literal
 from inspect import signature
 
 try:
@@ -57,7 +57,7 @@ def _is_ipython():
         ipython = False
     else:
         ipython = True if get_ipython() else False
-    
+
     return ipython
 
 
@@ -206,7 +206,7 @@ class Box(dict):
         box_recast: Optional[Dict] = None,
         box_dots: bool = False,
         box_class: Optional[Union[Dict, Type["Box"]]] = None,
-        box_namespace: Tuple[str, ...] = (),
+        box_namespace: Union[Tuple[str, ...], Literal[False]] = (),
         **kwargs: Any,
     ):
         """
@@ -253,7 +253,7 @@ class Box(dict):
         box_recast: Optional[Dict] = None,
         box_dots: bool = False,
         box_class: Optional[Union[Dict, Type["Box"]]] = None,
-        box_namespace: Tuple[str, ...] = (),
+        box_namespace: Union[Tuple[str, ...], Literal[False]] = (),
         **kwargs: Any,
     ):
         super().__init__()
@@ -385,7 +385,7 @@ class Box(dict):
             return hashing
         raise BoxTypeError('unhashable type: "Box"')
 
-    def __dir__(self):
+    def __dir__(self) -> List[str]:
         items = set(super().__dir__())
         # Only show items accessible by dot notation
         for key in self.keys():
