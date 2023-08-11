@@ -594,6 +594,12 @@ class Box(dict):
             if item == "_box_config":
                 cause = _exception_cause(err)
                 raise BoxKeyError("_box_config should only exist as an attribute and is never defaulted") from cause
+            if isinstance(item, slice):
+                # In Python 3.12 this changes to a KeyError instead of TypeError
+                new_box = self._box_config["box_class"](**self.__box_config())
+                for x in list(super().keys())[item.start : item.stop : item.step]:
+                    new_box[x] = self[x]
+                return new_box
             if self._box_config["box_dots"] and isinstance(item, str) and ("." in item or "[" in item):
                 try:
                     first_item, children = _parse_box_dots(self, item)

@@ -116,7 +116,7 @@ class BoxList(list):
     def insert(self, index, p_object):
         super().insert(index, self._convert(p_object))
 
-    def _dotted_helper(self):
+    def _dotted_helper(self) -> List[str]:
         keys = []
         for idx, item in enumerate(self):
             added = False
