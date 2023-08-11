@@ -10,6 +10,7 @@ Version 7.1.0
 * Fixing #257 Two test failures due to arguments having incorrect types (thanks to Michał Górny)
 * Fixing stub files to match latest code signatures
 * Removing #251 support for circular references in lists (thanks to d00m514y3r)
+* Removing support for Python 3.7 as it is EOL
 
 Version 7.0.1
 -------------
