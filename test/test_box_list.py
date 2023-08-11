@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import sys
+import platform
 from pathlib import Path
 from io import StringIO
 from test.common import test_root, tmp_dir
@@ -229,7 +230,8 @@ class TestBoxList:
 
     def test_no_circular_references(self):
         og_limit = sys.getrecursionlimit()
-        sys.setrecursionlimit(100)
+        if platform.python_implementation() == "CPython":
+            sys.setrecursionlimit(200)
         try:
             circular_list = []
             circular_list.append(circular_list)

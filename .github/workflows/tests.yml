@@ -77,21 +77,25 @@ jobs:
           path: ~/.cache/pip
           key: package-manylinux-check-${{ hashFiles('requirements.txt') }}-${{ hashFiles('requirements-test.txt') }}
 
-      - name: Install dependencies
+      - name: Build wheels
         run: |
           python -m pip install --upgrade pip
+          pip install cibuildwheel
+          python -m cibuildwheel --output-dir dist
+        env:
+          CIBW_BUILD: cp38-manylinux* cp39-manylinux* cp310-manylinux* cp311-manylinux* cp312-manylinux*
+          CIBW_BEFORE_BUILD: pip install Cython
+
+      - name: Install test dependencies
+        run: |
           pip install -r requirements.txt
           pip install -r requirements-test.txt
           pip install coveralls flake8 flake8-print mypy setuptools wheel twine Cython
 
-      - uses: RalfG/python-wheels-manylinux-build@v0.7.1-manylinux2010_x86_64
-        with:
-          python-versions: 'cp38-cp38 cp39-cp39 cp310-cp310 cp311-cp311'
-          build-requirements: 'cython'
-
       - name: Test packaged wheel on linux
         run: |
-          pip install dist/*cp310-manylinux*.whl
+          ls dist/*
+          pip install dist/*311*.whl
           rm -rf box
           python -m pytest -vv
 
