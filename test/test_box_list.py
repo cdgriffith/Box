@@ -229,13 +229,9 @@ class TestBoxList:
         assert a["list_of_dicts"][1] == [{"example2": 2}]
 
     def test_no_circular_references(self):
-        og_limit = sys.getrecursionlimit()
-        if platform.python_implementation() == "CPython":
-            sys.setrecursionlimit(200)
-        try:
-            circular_list = []
-            circular_list.append(circular_list)
-            with pytest.raises(RecursionError):
-                BoxList(circular_list)
-        finally:
-            sys.setrecursionlimit(og_limit)
+        if sys.version_info >= (3, 12) and sys.platform == "win32":
+            pytest.skip("Windows fatal exception: stack overflow on github actions")
+        circular_list = []
+        circular_list.append(circular_list)
+        with pytest.raises(RecursionError):
+            BoxList(circular_list)
