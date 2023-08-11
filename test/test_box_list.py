@@ -5,6 +5,7 @@
 import json
 import os
 import shutil
+import sys
 from pathlib import Path
 from io import StringIO
 from test.common import test_root, tmp_dir
@@ -227,7 +228,12 @@ class TestBoxList:
         assert a["list_of_dicts"][1] == [{"example2": 2}]
 
     def test_no_circular_references(self):
-        circular_list = []
-        circular_list.append(circular_list)
-        with pytest.raises(RecursionError):
-            BoxList(circular_list)
+        og_limit = sys.getrecursionlimit()
+        sys.setrecursionlimit(100)
+        try:
+            circular_list = []
+            circular_list.append(circular_list)
+            with pytest.raises(RecursionError):
+                BoxList(circular_list)
+        finally:
+            sys.setrecursionlimit(og_limit)
