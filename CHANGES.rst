@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 7.1.1
+-------------
+
+* Fixing Cython optimized build deployments for linux
+
 Version 7.1.0
 -------------
 
