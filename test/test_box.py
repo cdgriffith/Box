@@ -588,15 +588,6 @@ class TestBox:
 
         bx.to_json()
 
-        circular_list = []
-        circular_list.append(circular_list)
-        bl = BoxList(circular_list)
-        assert bl == bl[0]
-        assert isinstance(bl[0], BoxList)
-        circular_list_2 = bl.to_list()
-        assert circular_list_2 == circular_list_2[0]
-        assert isinstance(circular_list_2, list)
-
     def test_to_multiline(self):
         a = BoxList([Box(a=1), Box(b=2), Box(three=5)])
 
@@ -1264,6 +1255,18 @@ class TestBox:
         a.merge_update({"key1": {"new": 5}, "Key 2": {"add_key": 6}, "lister": ["a"]})
         assert a.lister == ["a"]
 
+        d1 = {"app": {"S3": {"S3Service": [{"bucket": "bucket001"}]}}}
+
+        d2 = {"app": {"S3": {"S3Service": [{"expirationDate": "2099-10-25"}]}}}
+
+        box1 = Box(d1)
+
+        box1.merge_update(d2, box_merge_lists="extend")
+
+        assert box1 == Box(
+            {"app": {"S3": {"S3Service": [{"bucket": "bucket001"}, {"expirationDate": "2099-10-25"}]}}}
+        ), box1
+
     def test_box_from_empty_yaml(self):
         out = Box.from_yaml("---")
         assert out == Box()
@@ -1331,7 +1334,7 @@ class TestBox:
             "box_dots": True,
             "modify_tuples_box": True,
             "box_intact_types": (),
-            "box_recast": True,
+            "box_recast": {"id": int},
         }
 
         bx = Box(**params)

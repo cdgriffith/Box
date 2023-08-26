@@ -5,6 +5,8 @@
 import json
 import os
 import shutil
+import sys
+import platform
 from pathlib import Path
 from io import StringIO
 from test.common import test_root, tmp_dir
@@ -220,3 +222,16 @@ class TestBoxList:
                 assert item._box_config["default_box"] is True
             elif isinstance(item, BoxList):
                 assert item.box_options["default_box"] is True
+
+    def test_no_recursion_errors(self):
+        a = Box({"list_of_dicts": [[{"example1": 1}]]})
+        a.list_of_dicts.append([{"example2": 2}])
+        assert a["list_of_dicts"][1] == [{"example2": 2}]
+
+    def test_no_circular_references(self):
+        if sys.version_info >= (3, 12) and sys.platform == "win32":
+            pytest.skip("Windows fatal exception: stack overflow on github actions")
+        circular_list = []
+        circular_list.append(circular_list)
+        with pytest.raises(RecursionError):
+            BoxList(circular_list)

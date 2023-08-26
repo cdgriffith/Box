@@ -10,7 +10,7 @@ import re
 import warnings
 from keyword import iskeyword
 from os import PathLike
-from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union, Literal
 from inspect import signature
 
 try:
@@ -18,12 +18,6 @@ try:
 except ImportError:
     from collections.abc import Callable, Iterable, Mapping
 
-try:
-    from IPython import get_ipython
-except ImportError:
-    ipython = False
-else:
-    ipython = True if get_ipython() else False
 
 import box
 from box.converters import (
@@ -54,6 +48,17 @@ _list_pos_re = re.compile(r"\[(\d+)\]")
 NO_DEFAULT = object()
 # a sentinel object for indicating when to skip adding a new namespace, allowing `None` keys
 NO_NAMESPACE = object()
+
+
+def _is_ipython():
+    try:
+        from IPython import get_ipython
+    except ImportError:
+        ipython = False
+    else:
+        ipython = True if get_ipython() else False
+
+    return ipython
 
 
 def _exception_cause(e):
@@ -201,7 +206,7 @@ class Box(dict):
         box_recast: Optional[Dict] = None,
         box_dots: bool = False,
         box_class: Optional[Union[Dict, Type["Box"]]] = None,
-        box_namespace: Tuple[str, ...] = (),
+        box_namespace: Union[Tuple[str, ...], Literal[False]] = (),
         **kwargs: Any,
     ):
         """
@@ -248,7 +253,7 @@ class Box(dict):
         box_recast: Optional[Dict] = None,
         box_dots: bool = False,
         box_class: Optional[Union[Dict, Type["Box"]]] = None,
-        box_namespace: Tuple[str, ...] = (),
+        box_namespace: Union[Tuple[str, ...], Literal[False]] = (),
         **kwargs: Any,
     ):
         super().__init__()
@@ -380,7 +385,7 @@ class Box(dict):
             return hashing
         raise BoxTypeError('unhashable type: "Box"')
 
-    def __dir__(self):
+    def __dir__(self) -> List[str]:
         items = set(super().__dir__())
         # Only show items accessible by dot notation
         for key in self.keys():
@@ -483,7 +488,7 @@ class Box(dict):
         self.__dict__.update(state)
 
     def __get_default(self, item, attr=False):
-        if ipython and item in ("getdoc", "shape"):
+        if item in ("getdoc", "shape") and _is_ipython():
             return None
         default_value = self._box_config["default_box_attr"]
         if default_value in (self._box_config["box_class"], dict):
@@ -589,6 +594,12 @@ class Box(dict):
             if item == "_box_config":
                 cause = _exception_cause(err)
                 raise BoxKeyError("_box_config should only exist as an attribute and is never defaulted") from cause
+            if isinstance(item, slice):
+                # In Python 3.12 this changes to a KeyError instead of TypeError
+                new_box = self._box_config["box_class"](**self.__box_config())
+                for x in list(super().keys())[item.start : item.stop : item.step]:
+                    new_box[x] = self[x]
+                return new_box
             if self._box_config["box_dots"] and isinstance(item, str) and ("." in item or "[" in item):
                 try:
                     first_item, children = _parse_box_dots(self, item)
@@ -823,7 +834,7 @@ class Box(dict):
                 # in the `converted` box_config set
                 v = self._box_config["box_class"](v, **self.__box_config(extra_namespace=k))
                 if k in self and isinstance(self[k], dict):
-                    self[k].merge_update(v)
+                    self[k].merge_update(v, box_merge_lists=merge_type)
                     return
             if isinstance(v, list) and not intact_type:
                 v = box.BoxList(v, **self.__box_config(extra_namespace=k))

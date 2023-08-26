@@ -5,7 +5,7 @@
 import copy
 import re
 from os import PathLike
-from typing import Optional, Iterable, Type, Union
+from typing import Optional, Iterable, Type, Union, List, Any
 
 import box
 from box.converters import (
@@ -22,7 +22,6 @@ from box.converters import (
     _to_yaml,
     msgpack_available,
     toml_read_library,
-    toml_write_library,
     yaml_available,
 )
 from box.exceptions import BoxError, BoxTypeError
@@ -102,7 +101,7 @@ class BoxList(list):
         elif isinstance(p_object, box.Box):
             p_object._box_config.update(self.box_options)
         if isinstance(p_object, list) and not self._is_intact_type(p_object):
-            p_object = self if id(p_object) == self.box_org_ref else self.__class__(p_object, **self.box_options)
+            p_object = self.__class__(p_object, **self.box_options)
         elif isinstance(p_object, BoxList):
             p_object.box_options.update(self.box_options)
         return p_object
@@ -117,7 +116,7 @@ class BoxList(list):
     def insert(self, index, p_object):
         super().insert(index, self._convert(p_object))
 
-    def _dotted_helper(self):
+    def _dotted_helper(self) -> List[str]:
         keys = []
         for idx, item in enumerate(self):
             added = False
@@ -150,15 +149,15 @@ class BoxList(list):
             out.append(copy.deepcopy(k, memo=memo))
         return out
 
-    def __hash__(self):
+    def __hash__(self) -> int:  # type: ignore[override]
         if self.box_options.get("frozen_box"):
             hashing = 98765
             hashing ^= hash(tuple(self))
             return hashing
         raise BoxTypeError("unhashable type: 'BoxList'")
 
-    def to_list(self):
-        new_list = []
+    def to_list(self) -> List:
+        new_list: List[Any] = []
         for x in self:
             if x is self:
                 new_list.append(new_list)

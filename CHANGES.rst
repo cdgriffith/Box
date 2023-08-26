@@ -1,6 +1,17 @@
 Changelog
 =========
 
+Version 7.1.0
+-------------
+
+* Adding #255 defer ipython import for large import speed improvements (thanks to Eric Prestat)
+* Adding testing for Python 3.12
+* Fixing #253 merge_update box list merge types not populated to sub dictionaries (thanks to lei wang)
+* Fixing #257 Two test failures due to arguments having incorrect types (thanks to Michał Górny)
+* Fixing stub files to match latest code signatures
+* Removing #251 support for circular references in lists (thanks to d00m514y3r)
+* Removing support for Python 3.7 as it is EOL
+
 Version 7.0.1
 -------------
 

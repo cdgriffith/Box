@@ -1,6 +1,5 @@
-from box.exceptions import BoxError as BoxError
-from os import PathLike as PathLike
-from typing import Any, Union, Optional, Dict, Callable
+from typing import Any, Callable, Optional, Union, Dict
+from os import PathLike
 
 yaml_available: bool
 toml_available: bool
@@ -10,57 +9,52 @@ toml_read_library: Optional[Any]
 toml_write_library: Optional[Any]
 toml_decode_error: Optional[Callable]
 
-def _exists(filename: Union[str, PathLike], create: bool = False) -> Any: ...
 def _to_json(
-    obj, filename: Optional[Union[str, PathLike]] = None, encoding: str = "utf-8", errors: str = "strict", **json_kwargs
-) -> Any: ...
+    obj, filename: Optional[Union[str, PathLike]] = ..., encoding: str = ..., errors: str = ..., **json_kwargs
+): ...
 def _from_json(
-    json_string: Optional[str] = None,
-    filename: Optional[Union[str, PathLike]] = None,
-    encoding: str = "utf-8",
-    errors: str = "strict",
-    multiline: bool = False,
+    json_string: Optional[str] = ...,
+    filename: Optional[Union[str, PathLike]] = ...,
+    encoding: str = ...,
+    errors: str = ...,
+    multiline: bool = ...,
     **kwargs,
-) -> Any: ...
+): ...
 def _to_yaml(
     obj,
-    filename: Optional[Union[str, PathLike]] = None,
-    default_flow_style: bool = False,
-    encoding: str = "utf-8",
-    errors: str = "strict",
-    ruamel_typ: str = "rt",
-    ruamel_attrs: Optional[Dict] = None,
+    filename: Optional[Union[str, PathLike]] = ...,
+    default_flow_style: bool = ...,
+    encoding: str = ...,
+    errors: str = ...,
+    ruamel_typ: str = ...,
+    ruamel_attrs: Optional[Dict] = ...,
     **yaml_kwargs,
-) -> Any: ...
+): ...
 def _from_yaml(
-    yaml_string: Optional[str] = None,
-    filename: Optional[Union[str, PathLike]] = None,
-    encoding: str = "utf-8",
-    errors: str = "strict",
-    ruamel_typ: str = "rt",
-    ruamel_attrs: Optional[Dict] = None,
+    yaml_string: Optional[str] = ...,
+    filename: Optional[Union[str, PathLike]] = ...,
+    encoding: str = ...,
+    errors: str = ...,
+    ruamel_typ: str = ...,
+    ruamel_attrs: Optional[Dict] = ...,
     **kwargs,
-) -> Any: ...
-def _to_toml(
-    obj, filename: Optional[Union[str, PathLike]] = None, encoding: str = "utf-8", errors: str = "strict"
-) -> Any: ...
+): ...
+def _to_toml(obj, filename: Optional[Union[str, PathLike]] = ..., encoding: str = ..., errors: str = ...): ...
 def _from_toml(
-    toml_string: Optional[str] = None,
-    filename: Optional[Union[str, PathLike]] = None,
-    encoding: str = "utf-8",
-    errors: str = "strict",
-) -> Any: ...
-def _to_msgpack(obj, filename: Optional[Union[str, PathLike]] = None, **kwargs) -> Any: ...
-def _from_msgpack(
-    msgpack_bytes: Optional[bytes] = None, filename: Optional[Union[str, PathLike]] = None, **kwargs
-) -> Any: ...
+    toml_string: Optional[str] = ...,
+    filename: Optional[Union[str, PathLike]] = ...,
+    encoding: str = ...,
+    errors: str = ...,
+): ...
+def _to_msgpack(obj, filename: Optional[Union[str, PathLike]] = ..., **kwargs): ...
+def _from_msgpack(msgpack_bytes: Optional[bytes] = ..., filename: Optional[Union[str, PathLike]] = ..., **kwargs): ...
 def _to_csv(
-    box_list, filename: Optional[Union[str, PathLike]] = None, encoding: str = "utf-8", errors: str = "strict", **kwargs
-) -> Any: ...
+    box_list, filename: Optional[Union[str, PathLike]] = ..., encoding: str = ..., errors: str = ..., **kwargs
+): ...
 def _from_csv(
-    csv_string: Optional[str] = None,
-    filename: Optional[Union[str, PathLike]] = None,
-    encoding: str = "utf-8",
-    errors: str = "strict",
+    csv_string: Optional[str] = ...,
+    filename: Optional[Union[str, PathLike]] = ...,
+    encoding: str = ...,
+    errors: str = ...,
     **kwargs,
-) -> Any: ...
+): ...

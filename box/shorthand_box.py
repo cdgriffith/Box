@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from typing import Dict
 
 from box.box import Box
 
@@ -27,28 +28,28 @@ class SBox(Box):
     ]
 
     @property
-    def dict(self):
+    def dict(self) -> Dict:
         return self.to_dict()
 
     @property
-    def json(self):
+    def json(self) -> str:
         return self.to_json()
 
     @property
-    def yaml(self):
+    def yaml(self) -> str:
         return self.to_yaml()
 
     @property
-    def toml(self):
+    def toml(self) -> str:
         return self.to_toml()
 
     def __repr__(self):
         return f"SBox({self})"
 
-    def copy(self):
+    def copy(self) -> "SBox":
         return SBox(super(SBox, self).copy())
 
-    def __copy__(self):
+    def __copy__(self) -> "SBox":
         return SBox(super(SBox, self).copy())
 
 
@@ -64,5 +65,5 @@ class DDBox(SBox):
         obj._box_config["default_box"] = True
         return obj
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"DDBox({self})"

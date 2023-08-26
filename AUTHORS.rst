@@ -29,6 +29,8 @@ Code contributions:
 - Ivan Pepelnjak (ipspace)
 - Michał Górny (mgorny)
 - Serge Lu (Serge45)
+- Eric Prestat (ericpre)
+
 
 
 Suggestions and bug reporting:
@@ -87,3 +89,5 @@ Suggestions and bug reporting:
 - Peter B (barmettl)
 - Ash A. (dragonpaw)
 - Коптев Роман Викторович (romikforest)
+- lei wang (191801737)
+- d00m514y3r
