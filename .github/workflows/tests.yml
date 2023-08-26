@@ -58,7 +58,7 @@ jobs:
           Remove-item box -recurse -force
           python -m pytest -vv
       - name: Upload wheel artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: python_box
           path: dist/*.whl
@@ -89,7 +89,7 @@ jobs:
           CIBW_TEST_COMMAND: pytest {package}/test -vv
 
       - name: Upload wheel artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: python_box
           path: dist/*-manylinux*.whl
