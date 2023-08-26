@@ -31,7 +31,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-test.txt
-          pip install coveralls flake8 flake8-print mypy setuptools wheel twine Cython
+          pip install coveralls flake8 flake8-print mypy setuptools wheel twine Cython==3.0.0
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors, undefined names or print statements
@@ -84,7 +84,7 @@ jobs:
           python -m cibuildwheel --output-dir dist
         env:
           CIBW_BUILD: cp38-manylinux_x86_64 cp39-manylinux_x86_64 cp310-manylinux_x86_64 cp311-manylinux_x86_64 cp311-macosx_x86_64
-          CIBW_BEFORE_BUILD: pip install Cython
+          CIBW_BEFORE_BUILD: pip install Cython==3.0.0
           CIBW_BEFORE_TEST: pip install -r requirements.txt -r requirements-test.txt setuptools wheel twine
           CIBW_TEST_COMMAND: pytest {package}/test -vv
 
@@ -115,7 +115,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-test.txt
-        pip install setuptools wheel Cython
+        pip install setuptools wheel Cython==3.0.0
         python setup.py build_ext --inplace
     - name: Test with pytest
       env:

@@ -51,7 +51,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install setuptools wheel twine Cython --upgrade
+        pip install setuptools wheel twine Cython==3.0.0 --upgrade
     - name: Build and publish
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
@@ -76,7 +76,7 @@ jobs:
         python -m cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: cp38-manylinux_x86_64 cp39-manylinux_x86_64 cp310-manylinux_x86_64 cp311-manylinux_x86_64 cp311-macosx_x86_64
-        CIBW_BEFORE_BUILD: pip install Cython
+        CIBW_BEFORE_BUILD: pip install Cython==3.0.0
         CIBW_BEFORE_TEST: pip install -r requirements.txt -r requirements-test.txt setuptools wheel twine
         CIBW_TEST_COMMAND: pytest {package}/test -vv
 
