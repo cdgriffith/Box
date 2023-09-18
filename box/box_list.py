@@ -40,6 +40,7 @@ class BoxList(list):
         # This is required for pickling to work correctly
         obj.box_options = {"box_class": box.Box}
         obj.box_options.update(kwargs)
+        obj.box_org_ref = None
         return obj
 
     def __init__(self, iterable: Optional[Iterable] = None, box_class: Type[box.Box] = box.Box, **box_options):
