@@ -35,6 +35,8 @@ class TestBoxList:
         assert new_list[-1].item == 22
         new_list.append([{"bad_item": 33}])
         assert new_list[-1][0].bad_item == 33
+        new_list[-1].append([{"bad_item": 33}])
+        assert new_list[-1, -1, 0].bad_item == 33
         assert repr(new_list).startswith("BoxList(")
         for x in new_list.to_list():
             assert not isinstance(x, (BoxList, Box))

@@ -65,6 +65,11 @@ class BoxList(list):
             if len(list_pos.group()) == len(item):
                 return value
             return value.__getitem__(item[len(list_pos.group()) :].lstrip("."))
+        if isinstance(item, tuple):
+            result = self
+            for i in item:
+                result = result[i]
+            return result
         return super().__getitem__(item)
 
     def __delitem__(self, key):
