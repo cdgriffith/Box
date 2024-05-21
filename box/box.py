@@ -415,7 +415,8 @@ class Box(dict):
         except BoxError:
             return False
         else:
-            return children in self[first_item]
+            it = self[first_item]
+            return isinstance(it, Iterable) and children in it
 
     def keys(self, dotted: Union[bool] = False):
         if not dotted:
