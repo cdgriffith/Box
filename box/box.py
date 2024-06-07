@@ -777,7 +777,7 @@ class Box(dict):
         return key, self.pop(key)
 
     def __repr__(self) -> str:
-        return f"Box({self})"
+        return f"{self.__class__.__name__}({self})"
 
     def __str__(self) -> str:
         return str(self.to_dict())

@@ -133,7 +133,7 @@ class BoxList(list):
         return keys
 
     def __repr__(self):
-        return f"BoxList({self.to_list()})"
+        return f"{self.__class__.__name__}({self.to_list()})"
 
     def __str__(self):
         return str(self.to_list())
