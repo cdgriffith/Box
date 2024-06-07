@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 7.1.2
+-------------
+
+* Fixing #261 altering all `__repr__` methods so that subclassing will output the correct class name
+
 Version 7.1.1
 -------------
 

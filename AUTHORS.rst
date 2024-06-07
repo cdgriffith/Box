@@ -30,6 +30,7 @@ Code contributions:
 - Michał Górny (mgorny)
 - Serge Lu (Serge45)
 - Eric Prestat (ericpre)
+- Gabriel Mitelman Tkacz (gtkacz)
 
 
 
