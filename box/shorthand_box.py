@@ -44,7 +44,7 @@ class SBox(Box):
         return self.to_toml()
 
     def __repr__(self):
-        return f"SBox({self})"
+        return f"{self.__class__.__name__}({self})"
 
     def copy(self) -> "SBox":
         return SBox(super(SBox, self).copy())
@@ -66,4 +66,4 @@ class DDBox(SBox):
         return obj
 
     def __repr__(self) -> str:
-        return f"DDBox({self})"
+        return f"{self.__class__.__name__}({self})"

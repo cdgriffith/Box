@@ -40,16 +40,17 @@ class BoxList(list):
         # This is required for pickling to work correctly
         obj.box_options = {"box_class": box.Box}
         obj.box_options.update(kwargs)
-        obj.box_org_ref = 0
+        obj.box_org_ref = None
         return obj
 
     def __init__(self, iterable: Optional[Iterable] = None, box_class: Type[box.Box] = box.Box, **box_options):
         self.box_options = box_options
         self.box_options["box_class"] = box_class
-        self.box_org_ref = id(iterable) if iterable else 0
+        self.box_org_ref = iterable
         if iterable:
             for x in iterable:
                 self.append(x)
+        self.box_org_ref = None
         if box_options.get("frozen_box"):
 
             def frozen(*args, **kwargs):
@@ -65,6 +66,14 @@ class BoxList(list):
             if len(list_pos.group()) == len(item):
                 return value
             return value.__getitem__(item[len(list_pos.group()) :].lstrip("."))
+        if isinstance(item, tuple):
+            result = self
+            for idx in item:
+                if isinstance(result, list):
+                    result = result[idx]
+                else:
+                    raise BoxTypeError(f"Cannot numpy-style indexing on {type(result).__name__}.")
+            return result
         return super().__getitem__(item)
 
     def __delitem__(self, key):
@@ -101,7 +110,11 @@ class BoxList(list):
         elif isinstance(p_object, box.Box):
             p_object._box_config.update(self.box_options)
         if isinstance(p_object, list) and not self._is_intact_type(p_object):
-            p_object = self.__class__(p_object, **self.box_options)
+            p_object = (
+                self
+                if p_object is self or p_object is self.box_org_ref
+                else self.__class__(p_object, **self.box_options)
+            )
         elif isinstance(p_object, BoxList):
             p_object.box_options.update(self.box_options)
         return p_object
@@ -133,7 +146,7 @@ class BoxList(list):
         return keys
 
     def __repr__(self):
-        return f"BoxList({self.to_list()})"
+        return f"{self.__class__.__name__}({self.to_list()})"
 
     def __str__(self):
         return str(self.to_list())

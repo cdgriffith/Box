@@ -415,7 +415,8 @@ class Box(dict):
         except BoxError:
             return False
         else:
-            return children in self[first_item]
+            it = self[first_item]
+            return isinstance(it, Iterable) and children in it
 
     def keys(self, dotted: Union[bool] = False):
         if not dotted:
@@ -777,7 +778,7 @@ class Box(dict):
         return key, self.pop(key)
 
     def __repr__(self) -> str:
-        return f"Box({self})"
+        return f"{self.__class__.__name__}({self})"
 
     def __str__(self) -> str:
         return str(self.to_dict())

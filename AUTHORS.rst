@@ -30,7 +30,10 @@ Code contributions:
 - Michał Górny (mgorny)
 - Serge Lu (Serge45)
 - Eric Prestat (ericpre)
-
+- Gabriel Mitelman Tkacz (gtkacz)
+- Muspi Merol (CNSeniorious000)
+- YISH (mokeyish)
+- Bit0r
 
 
 Suggestions and bug reporting:

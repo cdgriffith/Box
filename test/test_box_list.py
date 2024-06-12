@@ -35,6 +35,10 @@ class TestBoxList:
         assert new_list[-1].item == 22
         new_list.append([{"bad_item": 33}])
         assert new_list[-1][0].bad_item == 33
+        new_list[-1].append([{"bad_item": 33}])
+        assert new_list[-1, -1, 0].bad_item == 33
+        bx = Box({0: {1: {2: {3: 3}}}, (0, 1, 2, 3): 4})
+        assert bx[0, 1, 2, 3] == 4
         assert repr(new_list).startswith("BoxList(")
         for x in new_list.to_list():
             assert not isinstance(x, (BoxList, Box))
@@ -228,10 +232,8 @@ class TestBoxList:
         a.list_of_dicts.append([{"example2": 2}])
         assert a["list_of_dicts"][1] == [{"example2": 2}]
 
-    def test_no_circular_references(self):
-        if sys.version_info >= (3, 12) and sys.platform == "win32":
-            pytest.skip("Windows fatal exception: stack overflow on github actions")
+    def test_circular_references(self):
         circular_list = []
         circular_list.append(circular_list)
-        with pytest.raises(RecursionError):
-            BoxList(circular_list)
+        circular_box = BoxList(circular_list)
+        assert circular_box[0] == circular_box

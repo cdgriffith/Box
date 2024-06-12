@@ -13,13 +13,13 @@ jobs:
   package-checks:
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12-dev", "pypy-3.8"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "pypy-3.8"]
         os: [ubuntu-latest, macos-11, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - uses: actions/cache@v3
@@ -58,19 +58,19 @@ jobs:
           Remove-item box -recurse -force
           python -m pytest -vv
       - name: Upload wheel artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: python_box
+          name: python_box_${{matrix.os}}_${{ matrix.python-version }}
           path: dist/*.whl
 
   package-manylinux-checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - uses: actions/cache@v3
         with:
@@ -83,27 +83,27 @@ jobs:
           pip install cibuildwheel
           python -m cibuildwheel --output-dir dist
         env:
-          CIBW_BUILD: cp38-manylinux_x86_64 cp39-manylinux_x86_64 cp310-manylinux_x86_64 cp311-manylinux_x86_64 cp311-macosx_x86_64
+          CIBW_BUILD: cp38-manylinux_x86_64 cp39-manylinux_x86_64 cp310-manylinux_x86_64 cp311-manylinux_x86_64 cp312-manylinux_x86_64
           CIBW_BEFORE_BUILD: pip install Cython==3.0.0
           CIBW_BEFORE_TEST: pip install -r requirements.txt -r requirements-test.txt setuptools wheel twine
           CIBW_TEST_COMMAND: pytest {package}/test -vv
 
       - name: Upload wheel artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: python_box
+          name: python_box_manylinux
           path: dist/*-manylinux*.whl
 
   test:
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         os: [ubuntu-latest, macos-11, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - uses: actions/cache@v3

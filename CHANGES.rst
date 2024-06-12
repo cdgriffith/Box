@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Version 7.2.0
+-------------
+
+* Adding #266 support for accessing nested items in BoxList using numpy-style tuple indexing (thanks to Bit0r)
+* Adding tests and Cython releases for Python 3.12
+* Fixing #251 support for circular references in lists (thanks to Muspi Merol)
+* Fixing #261 altering all `__repr__` methods so that subclassing will output the correct class name (thanks to Gabriel Tkacz)
+* Fixing #267 Fix type 'int' not iterable (thanks to YISH)
+
 Version 7.1.1
 -------------
 
