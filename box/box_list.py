@@ -65,6 +65,14 @@ class BoxList(list):
             if len(list_pos.group()) == len(item):
                 return value
             return value.__getitem__(item[len(list_pos.group()) :].lstrip("."))
+        if isinstance(item, tuple):
+            result = self
+            for idx in item:
+                if isinstance(result, list):
+                    result = result[idx]
+                else:
+                    raise BoxTypeError(f"Cannot numpy-style indexing on {type(result).__name__}.")
+            return result
         return super().__getitem__(item)
 
     def __delitem__(self, key):
