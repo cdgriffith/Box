@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.4.0
+  rev: v4.6.0
   hooks:
     # Identify invalid files
     - id: check-ast
@@ -20,8 +20,8 @@ repos:
     - id: fix-encoding-pragma
     - id: fix-byte-order-marker
     # General quality checks
-    - id: mixed-line-ending
-      args: [--fix=lf]
+#    - id: mixed-line-ending
+#      args: [--fix=lf]
     - id: trailing-whitespace
       args: [--markdown-linebreak-ext=md]
     - id: check-executables-have-shebangs
@@ -29,7 +29,7 @@ repos:
       exclude: ^test/data/.+
 
 - repo: https://github.com/ambv/black
-  rev: 23.7.0
+  rev: 24.4.2
   hooks:
     - id: black
       args: [--config=.black.toml]
@@ -51,7 +51,7 @@ repos:
       always_run: true
 
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: 'v1.4.1'
+  rev: 'v1.10.0'
   hooks:
     - id: mypy
       types: [python]
