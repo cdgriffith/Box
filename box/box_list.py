@@ -357,6 +357,7 @@ class BoxList(list):
         ):
             raise BoxError('toml is unavailable on this system, please install the "tomli-w" package')
 
+    
     if toml_read_library is not None:
 
         @classmethod
@@ -405,6 +406,7 @@ class BoxList(list):
         ):
             raise BoxError('toml is unavailable on this system, please install the "toml" package')
 
+    
     if msgpack_available:
 
         def to_msgpack(self, filename: Optional[Union[str, PathLike]] = None, **kwargs):
@@ -457,6 +459,7 @@ class BoxList(list):
     def to_csv(self, filename: Optional[Union[str, PathLike]] = None, encoding: str = "utf-8", errors: str = "strict"):
         return _to_csv(self, filename=filename, encoding=encoding, errors=errors)
 
+    
     @classmethod
     def from_csv(
         cls,
