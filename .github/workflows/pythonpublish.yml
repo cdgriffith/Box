@@ -18,7 +18,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12'
+        python-version: '3.13'
 
     - name: Install Dependencies
       run: |
@@ -38,8 +38,8 @@ jobs:
   deploy-cython:
     strategy:
       matrix:
-        os: [macos-11, windows-latest]
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        os: [macos-latest, windows-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -51,7 +51,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install setuptools wheel twine Cython==3.0.0 --upgrade
+        pip install setuptools wheel twine Cython>=3.0.11 --upgrade
     - name: Build and publish
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
@@ -64,10 +64,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python 3.12
+    - name: Set up Python 3.13
       uses: actions/setup-python@v5
       with:
-        python-version: "3.12"
+        python-version: "3.13"
 
     - name: Build wheels
       run: |
@@ -76,7 +76,7 @@ jobs:
         python -m cibuildwheel --output-dir dist
       env:
         CIBW_BUILD: cp38-manylinux_x86_64 cp39-manylinux_x86_64 cp310-manylinux_x86_64 cp311-manylinux_x86_64 cp312-manylinux_x86_64
-        CIBW_BEFORE_BUILD: pip install Cython==3.0.0
+        CIBW_BEFORE_BUILD: pip install Cython>=3.0.11
         CIBW_BEFORE_TEST: pip install -r requirements.txt -r requirements-test.txt setuptools wheel twine
         CIBW_TEST_COMMAND: pytest {package}/test -vv
 

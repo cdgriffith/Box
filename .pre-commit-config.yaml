@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.6.0
+  rev: v5.0.0
   hooks:
     # Identify invalid files
     - id: check-ast
@@ -29,7 +29,7 @@ repos:
       exclude: ^test/data/.+
 
 - repo: https://github.com/ambv/black
-  rev: 24.4.2
+  rev: 24.10.0
   hooks:
     - id: black
       args: [--config=.black.toml]
@@ -51,7 +51,7 @@ repos:
       always_run: true
 
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: 'v1.10.0'
+  rev: 'v1.13.0'
   hooks:
     - id: mypy
       types: [python]
