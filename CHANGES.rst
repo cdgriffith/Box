@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 7.3.0
+-------------
+
+* Adding tests and Cython releases for Python 3.13
+* Fixing #281 consistent error message about missing YAML parser (thanks to J vanBemmel)
+* Removing support for Python 3.8 as it is EOL
+
 Version 7.2.0
 -------------
 
