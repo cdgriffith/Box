@@ -29,6 +29,8 @@ try:
 except ImportError:
     pyyaml_available = False
 
+MISSING_PARSER_ERROR = "No YAML Parser available, please install ruamel.yaml>=0.17 or PyYAML"
+
 toml_read_library: Optional[Any] = None
 toml_write_library: Optional[Any] = None
 toml_decode_error: Optional[Callable] = None
@@ -196,7 +198,7 @@ def _to_yaml(
             elif pyyaml_available:
                 return yaml.dump(obj, stream=f, default_flow_style=default_flow_style, **yaml_kwargs)
             else:
-                raise BoxError("No YAML Parser available, please install ruamel.yaml>0.17 or PyYAML")
+                raise BoxError(MISSING_PARSER_ERROR)
 
     else:
         if ruamel_available:
@@ -210,7 +212,7 @@ def _to_yaml(
         elif pyyaml_available:
             return yaml.dump(obj, default_flow_style=default_flow_style, **yaml_kwargs)
         else:
-            raise BoxError("No YAML Parser available, please install ruamel.yaml>0.17 or PyYAML")
+            raise BoxError(MISSING_PARSER_ERROR)
 
 
 def _from_yaml(
@@ -237,7 +239,7 @@ def _from_yaml(
                     kwargs["Loader"] = yaml.SafeLoader
                 data = yaml.load(f, **kwargs)
             else:
-                raise BoxError("No YAML Parser available, please install ruamel.yaml>0.15 or PyYAML")
+                raise BoxError(MISSING_PARSER_ERROR)
     elif yaml_string:
         if ruamel_available:
             yaml_loader = YAML(typ=ruamel_typ)
@@ -249,7 +251,7 @@ def _from_yaml(
                 kwargs["Loader"] = yaml.SafeLoader
             data = yaml.load(yaml_string, **kwargs)
         else:
-            raise BoxError("No YAML Parser available, please install ruamel.yaml>0.17 or PyYAML")
+            raise BoxError(MISSING_PARSER_ERROR)
     else:
         raise BoxError("from_yaml requires a string or filename")
     return data
