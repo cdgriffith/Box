@@ -22,10 +22,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: package-check-${{ hashFiles('requirements.txt') }}-${{ hashFiles('requirements-test.txt') }}
+#      - uses: actions/cache@v3
+#        with:
+#          path: ~/.cache/pip
+#          key: package-check-${{ hashFiles('requirements.txt') }}-${{ hashFiles('requirements-test.txt') }}
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -72,10 +72,10 @@ jobs:
         with:
           python-version: "3.13"
 
-      - uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: package-manylinux-check-${{ hashFiles('requirements.txt') }}-${{ hashFiles('requirements-test.txt') }}
+#      - uses: actions/cache@v3
+#        with:
+#          path: ~/.cache/pip
+#          key: package-manylinux-check-${{ hashFiles('requirements.txt') }}-${{ hashFiles('requirements-test.txt') }}
 
       - name: Build wheels
         run: |
@@ -83,9 +83,10 @@ jobs:
           pip install cibuildwheel
           python -m cibuildwheel --output-dir dist
         env:
-          CIBW_BUILD: cp38-manylinux_x86_64 cp39-manylinux_x86_64 cp310-manylinux_x86_64 cp311-manylinux_x86_64 cp312-manylinux_x86_64
-          CIBW_BEFORE_BUILD: pip install Cython>=3.0.11
-          CIBW_BEFORE_TEST: pip install -r requirements.txt -r requirements-test.txt setuptools wheel twine
+          CIBW_BUILD: cp39-manylinux_x86_64 cp310-manylinux_x86_64 cp311-manylinux_x86_64 cp312-manylinux_x86_64 cp313-manylinux_x86_64
+          CIBW_BEFORE_BUILD: pip install Cython>=3.0.11  setuptools wheel
+          CIBW_BEFORE_TEST: pip install -r requirements.txt -r requirements-test.txt setuptools wheel twine Cython>=3.0.11
+          CIBW_BUILD_VERBOSITY: 1
           CIBW_TEST_COMMAND: pytest {package}/test -vv
 
       - name: Upload wheel artifact
@@ -106,10 +107,10 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    - uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: test-${{ hashFiles('requirements.txt') }}-${{ hashFiles('requirements-test.txt') }}
+#    - uses: actions/cache@v3
+#      with:
+#        path: ~/.cache/pip
+#        key: test-${{ hashFiles('requirements.txt') }}-${{ hashFiles('requirements-test.txt') }}
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
