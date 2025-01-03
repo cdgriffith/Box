@@ -34,6 +34,7 @@ Code contributions:
 - Muspi Merol (CNSeniorious000)
 - YISH (mokeyish)
 - Bit0r
+- Jesper Schlegel (jesperschlegel)
 
 
 Suggestions and bug reporting:

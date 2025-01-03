@@ -204,6 +204,21 @@ class TestBoxList:
         for key in keys:
             db[key]
 
+    def test_box_list_default_dots(self):
+        box_1 = Box(default_box=True, box_dots=True)
+        box_1["a[0]"] = 42
+        assert box_1.a[0] == 42
+
+        box_1["b[0].c[0].d"] = 42
+        assert box_1.b[0].c[0].d == 42
+
+        box_1["c[0][0][0]"] = 42
+        assert box_1.c[0][0][0] == 42
+
+        box_2 = Box(default_box=True, box_dots=True)
+        box_2["a[4]"] = 42
+        assert box_2.a.to_list() == [None, None, None, None, 42]
+
     def test_box_config_propagate(self):
         structure = Box(a=[Box(default_box=False)], default_box=True, box_inherent_settings=True)
         assert structure._box_config["default_box"] is True

@@ -94,9 +94,17 @@ class BoxList(list):
         if self.box_options.get("box_dots") and isinstance(key, str) and key.startswith("["):
             list_pos = _list_pos_re.search(key)
             pos = int(list_pos.groups()[0])
+            if pos >= len(self):
+                self.extend([None] * (pos - len(self) + 1))
             if len(list_pos.group()) == len(key):
                 return super().__setitem__(pos, value)
-            return super().__getitem__(pos).__setitem__(key[len(list_pos.group()) :].lstrip("."), value)
+            children = key[len(list_pos.group()):].lstrip(".")
+            if self.box_options.get("default_box"):
+                if children[0] == "[":
+                    super().__setitem__(pos, box.BoxList(**self.box_options))
+                else:
+                    super().__setitem__(pos, self.box_options.get("box_class")(**self.box_options))
+            return super().__getitem__(pos).__setitem__(children, value)
         super().__setitem__(key, value)
 
     def _is_intact_type(self, obj):
