@@ -94,7 +94,7 @@ class BoxList(list):
         if self.box_options.get("box_dots") and isinstance(key, str) and key.startswith("["):
             list_pos = _list_pos_re.search(key)
             pos = int(list_pos.groups()[0])
-            if pos >= len(self):
+            if pos >= len(self) and self.box_options.get("default_box"):
                 self.extend([None] * (pos - len(self) + 1))
             if len(list_pos.group()) == len(key):
                 return super().__setitem__(pos, value)
