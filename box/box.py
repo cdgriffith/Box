@@ -101,8 +101,7 @@ def _parse_box_dots(bx, item, setting=False):
         if char == "[":
             return item[:idx], item[idx:]
         elif char == ".":
-            if item[:idx] in bx:
-                return item[:idx], item[idx + 1 :]
+            return item[:idx], item[idx + 1 :]
     if setting and "." in item:
         return item.split(".", 1)
     raise BoxError("Could not split box dots properly")

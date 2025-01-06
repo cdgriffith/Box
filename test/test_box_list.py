@@ -219,6 +219,10 @@ class TestBoxList:
         box_2["a[4]"] = 42
         assert box_2.a.to_list() == [None, None, None, None, 42]
 
+        box_3 = Box(default_box=True, box_dots=True)
+        box_3["a.b[0]"] = 42
+        assert box_3.a.b[0] == 42
+
     def test_box_config_propagate(self):
         structure = Box(a=[Box(default_box=False)], default_box=True, box_inherent_settings=True)
         assert structure._box_config["default_box"] is True
