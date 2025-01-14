@@ -101,8 +101,7 @@ def _parse_box_dots(bx, item, setting=False):
         if char == "[":
             return item[:idx], item[idx:]
         elif char == ".":
-            if item[:idx] in bx:
-                return item[:idx], item[idx + 1 :]
+            return item[:idx], item[idx + 1 :]
     if setting and "." in item:
         return item.split(".", 1)
     raise BoxError("Could not split box dots properly")
@@ -657,9 +656,14 @@ class Box(dict):
                 if hasattr(self[first_item], "__setitem__"):
                     return self[first_item].__setitem__(children, value)
             elif self._box_config["default_box"]:
-                super().__setitem__(
-                    first_item, self._box_config["box_class"](**self.__box_config(extra_namespace=first_item))
-                )
+                if children[0] == "[":
+                    super().__setitem__(
+                        first_item, box.BoxList(**self.__box_config(extra_namespace=first_item))
+                    )
+                else:
+                    super().__setitem__(
+                        first_item, self._box_config["box_class"](**self.__box_config(extra_namespace=first_item))
+                    )
                 return self[first_item].__setitem__(children, value)
             else:
                 raise BoxKeyError(f"'{self.__class__}' object has no attribute {first_item}")
