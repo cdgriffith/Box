@@ -1340,8 +1340,8 @@ class TestBox:
         bx = Box(**params)
         assert bx == Box()
 
-        for param in BOX_PARAMETERS:
-            assert param in params
+        for param in params:
+            assert param in BOX_PARAMETERS
 
     def test_box_greek(self):
         # WARNING μ is ord 956 whereas µ is ord 181 and will not work due to python NFKC normalization

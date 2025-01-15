@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 __author__ = "Chris Griffith"
-__version__ = "7.3.0"
+__version__ = "7.3.1"
 
 from box.box import Box
 from box.box_list import BoxList
