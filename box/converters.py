@@ -109,16 +109,19 @@ yaml_available = pyyaml_available or ruamel_available
 BOX_PARAMETERS = (
     "default_box",
     "default_box_attr",
-    "conversion_box",
+    "default_box_none_transform",
+    "default_box_create_on_get",
     "frozen_box",
     "camel_killer_box",
+    "conversion_box",
+    "modify_tuples_box",
     "box_safe_prefix",
     "box_duplicates",
-    "default_box_none_transform",
-    "box_dots",
-    "modify_tuples_box",
     "box_intact_types",
+    "box_dots",
     "box_recast",
+    "box_class",
+    "box_namespace",
 )
 
 

@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 7.3.1
+-------------
+
+* Fixing #275 default_box_create_on_get is ignored with from_yaml (thanks to Ward Loos)
+* Fixing #285 Infinite Recursion when accessing non existent list index in a DefaultBox with box_dots (thanks to Jesper Schlegel)
+
+
 Version 7.3.0
 -------------
 
