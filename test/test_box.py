@@ -755,6 +755,7 @@ class TestBox:
         assert isinstance(bx.get("a", [1, 2]), BoxList)
         bx_dot = Box(a=Box(b=Box(c="me!")), box_dots=True)
         assert bx_dot.get("a.b.c") == "me!"
+        assert bx_dot.get("def.not.in.the.box", 4) == 4
 
     def test_contains(self):
         bx_dot = Box(a=Box(b=Box(c=Box())), box_dots=True)
