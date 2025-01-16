@@ -414,6 +414,8 @@ class Box(dict):
         except BoxError:
             return False
         else:
+            if not super().__contains__(first_item):
+                return False
             it = self[first_item]
             return isinstance(it, Iterable) and children in it
 
@@ -657,9 +659,7 @@ class Box(dict):
                     return self[first_item].__setitem__(children, value)
             elif self._box_config["default_box"]:
                 if children[0] == "[":
-                    super().__setitem__(
-                        first_item, box.BoxList(**self.__box_config(extra_namespace=first_item))
-                    )
+                    super().__setitem__(first_item, box.BoxList(**self.__box_config(extra_namespace=first_item)))
                 else:
                     super().__setitem__(
                         first_item, self._box_config["box_class"](**self.__box_config(extra_namespace=first_item))
