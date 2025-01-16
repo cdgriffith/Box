@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 7.3.2
+-------------
+
+* Fixing #288 default get value error when using box_dots (thanks to Sébastien Weber)
+
 Version 7.3.1
 -------------
 

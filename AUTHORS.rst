@@ -95,3 +95,5 @@ Suggestions and bug reporting:
 - Коптев Роман Викторович (romikforest)
 - lei wang (191801737)
 - d00m514y3r
+- Sébastien Weber (seb5g)
+- Ward Loos (wrdls)
