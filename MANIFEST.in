@@ -6,3 +6,11 @@ include box/*.c
 include box/*.so
 include box/*.pyd
 include box/*.pyi
+include test/__init__.py
+include test/common.py
+include test/data/*.csv
+include test/data/*.json
+include test/data/*.msgpack
+include test/data/*.tml
+include test/data/*.txt
+include test/data/*.yaml
