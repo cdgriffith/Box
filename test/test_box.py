@@ -984,6 +984,11 @@ class TestBox:
         with pytest.raises(BoxError):
             Box() + BoxList()
 
+    def test_add_frozen_boxes(self):
+        b = Box(c=1, d={"sub": 1}, e=1, frozen_box=True)
+        c = dict(d={"val": 2}, e=4)
+        assert b + c == Box(c=1, d={"sub": 1, "val": 2}, e=4)
+
     def test_iadd_boxes(self):
         b = Box(c=1, d={"sub": 1}, e=1)
         c = dict(d={"val": 2}, e=4)

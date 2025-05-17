@@ -839,7 +839,10 @@ class Box(dict):
                 # in the `converted` box_config set
                 v = self._box_config["box_class"](v, **self.__box_config(extra_namespace=k))
                 if k in self and isinstance(self[k], dict):
+                    frozen = self[k]._box_config['frozen_box']
+                    self[k]._box_config['frozen_box'] = False
                     self[k].merge_update(v, box_merge_lists=merge_type)
+                    self[k]._box_config['frozen_box'] = frozen
                     return
             if isinstance(v, list) and not intact_type:
                 v = box.BoxList(v, **self.__box_config(extra_namespace=k))
