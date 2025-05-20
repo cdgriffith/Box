@@ -240,7 +240,7 @@ def _from_yaml(
             elif pyyaml_available:
                 if "Loader" not in kwargs:
                     kwargs["Loader"] = yaml.SafeLoader
-                data = yaml.load(f, **kwargs)
+                data = yaml.safe_load(f, **kwargs)
             else:
                 raise BoxError(MISSING_PARSER_ERROR)
     elif yaml_string:
@@ -252,7 +252,7 @@ def _from_yaml(
         elif pyyaml_available:
             if "Loader" not in kwargs:
                 kwargs["Loader"] = yaml.SafeLoader
-            data = yaml.load(yaml_string, **kwargs)
+            data = yaml.safe_load(yaml_string, **kwargs)
         else:
             raise BoxError(MISSING_PARSER_ERROR)
     else:
