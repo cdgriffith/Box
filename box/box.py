@@ -206,6 +206,7 @@ class Box(dict):
         box_dots: bool = False,
         box_class: Optional[Union[Dict, Type["Box"]]] = None,
         box_namespace: Union[Tuple[str, ...], Literal[False]] = (),
+        on_change: Optional[Callable] = None,
         **kwargs: Any,
     ):
         """
@@ -231,8 +232,12 @@ class Box(dict):
                 "box_dots": box_dots,
                 "box_class": box_class if box_class is not None else Box,
                 "box_namespace": box_namespace,
+                "on_change": on_change,
             }
         )
+        # Initialize parent tracking
+        obj._parent_ref = None
+        obj._parent_key = None
         return obj
 
     def __init__(
@@ -253,6 +258,7 @@ class Box(dict):
         box_dots: bool = False,
         box_class: Optional[Union[Dict, Type["Box"]]] = None,
         box_namespace: Union[Tuple[str, ...], Literal[False]] = (),
+        on_change: Optional[Callable] = None,
         **kwargs: Any,
     ):
         super().__init__()
@@ -274,8 +280,12 @@ class Box(dict):
                 "box_dots": box_dots,
                 "box_class": box_class if box_class is not None else self.__class__,
                 "box_namespace": box_namespace,
+                "on_change": on_change,
             }
         )
+        # Initialize parent tracking
+        self._parent_ref = None
+        self._parent_key = None
         if not self._box_config["conversion_box"] and self._box_config["box_duplicates"] != "ignore":
             raise BoxError("box_duplicates are only for conversion_boxes")
         if len(args) == 1:
@@ -574,6 +584,10 @@ class Box(dict):
         if isinstance(value, dict):
             # We always re-create even if it was already a Box object to pass down configurations correctly
             value = self._box_config["box_class"](value, **self.__box_config(extra_namespace=item))
+            # Set parent reference
+            if hasattr(value, "_parent_ref"):
+                value._parent_ref = self
+                value._parent_key = item
         elif isinstance(value, list) and not isinstance(value, box.BoxList):
             if self._box_config["frozen_box"]:
                 value = _recursive_tuples(
@@ -583,8 +597,16 @@ class Box(dict):
                 )
             else:
                 value = box.BoxList(value, **self.__box_config(extra_namespace=item))
+                # Set parent reference
+                if hasattr(value, "_parent_ref"):
+                    value._parent_ref = self
+                    value._parent_key = item
         elif isinstance(value, box.BoxList):
             value.box_options.update(self.__box_config(extra_namespace=item))
+            # Update parent reference
+            if hasattr(value, "_parent_ref"):
+                value._parent_ref = self
+                value._parent_key = item
         elif self._box_config["modify_tuples_box"] and isinstance(value, tuple):
             value = _recursive_tuples(value, recreate_tuples=True, **self.__box_config(extra_namespace=item))
         super().__setitem__(item, value)
@@ -674,9 +696,12 @@ class Box(dict):
         if self._box_config["conversion_box"] and self._box_config["box_duplicates"] != "ignore":
             self._conversion_checks(key)
         self.__convert_and_store(key, value)
+        # Notify of the change (but not during initialization)
+        if self._box_config.get("__created", False):
+            self._notify(key, value, "set")
 
     def __setattr__(self, key, value):
-        if key == "_box_config":
+        if key in ("_box_config", "_parent_ref", "_parent_key"):
             return object.__setattr__(self, key, value)
         if self._box_config["frozen_box"] and self._box_config["__created"]:
             raise BoxError("Box is frozen")
@@ -716,6 +741,8 @@ class Box(dict):
                         break
         try:
             super().__delitem__(key)
+            # Notify of the deletion
+            self._notify(key, None, "delete")
         except KeyError as err:
             raise BoxKeyError(str(err)) from _exception_cause(err)
 
@@ -757,6 +784,7 @@ class Box(dict):
                 return args[0]
             else:
                 del self[key]
+                # _notify is called in __delitem__
                 return item
         try:
             item = self[key]
@@ -764,6 +792,7 @@ class Box(dict):
             raise BoxKeyError(f"{key}") from None
         else:
             del self[key]
+            # _notify is called in __delitem__
             return item
 
     def clear(self):
@@ -771,6 +800,8 @@ class Box(dict):
             raise BoxError("Box is frozen")
         super().clear()
         self._box_config["__safe_keys"].clear()
+        # Notify of the clear
+        self._notify(None, None, "clear")
 
     def popitem(self):
         if self._box_config["frozen_box"]:
@@ -779,6 +810,7 @@ class Box(dict):
             key = next(self.__iter__())
         except StopIteration:
             raise BoxKeyError("Empty box") from None
+        # pop() will handle notification
         return key, self.pop(key)
 
     def __repr__(self) -> str:
@@ -820,12 +852,12 @@ class Box(dict):
         if single_arg:
             if hasattr(single_arg, "keys"):
                 for k in single_arg:
-                    self.__convert_and_store(k, single_arg[k])
+                    self.__setitem__(k, single_arg[k])
             else:
                 for k, v in single_arg:
-                    self.__convert_and_store(k, v)
+                    self.__setitem__(k, v)
         for k in kwargs:
-            self.__convert_and_store(k, kwargs[k])
+            self.__setitem__(k, kwargs[k])
 
     def merge_update(self, *args, **kwargs):
         merge_type = None
@@ -881,6 +913,27 @@ class Box(dict):
             default = box.BoxList(default, **self.__box_config(extra_namespace=item))
         self[item] = default
         return self[item]
+
+    def _notify(self, key: Any, value: Any = None, action: str = "set", is_root: bool = True) -> None:
+        """
+        Notify of changes and propagate up to parent objects.
+        
+        :param key: The key that was changed
+        :param value: The new value (None for deletions)
+        :param action: The type of change ('set', 'delete', 'clear', etc.)
+        :param is_root: True if this is the root object where on_change was set, False for child objects
+        """
+        # Call local on_change callback if present AND we have no parent (we are the root)
+        if self._box_config.get("on_change") and self._parent_ref is None:
+            try:
+                self._box_config["on_change"](self, key, value, action, is_root)
+            except Exception:
+                # Silently ignore callback errors to prevent disrupting operations
+                pass
+        
+        # Propagate to parent if present (child notifications are never root)
+        if self._parent_ref is not None and hasattr(self._parent_ref, "_notify"):
+            self._parent_ref._notify(self._parent_key, self, action="child_change", is_root=False)
 
     def _safe_attr(self, attr):
         """Convert a key into something that is accessible as an attribute"""

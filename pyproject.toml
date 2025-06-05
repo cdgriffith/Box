@@ -1,0 +1,97 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel", "cython>=3.0.11"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "python-box"
+version = "7.3.2"
+description = "Advanced Python dictionaries with dot notation access"
+readme = "README.rst"
+license = "MIT"
+authors = [
+    {name = "Chris Griffith", email = "chris@cdgriffith.com"},
+]
+maintainers = [
+    {name = "Chris Griffith", email = "chris@cdgriffith.com"},
+]
+keywords = ["box", "dict", "dictionary", "dot", "notation", "access", "yaml", "json", "toml", "msgpack"]
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Development Status :: 5 - Production/Stable",
+    "Natural Language :: English",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Utilities",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.9"
+dependencies = []
+
+[project.optional-dependencies]
+all = ["ruamel.yaml>=0.17", "toml", "msgpack"]
+yaml = ["ruamel.yaml>=0.17"]
+ruamel-yaml = ["ruamel.yaml>=0.17"]
+PyYAML = ["PyYAML"]
+tomli = ["tomli; python_version < '3.11'", "tomli-w"]
+toml = ["toml"]
+msgpack = ["msgpack"]
+
+[project.urls]
+Homepage = "https://github.com/cdgriffith/Box"
+Documentation = "https://github.com/cdgriffith/Box/wiki"
+Repository = "https://github.com/cdgriffith/Box"
+"Bug Tracker" = "https://github.com/cdgriffith/Box/issues"
+
+[tool.uv]
+dev-dependencies = [
+    "black>=23.1.0",
+    "cython>=3.0.11",
+    "mypy>=1.0.1",
+    "pre-commit>=2.21.0",
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+    "ruamel.yaml>=0.17",
+    "toml>=0.10.2",
+    "msgpack>=1.0.0",
+    "PyYAML>=6.0",
+    "tomli>=2.0.0; python_version < '3.11'",
+    "tomli-w>=1.0.0",
+]
+
+[tool.setuptools]
+packages = ["box"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+box = ["py.typed", "*.pyi"]
+
+[tool.setuptools.exclude-package-data]
+"*" = ["*.c", "*.pyx"]
+
+[tool.cython]
+packages = ["box"]
+
+[tool.black]
+line-length = 120
+target-version = ['py39', 'py310', 'py311', 'py312']
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"

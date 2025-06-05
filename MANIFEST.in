@@ -1,8 +1,20 @@
+include README.rst
 include LICENSE
 include AUTHORS.rst
 include CHANGES.rst
+include CONTRIBUTING.rst
 include box/py.typed
-include box/*.c
-include box/*.so
-include box/*.pyd
 include box/*.pyi
+recursive-include test *.py
+recursive-include test/data *
+recursive-include docs *.rst
+exclude box/*.c
+exclude box/*.so
+exclude box/*.pyd
+prune build
+prune dist
+prune .git
+prune __pycache__
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude .DS_Store

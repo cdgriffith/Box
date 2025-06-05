@@ -2,6 +2,45 @@
 
 |BoxImage|
 
+**Fork Notice**
+===============
+
+This is a fork of the original `python-box <https://github.com/cdgriffith/Box>`_ library with enhanced notification capabilities.
+
+**New Features in This Fork:**
+
+* **Change Notifications**: Box and BoxList objects support an ``on_change`` callback parameter that gets triggered whenever values are modified
+* **Hierarchical Propagation**: Changes in nested objects automatically propagate up to parent objects 
+* **Root Detection**: The ``is_root`` parameter distinguishes between direct changes and propagated changes from nested objects
+* **Modern Build System**: Migrated to pyproject.toml and uv for dependency management while maintaining Cython optimization support
+
+**Notification System Usage:**
+
+.. code:: python
+
+        from box import Box
+
+        def track_changes(obj, key, value, action, is_root):
+            if is_root:
+                print(f"Direct change: {key} = {value}")
+            else:
+                print(f"Nested change propagated: {key} changed")
+
+        # Create Box with change tracking
+        data = Box({
+            'user': {'name': 'John', 'age': 30},
+            'settings': ['theme', 'lang']
+        }, on_change=track_changes)
+        
+        data.status = 'active'        # Triggers: Direct change: status = active
+        data.user.name = 'Jane'       # Triggers: Nested change propagated: user changed
+        data.settings.append('tz')    # Triggers: Nested change propagated: settings changed
+
+For more details on the notification system, see the comprehensive test suite in ``test/test_notification.py``.
+
+**Original Box Features**
+=========================
+
 .. code:: python
 
         from box import Box
@@ -23,27 +62,44 @@ Check out the new `Box github wiki <https://github.com/cdgriffith/Box/wiki>`_ fo
 Install
 =======
 
-**Version Pin Your Box!**
+**Fork Installation**
 
-If you aren't in the habit of version pinning your libraries, it will eventually bite you.
-Box has a `list of breaking change <https://github.com/cdgriffith/Box/wiki/Major-Version-Breaking-Changes>`_ between major versions you should always check out before updating.
-
-requirements.txt
-----------------
-
-.. code:: text
-
-        python-box[all]~=7.0
-
-As Box adheres to semantic versioning (aka API changes will only occur on between major version),
-it is best to use `Compatible release <https://www.python.org/dev/peps/pep-0440/#compatible-release>`_ matching using the `~=` clause.
-
-Install from command line
--------------------------
+This fork is not published to PyPI. To use it, install directly from source:
 
 .. code:: bash
 
-        python -m pip install --upgrade pip
+        # Clone this fork
+        git clone <your-fork-url>
+        cd Box
+        
+        # Install with uv (recommended)
+        uv sync --all-extras
+        uv build  # Creates optimized wheel with Cython extensions
+        
+        # Or install with pip in development mode
+        pip install -e .[all]
+
+**Build with Cython Optimization**
+
+This fork maintains full Cython optimization support:
+
+.. code:: bash
+
+        # Install dependencies including Cython
+        uv sync --all-extras
+        
+        # Build optimized wheel
+        uv build
+        
+        # Install the built wheel
+        pip install dist/python_box-*.whl
+
+**Original Installation (upstream)**
+
+For the original python-box library without notification features:
+
+.. code:: bash
+
         pip install python-box[all]~=7.0 --upgrade
 
 Install with selected dependencies
@@ -98,6 +154,98 @@ Keep in mind any sub dictionaries or ones set after initiation will be automatic
 a `Box` object, and lists will be converted to `BoxList`, all other objects stay intact.
 
 Check out the `Quick Start <https://github.com/cdgriffith/Box/wiki/Quick-Start>`_  for more in depth details.
+
+Notification System (Fork Feature)
+===================================
+
+This fork adds a comprehensive change notification system to Box and BoxList objects.
+
+**Basic Usage**
+
+Pass an ``on_change`` callback when creating a Box or BoxList:
+
+.. code:: python
+
+        def my_callback(obj, key, value, action, is_root):
+            print(f"Change: {key} = {value} (action: {action}, is_root: {is_root})")
+        
+        data = Box({'user': {'name': 'John'}}, on_change=my_callback)
+        data.user.name = 'Jane'  # Triggers callback
+
+**Callback Parameters**
+
+* ``obj``: The object where the callback was originally set (always the root)
+* ``key``: The key/index that changed 
+* ``value``: The new value (or None for deletions)
+* ``action``: Type of change (``'set'``, ``'delete'``, ``'clear'``, ``'append'``, ``'insert'``, ``'child_change'``)
+* ``is_root``: ``True`` for direct changes, ``False`` for nested changes that propagated up
+
+**Change Types**
+
+* **Direct changes**: ``is_root=True`` - modifications made directly to the root object
+* **Propagated changes**: ``is_root=False`` - modifications made to nested objects that bubble up
+
+**Supported Operations**
+
+All modification operations trigger notifications:
+
+.. code:: python
+
+        data = Box({}, on_change=callback)
+        
+        # Set operations
+        data.key = 'value'              # action='set', is_root=True
+        data['key'] = 'value'           # action='set', is_root=True
+        data.update({'a': 1, 'b': 2})   # action='set', is_root=True (per key)
+        
+        # Delete operations  
+        del data.key                    # action='delete', is_root=True
+        data.pop('key')                 # action='delete', is_root=True
+        data.clear()                    # action='clear', is_root=True
+        
+        # Nested changes
+        data.nested.value = 42          # action='child_change', is_root=False
+
+**BoxList Support**
+
+BoxList objects also support notifications:
+
+.. code:: python
+
+        items = BoxList([1, 2, 3], on_change=callback)
+        
+        items.append(4)                 # action='append', is_root=True
+        items.insert(0, 0)              # action='insert', is_root=True  
+        items[1] = 'new'                # action='set', is_root=True
+        items.pop()                     # action='pop', is_root=True
+        items.remove('new')             # action='remove', is_root=True
+        items.clear()                   # action='clear', is_root=True
+
+**Error Handling**
+
+Callback errors are silently caught to prevent disrupting normal operations:
+
+.. code:: python
+
+        def bad_callback(obj, key, value, action, is_root):
+            raise Exception("Callback error!")
+        
+        data = Box(on_change=bad_callback)
+        data.key = 'value'  # Works normally, error is ignored
+
+**Use Cases**
+
+* **Change tracking**: Monitor all modifications to complex data structures
+* **Validation**: Implement custom validation logic on data changes  
+* **Persistence**: Automatically save data when changes occur
+* **Debugging**: Log all changes for debugging purposes
+* **Event systems**: Trigger events based on data modifications
+
+**Performance Notes**
+
+* Cython optimization is fully supported for notification-enabled objects
+* Callback overhead is minimal when no callback is set
+* Parent references are efficiently managed automatically
 
 `Box` can be instantiated the same ways as `dict`.
 

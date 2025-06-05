@@ -1,5 +1,5 @@
 from _typeshed import Incomplete
-from collections.abc import Mapping
+from collections.abc import Mapping, Callable
 from os import PathLike
 from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union, Literal
 
@@ -22,6 +22,7 @@ class Box(dict):
         box_dots: bool = ...,
         box_class: Optional[Union[Dict, Type["Box"]]] = ...,
         box_namespace: Union[Tuple[str, ...], Literal[False]] = ...,
+        on_change: Optional[Callable] = ...,
         **kwargs: Any,
     ): ...
     def __init__(
@@ -42,6 +43,7 @@ class Box(dict):
         box_dots: bool = ...,
         box_class: Optional[Union[Dict, Type["Box"]]] = ...,
         box_namespace: Union[Tuple[str, ...], Literal[False]] = ...,
+        on_change: Optional[Callable] = ...,
         **kwargs: Any,
     ) -> None: ...
     def __add__(self, other: Mapping[Any, Any]): ...
@@ -75,6 +77,7 @@ class Box(dict):
     def update(self, *args, **kwargs) -> None: ...
     def merge_update(self, *args, **kwargs) -> None: ...
     def setdefault(self, item, default: Incomplete | None = ...): ...
+    def _notify(self, key: Any, value: Any = ..., action: str = ..., is_root: bool = ...) -> None: ...
     def to_json(
         self, filename: Optional[Union[str, PathLike]] = ..., encoding: str = ..., errors: str = ..., **json_kwargs
     ): ...

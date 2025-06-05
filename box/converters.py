@@ -122,6 +122,7 @@ BOX_PARAMETERS = (
     "box_recast",
     "box_class",
     "box_namespace",
+    "on_change",
 )
 
 

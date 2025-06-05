@@ -1,6 +1,0 @@
-# Files needed for pre-commit hooks
-black>=23.1.0
-Cython>=3.0.11
-mypy>=1.0.1
-pre-commit>=2.21.0
-setuptools>=75.6.0

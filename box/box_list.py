@@ -41,12 +41,19 @@ class BoxList(list):
         obj.box_options = {"box_class": box.Box}
         obj.box_options.update(kwargs)
         obj.box_org_ref = None
+        # Initialize parent tracking
+        obj._parent_ref = None
+        obj._parent_key = None
         return obj
 
     def __init__(self, iterable: Optional[Iterable] = None, box_class: Type[box.Box] = box.Box, **box_options):
         self.box_options = box_options
         self.box_options["box_class"] = box_class
         self.box_org_ref = iterable
+        # Initialize parent tracking if not already done
+        if not hasattr(self, "_parent_ref"):
+            self._parent_ref = None
+            self._parent_key = None
         if iterable:
             for x in iterable:
                 self.append(x)
@@ -105,7 +112,35 @@ class BoxList(list):
                 else:
                     super().__setitem__(pos, self.box_options.get("box_class")(**self.box_options))
             return super().__getitem__(pos).__setitem__(children, value)
-        super().__setitem__(key, value)
+        # Convert the value
+        converted = self._convert(value)
+        # Update parent_key for the new item
+        if hasattr(converted, "_parent_key"):
+            converted._parent_key = key
+        super().__setitem__(key, converted)
+        # Notify of the change
+        self._notify(key, converted, "set")
+
+    def _notify(self, index: Any, value: Any = None, action: str = "set", is_root: bool = True) -> None:
+        """
+        Notify of changes and propagate up to parent objects.
+        
+        :param index: The index that was changed
+        :param value: The new value (None for deletions)
+        :param action: The type of change ('append', 'insert', 'delete', 'clear', etc.)
+        :param is_root: True if this is the root object where on_change was set, False for child objects
+        """
+        # Call local on_change callback if present AND we have no parent (we are the root)
+        if self.box_options.get("on_change") and self._parent_ref is None:
+            try:
+                self.box_options["on_change"](self, index, value, action, is_root)
+            except Exception:
+                # Silently ignore callback errors to prevent disrupting operations
+                pass
+        
+        # Propagate to parent if present (child notifications are never root)
+        if self._parent_ref is not None and hasattr(self._parent_ref, "_notify"):
+            self._parent_ref._notify(self._parent_key, self, action="child_change", is_root=False)
 
     def _is_intact_type(self, obj):
         if self.box_options.get("box_intact_types") and isinstance(obj, self.box_options["box_intact_types"]):
@@ -115,27 +150,90 @@ class BoxList(list):
     def _convert(self, p_object):
         if isinstance(p_object, dict) and not self._is_intact_type(p_object):
             p_object = self.box_options["box_class"](p_object, **self.box_options)
+            # Set parent reference - will be updated with correct index in append/insert
+            if hasattr(p_object, "_parent_ref"):
+                p_object._parent_ref = self
         elif isinstance(p_object, box.Box):
             p_object._box_config.update(self.box_options)
+            # Update parent reference
+            if hasattr(p_object, "_parent_ref"):
+                p_object._parent_ref = self
         if isinstance(p_object, list) and not self._is_intact_type(p_object):
             p_object = (
                 self
                 if p_object is self or p_object is self.box_org_ref
                 else self.__class__(p_object, **self.box_options)
             )
+            # Set parent reference if it's a new BoxList
+            if p_object is not self and hasattr(p_object, "_parent_ref"):
+                p_object._parent_ref = self
         elif isinstance(p_object, BoxList):
             p_object.box_options.update(self.box_options)
+            # Update parent reference
+            if hasattr(p_object, "_parent_ref"):
+                p_object._parent_ref = self
         return p_object
 
     def append(self, p_object):
-        super().append(self._convert(p_object))
+        converted = self._convert(p_object)
+        new_index = len(self)
+        # Update parent_key for the new item
+        if hasattr(converted, "_parent_key"):
+            converted._parent_key = new_index
+        super().append(converted)
+        # Notify of the append (but not during initialization)
+        if self.box_org_ref is None:  # Not during initialization
+            self._notify(new_index, converted, "append")
 
     def extend(self, iterable):
         for item in iterable:
             self.append(item)
 
     def insert(self, index, p_object):
-        super().insert(index, self._convert(p_object))
+        converted = self._convert(p_object)
+        # Update parent_key for the new item
+        if hasattr(converted, "_parent_key"):
+            converted._parent_key = index
+        super().insert(index, converted)
+        # Update parent_key for all items after the insertion point
+        for i in range(index + 1, len(self)):
+            if hasattr(self[i], "_parent_key"):
+                self[i]._parent_key = i
+        # Notify of the insert
+        self._notify(index, converted, "insert")
+    
+    def pop(self, index=-1):
+        if self.box_options.get("frozen_box"):
+            raise BoxError("BoxList is frozen")
+        item = super().pop(index)
+        # Update parent_key for all items after the removed index
+        if index < 0:
+            index = len(self) + index + 1  # Convert to positive index
+        for i in range(index, len(self)):
+            if hasattr(self[i], "_parent_key"):
+                self[i]._parent_key = i
+        # Notify of the pop
+        self._notify(index, None, "pop")
+        return item
+    
+    def remove(self, value):
+        if self.box_options.get("frozen_box"):
+            raise BoxError("BoxList is frozen")
+        index = self.index(value)
+        super().remove(value)
+        # Update parent_key for all items after the removed index
+        for i in range(index, len(self)):
+            if hasattr(self[i], "_parent_key"):
+                self[i]._parent_key = i
+        # Notify of the removal
+        self._notify(index, None, "remove")
+    
+    def clear(self):
+        if self.box_options.get("frozen_box"):
+            raise BoxError("BoxList is frozen")
+        super().clear()
+        # Notify of the clear
+        self._notify(None, None, "clear")
 
     def _dotted_helper(self) -> List[str]:
         keys = []
