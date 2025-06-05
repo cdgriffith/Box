@@ -27,7 +27,6 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Natural Language :: English",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Topic :: Utilities",
     "Topic :: Software Development",
