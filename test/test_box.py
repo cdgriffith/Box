@@ -936,6 +936,13 @@ class TestBox:
         with pytest.raises(BoxKeyError):
             del b["a.b"]
 
+    def test_dots_exclusion(self):
+        bx = Box.from_yaml(yaml_string="0.0.0.1: True",default_box=True,default_box_none_transform=False,box_dots=True,
+                           box_dots_exclude=r'[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
+        assert bx["0.0.0.1"] == True
+        with pytest.raises(BoxKeyError):
+          del bx["0"]
+
     def test_unicode(self):
         bx = Box()
         bx["\U0001f631"] = 4
