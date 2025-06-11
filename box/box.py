@@ -494,9 +494,11 @@ class Box(dict):
         self._box_config = state["_box_config"]
         self.__dict__.update(state)
 
-    def __is_dotted(self,item):
-        return ("[" in item) or ("." in item and not (self._box_config["box_dots_exclude"]
-                                                 and self._box_config["box_dots_exclude"].match(item)))
+    def __process_dotted_key(self,item):
+        if self._box_config["box_dots"] and isinstance(item, str):
+            return ("[" in item) or ("." in item and not (self._box_config["box_dots_exclude"]
+                                                     and self._box_config["box_dots_exclude"].match(item)))
+        return False
 
     def __get_default(self, item, attr=False):
         if item in ("getdoc", "shape") and _is_ipython():
@@ -535,7 +537,7 @@ class Box(dict):
             value = default_value
         if self._box_config["default_box_create_on_get"]:
             if not attr or not (item.startswith("_") and item.endswith("_")):
-                if self._box_config["box_dots"] and isinstance(item, str) and self.__is_dotted(item):
+                if self.__process_dotted_key(item):
                     first_item, children = _parse_box_dots(self, item, setting=True)
                     if first_item in self.keys():
                         if hasattr(self[first_item], "__setitem__"):
@@ -611,7 +613,7 @@ class Box(dict):
                 for x in list(super().keys())[item.start : item.stop : item.step]:
                     new_box[x] = self[x]
                 return new_box
-            if self._box_config["box_dots"] and isinstance(item, str) and self.__is_dotted(item):
+            if self.__process_dotted_key(item):
                 try:
                     first_item, children = _parse_box_dots(self, item)
                 except BoxError:
@@ -661,7 +663,7 @@ class Box(dict):
     def __setitem__(self, key, value):
         if key != "_box_config" and self._box_config["frozen_box"] and self._box_config["__created"]:
             raise BoxError("Box is frozen")
-        if self._box_config["box_dots"] and isinstance(key, str) and self.__is_dotted(key):
+        if self.__process_dotted_key(key):
             first_item, children = _parse_box_dots(self, key, setting=True)
             if first_item in self.keys():
                 if hasattr(self[first_item], "__setitem__"):
@@ -705,12 +707,7 @@ class Box(dict):
     def __delitem__(self, key):
         if self._box_config["frozen_box"]:
             raise BoxError("Box is frozen")
-        if (
-            key not in self.keys()
-            and self._box_config["box_dots"]
-            and isinstance(key, str)
-            and self.__is_dotted(key)
-        ):
+        if key not in self.keys() and self.__process_dotted_key(key):
             try:
                 first_item, children = _parse_box_dots(self, key)
             except BoxError:
