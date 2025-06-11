@@ -171,6 +171,7 @@ class Box(dict):
     :param box_intact_types: tuple of types to ignore converting
     :param box_recast: cast certain keys to a specified type
     :param box_dots: access nested Boxes by period separated keys in string
+    :param box_dots_exclude: optional regular expression for dotted keys to exclude
     :param box_class: change what type of class sub-boxes will be created as
     :param box_namespace: the namespace this (possibly nested) Box lives within
     """
@@ -204,6 +205,7 @@ class Box(dict):
         box_intact_types: Union[Tuple, List] = (),
         box_recast: Optional[Dict] = None,
         box_dots: bool = False,
+        box_dots_exclude: str = None,
         box_class: Optional[Union[Dict, Type["Box"]]] = None,
         box_namespace: Union[Tuple[str, ...], Literal[False]] = (),
         **kwargs: Any,
@@ -229,6 +231,7 @@ class Box(dict):
                 "box_intact_types": tuple(box_intact_types),
                 "box_recast": box_recast,
                 "box_dots": box_dots,
+                "box_dots_exclude": re.compile(box_dots_exclude) if box_dots_exclude else None,
                 "box_class": box_class if box_class is not None else Box,
                 "box_namespace": box_namespace,
             }
@@ -251,6 +254,7 @@ class Box(dict):
         box_intact_types: Union[Tuple, List] = (),
         box_recast: Optional[Dict] = None,
         box_dots: bool = False,
+        box_dots_exclude: str = None,
         box_class: Optional[Union[Dict, Type["Box"]]] = None,
         box_namespace: Union[Tuple[str, ...], Literal[False]] = (),
         **kwargs: Any,
@@ -272,6 +276,7 @@ class Box(dict):
                 "box_intact_types": tuple(box_intact_types),
                 "box_recast": box_recast,
                 "box_dots": box_dots,
+                "box_dots_exclude": re.compile(box_dots_exclude) if box_dots_exclude else None,
                 "box_class": box_class if box_class is not None else self.__class__,
                 "box_namespace": box_namespace,
             }
@@ -489,6 +494,10 @@ class Box(dict):
         self._box_config = state["_box_config"]
         self.__dict__.update(state)
 
+    def __is_dotted(self,item):
+        return ("[" in item) or ("." in item and not (self._box_config["box_dots_exclude"]
+                                                 and self._box_config["box_dots_exclude"].match(item)))
+
     def __get_default(self, item, attr=False):
         if item in ("getdoc", "shape") and _is_ipython():
             return None
@@ -526,7 +535,7 @@ class Box(dict):
             value = default_value
         if self._box_config["default_box_create_on_get"]:
             if not attr or not (item.startswith("_") and item.endswith("_")):
-                if self._box_config["box_dots"] and isinstance(item, str) and ("." in item or "[" in item):
+                if self._box_config["box_dots"] and isinstance(item, str) and self.__is_dotted(item):
                     first_item, children = _parse_box_dots(self, item, setting=True)
                     if first_item in self.keys():
                         if hasattr(self[first_item], "__setitem__"):
@@ -602,7 +611,7 @@ class Box(dict):
                 for x in list(super().keys())[item.start : item.stop : item.step]:
                     new_box[x] = self[x]
                 return new_box
-            if self._box_config["box_dots"] and isinstance(item, str) and ("." in item or "[" in item):
+            if self._box_config["box_dots"] and isinstance(item, str) and self.__is_dotted(item):
                 try:
                     first_item, children = _parse_box_dots(self, item)
                 except BoxError:
@@ -652,7 +661,7 @@ class Box(dict):
     def __setitem__(self, key, value):
         if key != "_box_config" and self._box_config["frozen_box"] and self._box_config["__created"]:
             raise BoxError("Box is frozen")
-        if self._box_config["box_dots"] and isinstance(key, str) and ("." in key or "[" in key):
+        if self._box_config["box_dots"] and isinstance(key, str) and self.__is_dotted(key):
             first_item, children = _parse_box_dots(self, key, setting=True)
             if first_item in self.keys():
                 if hasattr(self[first_item], "__setitem__"):
@@ -700,7 +709,7 @@ class Box(dict):
             key not in self.keys()
             and self._box_config["box_dots"]
             and isinstance(key, str)
-            and ("." in key or "[" in key)
+            and self.__is_dotted(key)
         ):
             try:
                 first_item, children = _parse_box_dots(self, key)
