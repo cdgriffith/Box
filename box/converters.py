@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 
 # Abstract converter functions for use in any Box class
 
 import csv
 import json
+from collections.abc import Callable
 from io import StringIO
 from os import PathLike
 from pathlib import Path
-from typing import Union, Optional, Dict, Any, Callable
+from typing import Any
 
 from box.exceptions import BoxError
 
@@ -31,9 +33,9 @@ except ImportError:
 
 MISSING_PARSER_ERROR = "No YAML Parser available, please install ruamel.yaml>=0.17 or PyYAML"
 
-toml_read_library: Optional[Any] = None
-toml_write_library: Optional[Any] = None
-toml_decode_error: Optional[Callable] = None
+toml_read_library: Any | None = None
+toml_write_library: Any | None = None
+toml_decode_error: Callable | None = None
 
 __all__ = [
     "_to_json",
@@ -41,11 +43,13 @@ __all__ = [
     "_to_toml",
     "_to_csv",
     "_to_msgpack",
+    "_to_toon",
     "_from_json",
     "_from_yaml",
     "_from_toml",
     "_from_csv",
     "_from_msgpack",
+    "_from_toon",
 ]
 
 
@@ -104,6 +108,13 @@ except ImportError:
     msgpack = None  # type: ignore
     msgpack_available = False
 
+toon_available = True
+
+try:
+    from toon_format import encode as toon_encode, decode as toon_decode
+except ImportError:
+    toon_available = False
+
 yaml_available = pyyaml_available or ruamel_available
 
 BOX_PARAMETERS = (
@@ -119,13 +130,14 @@ BOX_PARAMETERS = (
     "box_duplicates",
     "box_intact_types",
     "box_dots",
+    "box_dots_exclude",
     "box_recast",
     "box_class",
     "box_namespace",
 )
 
 
-def _exists(filename: Union[str, PathLike], create: bool = False) -> Path:
+def _exists(filename: str | PathLike, create: bool = False) -> Path:
     path = Path(filename)
     if create:
         try:
@@ -142,7 +154,7 @@ def _exists(filename: Union[str, PathLike], create: bool = False) -> Path:
 
 
 def _to_json(
-    obj, filename: Optional[Union[str, PathLike]] = None, encoding: str = "utf-8", errors: str = "strict", **json_kwargs
+    obj, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict", **json_kwargs
 ):
     if filename:
         _exists(filename, create=True)
@@ -153,8 +165,8 @@ def _to_json(
 
 
 def _from_json(
-    json_string: Optional[str] = None,
-    filename: Optional[Union[str, PathLike]] = None,
+    json_string: str | None = None,
+    filename: str | PathLike | None = None,
     encoding: str = "utf-8",
     errors: str = "strict",
     multiline: bool = False,
@@ -179,12 +191,13 @@ def _from_json(
 
 def _to_yaml(
     obj,
-    filename: Optional[Union[str, PathLike]] = None,
+    filename: str | PathLike | None = None,
     default_flow_style: bool = False,
     encoding: str = "utf-8",
     errors: str = "strict",
     ruamel_typ: str = "rt",
-    ruamel_attrs: Optional[Dict] = None,
+    ruamel_attrs: dict | None = None,
+    width: int = 120,
     **yaml_kwargs,
 ):
     if not ruamel_attrs:
@@ -195,11 +208,12 @@ def _to_yaml(
             if ruamel_available:
                 yaml_dumper = YAML(typ=ruamel_typ)
                 yaml_dumper.default_flow_style = default_flow_style
+                yaml_dumper.width = width
                 for attr, value in ruamel_attrs.items():
                     setattr(yaml_dumper, attr, value)
                 return yaml_dumper.dump(obj, stream=f, **yaml_kwargs)
             elif pyyaml_available:
-                return yaml.dump(obj, stream=f, default_flow_style=default_flow_style, **yaml_kwargs)
+                return yaml.dump(obj, stream=f, default_flow_style=default_flow_style, width=width, **yaml_kwargs)
             else:
                 raise BoxError(MISSING_PARSER_ERROR)
 
@@ -207,24 +221,25 @@ def _to_yaml(
         if ruamel_available:
             yaml_dumper = YAML(typ=ruamel_typ)
             yaml_dumper.default_flow_style = default_flow_style
+            yaml_dumper.width = width
             for attr, value in ruamel_attrs.items():
                 setattr(yaml_dumper, attr, value)
             with StringIO() as string_stream:
                 yaml_dumper.dump(obj, stream=string_stream, **yaml_kwargs)
                 return string_stream.getvalue()
         elif pyyaml_available:
-            return yaml.dump(obj, default_flow_style=default_flow_style, **yaml_kwargs)
+            return yaml.dump(obj, default_flow_style=default_flow_style, width=width, **yaml_kwargs)
         else:
             raise BoxError(MISSING_PARSER_ERROR)
 
 
 def _from_yaml(
-    yaml_string: Optional[str] = None,
-    filename: Optional[Union[str, PathLike]] = None,
+    yaml_string: str | None = None,
+    filename: str | PathLike | None = None,
     encoding: str = "utf-8",
     errors: str = "strict",
     ruamel_typ: str = "rt",
-    ruamel_attrs: Optional[Dict] = None,
+    ruamel_attrs: dict | None = None,
     **kwargs,
 ):
     if not ruamel_attrs:
@@ -260,7 +275,7 @@ def _from_yaml(
     return data
 
 
-def _to_toml(obj, filename: Optional[Union[str, PathLike]] = None, encoding: str = "utf-8", errors: str = "strict"):
+def _to_toml(obj, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict"):
     if filename:
         _exists(filename, create=True)
         if toml_write_library.__name__ == "toml":  # type: ignore
@@ -283,8 +298,8 @@ def _to_toml(obj, filename: Optional[Union[str, PathLike]] = None, encoding: str
 
 
 def _from_toml(
-    toml_string: Optional[str] = None,
-    filename: Optional[Union[str, PathLike]] = None,
+    toml_string: str | None = None,
+    filename: str | PathLike | None = None,
     encoding: str = "utf-8",
     errors: str = "strict",
 ):
@@ -303,7 +318,7 @@ def _from_toml(
     return data
 
 
-def _to_msgpack(obj, filename: Optional[Union[str, PathLike]] = None, **kwargs):
+def _to_msgpack(obj, filename: str | PathLike | None = None, **kwargs):
     if filename:
         _exists(filename, create=True)
         with open(filename, "wb") as f:
@@ -312,7 +327,7 @@ def _to_msgpack(obj, filename: Optional[Union[str, PathLike]] = None, **kwargs):
         return msgpack.packb(obj, **kwargs)
 
 
-def _from_msgpack(msgpack_bytes: Optional[bytes] = None, filename: Optional[Union[str, PathLike]] = None, **kwargs):
+def _from_msgpack(msgpack_bytes: bytes | None = None, filename: str | PathLike | None = None, **kwargs):
     if filename:
         _exists(filename)
         with open(filename, "rb") as f:
@@ -324,8 +339,35 @@ def _from_msgpack(msgpack_bytes: Optional[bytes] = None, filename: Optional[Unio
     return data
 
 
+def _to_toon(obj, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict", **kwargs):
+    if filename:
+        _exists(filename, create=True)
+        with open(filename, "w", encoding=encoding, errors=errors) as f:
+            f.write(toon_encode(obj, **kwargs))
+    else:
+        return toon_encode(obj, **kwargs)
+
+
+def _from_toon(
+    toon_string: str | None = None,
+    filename: str | PathLike | None = None,
+    encoding: str = "utf-8",
+    errors: str = "strict",
+    **kwargs,
+):
+    if filename:
+        _exists(filename)
+        with open(filename, "r", encoding=encoding, errors=errors) as f:
+            data = toon_decode(f.read(), **kwargs)
+    elif toon_string:
+        data = toon_decode(toon_string, **kwargs)
+    else:
+        raise BoxError("from_toon requires a string or filename")
+    return data
+
+
 def _to_csv(
-    box_list, filename: Optional[Union[str, PathLike]] = None, encoding: str = "utf-8", errors: str = "strict", **kwargs
+    box_list, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict", **kwargs
 ):
     csv_column_names = list(box_list[0].keys())
     for row in box_list:
@@ -347,8 +389,8 @@ def _to_csv(
 
 
 def _from_csv(
-    csv_string: Optional[str] = None,
-    filename: Optional[Union[str, PathLike]] = None,
+    csv_string: str | None = None,
+    filename: str | PathLike | None = None,
     encoding: str = "utf-8",
     errors: str = "strict",
     **kwargs,

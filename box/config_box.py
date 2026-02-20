@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from typing import List
+from __future__ import annotations
 
 from box.box import Box
 
@@ -30,7 +30,7 @@ class ConfigBox(Box):
         except AttributeError:
             return super().__getattr__(item.lower())
 
-    def __dir__(self) -> List[str]:
+    def __dir__(self) -> list[str]:
         return super().__dir__() + ["bool", "int", "float", "list", "getboolean", "getfloat", "getint"]
 
     def bool(self, item, default=None):

@@ -20,6 +20,7 @@ from test.common import (
     tmp_dir,
     tmp_json_file,
     tmp_msgpack_file,
+    tmp_toon_file,
     tmp_yaml_file,
 )
 
@@ -220,6 +221,14 @@ class TestBox:
             yaml = YAML(typ="safe")
             data = yaml.load(f)
             assert data == test_dict
+
+    def test_to_yaml_width(self):
+        long_value = "a " * 80  # 160 character string
+        a = Box({"key": long_value.strip()})
+        narrow = a.to_yaml(width=40)
+        wide = a.to_yaml(width=200)
+        # With width=200, the value should fit on fewer lines than width=40
+        assert len(wide.splitlines()) < len(narrow.splitlines())
 
     def test_dir(self):
         a = Box(test_dict, camel_killer_box=True)
@@ -936,6 +945,18 @@ class TestBox:
         with pytest.raises(BoxKeyError):
             del b["a.b"]
 
+    def test_dots_exclusion(self):
+        bx = Box.from_yaml(
+            yaml_string="0.0.0.1: True",
+            default_box=True,
+            default_box_none_transform=False,
+            box_dots=True,
+            box_dots_exclude=r"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+",
+        )
+        assert bx["0.0.0.1"] == True
+        with pytest.raises(BoxKeyError):
+            del bx["0"]
+
     def test_unicode(self):
         bx = Box()
         bx["\U0001f631"] = 4
@@ -983,6 +1004,25 @@ class TestBox:
         assert b + c == Box(c=1, d={"sub": 1, "val": 2}, e=4)
         with pytest.raises(BoxError):
             Box() + BoxList()
+
+    def test_add_frozen_boxes(self):
+        b = Box(c=1, d={"sub": 1}, e=1, frozen_box=True)
+        c = dict(d={"val": 2}, e=4)
+        assert b + c == Box(c=1, d={"sub": 1, "val": 2}, e=4)
+
+    def test_adding_frozen_boxes_result_in_frozen_box(self):
+        a = Box({"one": 1}, frozen_box=True)
+        b = Box({"two": 2}, frozen_box=True)
+        c = a + b
+        with pytest.raises(BoxError):
+            c.three = 3
+
+    def test_adding_nested_frozen_boxes_result_in_frozen_box(self):
+        a = Box({"one": {"two": "1.2"}}, frozen_box=True)
+        b = Box({"one": {"three": "1.3"}}, frozen_box=True)
+        c = a + b
+        with pytest.raises(BoxError):
+            c.one.four = "1.4"
 
     def test_iadd_boxes(self):
         b = Box(c=1, d={"sub": 1}, e=1)
@@ -1172,6 +1212,26 @@ class TestBox:
     def test_msgpack_no_input(self):
         with pytest.raises(BoxError):
             Box.from_msgpack()
+
+    def test_toon_strings(self):
+        box1 = Box(test_dict)
+        toon_str = box1.to_toon()
+        assert Box.from_toon(toon_str) == box1
+
+    def test_toon_files(self):
+        box1 = Box(test_dict)
+        box1.to_toon(filename=tmp_toon_file)
+        assert Box.from_toon(filename=tmp_toon_file) == box1
+
+    def test_toon_no_input(self):
+        with pytest.raises(BoxError):
+            Box.from_toon()
+
+    def test_toon_from_toon_with_box_args(self):
+        box1 = Box(test_dict)
+        toon_str = box1.to_toon()
+        box2 = Box.from_toon(toon_str, default_box=True)
+        assert box2.nonexistent == Box()
 
     def test_value_view(self):
         a = Box()

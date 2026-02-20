@@ -94,11 +94,5 @@ class TestConverters:
 
     def test_to_yaml_ruamel(self):
         movie_string = _to_yaml(movie_data, ruamel_attrs={"width": 12})
-        multiline_except = """    - name: Roger
-        Rees
-      imdb: nm0715953
-      role: Sheriff
-        of Rottingham
-    - name: Amy
-        Yasbeck"""
+        multiline_except = """    - name: \n        Roger\n        Rees\n      imdb: \n        nm0715953\n      role: \n        Sheriff\n        of \n        Rottingham\n    - name: \n        Amy \n        Yasbeck"""
         assert multiline_except in movie_string

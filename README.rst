@@ -139,7 +139,7 @@ Also special shout-out to PythonBytes_, who featured Box on their podcast.
 License
 =======
 
-MIT License, Copyright (c) 2017-2023 Chris Griffith. See LICENSE_ file.
+MIT License, Copyright (c) 2017-2026 Chris Griffith. See LICENSE_ file.
 
 
 .. |BoxImage| image:: https://raw.githubusercontent.com/cdgriffith/Box/master/box_logo.png
