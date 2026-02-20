@@ -35,6 +35,8 @@ Code contributions:
 - YISH (mokeyish)
 - Bit0r
 - Jesper Schlegel (jesperschlegel)
+- J vanBemmel (jbemmel)
+- m-janicki
 
 
 Suggestions and bug reporting:

@@ -4,8 +4,10 @@ Changelog
 Version 7.4.0
 -------------
 
+* Adding #297 'box_dots_exclude' parameter to keep certain keys with dots from being broken down (thanks to J vanBemmel)
 * Adding support for YAML width
 * Adding support for Python 3.14
+* Fixing #291 adding frozen boxes (thanks to m-janicki)
 * Removing support for Python 3.9 as it is EOL
 
 Version 7.3.2

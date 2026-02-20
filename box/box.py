@@ -205,7 +205,7 @@ class Box(dict):
         box_intact_types: Union[Tuple, List] = (),
         box_recast: Optional[Dict] = None,
         box_dots: bool = False,
-        box_dots_exclude: str = None,
+        box_dots_exclude: Optional[str] = None,
         box_class: Optional[Union[Dict, Type["Box"]]] = None,
         box_namespace: Union[Tuple[str, ...], Literal[False]] = (),
         **kwargs: Any,
@@ -254,7 +254,7 @@ class Box(dict):
         box_intact_types: Union[Tuple, List] = (),
         box_recast: Optional[Dict] = None,
         box_dots: bool = False,
-        box_dots_exclude: str = None,
+        box_dots_exclude: Optional[str] = None,
         box_class: Optional[Union[Dict, Type["Box"]]] = None,
         box_namespace: Union[Tuple[str, ...], Literal[False]] = (),
         **kwargs: Any,
@@ -312,9 +312,7 @@ class Box(dict):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
         new_box = self.copy()
-        new_box._box_config["frozen_box"] = False
-        new_box.merge_update(other)  # type: ignore[attr-defined]
-        new_box._box_config["frozen_box"] = self._box_config["frozen_box"]
+        new_box.merge_update(other, _force_unfrozen=True)  # type: ignore[attr-defined]
         return new_box
 
     def __radd__(self, other: Mapping[Any, Any]):
@@ -324,8 +322,7 @@ class Box(dict):
         new_box = other.copy()
         if not isinstance(other, Box):
             new_box = self._box_config["box_class"](new_box)
-        new_box._box_config["frozen_box"] = False  # type: ignore[attr-defined]
-        new_box.merge_update(self)  # type: ignore[attr-defined]
+        new_box.merge_update(self, _force_unfrozen=True)  # type: ignore[attr-defined]
         new_box._box_config["frozen_box"] = self._box_config["frozen_box"]  # type: ignore[attr-defined]
         return new_box
 
@@ -494,10 +491,12 @@ class Box(dict):
         self._box_config = state["_box_config"]
         self.__dict__.update(state)
 
-    def __process_dotted_key(self,item):
+    def __process_dotted_key(self, item):
         if self._box_config["box_dots"] and isinstance(item, str):
-            return ("[" in item) or ("." in item and not (self._box_config["box_dots_exclude"]
-                                                     and self._box_config["box_dots_exclude"].match(item)))
+            return ("[" in item) or (
+                "." in item
+                and not (self._box_config["box_dots_exclude"] and self._box_config["box_dots_exclude"].match(item))
+            )
         return False
 
     def __get_default(self, item, attr=False):
@@ -837,41 +836,54 @@ class Box(dict):
         merge_type = None
         if "box_merge_lists" in kwargs:
             merge_type = kwargs.pop("box_merge_lists")
+        force_unfrozen = kwargs.pop("_force_unfrozen", False)
 
-        def convert_and_set(k, v):
-            intact_type = self._box_config["box_intact_types"] and isinstance(v, self._box_config["box_intact_types"])
-            if isinstance(v, dict) and not intact_type:
-                # Box objects must be created in case they are already
-                # in the `converted` box_config set
-                v = self._box_config["box_class"](v, **self.__box_config(extra_namespace=k))
-                if k in self and isinstance(self[k], dict):
-                    self[k].merge_update(v, box_merge_lists=merge_type)
-                    return
-            if isinstance(v, list) and not intact_type:
-                v = box.BoxList(v, **self.__box_config(extra_namespace=k))
-                if merge_type == "extend" and k in self and isinstance(self[k], list):
-                    self[k].extend(v)
-                    return
-                if merge_type == "unique" and k in self and isinstance(self[k], list):
-                    for item in v:
-                        if item not in self[k]:
-                            self[k].append(item)
-                    return
-            self.__setitem__(k, v)
+        was_frozen = self._box_config["frozen_box"]
+        if force_unfrozen:
+            self._box_config["frozen_box"] = False
 
-        if (len(args) + int(bool(kwargs))) > 1:
-            raise BoxTypeError(f"merge_update expected at most 1 argument, got {len(args) + int(bool(kwargs))}")
-        single_arg = next(iter(args), None)
-        if single_arg:
-            if hasattr(single_arg, "keys"):
-                for k in single_arg:
-                    convert_and_set(k, single_arg[k])
-            else:
-                for k, v in single_arg:
-                    convert_and_set(k, v)
+        try:
 
-        for key in kwargs:
-            convert_and_set(key, kwargs[key])
+            def convert_and_set(k, v):
+                intact_type = self._box_config["box_intact_types"] and isinstance(
+                    v, self._box_config["box_intact_types"]
+                )
+                if isinstance(v, dict) and not intact_type:
+                    # Box objects must be created in case they are already
+                    # in the `converted` box_config set
+                    v = self._box_config["box_class"](v, **self.__box_config(extra_namespace=k))
+                    if k in self and isinstance(self[k], dict):
+                        self[k].merge_update(v, box_merge_lists=merge_type, _force_unfrozen=force_unfrozen)
+                        return
+                if isinstance(v, list) and not intact_type:
+                    v = box.BoxList(v, **self.__box_config(extra_namespace=k))
+                    if merge_type == "extend" and k in self and isinstance(self[k], list):
+                        self[k].extend(v)
+                        return
+                    if merge_type == "unique" and k in self and isinstance(self[k], list):
+                        for item in v:
+                            if item not in self[k]:
+                                self[k].append(item)
+                        return
+                self.__setitem__(k, v)
+
+            if (len(args) + int(bool(kwargs))) > 1:
+                raise BoxTypeError(f"merge_update expected at most 1 argument, got {len(args) + int(bool(kwargs))}")
+            single_arg = next(iter(args), None)
+            if single_arg:
+                if hasattr(single_arg, "keys"):
+                    for k in single_arg:
+                        convert_and_set(k, single_arg[k])
+                else:
+                    for k, v in single_arg:
+                        convert_and_set(k, v)
+
+            for key in kwargs:
+                convert_and_set(key, kwargs[key])
+
+        finally:
+            if force_unfrozen:
+                self._box_config["frozen_box"] = was_frozen
 
     def setdefault(self, item, default=None):
         if item in self:
