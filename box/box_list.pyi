@@ -49,6 +49,7 @@ class BoxList(list):
         default_flow_style: bool = ...,
         encoding: str = ...,
         errors: str = ...,
+        width: int = ...,
         **yaml_kwargs: Any,
     ) -> Any: ...
     @classmethod

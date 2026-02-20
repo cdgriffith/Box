@@ -93,6 +93,7 @@ class Box(dict):
         default_flow_style: bool = ...,
         encoding: str = ...,
         errors: str = ...,
+        width: int = ...,
         **yaml_kwargs,
     ): ...
     @classmethod

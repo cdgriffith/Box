@@ -221,6 +221,14 @@ class TestBox:
             data = yaml.load(f)
             assert data == test_dict
 
+    def test_to_yaml_width(self):
+        long_value = "a " * 80  # 160 character string
+        a = Box({"key": long_value.strip()})
+        narrow = a.to_yaml(width=40)
+        wide = a.to_yaml(width=200)
+        # With width=200, the value should fit on fewer lines than width=40
+        assert len(wide.splitlines()) < len(narrow.splitlines())
+
     def test_dir(self):
         a = Box(test_dict, camel_killer_box=True)
         assert "key1" in dir(a)

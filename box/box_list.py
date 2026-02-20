@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2017-2023 - Chris Griffith - MIT License
+# Copyright (c) 2017-2026 - Chris Griffith - MIT License
 import copy
 import re
 from os import PathLike
@@ -98,7 +98,7 @@ class BoxList(list):
                 self.extend([None] * (pos - len(self) + 1))
             if len(list_pos.group()) == len(key):
                 return super().__setitem__(pos, value)
-            children = key[len(list_pos.group()):].lstrip(".")
+            children = key[len(list_pos.group()) :].lstrip(".")
             if self.box_options.get("default_box"):
                 if children[0] == "[":
                     super().__setitem__(pos, box.BoxList(**self.box_options))
@@ -258,6 +258,7 @@ class BoxList(list):
             default_flow_style: bool = False,
             encoding: str = "utf-8",
             errors: str = "strict",
+            width: int = 120,
             **yaml_kwargs,
         ):
             """
@@ -267,6 +268,7 @@ class BoxList(list):
             :param default_flow_style: False will recursively dump dicts
             :param encoding: File encoding
             :param errors: How to handle encoding errors
+            :param width: Line width for YAML output
             :param yaml_kwargs: additional arguments to pass to yaml.dump
             :return: string of YAML or return of `yaml.dump`
             """
@@ -276,6 +278,7 @@ class BoxList(list):
                 default_flow_style=default_flow_style,
                 encoding=encoding,
                 errors=errors,
+                width=width,
                 **yaml_kwargs,
             )
 
@@ -318,6 +321,7 @@ class BoxList(list):
             default_flow_style: bool = False,
             encoding: str = "utf-8",
             errors: str = "strict",
+            width: int = 120,
             **yaml_kwargs,
         ):
             raise BoxError('yaml is unavailable on this system, please install the "ruamel.yaml" or "PyYAML" package')

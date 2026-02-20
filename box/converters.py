@@ -185,6 +185,7 @@ def _to_yaml(
     errors: str = "strict",
     ruamel_typ: str = "rt",
     ruamel_attrs: Optional[Dict] = None,
+    width: int = 120,
     **yaml_kwargs,
 ):
     if not ruamel_attrs:
@@ -195,11 +196,12 @@ def _to_yaml(
             if ruamel_available:
                 yaml_dumper = YAML(typ=ruamel_typ)
                 yaml_dumper.default_flow_style = default_flow_style
+                yaml_dumper.width = width
                 for attr, value in ruamel_attrs.items():
                     setattr(yaml_dumper, attr, value)
                 return yaml_dumper.dump(obj, stream=f, **yaml_kwargs)
             elif pyyaml_available:
-                return yaml.dump(obj, stream=f, default_flow_style=default_flow_style, **yaml_kwargs)
+                return yaml.dump(obj, stream=f, default_flow_style=default_flow_style, width=width, **yaml_kwargs)
             else:
                 raise BoxError(MISSING_PARSER_ERROR)
 
@@ -207,13 +209,14 @@ def _to_yaml(
         if ruamel_available:
             yaml_dumper = YAML(typ=ruamel_typ)
             yaml_dumper.default_flow_style = default_flow_style
+            yaml_dumper.width = width
             for attr, value in ruamel_attrs.items():
                 setattr(yaml_dumper, attr, value)
             with StringIO() as string_stream:
                 yaml_dumper.dump(obj, stream=string_stream, **yaml_kwargs)
                 return string_stream.getvalue()
         elif pyyaml_available:
-            return yaml.dump(obj, default_flow_style=default_flow_style, **yaml_kwargs)
+            return yaml.dump(obj, default_flow_style=default_flow_style, width=width, **yaml_kwargs)
         else:
             raise BoxError(MISSING_PARSER_ERROR)
 

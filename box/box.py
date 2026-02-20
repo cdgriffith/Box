@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2017-2023 - Chris Griffith - MIT License
+# Copyright (c) 2017-2026 - Chris Griffith - MIT License
 """
 Improved dictionary access through dot notation with additional tools.
 """
@@ -1002,6 +1002,7 @@ class Box(dict):
             default_flow_style: bool = False,
             encoding: str = "utf-8",
             errors: str = "strict",
+            width: int = 120,
             **yaml_kwargs,
         ):
             """
@@ -1011,6 +1012,7 @@ class Box(dict):
             :param default_flow_style: False will recursively dump dicts
             :param encoding: File encoding
             :param errors: How to handle encoding errors
+            :param width: Line width for YAML output
             :param yaml_kwargs: additional arguments to pass to yaml.dump
             :return: string of YAML (if no filename provided)
             """
@@ -1020,6 +1022,7 @@ class Box(dict):
                 default_flow_style=default_flow_style,
                 encoding=encoding,
                 errors=errors,
+                width=width,
                 **yaml_kwargs,
             )
 
@@ -1062,6 +1065,7 @@ class Box(dict):
             default_flow_style: bool = False,
             encoding: str = "utf-8",
             errors: str = "strict",
+            width: int = 120,
             **yaml_kwargs,
         ):
             raise BoxError('yaml is unavailable on this system, please install the "ruamel.yaml" or "PyYAML" package')

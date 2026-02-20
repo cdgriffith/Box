@@ -28,6 +28,7 @@ def _to_yaml(
     errors: str = ...,
     ruamel_typ: str = ...,
     ruamel_attrs: Optional[Dict] = ...,
+    width: int = ...,
     **yaml_kwargs,
 ): ...
 def _from_yaml(

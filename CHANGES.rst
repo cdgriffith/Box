@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 7.4.0
+-------------
+
+* Adding support for YAML width
+* Adding support for Python 3.14
+* Removing support for Python 3.9 as it is EOL
+
 Version 7.3.2
 -------------
 
