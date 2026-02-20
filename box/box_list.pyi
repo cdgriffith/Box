@@ -78,6 +78,16 @@ class BoxList(list):
     def to_msgpack(self, filename: str | PathLike = ..., **kwargs: Any) -> Any: ...
     @classmethod
     def from_msgpack(cls, msgpack_bytes: bytes = ..., filename: str | PathLike = ..., **kwargs: Any) -> Any: ...
+    def to_toon(self, filename: str | PathLike = ..., encoding: str = ..., errors: str = ..., **kwargs: Any) -> Any: ...
+    @classmethod
+    def from_toon(
+        cls,
+        toon_string: str = ...,
+        filename: str | PathLike = ...,
+        encoding: str = ...,
+        errors: str = ...,
+        **kwargs: Any,
+    ) -> Any: ...
     def to_csv(self, filename: str | PathLike = ..., encoding: str = ..., errors: str = ...) -> Any: ...
     @classmethod
     def from_csv(

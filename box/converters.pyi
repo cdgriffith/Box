@@ -5,6 +5,7 @@ from typing import Any
 yaml_available: bool
 toml_available: bool
 msgpack_available: bool
+toon_available: bool
 BOX_PARAMETERS: Any
 toml_read_library: Any | None
 toml_write_library: Any | None
@@ -48,6 +49,14 @@ def _from_toml(
 ): ...
 def _to_msgpack(obj, filename: str | PathLike | None = ..., **kwargs): ...
 def _from_msgpack(msgpack_bytes: bytes | None = ..., filename: str | PathLike | None = ..., **kwargs): ...
+def _to_toon(obj, filename: str | PathLike | None = ..., encoding: str = ..., errors: str = ..., **kwargs): ...
+def _from_toon(
+    toon_string: str | None = ...,
+    filename: str | PathLike | None = ...,
+    encoding: str = ...,
+    errors: str = ...,
+    **kwargs,
+): ...
 def _to_csv(box_list, filename: str | PathLike | None = ..., encoding: str = ..., errors: str = ..., **kwargs): ...
 def _from_csv(
     csv_string: str | None = ...,

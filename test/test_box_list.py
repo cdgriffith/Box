@@ -161,6 +161,24 @@ class TestBoxList:
         with pytest.raises(BoxError):
             data.to_csv(file)
 
+    def test_toon_strings(self):
+        bl = BoxList([{"item": 1, "name": "test"}, {"item": 2, "name": "two"}])
+        toon_str = bl.to_toon()
+        result = BoxList.from_toon(toon_str)
+        assert result[0]["item"] == 1
+        assert result[1]["name"] == "two"
+
+    def test_toon_files(self):
+        bl = BoxList([{"item": 1, "name": "test"}, {"item": 2, "name": "two"}])
+        file = Path(tmp_dir, "toon_file.toon")
+        bl.to_toon(filename=file)
+        result = BoxList.from_toon(filename=file)
+        assert result[0]["item"] == 1
+
+    def test_toon_no_input(self):
+        with pytest.raises(BoxError):
+            BoxList.from_toon()
+
     def test_box_list_dots(self):
         data = BoxList(
             [

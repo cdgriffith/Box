@@ -17,13 +17,16 @@ from box.converters import (
     _from_json,
     _from_msgpack,
     _from_toml,
+    _from_toon,
     _from_yaml,
     _to_csv,
     _to_json,
     _to_msgpack,
     _to_toml,
+    _to_toon,
     _to_yaml,
     msgpack_available,
+    toon_available,
     toml_read_library,
     yaml_available,
 )
@@ -466,6 +469,69 @@ class BoxList(list):
             **kwargs,
         ):
             raise BoxError('msgpack is unavailable on this system, please install the "msgpack" package')
+
+    if toon_available:
+
+        def to_toon(
+            self, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict", **kwargs
+        ):
+            """
+            Transform the BoxList object into a TOON string.
+
+            :param filename: File to write TOON object too
+            :param encoding: File encoding
+            :param errors: How to handle encoding errors
+            :param kwargs: parameters to pass to `toon_format.encode`
+            :return: string of TOON (if no filename provided)
+            """
+            return _to_toon(self.to_list(), filename=filename, encoding=encoding, errors=errors, **kwargs)
+
+        @classmethod
+        def from_toon(
+            cls,
+            toon_string: str | None = None,
+            filename: str | PathLike | None = None,
+            encoding: str = "utf-8",
+            errors: str = "strict",
+            **kwargs,
+        ):
+            """
+            Transforms a TOON string or file into a BoxList object
+
+            :param toon_string: string to pass to `toon_format.decode`
+            :param filename: filename to open and pass to `toon_format.decode`
+            :param encoding: File encoding
+            :param errors: How to handle encoding errors
+            :param kwargs: parameters to pass to `BoxList()`
+            :return: BoxList object
+            """
+            box_args = {}
+            for arg in list(kwargs.keys()):
+                if arg in BOX_PARAMETERS:
+                    box_args[arg] = kwargs.pop(arg)
+
+            data = _from_toon(toon_string=toon_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
+            if not isinstance(data, list):
+                raise BoxError(f"toon data not returned as a list but rather a {type(data).__name__}")
+            return cls(data, **box_args)
+
+    else:
+
+        def to_toon(
+            self, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict", **kwargs
+        ):
+            raise BoxError('toon is unavailable on this system, please install the "toon_format" package')
+
+        @classmethod
+        def from_toon(
+            cls,
+            toon_string: str | None = None,
+            filename: str | PathLike | None = None,
+            encoding: str = "utf-8",
+            errors: str = "strict",
+            **kwargs,
+        ):
+            raise BoxError('toon is unavailable on this system, please install the "toon_format" package')
 
     def to_csv(self, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict"):
         return _to_csv(self, filename=filename, encoding=encoding, errors=errors)

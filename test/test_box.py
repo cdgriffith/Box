@@ -20,6 +20,7 @@ from test.common import (
     tmp_dir,
     tmp_json_file,
     tmp_msgpack_file,
+    tmp_toon_file,
     tmp_yaml_file,
 )
 
@@ -1211,6 +1212,26 @@ class TestBox:
     def test_msgpack_no_input(self):
         with pytest.raises(BoxError):
             Box.from_msgpack()
+
+    def test_toon_strings(self):
+        box1 = Box(test_dict)
+        toon_str = box1.to_toon()
+        assert Box.from_toon(toon_str) == box1
+
+    def test_toon_files(self):
+        box1 = Box(test_dict)
+        box1.to_toon(filename=tmp_toon_file)
+        assert Box.from_toon(filename=tmp_toon_file) == box1
+
+    def test_toon_no_input(self):
+        with pytest.raises(BoxError):
+            Box.from_toon()
+
+    def test_toon_from_toon_with_box_args(self):
+        box1 = Box(test_dict)
+        toon_str = box1.to_toon()
+        box2 = Box.from_toon(toon_str, default_box=True)
+        assert box2.nonexistent == Box()
 
     def test_value_view(self):
         a = Box()

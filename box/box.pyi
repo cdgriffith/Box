@@ -120,3 +120,13 @@ class Box(dict):
     def from_msgpack(
         cls, msgpack_bytes: bytes | None = ..., filename: str | PathLike | None = ..., **kwargs
     ) -> Box: ...
+    def to_toon(self, filename: str | PathLike | None = ..., encoding: str = ..., errors: str = ..., **kwargs): ...
+    @classmethod
+    def from_toon(
+        cls,
+        toon_string: str | None = ...,
+        filename: str | PathLike | None = ...,
+        encoding: str = ...,
+        errors: str = ...,
+        **kwargs,
+    ) -> Box: ...

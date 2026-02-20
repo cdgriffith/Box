@@ -43,11 +43,13 @@ __all__ = [
     "_to_toml",
     "_to_csv",
     "_to_msgpack",
+    "_to_toon",
     "_from_json",
     "_from_yaml",
     "_from_toml",
     "_from_csv",
     "_from_msgpack",
+    "_from_toon",
 ]
 
 
@@ -105,6 +107,13 @@ try:
 except ImportError:
     msgpack = None  # type: ignore
     msgpack_available = False
+
+toon_available = True
+
+try:
+    from toon_format import encode as toon_encode, decode as toon_decode
+except ImportError:
+    toon_available = False
 
 yaml_available = pyyaml_available or ruamel_available
 
@@ -327,6 +336,33 @@ def _from_msgpack(msgpack_bytes: bytes | None = None, filename: str | PathLike |
         data = msgpack.unpackb(msgpack_bytes, **kwargs)
     else:
         raise BoxError("from_msgpack requires a string or filename")
+    return data
+
+
+def _to_toon(obj, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict", **kwargs):
+    if filename:
+        _exists(filename, create=True)
+        with open(filename, "w", encoding=encoding, errors=errors) as f:
+            f.write(toon_encode(obj, **kwargs))
+    else:
+        return toon_encode(obj, **kwargs)
+
+
+def _from_toon(
+    toon_string: str | None = None,
+    filename: str | PathLike | None = None,
+    encoding: str = "utf-8",
+    errors: str = "strict",
+    **kwargs,
+):
+    if filename:
+        _exists(filename)
+        with open(filename, "r", encoding=encoding, errors=errors) as f:
+            data = toon_decode(f.read(), **kwargs)
+    elif toon_string:
+        data = toon_decode(toon_string, **kwargs)
+    else:
+        raise BoxError("from_toon requires a string or filename")
     return data
 
 

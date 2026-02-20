@@ -5,6 +5,7 @@ Version 7.4.0
 -------------
 
 * Adding #297 'box_dots_exclude' parameter to keep certain keys with dots from being broken down (thanks to J vanBemmel)
+* Adding #301 support for TOON serialization format (thanks to richieadler)
 * Adding support for YAML width
 * Adding support for Python 3.14
 * Fixing #291 adding frozen boxes (thanks to m-janicki)
