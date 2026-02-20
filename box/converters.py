@@ -119,6 +119,7 @@ BOX_PARAMETERS = (
     "box_duplicates",
     "box_intact_types",
     "box_dots",
+    "box_dots_exclude",
     "box_recast",
     "box_class",
     "box_namespace",
