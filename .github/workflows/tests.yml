@@ -13,7 +13,7 @@ jobs:
   package-checks:
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14", "pypy-3.10"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14", "pypy-3.11"]
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
@@ -77,8 +77,9 @@ jobs:
           pip install cibuildwheel
           python -m cibuildwheel --output-dir dist
         env:
-          CIBW_BUILD: cp39-manylinux_x86_64 cp310-manylinux_x86_64 cp311-manylinux_x86_64 cp312-manylinux_x86_64 cp313-manylinux_x86_64
-          CIBW_BEFORE_BUILD: pip install Cython>=3.0.11  setuptools wheel
+          CIBW_BUILD: cp310-manylinux_x86_64 cp311-manylinux_x86_64 cp312-manylinux_x86_64 cp313-manylinux_x86_64
+          CIBW_BEFORE_BUILD: pip install Cython>=3.0.11 setuptools wheel
+          CIBW_BUILD_FRONTEND: "build; args: --no-isolation"
           CIBW_BEFORE_TEST: pip install -r requirements.txt -r requirements-test.txt setuptools wheel twine Cython>=3.0.11
           CIBW_BUILD_VERBOSITY: 1
           CIBW_TEST_COMMAND: pytest {package}/test -vv
