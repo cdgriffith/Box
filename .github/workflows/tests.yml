@@ -33,6 +33,7 @@ jobs:
           pip install -r requirements-test.txt
           pip install coveralls mypy setuptools wheel twine Cython>=3.0.11
       - name: Run mypy
+        if: "!startsWith(matrix.python-version, 'pypy')"
         run: mypy box
       - name: Build Wheel and check distribution log description
         run: |
