@@ -1,7 +1,7 @@
 from _typeshed import Incomplete
-from collections.abc import Mapping
+from collections.abc import Generator, Mapping
 from os import PathLike
-from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union, Literal
+from typing import Any, Literal
 
 class Box(dict):
     def __new__(
@@ -17,11 +17,12 @@ class Box(dict):
         modify_tuples_box: bool = ...,
         box_safe_prefix: str = ...,
         box_duplicates: str = ...,
-        box_intact_types: Union[Tuple, List] = ...,
-        box_recast: Optional[Dict] = ...,
+        box_intact_types: tuple | list = ...,
+        box_recast: dict | None = ...,
         box_dots: bool = ...,
-        box_class: Optional[Union[Dict, Type["Box"]]] = ...,
-        box_namespace: Union[Tuple[str, ...], Literal[False]] = ...,
+        box_dots_exclude: str | None = ...,
+        box_class: dict | type[Box] | None = ...,
+        box_namespace: tuple[str, ...] | Literal[False] = ...,
         **kwargs: Any,
     ): ...
     def __init__(
@@ -37,11 +38,12 @@ class Box(dict):
         modify_tuples_box: bool = ...,
         box_safe_prefix: str = ...,
         box_duplicates: str = ...,
-        box_intact_types: Union[Tuple, List] = ...,
-        box_recast: Optional[Dict] = ...,
+        box_intact_types: tuple | list = ...,
+        box_recast: dict | None = ...,
         box_dots: bool = ...,
-        box_class: Optional[Union[Dict, Type["Box"]]] = ...,
-        box_namespace: Union[Tuple[str, ...], Literal[False]] = ...,
+        box_dots_exclude: str | None = ...,
+        box_class: dict | type[Box] | None = ...,
+        box_namespace: tuple[str, ...] | Literal[False] = ...,
         **kwargs: Any,
     ) -> None: ...
     def __add__(self, other: Mapping[Any, Any]): ...
@@ -52,10 +54,10 @@ class Box(dict):
     def __ior__(self, other: Mapping[Any, Any]): ...  # type: ignore[override]
     def __sub__(self, other: Mapping[Any, Any]): ...
     def __hash__(self): ...
-    def __dir__(self) -> List[str]: ...
+    def __dir__(self) -> list[str]: ...
     def __contains__(self, item) -> bool: ...
-    def keys(self, dotted: Union[bool] = ...): ...
-    def items(self, dotted: Union[bool] = ...): ...
+    def keys(self, dotted: bool = ...): ...
+    def items(self, dotted: bool = ...): ...
     def get(self, key, default=...): ...
     def copy(self) -> Box: ...
     def __copy__(self) -> Box: ...
@@ -71,25 +73,23 @@ class Box(dict):
     def popitem(self): ...
     def __iter__(self) -> Generator: ...
     def __reversed__(self) -> Generator: ...
-    def to_dict(self) -> Dict: ...
+    def to_dict(self) -> dict: ...
     def update(self, *args, **kwargs) -> None: ...
     def merge_update(self, *args, **kwargs) -> None: ...
     def setdefault(self, item, default: Incomplete | None = ...): ...
-    def to_json(
-        self, filename: Optional[Union[str, PathLike]] = ..., encoding: str = ..., errors: str = ..., **json_kwargs
-    ): ...
+    def to_json(self, filename: str | PathLike | None = ..., encoding: str = ..., errors: str = ..., **json_kwargs): ...
     @classmethod
     def from_json(
         cls,
-        json_string: Optional[str] = ...,
-        filename: Optional[Union[str, PathLike]] = ...,
+        json_string: str | None = ...,
+        filename: str | PathLike | None = ...,
         encoding: str = ...,
         errors: str = ...,
         **kwargs,
     ) -> Box: ...
     def to_yaml(
         self,
-        filename: Optional[Union[str, PathLike]] = ...,
+        filename: str | PathLike | None = ...,
         default_flow_style: bool = ...,
         encoding: str = ...,
         errors: str = ...,
@@ -99,24 +99,24 @@ class Box(dict):
     @classmethod
     def from_yaml(
         cls,
-        yaml_string: Optional[str] = ...,
-        filename: Optional[Union[str, PathLike]] = ...,
+        yaml_string: str | None = ...,
+        filename: str | PathLike | None = ...,
         encoding: str = ...,
         errors: str = ...,
         **kwargs,
     ) -> Box: ...
-    def to_toml(self, filename: Optional[Union[str, PathLike]] = ..., encoding: str = ..., errors: str = ...): ...
+    def to_toml(self, filename: str | PathLike | None = ..., encoding: str = ..., errors: str = ...): ...
     @classmethod
     def from_toml(
         cls,
-        toml_string: Optional[str] = ...,
-        filename: Optional[Union[str, PathLike]] = ...,
+        toml_string: str | None = ...,
+        filename: str | PathLike | None = ...,
         encoding: str = ...,
         errors: str = ...,
         **kwargs,
     ) -> Box: ...
-    def to_msgpack(self, filename: Optional[Union[str, PathLike]] = ..., **kwargs): ...
+    def to_msgpack(self, filename: str | PathLike | None = ..., **kwargs): ...
     @classmethod
     def from_msgpack(
-        cls, msgpack_bytes: Optional[bytes] = ..., filename: Optional[Union[str, PathLike]] = ..., **kwargs
+        cls, msgpack_bytes: bytes | None = ..., filename: str | PathLike | None = ..., **kwargs
     ) -> Box: ...

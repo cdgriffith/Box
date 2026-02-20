@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from typing import Dict
+from __future__ import annotations
 
 from box.box import Box
 
@@ -28,7 +28,7 @@ class SBox(Box):
     ]
 
     @property
-    def dict(self) -> Dict:
+    def dict(self) -> dict:
         return self.to_dict()
 
     @property
@@ -46,10 +46,10 @@ class SBox(Box):
     def __repr__(self):
         return f"{self.__class__.__name__}({self})"
 
-    def copy(self) -> "SBox":
+    def copy(self) -> SBox:
         return SBox(super(SBox, self).copy())
 
-    def __copy__(self) -> "SBox":
+    def __copy__(self) -> SBox:
         return SBox(super(SBox, self).copy())
 
 

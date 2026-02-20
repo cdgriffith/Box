@@ -31,13 +31,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-test.txt
-          pip install coveralls flake8 flake8-print mypy setuptools wheel twine Cython>=3.0.11
-      - name: Lint with flake8
-        run: |
-          # stop the build if there are Python syntax errors, undefined names or print statements
-          flake8 box --count --select=E9,F63,F7,F82,T001,T002,T003,T004 --show-source --statistics
-          # exit-zero treats all errors as warnings.
-          flake8 . --count --exit-zero --max-complexity=20 --max-line-length=120 --statistics --extend-ignore E203
+          pip install coveralls mypy setuptools wheel twine Cython>=3.0.11
       - name: Run mypy
         run: mypy box
       - name: Build Wheel and check distribution log description

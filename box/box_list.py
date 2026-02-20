@@ -2,10 +2,13 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2017-2026 - Chris Griffith - MIT License
+from __future__ import annotations
+
 import copy
 import re
+from collections.abc import Iterable
 from os import PathLike
-from typing import Optional, Iterable, Type, Union, List, Any
+from typing import Any
 
 import box
 from box.converters import (
@@ -43,7 +46,7 @@ class BoxList(list):
         obj.box_org_ref = None
         return obj
 
-    def __init__(self, iterable: Optional[Iterable] = None, box_class: Type[box.Box] = box.Box, **box_options):
+    def __init__(self, iterable: Iterable | None = None, box_class: type[box.Box] = box.Box, **box_options):
         self.box_options = box_options
         self.box_options["box_class"] = box_class
         self.box_org_ref = iterable
@@ -137,7 +140,7 @@ class BoxList(list):
     def insert(self, index, p_object):
         super().insert(index, self._convert(p_object))
 
-    def _dotted_helper(self) -> List[str]:
+    def _dotted_helper(self) -> list[str]:
         keys = []
         for idx, item in enumerate(self):
             added = False
@@ -177,8 +180,8 @@ class BoxList(list):
             return hashing
         raise BoxTypeError("unhashable type: 'BoxList'")
 
-    def to_list(self) -> List:
-        new_list: List[Any] = []
+    def to_list(self) -> list:
+        new_list: list[Any] = []
         for x in self:
             if x is self:
                 new_list.append(new_list)
@@ -192,7 +195,7 @@ class BoxList(list):
 
     def to_json(
         self,
-        filename: Optional[Union[str, PathLike]] = None,
+        filename: str | PathLike | None = None,
         encoding: str = "utf-8",
         errors: str = "strict",
         multiline: bool = False,
@@ -218,8 +221,8 @@ class BoxList(list):
     @classmethod
     def from_json(
         cls,
-        json_string: Optional[str] = None,
-        filename: Optional[Union[str, PathLike]] = None,
+        json_string: str | None = None,
+        filename: str | PathLike | None = None,
         encoding: str = "utf-8",
         errors: str = "strict",
         multiline: bool = False,
@@ -254,7 +257,7 @@ class BoxList(list):
 
         def to_yaml(
             self,
-            filename: Optional[Union[str, PathLike]] = None,
+            filename: str | PathLike | None = None,
             default_flow_style: bool = False,
             encoding: str = "utf-8",
             errors: str = "strict",
@@ -285,8 +288,8 @@ class BoxList(list):
         @classmethod
         def from_yaml(
             cls,
-            yaml_string: Optional[str] = None,
-            filename: Optional[Union[str, PathLike]] = None,
+            yaml_string: str | None = None,
+            filename: str | PathLike | None = None,
             encoding: str = "utf-8",
             errors: str = "strict",
             **kwargs,
@@ -317,7 +320,7 @@ class BoxList(list):
 
         def to_yaml(
             self,
-            filename: Optional[Union[str, PathLike]] = None,
+            filename: str | PathLike | None = None,
             default_flow_style: bool = False,
             encoding: str = "utf-8",
             errors: str = "strict",
@@ -329,8 +332,8 @@ class BoxList(list):
         @classmethod
         def from_yaml(
             cls,
-            yaml_string: Optional[str] = None,
-            filename: Optional[Union[str, PathLike]] = None,
+            yaml_string: str | None = None,
+            filename: str | PathLike | None = None,
             encoding: str = "utf-8",
             errors: str = "strict",
             **kwargs,
@@ -341,7 +344,7 @@ class BoxList(list):
 
         def to_toml(
             self,
-            filename: Optional[Union[str, PathLike]] = None,
+            filename: str | PathLike | None = None,
             key_name: str = "toml",
             encoding: str = "utf-8",
             errors: str = "strict",
@@ -362,7 +365,7 @@ class BoxList(list):
 
         def to_toml(
             self,
-            filename: Optional[Union[str, PathLike]] = None,
+            filename: str | PathLike | None = None,
             key_name: str = "toml",
             encoding: str = "utf-8",
             errors: str = "strict",
@@ -374,8 +377,8 @@ class BoxList(list):
         @classmethod
         def from_toml(
             cls,
-            toml_string: Optional[str] = None,
-            filename: Optional[Union[str, PathLike]] = None,
+            toml_string: str | None = None,
+            filename: str | PathLike | None = None,
             key_name: str = "toml",
             encoding: str = "utf-8",
             errors: str = "strict",
@@ -408,8 +411,8 @@ class BoxList(list):
         @classmethod
         def from_toml(
             cls,
-            toml_string: Optional[str] = None,
-            filename: Optional[Union[str, PathLike]] = None,
+            toml_string: str | None = None,
+            filename: str | PathLike | None = None,
             key_name: str = "toml",
             encoding: str = "utf-8",
             errors: str = "strict",
@@ -419,7 +422,7 @@ class BoxList(list):
 
     if msgpack_available:
 
-        def to_msgpack(self, filename: Optional[Union[str, PathLike]] = None, **kwargs):
+        def to_msgpack(self, filename: str | PathLike | None = None, **kwargs):
             """
             Transform the BoxList object into a toml string.
 
@@ -429,9 +432,7 @@ class BoxList(list):
             return _to_msgpack(self.to_list(), filename=filename, **kwargs)
 
         @classmethod
-        def from_msgpack(
-            cls, msgpack_bytes: Optional[bytes] = None, filename: Optional[Union[str, PathLike]] = None, **kwargs
-        ):
+        def from_msgpack(cls, msgpack_bytes: bytes | None = None, filename: str | PathLike | None = None, **kwargs):
             """
             Transforms a toml string or file into a BoxList object
 
@@ -452,28 +453,28 @@ class BoxList(list):
 
     else:
 
-        def to_msgpack(self, filename: Optional[Union[str, PathLike]] = None, **kwargs):
+        def to_msgpack(self, filename: str | PathLike | None = None, **kwargs):
             raise BoxError('msgpack is unavailable on this system, please install the "msgpack" package')
 
         @classmethod
         def from_msgpack(
             cls,
-            msgpack_bytes: Optional[bytes] = None,
-            filename: Optional[Union[str, PathLike]] = None,
+            msgpack_bytes: bytes | None = None,
+            filename: str | PathLike | None = None,
             encoding: str = "utf-8",
             errors: str = "strict",
             **kwargs,
         ):
             raise BoxError('msgpack is unavailable on this system, please install the "msgpack" package')
 
-    def to_csv(self, filename: Optional[Union[str, PathLike]] = None, encoding: str = "utf-8", errors: str = "strict"):
+    def to_csv(self, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict"):
         return _to_csv(self, filename=filename, encoding=encoding, errors=errors)
 
     @classmethod
     def from_csv(
         cls,
-        csv_string: Optional[str] = None,
-        filename: Optional[Union[str, PathLike]] = None,
+        csv_string: str | None = None,
+        filename: str | PathLike | None = None,
         encoding: str = "utf-8",
         errors: str = "strict",
     ):

@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import annotations
+
+import sys
+from collections.abc import Callable
 from json import JSONDecodeError
 from os import PathLike
 from pathlib import Path
-from typing import Optional, Callable, Dict, Union
-import sys
 
 from box.box import Box
 from box.box_list import BoxList
@@ -84,16 +86,16 @@ converters = {
     "msgpack": _to_msgpack,
     "pack": _to_msgpack,
     "csv": _to_csv,
-}  # type: Dict[str, Callable]
+}  # type: dict[str, Callable]
 
 
 def box_from_file(
-    file: Union[str, PathLike],
-    file_type: Optional[str] = None,
+    file: str | PathLike,
+    file_type: str | None = None,
     encoding: str = "utf-8",
     errors: str = "strict",
     **kwargs,
-) -> Union[Box, BoxList]:
+) -> Box | BoxList:
     """
     Loads the provided file and tries to parse it into a Box or BoxList object as appropriate.
 
@@ -115,7 +117,7 @@ def box_from_file(
     raise BoxError(f'"{file_type}" is an unknown type. Please use either csv, toml, msgpack, yaml or json')
 
 
-def box_from_string(content: str, string_type: str = "json") -> Union[Box, BoxList]:
+def box_from_string(content: str, string_type: str = "json") -> Box | BoxList:
     """
     Parse the provided string into a Box or BoxList object as appropriate.
 
