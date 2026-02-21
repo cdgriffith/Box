@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 7.4.1
+-------------
+
+* Fixing #303 Wrong version number (7.3.3) in 7.4.0 release (thanks to Michał Górny)
+
 Version 7.4.0
 -------------
 
@@ -10,6 +15,11 @@ Version 7.4.0
 * Adding support for Python 3.14
 * Fixing #291 adding frozen boxes (thanks to m-janicki)
 * Removing support for Python 3.9 as it is EOL
+
+Version 7.3.3
+-------------
+
+* Mistakenly released 7.4.0 as 7.3.3 in PyPI, same as above
 
 Version 7.3.2
 -------------
