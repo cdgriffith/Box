@@ -583,6 +583,20 @@ class Box(dict):
             return super().__setitem__(item, value)
         # This is the magic sauce that makes sub dictionaries into new box objects
         if isinstance(value, dict):
+            # If box_dots is enabled and the key already exists as a Box (possibly created from dotted keys),
+            # merge the new dict into the existing Box instead of overwriting it
+            # This fixes issue #305 where dotted keys are lost when a non-dotted key with the same prefix comes after
+            if (
+                self._box_config["box_dots"]
+                and item in self
+                and isinstance(self[item], Box)
+                and not self._box_config["__created"]
+            ):
+                # Merge the new dict into the existing Box by setting each key-value pair
+                # This ensures proper conversion of nested structures
+                for k, v in value.items():
+                    self[item].__setitem__(k, v)
+                return
             # We always re-create even if it was already a Box object to pass down configurations correctly
             value = self._box_config["box_class"](value, **self.__box_config(extra_namespace=item))
         elif isinstance(value, list) and not isinstance(value, box.BoxList):
