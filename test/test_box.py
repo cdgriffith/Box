@@ -369,6 +369,54 @@ class TestBox:
         assert bx.key1 == "value1"
         assert bx.Key_2 == Box()
 
+    def test_from_yaml_box_dots_dotted_key_before_non_dotted(self):
+        """
+        Test for issue #305: Dotted keys read from YAML are lost with box_dots / default_box
+        when the dotted key appears before a non-dotted key with the same prefix.
+        
+        This test documents the bug where a.b: c followed by a: {d: e} causes a.b to be lost.
+        """
+        # Create a temporary YAML file with dotted key before non-dotted key
+        yaml_content = """a.b: c
+a:
+  d: e
+"""
+        yaml_file = Path(tmp_dir, "test_dotted_before.yml")
+        yaml_file.write_text(yaml_content)
+
+        # Test without box_dots/default_box - should preserve both keys as separate entries
+        bx1 = Box.from_yaml(filename=yaml_file)
+        assert "a.b" in bx1
+        assert bx1["a.b"] == "c"
+        assert "a" in bx1
+        assert bx1["a"]["d"] == "e"
+
+        # Test with box_dots=True and default_box=True
+        # Expected behavior: a.b should be merged into a.b, so a.b == "c" and a.d == "e"
+        # Current bug: a.b is lost when it appears before a:
+        bx2 = Box.from_yaml(filename=yaml_file, box_dots=True, default_box=True)
+        assert "a" in bx2
+        assert bx2["a"]["d"] == "e"
+        # This assertion will fail until the bug is fixed:
+        # The dotted key a.b should be accessible as either a["b"] or via dotted notation
+        assert "b" in bx2["a"], "Bug #305: a.b key is lost when it appears before a: in YAML"
+        assert bx2["a"]["b"] == "c"
+
+        # Test reverse order (non-dotted before dotted) - this should work correctly
+        yaml_content_reverse = """a:
+  d: e
+a.b: c
+"""
+        yaml_file_reverse = Path(tmp_dir, "test_dotted_after.yml")
+        yaml_file_reverse.write_text(yaml_content_reverse)
+
+        bx3 = Box.from_yaml(filename=yaml_file_reverse, box_dots=True, default_box=True)
+        assert "a" in bx3
+        assert bx3["a"]["d"] == "e"
+        # In reverse order, the dotted key should be properly merged
+        assert "b" in bx3["a"]
+        assert bx3["a"]["b"] == "c"
+
     def test_bad_from_json(self):
         with pytest.raises(BoxError):
             Box.from_json()
