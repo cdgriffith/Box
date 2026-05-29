@@ -32,6 +32,10 @@ from box.box import _get_dot_paths, _camel_killer, _recursive_tuples  # type: ig
 from box.converters import BOX_PARAMETERS
 
 
+class _SubclassBox(Box):
+    """Module-level Box subclass so its instances are picklable in tests."""
+
+
 def mp_queue_test(q):
     bx = q.get()
     try:
@@ -685,6 +689,17 @@ class TestBox:
         loaded2 = pickle.load(open(pic2_file, "rb"))
         assert bx == loaded2
         loaded2.box_options = bx.box_options
+
+    def test_pickle_preserves_subclass_on_nested_access(self):
+        if platform.python_implementation() == "PyPy":
+            pytest.skip("Pickling does not work correctly on PyPy")
+        # Unpickling goes through __new__ + __setstate__ but not __init__, so
+        # box_class must be set from cls in __new__ too. Otherwise nested boxes
+        # created on access after unpickling fall back to the base Box (#308).
+        b = _SubclassBox({"a": {"b": 1}})
+        loaded = pickle.loads(pickle.dumps(b))
+        assert isinstance(loaded, _SubclassBox)
+        assert type(loaded.a) is _SubclassBox
 
     def test_pickle_default_box(self):
         if platform.python_implementation() == "PyPy":
