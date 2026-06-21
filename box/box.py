@@ -1022,6 +1022,8 @@ class Box(dict):
             encoding: str = "utf-8",
             errors: str = "strict",
             width: int = 120,
+            ruamel_typ: str = "rt",
+            ruamel_attrs: dict | None = None,
             **yaml_kwargs,
         ):
             """
@@ -1032,6 +1034,8 @@ class Box(dict):
             :param encoding: File encoding
             :param errors: How to handle encoding errors
             :param width: Line width for YAML output
+            :param ruamel_typ: ruamel.yaml parser type (default "rt")
+            :param ruamel_attrs: Additional attributes to set on the ruamel dumper
             :param yaml_kwargs: additional arguments to pass to yaml.dump
             :return: string of YAML (if no filename provided)
             """
@@ -1042,6 +1046,8 @@ class Box(dict):
                 encoding=encoding,
                 errors=errors,
                 width=width,
+                ruamel_typ=ruamel_typ,
+                ruamel_attrs=ruamel_attrs,
                 **yaml_kwargs,
             )
 
