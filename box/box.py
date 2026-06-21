@@ -233,7 +233,7 @@ class Box(dict):
                 "box_recast": box_recast,
                 "box_dots": box_dots,
                 "box_dots_exclude": re.compile(box_dots_exclude) if box_dots_exclude else None,
-                "box_class": box_class if box_class is not None else Box,
+                "box_class": box_class if box_class is not None else cls,
                 "box_namespace": box_namespace,
             }
         )
