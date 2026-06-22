@@ -1021,7 +1021,7 @@ class Box(dict):
             default_flow_style: bool = False,
             encoding: str = "utf-8",
             errors: str = "strict",
-            width: int = 120,
+            width: int = 0,
             **yaml_kwargs,
         ):
             """
@@ -1031,7 +1031,7 @@ class Box(dict):
             :param default_flow_style: False will recursively dump dicts
             :param encoding: File encoding
             :param errors: How to handle encoding errors
-            :param width: Line width for YAML output
+            :param width: Line width for YAML output (0 for no limit)
             :param yaml_kwargs: additional arguments to pass to yaml.dump
             :return: string of YAML (if no filename provided)
             """
@@ -1084,7 +1084,7 @@ class Box(dict):
             default_flow_style: bool = False,
             encoding: str = "utf-8",
             errors: str = "strict",
-            width: int = 120,
+            width: int = 0,
             **yaml_kwargs,
         ):
             raise BoxError('yaml is unavailable on this system, please install the "ruamel.yaml" or "PyYAML" package')
