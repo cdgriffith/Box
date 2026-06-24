@@ -20,6 +20,15 @@ class ConfigBox(Box):
 
     _protected_keys = dir(Box) + ["bool", "int", "float", "list", "getboolean", "getfloat", "getint"]
 
+    @staticmethod
+    def _case_insensitive_key(keys, item):
+        """Return a matching key (case-insensitive) from *keys*, or *item* if no match."""
+        lower = item.lower()
+        for k in keys:
+            if k.lower() == lower:
+                return k
+        return item
+
     def __getattr__(self, item):
         """
         Config file keys are stored in lower case, be a little more
@@ -28,7 +37,35 @@ class ConfigBox(Box):
         try:
             return super().__getattr__(item)
         except AttributeError:
-            return super().__getattr__(item.lower())
+            # Try case-insensitive match across all keys, not just lowering input
+            matched = self._case_insensitive_key(self.keys(), item)
+            if matched != item:
+                return super().__getattr__(matched)
+            raise
+
+    def __getitem__(self, item, _ignore_default=False):
+        try:
+            return super().__getitem__(item, _ignore_default=_ignore_default)
+        except KeyError:
+            matched = self._case_insensitive_key(self.keys(), item)
+            if matched != item:
+                return super().__getitem__(matched, _ignore_default=_ignore_default)
+            raise
+
+    def __contains__(self, item):
+        if super().__contains__(item):
+            return True
+        return self._case_insensitive_key(self.keys(), item) != item
+
+    def __setitem__(self, key, value):
+        matched = self._case_insensitive_key(self.keys(), key)
+        if matched != key:
+            key = matched
+        super().__setitem__(key, value)
+
+    def __delitem__(self, key):
+        matched = self._case_insensitive_key(self.keys(), key)
+        super().__delitem__(matched)
 
     def __dir__(self) -> list[str]:
         return super().__dir__() + ["bool", "int", "float", "list", "getboolean", "getfloat", "getint"]
