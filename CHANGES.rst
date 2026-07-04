@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Fixing #272 ``frozen_box`` with nested lists could not be serialized to YAML (thanks to apoorvdarshan)
+
 Version 7.4.1
 -------------
 

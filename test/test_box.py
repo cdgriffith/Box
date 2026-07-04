@@ -435,6 +435,22 @@ class TestBox:
 
         assert hash(bx3)
 
+    def test_frozen_box_with_lists_is_serializable(self):
+        # frozen_box stores lists as tuples of Boxes; to_dict must convert the
+        # nested Boxes back to native dicts so serialization works. See #272.
+        bx = Box({"a": [{"b": 123}, {"b": 222}], "c": [[{"d": 2}], [3, 4]]}, frozen_box=True)
+
+        native = bx.to_dict()
+        assert isinstance(native["a"], tuple)
+        assert native["a"][0] == {"b": 123}
+        assert not isinstance(native["a"][0], Box)
+        assert not isinstance(native["c"][0][0], Box)
+
+        # These used to raise RepresenterError / serialization errors.
+        yaml = YAML(typ="safe")
+        assert yaml.load(bx.to_yaml()) == {"a": [{"b": 123}, {"b": 222}], "c": [[{"d": 2}], [3, 4]]}
+        assert json.loads(bx.to_json()) == {"a": [{"b": 123}, {"b": 222}], "c": [[{"d": 2}], [3, 4]]}
+
     def test_hashing(self):
         bx1 = Box(t=3, g=4, frozen_box=True)
         bx2 = Box(g=4, t=3, frozen_box=True)
