@@ -97,6 +97,25 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
     return tuple(out_list)
 
 
+def _to_native_tuple(iterable):
+    """Convert a tuple's Box/BoxList members back to native types.
+
+    ``frozen_box`` stores lists as tuples of Boxes, so ``to_dict`` needs to
+    turn those nested Boxes back into plain dicts to remain serializable.
+    """
+    out_list = []
+    for i in iterable:
+        if isinstance(i, Box):
+            out_list.append(i.to_dict())
+        elif isinstance(i, box.BoxList):
+            out_list.append(i.to_list())
+        elif isinstance(i, tuple):
+            out_list.append(_to_native_tuple(i))
+        else:
+            out_list.append(i)
+    return tuple(out_list)
+
+
 def _parse_box_dots(bx, item, setting=False):
     for idx, char in enumerate(item):
         if char == "[":
@@ -815,6 +834,8 @@ class Box(dict):
                 out_dict[k] = v.to_dict()
             elif isinstance(v, box.BoxList):
                 out_dict[k] = v.to_list()
+            elif isinstance(v, tuple):
+                out_dict[k] = _to_native_tuple(v)
         return out_dict
 
     def update(self, *args, **kwargs):
