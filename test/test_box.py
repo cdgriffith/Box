@@ -43,6 +43,10 @@ def mp_queue_test(q):
         q.put(True)
 
 
+class MyBox(Box):
+    pass
+
+
 class TestBox:
     @pytest.fixture(autouse=True)
     def temp_dir_cleanup(self):
@@ -92,7 +96,9 @@ class TestBox:
 
     def test_recursive_tuples(self):
         out = _recursive_tuples(
-            ({"test": "a"}, ({"second": "b"}, {"third": "c"}, ("fourth",))), dict, recreate_tuples=True
+            ({"test": "a"}, ({"second": "b"}, {"third": "c"}, ("fourth",))),
+            dict,
+            recreate_tuples=True,
         )
         assert isinstance(out, tuple)
         assert isinstance(out[0], dict)
@@ -339,7 +345,9 @@ class TestBox:
             "lists[1]",
         ]
 
-        t = Box({"a": 1}, default_box=True, box_dots=True, default_box_none_transform=False)
+        t = Box(
+            {"a": 1}, default_box=True, box_dots=True, default_box_none_transform=False
+        )
         assert t.setdefault("b", [1, 2]) == [1, 2]
         assert t == Box(a=1, b=[1, 2])
         assert t.setdefault("c", [{"d": 2}]) == BoxList([{"d": 2}])
@@ -503,7 +511,11 @@ class TestBox:
 
     # Issue#59 https://github.com/cdgriffith/Box/issues/59 "Treat None values as non existing keys for default_box"
     def test_default_box_none_transforms(self):
-        bx4 = Box({"noneValue": None, "inner": {"noneInner": None}}, default_box=True, default_box_attr="issue#59")
+        bx4 = Box(
+            {"noneValue": None, "inner": {"noneInner": None}},
+            default_box=True,
+            default_box_attr="issue#59",
+        )
         assert bx4.noneValue == "issue#59"
         assert bx4.inner.noneInner == "issue#59"
 
@@ -559,7 +571,12 @@ class TestBox:
         assert bx2["Key 2"] == 4
 
     def test_functional_data(self):
-        data = Box.from_json(filename=data_json_file, conversion_box=True, camel_killer_box=True, default_box=False)
+        data = Box.from_json(
+            filename=data_json_file,
+            conversion_box=True,
+            camel_killer_box=True,
+            default_box=False,
+        )
         assert data.widget
 
         with pytest.raises(AttributeError):
@@ -573,12 +590,16 @@ class TestBox:
         widget_config = data.widget._Box__box_config()
         assert widget_config.pop("box_namespace") == ("widget",)
 
-        assert base_config == widget_config, "{} != {}".format(base_config, widget_config)
+        assert base_config == widget_config, "{} != {}".format(
+            base_config, widget_config
+        )
 
     def test_functional_spaceballs(self):
         my_box = Box(movie_data)
 
-        my_box.movies.Spaceballs.Stars.append({"name": "Bill Pullman", "imdb": "nm0000597", "role": "Lone Starr"})
+        my_box.movies.Spaceballs.Stars.append(
+            {"name": "Bill Pullman", "imdb": "nm0000597", "role": "Lone Starr"}
+        )
         assert my_box.movies.Spaceballs.Stars[-1].role == "Lone Starr"
         assert my_box.movies.Robin_Hood_Men_in_Tights.length == 104
         my_box.movies.Robin_Hood_Men_in_Tights.Stars.pop(0)
@@ -693,6 +714,15 @@ class TestBox:
         loaded = pickle.loads(pickle.dumps(bb))
         assert bb == loaded
 
+    def test_pickle_preserves_subclass_nested_box_class(self):
+        if platform.python_implementation() == "PyPy":
+            pytest.skip("Pickling does not work correctly on PyPy")
+        bb = MyBox()
+        bb.nested = {"value": 1}
+        loaded = pickle.loads(pickle.dumps(bb, protocol=pickle.HIGHEST_PROTOCOL))
+        assert isinstance(loaded, MyBox)
+        assert isinstance(loaded.nested, MyBox)
+
     def test_conversion_dup_only(self):
         with pytest.raises(BoxError):
             Box(movie_data, conversion_box=False, box_duplicates="error")
@@ -728,7 +758,10 @@ class TestBox:
                 ("movies.Robin Hood: Men in Tights.Stars[1].role", "Prince John"),
                 ("movies.Robin Hood: Men in Tights.Stars[2].imdb", "nm0715953"),
                 ("movies.Robin Hood: Men in Tights.Stars[2].name", "Roger Rees"),
-                ("movies.Robin Hood: Men in Tights.Stars[2].role", "Sheriff of Rottingham"),
+                (
+                    "movies.Robin Hood: Men in Tights.Stars[2].role",
+                    "Sheriff of Rottingham",
+                ),
                 ("movies.Robin Hood: Men in Tights.Stars[3].imdb", "nm0001865"),
                 ("movies.Robin Hood: Men in Tights.Stars[3].name", "Amy Yasbeck"),
                 ("movies.Robin Hood: Men in Tights.Stars[3].role", "Marian"),
@@ -822,7 +855,9 @@ class TestBox:
             def find_by_name(self, name):
                 return next((i for i in self if i.name == name), None)
 
-        db = Box(data, box_recast={"users": UsersBoxList}, box_intact_types=[UsersBoxList])
+        db = Box(
+            data, box_recast={"users": UsersBoxList}, box_intact_types=[UsersBoxList]
+        )
 
         assert isinstance(db.users, UsersBoxList)
         assert isinstance(db.users[0].users, UsersBoxList)
@@ -834,7 +869,12 @@ class TestBox:
         b.update({"out": "updated", "test": "unsafe"})
         assert b.out == "updated"
         assert b._out == "preserved"
-        assert b.to_dict() == {"out": "updated", "test": "unsafe", "_out": "preserved", "test_": "safe"}
+        assert b.to_dict() == {
+            "out": "updated",
+            "test": "unsafe",
+            "_out": "preserved",
+            "test_": "safe",
+        }
         assert b.test == "unsafe"
         assert b.test_ == "safe"
 
@@ -984,7 +1024,13 @@ class TestBox:
     def test_delete_attributes(self):
         b = Box(notThief=1, sortaThief=0, reallyAThief=True, camel_killer_box=True)
         b["$OhNo!"] = 3
-        c = Box(notThief=1, sortaThief=0, reallyAThief=True, camel_killer_box=True, conversion_box=False)
+        c = Box(
+            notThief=1,
+            sortaThief=0,
+            reallyAThief=True,
+            camel_killer_box=True,
+            conversion_box=False,
+        )
         del b.not_thief
         del b._oh_no_
         del b.really_a_thief
@@ -1093,7 +1139,10 @@ class TestBox:
 
     def test_box_dots(self):
         b = Box(
-            {"my_key": {"does stuff": {"to get to": "where I want"}}, "key.with.list": [[[{"test": "value"}]]]},
+            {
+                "my_key": {"does stuff": {"to get to": "where I want"}},
+                "key.with.list": [[[{"test": "value"}]]],
+            },
             box_dots=True,
             default_box=True,
         )
@@ -1129,7 +1178,9 @@ class TestBox:
             d.keys(dotted=True)
 
     def test_toml(self):
-        b = Box.from_toml(filename=Path(test_root, "data", "toml_file.tml"), default_box=True)
+        b = Box.from_toml(
+            filename=Path(test_root, "data", "toml_file.tml"), default_box=True
+        )
         assert b.database.server == "192.168.1.1"
         assert b.clients.hosts == ["alpha", "omega"]
         assert b.database.to_toml().startswith('server = "192.168.1.1"')
@@ -1325,7 +1376,16 @@ class TestBox:
         box1.merge_update(d2, box_merge_lists="extend")
 
         assert box1 == Box(
-            {"app": {"S3": {"S3Service": [{"bucket": "bucket001"}, {"expirationDate": "2099-10-25"}]}}}
+            {
+                "app": {
+                    "S3": {
+                        "S3Service": [
+                            {"bucket": "bucket001"},
+                            {"expirationDate": "2099-10-25"},
+                        ]
+                    }
+                }
+            }
         ), box1
 
     def test_box_from_empty_yaml(self):

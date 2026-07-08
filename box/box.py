@@ -5,6 +5,7 @@
 """
 Improved dictionary access through dot notation with additional tools.
 """
+
 from __future__ import annotations
 
 import copy
@@ -36,7 +37,13 @@ from box.converters import (
     toml_write_library,
     yaml_available,
 )
-from box.exceptions import BoxError, BoxKeyError, BoxTypeError, BoxValueError, BoxWarning
+from box.exceptions import (
+    BoxError,
+    BoxKeyError,
+    BoxTypeError,
+    BoxValueError,
+    BoxWarning,
+)
 
 __all__ = ["Box"]
 
@@ -220,7 +227,11 @@ class Box(dict):
         obj._box_config.update(
             {
                 "default_box": default_box,
-                "default_box_attr": cls.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
+                "default_box_attr": (
+                    cls.__class__
+                    if default_box_attr is NO_DEFAULT
+                    else default_box_attr
+                ),
                 "default_box_none_transform": default_box_none_transform,
                 "default_box_create_on_get": default_box_create_on_get,
                 "conversion_box": conversion_box,
@@ -232,8 +243,10 @@ class Box(dict):
                 "box_intact_types": tuple(box_intact_types),
                 "box_recast": box_recast,
                 "box_dots": box_dots,
-                "box_dots_exclude": re.compile(box_dots_exclude) if box_dots_exclude else None,
-                "box_class": box_class if box_class is not None else Box,
+                "box_dots_exclude": (
+                    re.compile(box_dots_exclude) if box_dots_exclude else None
+                ),
+                "box_class": box_class if box_class is not None else cls,
                 "box_namespace": box_namespace,
             }
         )
@@ -265,7 +278,11 @@ class Box(dict):
         self._box_config.update(
             {
                 "default_box": default_box,
-                "default_box_attr": self.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
+                "default_box_attr": (
+                    self.__class__
+                    if default_box_attr is NO_DEFAULT
+                    else default_box_attr
+                ),
                 "default_box_none_transform": default_box_none_transform,
                 "default_box_create_on_get": default_box_create_on_get,
                 "conversion_box": conversion_box,
@@ -277,12 +294,17 @@ class Box(dict):
                 "box_intact_types": tuple(box_intact_types),
                 "box_recast": box_recast,
                 "box_dots": box_dots,
-                "box_dots_exclude": re.compile(box_dots_exclude) if box_dots_exclude else None,
+                "box_dots_exclude": (
+                    re.compile(box_dots_exclude) if box_dots_exclude else None
+                ),
                 "box_class": box_class if box_class is not None else self.__class__,
                 "box_namespace": box_namespace,
             }
         )
-        if not self._box_config["conversion_box"] and self._box_config["box_duplicates"] != "ignore":
+        if (
+            not self._box_config["conversion_box"]
+            and self._box_config["box_duplicates"] != "ignore"
+        ):
             raise BoxError("box_duplicates are only for conversion_boxes")
         if len(args) == 1:
             if isinstance(args[0], str):
@@ -291,7 +313,11 @@ class Box(dict):
                 for k, v in args[0].items():
                     if v is args[0]:
                         v = self
-                    if v is None and self._box_config["default_box"] and self._box_config["default_box_none_transform"]:
+                    if (
+                        v is None
+                        and self._box_config["default_box"]
+                        and self._box_config["default_box_none_transform"]
+                    ):
                         continue
                     self.__setitem__(k, v)
             elif isinstance(args[0], Iterable):
@@ -311,14 +337,18 @@ class Box(dict):
 
     def __add__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
-            raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
+            raise BoxTypeError(
+                "Box can only merge two boxes or a box and a dictionary."
+            )
         new_box = self.copy()
         new_box.merge_update(other, _force_unfrozen=True)  # type: ignore[attr-defined]
         return new_box
 
     def __radd__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
-            raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
+            raise BoxTypeError(
+                "Box can only merge two boxes or a box and a dictionary."
+            )
 
         new_box = other.copy()
         if not isinstance(other, Box):
@@ -329,13 +359,17 @@ class Box(dict):
 
     def __iadd__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
-            raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
+            raise BoxTypeError(
+                "Box can only merge two boxes or a box and a dictionary."
+            )
         self.merge_update(other)
         return self
 
     def __or__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
-            raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
+            raise BoxTypeError(
+                "Box can only merge two boxes or a box and a dictionary."
+            )
         new_box = self.copy()
         new_box._box_config["frozen_box"] = False
         new_box.update(other)  # type: ignore[attr-defined]
@@ -344,7 +378,9 @@ class Box(dict):
 
     def __ror__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
-            raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
+            raise BoxTypeError(
+                "Box can only merge two boxes or a box and a dictionary."
+            )
         new_box = other.copy()
         if not isinstance(other, Box):
             new_box = self._box_config["box_class"](new_box)
@@ -355,7 +391,9 @@ class Box(dict):
 
     def __ior__(self, other: Mapping[Any, Any]):  # type: ignore[override]
         if not isinstance(other, dict):
-            raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
+            raise BoxTypeError(
+                "Box can only merge two boxes or a box and a dictionary."
+            )
         self.update(other)
         return self
 
@@ -363,7 +401,9 @@ class Box(dict):
         frozen = self._box_config["frozen_box"]
         config = self.__box_config()
         config["frozen_box"] = False
-        config.pop("box_namespace")  # Detach namespace; it will be reassigned if we nest again
+        config.pop(
+            "box_namespace"
+        )  # Detach namespace; it will be reassigned if we nest again
         output = self._box_config["box_class"](**config)
         if not isinstance(other, dict):
             raise BoxError("Box can only compare two boxes or a box and a dictionary.")
@@ -427,7 +467,9 @@ class Box(dict):
             return super().keys()
 
         if not self._box_config["box_dots"]:
-            raise BoxError("Cannot return dotted keys as this Box does not have `box_dots` enabled")
+            raise BoxError(
+                "Cannot return dotted keys as this Box does not have `box_dots` enabled"
+            )
 
         keys = set()
         for key, value in self.items():
@@ -450,14 +492,19 @@ class Box(dict):
             return super().items()
 
         if not self._box_config["box_dots"]:
-            raise BoxError("Cannot return dotted keys as this Box does not have `box_dots` enabled")
+            raise BoxError(
+                "Cannot return dotted keys as this Box does not have `box_dots` enabled"
+            )
 
         return [(k, self[k]) for k in self.keys(dotted=True)]
 
     def get(self, key, default=NO_DEFAULT):
         if key not in self:
             if default is NO_DEFAULT:
-                if self._box_config["default_box"] and self._box_config["default_box_none_transform"]:
+                if (
+                    self._box_config["default_box"]
+                    and self._box_config["default_box_none_transform"]
+                ):
                     return self.__get_default(key)
                 else:
                     return None
@@ -470,7 +517,9 @@ class Box(dict):
 
     def copy(self) -> Box:
         config = self.__box_config()
-        config.pop("box_namespace")  # Detach namespace; it will be reassigned if we nest again
+        config.pop(
+            "box_namespace"
+        )  # Detach namespace; it will be reassigned if we nest again
         return Box(super().copy(), **config)
 
     def __copy__(self) -> Box:
@@ -496,7 +545,10 @@ class Box(dict):
         if self._box_config["box_dots"] and isinstance(item, str):
             return ("[" in item) or (
                 "." in item
-                and not (self._box_config["box_dots_exclude"] and self._box_config["box_dots_exclude"].match(item))
+                and not (
+                    self._box_config["box_dots_exclude"]
+                    and self._box_config["box_dots_exclude"].match(item)
+                )
             )
         return False
 
@@ -505,9 +557,13 @@ class Box(dict):
             return None
         default_value = self._box_config["default_box_attr"]
         if default_value in (self._box_config["box_class"], dict):
-            value = self._box_config["box_class"](**self.__box_config(extra_namespace=item))
+            value = self._box_config["box_class"](
+                **self.__box_config(extra_namespace=item)
+            )
         elif isinstance(default_value, dict):
-            value = self._box_config["box_class"](**self.__box_config(extra_namespace=item), **default_value)
+            value = self._box_config["box_class"](
+                **self.__box_config(extra_namespace=item), **default_value
+            )
         elif isinstance(default_value, list):
             value = box.BoxList(**self.__box_config(extra_namespace=item))
         elif isinstance(default_value, Callable):
@@ -518,10 +574,16 @@ class Box(dict):
                 for p in signature(default_value).parameters.values()
                 if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
             ]
-            k_sigs = [p.name for p in signature(default_value).parameters.values() if p.kind is p.KEYWORD_ONLY]
+            k_sigs = [
+                p.name
+                for p in signature(default_value).parameters.values()
+                if p.kind is p.KEYWORD_ONLY
+            ]
             for name in p_sigs:
                 if name not in ("key", "box_instance"):
-                    raise BoxError("default_box_attr can only have the arguments 'key' and 'box_instance'")
+                    raise BoxError(
+                        "default_box_attr can only have the arguments 'key' and 'box_instance'"
+                    )
             if "key" in p_sigs:
                 args.append(item)
             if "box_instance" in p_sigs:
@@ -544,7 +606,10 @@ class Box(dict):
                             self[first_item].__setitem__(children, value)
                     else:
                         super().__setitem__(
-                            first_item, self._box_config["box_class"](**self.__box_config(extra_namespace=first_item))
+                            first_item,
+                            self._box_config["box_class"](
+                                **self.__box_config(extra_namespace=first_item)
+                            ),
                         )
                         self[first_item].__setitem__(children, value)
                 else:
@@ -556,7 +621,10 @@ class Box(dict):
         for k, v in self._box_config.copy().items():
             if not k.startswith("__"):
                 out[k] = v
-        if extra_namespace is not NO_NAMESPACE and self._box_config["box_namespace"] is not False:
+        if (
+            extra_namespace is not NO_NAMESPACE
+            and self._box_config["box_namespace"] is not False
+        ):
             out["box_namespace"] = (*out["box_namespace"], extra_namespace)
         return out
 
@@ -569,22 +637,30 @@ class Box(dict):
                 else:
                     return recast(value)
             except ValueError as err:
-                raise BoxValueError(f"Cannot convert {value} to {recast}") from _exception_cause(err)
+                raise BoxValueError(
+                    f"Cannot convert {value} to {recast}"
+                ) from _exception_cause(err)
         return value
 
     def __convert_and_store(self, item, value):
         if self._box_config["conversion_box"]:
             safe_key = self._safe_attr(item)
             self._box_config["__safe_keys"][safe_key] = item
-        if isinstance(value, (int, float, str, bytes, bytearray, bool, complex, set, frozenset)):
+        if isinstance(
+            value, (int, float, str, bytes, bytearray, bool, complex, set, frozenset)
+        ):
             return super().__setitem__(item, value)
         # If the value has already been converted or should not be converted, return it as-is
-        if self._box_config["box_intact_types"] and isinstance(value, self._box_config["box_intact_types"]):
+        if self._box_config["box_intact_types"] and isinstance(
+            value, self._box_config["box_intact_types"]
+        ):
             return super().__setitem__(item, value)
         # This is the magic sauce that makes sub dictionaries into new box objects
         if isinstance(value, dict):
             # We always re-create even if it was already a Box object to pass down configurations correctly
-            value = self._box_config["box_class"](value, **self.__box_config(extra_namespace=item))
+            value = self._box_config["box_class"](
+                value, **self.__box_config(extra_namespace=item)
+            )
         elif isinstance(value, list) and not isinstance(value, box.BoxList):
             if self._box_config["frozen_box"]:
                 value = _recursive_tuples(
@@ -597,7 +673,9 @@ class Box(dict):
         elif isinstance(value, box.BoxList):
             value.box_options.update(self.__box_config(extra_namespace=item))
         elif self._box_config["modify_tuples_box"] and isinstance(value, tuple):
-            value = _recursive_tuples(value, recreate_tuples=True, **self.__box_config(extra_namespace=item))
+            value = _recursive_tuples(
+                value, recreate_tuples=True, **self.__box_config(extra_namespace=item)
+            )
         super().__setitem__(item, value)
 
     def __getitem__(self, item, _ignore_default=False):
@@ -606,7 +684,9 @@ class Box(dict):
         except KeyError as err:
             if item == "_box_config":
                 cause = _exception_cause(err)
-                raise BoxKeyError("_box_config should only exist as an attribute and is never defaulted") from cause
+                raise BoxKeyError(
+                    "_box_config should only exist as an attribute and is never defaulted"
+                ) from cause
             if isinstance(item, slice):
                 # In Python 3.12 this changes to a KeyError instead of TypeError
                 new_box = self._box_config["box_class"](**self.__box_config())
@@ -655,13 +735,19 @@ class Box(dict):
                     return self.__getitem__(self._box_config["__safe_keys"][safe_key])
             if self._box_config["default_box"]:
                 if item.startswith("_") and item.endswith("_"):
-                    raise BoxKeyError(f"{item}: Does not exist and internal methods are never defaulted")
+                    raise BoxKeyError(
+                        f"{item}: Does not exist and internal methods are never defaulted"
+                    )
                 return self.__get_default(item, attr=True)
             raise BoxKeyError(str(err)) from _exception_cause(err)
         return value
 
     def __setitem__(self, key, value):
-        if key != "_box_config" and self._box_config["frozen_box"] and self._box_config["__created"]:
+        if (
+            key != "_box_config"
+            and self._box_config["frozen_box"]
+            and self._box_config["__created"]
+        ):
             raise BoxError("Box is frozen")
         if self.__process_dotted_key(key):
             first_item, children = _parse_box_dots(self, key, setting=True)
@@ -670,19 +756,30 @@ class Box(dict):
                     return self[first_item].__setitem__(children, value)
             elif self._box_config["default_box"]:
                 if children[0] == "[":
-                    super().__setitem__(first_item, box.BoxList(**self.__box_config(extra_namespace=first_item)))
+                    super().__setitem__(
+                        first_item,
+                        box.BoxList(**self.__box_config(extra_namespace=first_item)),
+                    )
                 else:
                     super().__setitem__(
-                        first_item, self._box_config["box_class"](**self.__box_config(extra_namespace=first_item))
+                        first_item,
+                        self._box_config["box_class"](
+                            **self.__box_config(extra_namespace=first_item)
+                        ),
                     )
                 return self[first_item].__setitem__(children, value)
             else:
-                raise BoxKeyError(f"'{self.__class__}' object has no attribute {first_item}")
+                raise BoxKeyError(
+                    f"'{self.__class__}' object has no attribute {first_item}"
+                )
         value = self.__recast(key, value)
         if key not in self.keys() and self._box_config["camel_killer_box"]:
             if self._box_config["camel_killer_box"] and isinstance(key, str):
                 key = _camel_killer(key)
-        if self._box_config["conversion_box"] and self._box_config["box_duplicates"] != "ignore":
+        if (
+            self._box_config["conversion_box"]
+            and self._box_config["box_duplicates"] != "ignore"
+        ):
             self._conversion_checks(key)
         self.__convert_and_store(key, value)
 
@@ -821,7 +918,9 @@ class Box(dict):
         if self._box_config["frozen_box"]:
             raise BoxError("Box is frozen")
         if (len(args) + int(bool(kwargs))) > 1:
-            raise BoxTypeError(f"update expected at most 1 argument, got {len(args) + int(bool(kwargs))}")
+            raise BoxTypeError(
+                f"update expected at most 1 argument, got {len(args) + int(bool(kwargs))}"
+            )
         single_arg = next(iter(args), None)
         if single_arg:
             if hasattr(single_arg, "keys"):
@@ -852,16 +951,30 @@ class Box(dict):
                 if isinstance(v, dict) and not intact_type:
                     # Box objects must be created in case they are already
                     # in the `converted` box_config set
-                    v = self._box_config["box_class"](v, **self.__box_config(extra_namespace=k))
+                    v = self._box_config["box_class"](
+                        v, **self.__box_config(extra_namespace=k)
+                    )
                     if k in self and isinstance(self[k], dict):
-                        self[k].merge_update(v, box_merge_lists=merge_type, _force_unfrozen=force_unfrozen)
+                        self[k].merge_update(
+                            v,
+                            box_merge_lists=merge_type,
+                            _force_unfrozen=force_unfrozen,
+                        )
                         return
                 if isinstance(v, list) and not intact_type:
                     v = box.BoxList(v, **self.__box_config(extra_namespace=k))
-                    if merge_type == "extend" and k in self and isinstance(self[k], list):
+                    if (
+                        merge_type == "extend"
+                        and k in self
+                        and isinstance(self[k], list)
+                    ):
                         self[k].extend(v)
                         return
-                    if merge_type == "unique" and k in self and isinstance(self[k], list):
+                    if (
+                        merge_type == "unique"
+                        and k in self
+                        and isinstance(self[k], list)
+                    ):
                         for item in v:
                             if item not in self[k]:
                                 self[k].append(item)
@@ -869,7 +982,9 @@ class Box(dict):
                 self.__setitem__(k, v)
 
             if (len(args) + int(bool(kwargs))) > 1:
-                raise BoxTypeError(f"merge_update expected at most 1 argument, got {len(args) + int(bool(kwargs))}")
+                raise BoxTypeError(
+                    f"merge_update expected at most 1 argument, got {len(args) + int(bool(kwargs))}"
+                )
             single_arg = next(iter(args), None)
             if single_arg:
                 if hasattr(single_arg, "keys"):
@@ -895,7 +1010,9 @@ class Box(dict):
                 return self[item]
 
         if isinstance(default, dict):
-            default = self._box_config["box_class"](default, **self.__box_config(extra_namespace=item))
+            default = self._box_config["box_class"](
+                default, **self.__box_config(extra_namespace=item)
+            )
         if isinstance(default, list):
             default = box.BoxList(default, **self.__box_config(extra_namespace=item))
         self[item] = default
@@ -918,7 +1035,14 @@ class Box(dict):
         if attr.isidentifier() and not iskeyword(attr):
             return attr
 
-        if sum(1 for character in attr if character.isidentifier() and not iskeyword(character)) == 0:
+        if (
+            sum(
+                1
+                for character in attr
+                if character.isidentifier() and not iskeyword(character)
+            )
+            == 0
+        ):
             attr = f'{self.__box_config()["box_safe_prefix"]}{attr}'
             if attr.isidentifier() and not iskeyword(attr):
                 return attr
@@ -958,9 +1082,14 @@ class Box(dict):
         safe_item = self._safe_attr(item)
 
         if safe_item in self._box_config["__safe_keys"]:
-            dups = [f"{item}({safe_item})", f'{self._box_config["__safe_keys"][safe_item]}({safe_item})']
+            dups = [
+                f"{item}({safe_item})",
+                f'{self._box_config["__safe_keys"][safe_item]}({safe_item})',
+            ]
             if self._box_config["box_duplicates"].startswith("warn"):
-                warnings.warn(f"Duplicate conversion attributes exist: {dups}", BoxWarning)
+                warnings.warn(
+                    f"Duplicate conversion attributes exist: {dups}", BoxWarning
+                )
             else:
                 raise BoxError(f"Duplicate conversion attributes exist: {dups}")
 
@@ -980,7 +1109,13 @@ class Box(dict):
         :param json_kwargs: additional arguments to pass to json.dump(s)
         :return: string of JSON (if no filename provided)
         """
-        return _to_json(self.to_dict(), filename=filename, encoding=encoding, errors=errors, **json_kwargs)
+        return _to_json(
+            self.to_dict(),
+            filename=filename,
+            encoding=encoding,
+            errors=errors,
+            **json_kwargs,
+        )
 
     @classmethod
     def from_json(
@@ -1007,10 +1142,14 @@ class Box(dict):
             if arg in BOX_PARAMETERS:
                 box_args[arg] = kwargs.pop(arg)
 
-        data = _from_json(json_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
+        data = _from_json(
+            json_string, filename=filename, encoding=encoding, errors=errors, **kwargs
+        )
 
         if not isinstance(data, dict):
-            raise BoxError(f"json data not returned as a dictionary, but rather a {type(data).__name__}")
+            raise BoxError(
+                f"json data not returned as a dictionary, but rather a {type(data).__name__}"
+            )
         return cls(data, **box_args)
 
     if yaml_available:
@@ -1069,11 +1208,19 @@ class Box(dict):
                 if arg in BOX_PARAMETERS:
                     box_args[arg] = kwargs.pop(arg)
 
-            data = _from_yaml(yaml_string=yaml_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
+            data = _from_yaml(
+                yaml_string=yaml_string,
+                filename=filename,
+                encoding=encoding,
+                errors=errors,
+                **kwargs,
+            )
             if not data:
                 return cls(**box_args)
             if not isinstance(data, dict):
-                raise BoxError(f"yaml data not returned as a dictionary but rather a {type(data).__name__}")
+                raise BoxError(
+                    f"yaml data not returned as a dictionary but rather a {type(data).__name__}"
+                )
             return cls(data, **box_args)
 
     else:
@@ -1087,7 +1234,9 @@ class Box(dict):
             width: int = 120,
             **yaml_kwargs,
         ):
-            raise BoxError('yaml is unavailable on this system, please install the "ruamel.yaml" or "PyYAML" package')
+            raise BoxError(
+                'yaml is unavailable on this system, please install the "ruamel.yaml" or "PyYAML" package'
+            )
 
         @classmethod
         def from_yaml(
@@ -1098,11 +1247,18 @@ class Box(dict):
             errors: str = "strict",
             **kwargs,
         ) -> Box:
-            raise BoxError('yaml is unavailable on this system, please install the "ruamel.yaml" or "PyYAML" package')
+            raise BoxError(
+                'yaml is unavailable on this system, please install the "ruamel.yaml" or "PyYAML" package'
+            )
 
     if toml_write_library is not None:
 
-        def to_toml(self, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict"):
+        def to_toml(
+            self,
+            filename: str | PathLike | None = None,
+            encoding: str = "utf-8",
+            errors: str = "strict",
+        ):
             """
             Transform the Box object into a toml string.
 
@@ -1111,12 +1267,21 @@ class Box(dict):
             :param errors: How to handle encoding errors
             :return: string of TOML (if no filename provided)
             """
-            return _to_toml(self.to_dict(), filename=filename, encoding=encoding, errors=errors)
+            return _to_toml(
+                self.to_dict(), filename=filename, encoding=encoding, errors=errors
+            )
 
     else:
 
-        def to_toml(self, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict"):
-            raise BoxError('toml is unavailable on this system, please install the "tomli-w" package')
+        def to_toml(
+            self,
+            filename: str | PathLike | None = None,
+            encoding: str = "utf-8",
+            errors: str = "strict",
+        ):
+            raise BoxError(
+                'toml is unavailable on this system, please install the "tomli-w" package'
+            )
 
     if toml_read_library is not None:
 
@@ -1144,7 +1309,12 @@ class Box(dict):
                 if arg in BOX_PARAMETERS:
                     box_args[arg] = kwargs.pop(arg)
 
-            data = _from_toml(toml_string=toml_string, filename=filename, encoding=encoding, errors=errors)
+            data = _from_toml(
+                toml_string=toml_string,
+                filename=filename,
+                encoding=encoding,
+                errors=errors,
+            )
             return cls(data, **box_args)
 
     else:
@@ -1158,7 +1328,9 @@ class Box(dict):
             errors: str = "strict",
             **kwargs,
         ) -> Box:
-            raise BoxError('toml is unavailable on this system, please install the "tomli" package')
+            raise BoxError(
+                'toml is unavailable on this system, please install the "tomli" package'
+            )
 
     if msgpack_available:
 
@@ -1192,15 +1364,21 @@ class Box(dict):
                 if arg in BOX_PARAMETERS:
                     box_args[arg] = kwargs.pop(arg)
 
-            data = _from_msgpack(msgpack_bytes=msgpack_bytes, filename=filename, **kwargs)
+            data = _from_msgpack(
+                msgpack_bytes=msgpack_bytes, filename=filename, **kwargs
+            )
             if not isinstance(data, dict):
-                raise BoxError(f"msgpack data not returned as a dictionary but rather a {type(data).__name__}")
+                raise BoxError(
+                    f"msgpack data not returned as a dictionary but rather a {type(data).__name__}"
+                )
             return cls(data, **box_args)
 
     else:
 
         def to_msgpack(self, filename: str | PathLike | None = None, **kwargs):
-            raise BoxError('msgpack is unavailable on this system, please install the "msgpack" package')
+            raise BoxError(
+                'msgpack is unavailable on this system, please install the "msgpack" package'
+            )
 
         @classmethod
         def from_msgpack(
@@ -1211,12 +1389,18 @@ class Box(dict):
             errors: str = "strict",
             **kwargs,
         ) -> Box:
-            raise BoxError('msgpack is unavailable on this system, please install the "msgpack" package')
+            raise BoxError(
+                'msgpack is unavailable on this system, please install the "msgpack" package'
+            )
 
     if toon_available:
 
         def to_toon(
-            self, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict", **kwargs
+            self,
+            filename: str | PathLike | None = None,
+            encoding: str = "utf-8",
+            errors: str = "strict",
+            **kwargs,
         ):
             """
             Transform the Box object into a TOON string.
@@ -1227,7 +1411,13 @@ class Box(dict):
             :param kwargs: parameters to pass to `toon_format.encode`
             :return: string of TOON (if no filename provided)
             """
-            return _to_toon(self.to_dict(), filename=filename, encoding=encoding, errors=errors, **kwargs)
+            return _to_toon(
+                self.to_dict(),
+                filename=filename,
+                encoding=encoding,
+                errors=errors,
+                **kwargs,
+            )
 
         @classmethod
         def from_toon(
@@ -1253,17 +1443,31 @@ class Box(dict):
                 if arg in BOX_PARAMETERS:
                     box_args[arg] = kwargs.pop(arg)
 
-            data = _from_toon(toon_string=toon_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
+            data = _from_toon(
+                toon_string=toon_string,
+                filename=filename,
+                encoding=encoding,
+                errors=errors,
+                **kwargs,
+            )
             if not isinstance(data, dict):
-                raise BoxError(f"toon data not returned as a dictionary but rather a {type(data).__name__}")
+                raise BoxError(
+                    f"toon data not returned as a dictionary but rather a {type(data).__name__}"
+                )
             return cls(data, **box_args)
 
     else:
 
         def to_toon(
-            self, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict", **kwargs
+            self,
+            filename: str | PathLike | None = None,
+            encoding: str = "utf-8",
+            errors: str = "strict",
+            **kwargs,
         ):
-            raise BoxError('toon is unavailable on this system, please install the "toon_format" package')
+            raise BoxError(
+                'toon is unavailable on this system, please install the "toon_format" package'
+            )
 
         @classmethod
         def from_toon(
@@ -1274,4 +1478,6 @@ class Box(dict):
             errors: str = "strict",
             **kwargs,
         ) -> Box:
-            raise BoxError('toon is unavailable on this system, please install the "toon_format" package')
+            raise BoxError(
+                'toon is unavailable on this system, please install the "toon_format" package'
+            )
