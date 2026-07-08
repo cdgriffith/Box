@@ -11,6 +11,7 @@ import pytest
 from ruamel.yaml import YAML
 
 from box import BoxError
+import box.converters as converters
 from box.converters import _from_toml, _to_json, _to_msgpack, _to_toml, _to_yaml
 
 toml_string = """[movies.Spaceballs]
@@ -83,6 +84,20 @@ class TestConverters:
         assert "Rick Moranis" in open(m_file).read()
         yaml = YAML()
         assert yaml.load(open(m_file)) == yaml.load(movie_string)
+
+    def test_to_yaml_pyyaml_does_not_wrap_long_scalar_by_default(self, monkeypatch):
+        if not converters.pyyaml_available:
+            pytest.skip("PyYAML not available")
+        monkeypatch.setattr(converters, "ruamel_available", False)
+        long_scalar = " ".join(["word"] * 50)
+        expected = f"long: {long_scalar}\n"
+
+        yaml_string = _to_yaml({"long": long_scalar})
+        assert yaml_string == expected
+
+        out_file = Path(tmp_dir, "long_yaml")
+        _to_yaml({"long": long_scalar}, filename=out_file)
+        assert out_file.read_text() == expected
 
     def test_to_msgpack(self):
         m_file = os.path.join(tmp_dir, "movie_data")

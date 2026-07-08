@@ -31,7 +31,9 @@ try:
 except ImportError:
     pyyaml_available = False
 
-MISSING_PARSER_ERROR = "No YAML Parser available, please install ruamel.yaml>=0.17 or PyYAML"
+MISSING_PARSER_ERROR = (
+    "No YAML Parser available, please install ruamel.yaml>=0.17 or PyYAML"
+)
 
 toml_read_library: Any | None = None
 toml_write_library: Any | None = None
@@ -154,7 +156,11 @@ def _exists(filename: str | PathLike, create: bool = False) -> Path:
 
 
 def _to_json(
-    obj, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict", **json_kwargs
+    obj,
+    filename: str | PathLike | None = None,
+    encoding: str = "utf-8",
+    errors: str = "strict",
+    **json_kwargs,
 ):
     if filename:
         _exists(filename, create=True)
@@ -213,7 +219,10 @@ def _to_yaml(
                     setattr(yaml_dumper, attr, value)
                 return yaml_dumper.dump(obj, stream=f, **yaml_kwargs)
             elif pyyaml_available:
-                return yaml.dump(obj, stream=f, default_flow_style=default_flow_style, width=width, **yaml_kwargs)
+                yaml_kwargs.setdefault("width", 2**31 - 1 if width == 120 else width)
+                return yaml.dump(
+                    obj, stream=f, default_flow_style=default_flow_style, **yaml_kwargs
+                )
             else:
                 raise BoxError(MISSING_PARSER_ERROR)
 
@@ -228,7 +237,8 @@ def _to_yaml(
                 yaml_dumper.dump(obj, stream=string_stream, **yaml_kwargs)
                 return string_stream.getvalue()
         elif pyyaml_available:
-            return yaml.dump(obj, default_flow_style=default_flow_style, width=width, **yaml_kwargs)
+            yaml_kwargs.setdefault("width", 2**31 - 1 if width == 120 else width)
+            return yaml.dump(obj, default_flow_style=default_flow_style, **yaml_kwargs)
         else:
             raise BoxError(MISSING_PARSER_ERROR)
 
@@ -275,7 +285,12 @@ def _from_yaml(
     return data
 
 
-def _to_toml(obj, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict"):
+def _to_toml(
+    obj,
+    filename: str | PathLike | None = None,
+    encoding: str = "utf-8",
+    errors: str = "strict",
+):
     if filename:
         _exists(filename, create=True)
         if toml_write_library.__name__ == "toml":  # type: ignore
@@ -327,7 +342,9 @@ def _to_msgpack(obj, filename: str | PathLike | None = None, **kwargs):
         return msgpack.packb(obj, **kwargs)
 
 
-def _from_msgpack(msgpack_bytes: bytes | None = None, filename: str | PathLike | None = None, **kwargs):
+def _from_msgpack(
+    msgpack_bytes: bytes | None = None, filename: str | PathLike | None = None, **kwargs
+):
     if filename:
         _exists(filename)
         with open(filename, "rb") as f:
@@ -339,7 +356,13 @@ def _from_msgpack(msgpack_bytes: bytes | None = None, filename: str | PathLike |
     return data
 
 
-def _to_toon(obj, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict", **kwargs):
+def _to_toon(
+    obj,
+    filename: str | PathLike | None = None,
+    encoding: str = "utf-8",
+    errors: str = "strict",
+    **kwargs,
+):
     if filename:
         _exists(filename, create=True)
         with open(filename, "w", encoding=encoding, errors=errors) as f:
@@ -367,12 +390,18 @@ def _from_toon(
 
 
 def _to_csv(
-    box_list, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict", **kwargs
+    box_list,
+    filename: str | PathLike | None = None,
+    encoding: str = "utf-8",
+    errors: str = "strict",
+    **kwargs,
 ):
     csv_column_names = list(box_list[0].keys())
     for row in box_list:
         if list(row.keys()) != csv_column_names:
-            raise BoxError("BoxList must contain the same dictionary structure for every item to convert to csv")
+            raise BoxError(
+                "BoxList must contain the same dictionary structure for every item to convert to csv"
+            )
 
     if filename:
         _exists(filename, create=True)
