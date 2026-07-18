@@ -669,7 +669,8 @@ class Box(dict):
                 if hasattr(self[first_item], "__setitem__"):
                     return self[first_item].__setitem__(children, value)
             elif self._box_config["default_box"]:
-                if children[0] == "[":
+                # children may be "" for trailing dots (e.g. "a."); treat as Box + empty key.
+                if children[:1] == "[":
                     super().__setitem__(first_item, box.BoxList(**self.__box_config(extra_namespace=first_item)))
                 else:
                     super().__setitem__(

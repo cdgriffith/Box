@@ -344,6 +344,17 @@ class TestBox:
         assert t == Box(a=1, b=[1, 2])
         assert t.setdefault("c", [{"d": 2}]) == BoxList([{"d": 2}])
 
+    def test_box_dots_trailing_dot_default_box(self):
+        # Trailing dots leave an empty children segment; must set empty-string key, not IndexError.
+        b = Box(default_box=True, box_dots=True)
+        b["a."] = 1
+        assert b["a"][""] == 1
+        b2 = Box(default_box=True, box_dots=True)
+        b2["a[0]."] = 2
+        assert b2.a[0][""] == 2
+        b3 = Box(default_box=True, box_dots=True)
+        assert isinstance(b3[".."], Box)
+
     def test_from_json_file(self):
         bx = Box.from_json(filename=data_json_file)
         assert isinstance(bx, Box)

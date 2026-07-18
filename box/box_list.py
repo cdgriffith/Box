@@ -106,7 +106,8 @@ class BoxList(list):
                 return super().__setitem__(pos, value)
             children = key[len(list_pos.group()) :].lstrip(".")
             if self.box_options.get("default_box"):
-                if children[0] == "[":
+                # children may be "" after a trailing dot on a list path (e.g. "[0].").
+                if children[:1] == "[":
                     super().__setitem__(pos, box.BoxList(**self.box_options))
                 else:
                     super().__setitem__(pos, self.box_options.get("box_class")(**self.box_options))
