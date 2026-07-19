@@ -169,11 +169,14 @@ class BoxList(list):
         return self.__class__((x for x in self), **self.box_options)
 
     def __deepcopy__(self, memo=None):
-        out = self.__class__()
+        frozen = self.box_options.get("frozen_box")
+        out = self.__class__(**{**self.box_options, "frozen_box": False})
         memo = memo or {}
         memo[id(self)] = out
         for k in self:
             out.append(copy.deepcopy(k, memo=memo))
+        if frozen:
+            out.__init__(**self.box_options)
         return out
 
     def __hash__(self) -> int:  # type: ignore[override]

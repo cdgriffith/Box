@@ -74,6 +74,28 @@ class TestBoxList:
         bl2[1] = 4
         assert bl2[1] == 4
 
+    def test_deepcopy_preserves_box_options(self):
+        import copy
+
+        # deepcopy must preserve box_options, matching __copy__ and Box.__deepcopy__
+        for options in (
+            {"frozen_box": True},
+            {"box_dots": True},
+            {"default_box": True},
+            {"box_intact_types": (dict,)},
+        ):
+            bl = BoxList([{"a": 1}], **options)
+            key = list(options)[0]
+            assert copy.copy(bl).box_options.get(key) == options[key]
+            assert copy.deepcopy(bl).box_options.get(key) == options[key]
+
+        # a frozen BoxList must stay frozen (immutable + hashable) after deepcopy
+        frozen = BoxList([5, 4, 3], frozen_box=True)
+        clone = copy.deepcopy(frozen)
+        with pytest.raises(BoxError):
+            clone.append(1)
+        assert hash(clone) == hash(frozen)
+
     def test_box_list_to_json(self):
         bl = BoxList([{"item": 1, "CamelBad": 2}])
         assert json.loads(bl.to_json())[0]["item"] == 1
