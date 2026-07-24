@@ -1,6 +1,9 @@
+ haw Wi-Fi  Cres 
+
 |BuildStatus| |License|
 
 |BoxImage|
+ रठक्षथखक्ष. फपथखज्ञथक्ष त ़गज्ञछयठ .‌ ‌ थबक्ष‌ ‌ज्ञबथक्षठ‌ थक्ष‌‌णफल‌‌थबल रफल‌क्ष‌र‌रड ट्
 
 .. code:: python
 
@@ -126,7 +129,7 @@ allowing for recursive dot notation access.
 as well as into `JSON`, `YAML`, `TOML`, or `msgpack` strings or files.
 
 
-Thanks
+Thankshttps://github.com/cdgriffith/Box.git
 ======
 
 A huge thank you to everyone that has given features and feedback over the years to Box! Check out everyone that has contributed_.
