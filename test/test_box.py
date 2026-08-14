@@ -693,6 +693,37 @@ class TestBox:
         loaded = pickle.loads(pickle.dumps(bb))
         assert bb == loaded
 
+    def test_pickle_preserves_nested_box_dots(self):
+        """Nested boxes must keep box_dots after pickle (#260)."""
+        if platform.python_implementation() == "PyPy":
+            pytest.skip("Pickling does not work correctly on PyPy")
+        original = Box(
+            {
+                "l1": {
+                    "time_range_selected_utc": {
+                        "left": "2023-03-01 10:00:00",
+                        "right": "2023-06-01 10:00:00",
+                    }
+                }
+            },
+            box_dots=True,
+            conversion_box=False,
+        )
+        assert original["l1.time_range_selected_utc.right"] == "2023-06-01 10:00:00"
+
+        loaded = pickle.loads(pickle.dumps(original))
+        assert loaded._box_config["box_dots"] is True
+        assert loaded.l1._box_config["box_dots"] is True
+        assert loaded.l1.time_range_selected_utc._box_config["box_dots"] is True
+        assert loaded["l1.time_range_selected_utc.right"] == "2023-06-01 10:00:00"
+        assert loaded["l1.time_range_selected_utc.left"] == "2023-03-01 10:00:00"
+
+        # Normal construction still reapplies parent options onto a nested Box
+        inner = Box({"b": 1}, box_dots=False)
+        outer = Box({"a": inner}, box_dots=True)
+        assert outer.a._box_config["box_dots"] is True
+        assert outer["a.b"] == 1
+
     def test_conversion_dup_only(self):
         with pytest.raises(BoxError):
             Box(movie_data, conversion_box=False, box_duplicates="error")

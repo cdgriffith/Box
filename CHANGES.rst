@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 7.4.2
+-------------
+
+* Fixing #260 nested boxes lose ``box_dots`` (and other options) after pickle (thanks to DSeaStar)
+
 Version 7.4.1
 -------------
 
