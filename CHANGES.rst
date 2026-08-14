@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 7.4.2
+-------------
+
+* Fixing #264 ruamel.yaml ScalarFloat/ScalarInt kept as non-builtin types after from_yaml
+
 Version 7.4.1
 -------------
 
