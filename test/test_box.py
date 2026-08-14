@@ -369,6 +369,17 @@ class TestBox:
         assert bx.key1 == "value1"
         assert bx.Key_2 == Box()
 
+
+    def test_from_yaml_builtin_scalars(self):
+        bx = Box.from_yaml("Float: 0.1\nCount: 4\nFlag: true\n")
+        assert type(bx.Float) is float
+        assert type(bx.Count) is int
+        assert type(bx.Flag) is bool
+        dumped = bx.to_dict()
+        assert type(dumped["Float"]) is float
+        assert type(dumped["Count"]) is int
+        assert dumped["Float"] == 0.1
+
     def test_bad_from_json(self):
         with pytest.raises(BoxError):
             Box.from_json()
