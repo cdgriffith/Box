@@ -233,6 +233,30 @@ def _to_yaml(
             raise BoxError(MISSING_PARSER_ERROR)
 
 
+
+def _ruamel_to_builtin(obj):
+    """Convert ruamel.yaml scalar types to plain Python builtins.
+
+    ScalarFloat/ScalarInt survive Box.to_dict() and break serializers
+    that only accept builtin float/int (issue #264).
+    """
+    if isinstance(obj, dict):
+        return {k: _ruamel_to_builtin(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_ruamel_to_builtin(v) for v in obj]
+    module = type(obj).__module__
+    if module.startswith("ruamel"):
+        if isinstance(obj, bool):
+            return bool(obj)
+        if isinstance(obj, int):
+            return int(obj)
+        if isinstance(obj, float):
+            return float(obj)
+        if isinstance(obj, str):
+            return str(obj)
+    return obj
+
+
 def _from_yaml(
     yaml_string: str | None = None,
     filename: str | PathLike | None = None,
@@ -272,7 +296,7 @@ def _from_yaml(
             raise BoxError(MISSING_PARSER_ERROR)
     else:
         raise BoxError("from_yaml requires a string or filename")
-    return data
+    return _ruamel_to_builtin(data)
 
 
 def _to_toml(obj, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict"):
