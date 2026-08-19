@@ -834,6 +834,27 @@ class Box(dict):
             self.__convert_and_store(k, kwargs[k])
 
     def merge_update(self, *args, **kwargs):
+        """
+        Recursively update the Box, merging nested dictionaries instead of
+        overwriting them like the built-in ``dict.update``.
+
+        The ``box_merge_lists`` keyword controls how lists sharing a key are
+        combined:
+
+        * ``None`` (default) - the incoming list replaces the existing one
+        * ``"extend"`` - the incoming items are appended to the existing list
+        * ``"unique"`` - only incoming items not already present are appended
+        * ``"merge"`` - lists are merged element by element, recursing into
+          dictionaries that share the same index so their keys are combined
+
+        .. code-block:: python
+
+            box_one = Box({"data": [{"a": 1}, {"b": 2}]})
+            box_one.merge_update({"data": [{"c": 3}]}, box_merge_lists="merge")
+            # Box({'data': [{'a': 1, 'c': 3}, {'b': 2}]})
+
+        :param box_merge_lists: strategy used to merge lists, see above
+        """
         merge_type = None
         if "box_merge_lists" in kwargs:
             merge_type = kwargs.pop("box_merge_lists")
@@ -864,6 +885,17 @@ class Box(dict):
                     if merge_type == "unique" and k in self and isinstance(self[k], list):
                         for item in v:
                             if item not in self[k]:
+                                self[k].append(item)
+                        return
+                    if merge_type == "merge" and k in self and isinstance(self[k], list):
+                        for index, item in enumerate(v):
+                            if index < len(self[k]) and isinstance(self[k][index], dict) and isinstance(item, dict):
+                                self[k][index].merge_update(
+                                    item, box_merge_lists=merge_type, _force_unfrozen=force_unfrozen
+                                )
+                            elif index < len(self[k]):
+                                self[k][index] = item
+                            else:
                                 self[k].append(item)
                         return
                 self.__setitem__(k, v)

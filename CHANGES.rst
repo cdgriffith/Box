@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Adding #263 ``"merge"`` option for ``box_merge_lists`` to merge lists of dictionaries element by element
+
 Version 7.4.1
 -------------
 
