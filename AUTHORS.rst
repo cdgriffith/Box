@@ -98,3 +98,4 @@ Suggestions and bug reporting:
 - d00m514y3r
 - Sébastien Weber (seb5g)
 - Ward Loos (wrdls)
+- Chris (ChrisJr404)

@@ -1328,6 +1328,27 @@ class TestBox:
             {"app": {"S3": {"S3Service": [{"bucket": "bucket001"}, {"expirationDate": "2099-10-25"}]}}}
         ), box1
 
+    def test_merge_list_merge_option(self):
+        # Lists of dictionaries are merged element by element
+        box1 = Box({"data": [{"foo": 1, "foobar": 20}, {"bar": 2}]})
+        box1.merge_update({"data": [{"foo": 1, "baz": 10}]}, box_merge_lists="merge")
+        assert box1 == Box({"data": [{"foo": 1, "foobar": 20, "baz": 10}, {"bar": 2}]}), box1
+
+        # Extra incoming elements are appended, nested dictionaries recurse
+        box2 = Box({"app": {"servers": [{"name": "web", "tags": {"a": 1}}]}})
+        box2.merge_update({"app": {"servers": [{"tags": {"b": 2}}, {"name": "db"}]}}, box_merge_lists="merge")
+        assert box2 == Box({"app": {"servers": [{"name": "web", "tags": {"a": 1, "b": 2}}, {"name": "db"}]}}), box2
+
+        # Non-dict elements at a shared index are overwritten
+        box3 = Box({"nums": [1, 2, 3]})
+        box3.merge_update({"nums": [9, 8]}, box_merge_lists="merge")
+        assert box3.nums == [9, 8, 3]
+
+        # Falls back to assignment when the existing value is not a list
+        box4 = Box({"data": 5})
+        box4.merge_update({"data": [{"a": 1}]}, box_merge_lists="merge")
+        assert box4 == Box({"data": [{"a": 1}]}), box4
+
     def test_box_from_empty_yaml(self):
         out = Box.from_yaml("---")
         assert out == Box()
