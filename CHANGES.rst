@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Fixing #300 CamelCase keys in dotted and indexed lookups with camel_killer_box (thanks to Guo Jiarui)
+
 Version 7.4.1
 -------------
 

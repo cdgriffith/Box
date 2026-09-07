@@ -620,6 +620,8 @@ class Box(dict):
                     if self._box_config["default_box"] and not _ignore_default:
                         return self.__get_default(item)
                     raise BoxKeyError(str(item)) from _exception_cause(err)
+                if first_item not in self.keys() and self._box_config["camel_killer_box"]:
+                    first_item = _camel_killer(first_item)
                 if first_item in self.keys():
                     if hasattr(self[first_item], "__getitem__"):
                         return self[first_item][children]
