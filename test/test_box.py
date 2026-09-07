@@ -539,6 +539,47 @@ class TestBox:
         assert isinstance(killer_default_box.does_not_exist, Box)
         assert isinstance(killer_default_box["does_not_exist"], Box)
 
+    @pytest.mark.parametrize("default_box", [False, True])
+    @pytest.mark.parametrize("conversion_box", [False, True])
+    def test_camel_killer_box_dotted_lookup(self, default_box, conversion_box):
+        bx = Box(
+            {"someKey": [{"innerKey": "value"}], "otherKey": {"innerKey": "value"}},
+            camel_killer_box=True,
+            box_dots=True,
+            default_box=default_box,
+            conversion_box=conversion_box,
+        )
+
+        for key in (
+            "some_key[0].inner_key",
+            "some_key[0].innerKey",
+            "someKey[0].innerKey",
+            "SomeKey[0].InnerKey",
+            "other_key.inner_key",
+            "otherKey.innerKey",
+            "OtherKey.InnerKey",
+        ):
+            assert bx[key] == "value"
+            assert bx.to_dict() == {"some_key": [{"inner_key": "value"}], "other_key": {"inner_key": "value"}}
+
+    @pytest.mark.parametrize("camel_killer_box, box_dots", [(False, True), (True, False)])
+    def test_camel_killer_box_dotted_lookup_disabled(self, camel_killer_box, box_dots):
+        bx = Box({"some_key": {"inner_key": "value"}}, camel_killer_box=camel_killer_box, box_dots=box_dots)
+
+        with pytest.raises(BoxKeyError):
+            bx["someKey.innerKey"]
+        assert bx.to_dict() == {"some_key": {"inner_key": "value"}}
+
+    def test_camel_killer_box_dotted_lookup_exact_key(self):
+        bx = Box({"someKey": {"innerKey": "converted"}}, camel_killer_box=True, box_dots=True)
+        bx.update({"someKey": {"innerKey": "exact"}})
+
+        assert bx["someKey.innerKey"] == "exact"
+        assert bx["some_key.innerKey"] == "converted"
+
+        bx.update({"someKey.innerKey": "literal"})
+        assert bx["someKey.innerKey"] == "literal"
+
     def test_box_modify_tuples(self):
         bx = Box(extended_test_dict, modify_tuples_box=True)
         assert bx.tuples_galore[0].item == 3
