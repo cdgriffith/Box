@@ -549,6 +549,10 @@ class Box(dict):
                         self[first_item].__setitem__(children, value)
                 else:
                     super().__setitem__(item, value)
+        elif isinstance(value, Box):
+            # Lookups stay ephemeral, but a later assignment on this child
+            # should create the missing parent keys.
+            value._box_config["__pending_parent"] = (self, item)
         return value
 
     def __box_config(self, extra_namespace: Any = NO_NAMESPACE) -> dict:
@@ -660,7 +664,18 @@ class Box(dict):
             raise BoxKeyError(str(err)) from _exception_cause(err)
         return value
 
+    def _flush_pending_parent(self):
+        pending = self._box_config.pop("__pending_parent", None)
+        if pending is None:
+            return
+        parent, key = pending
+        parent_flush = getattr(parent, "_flush_pending_parent", None)
+        if parent_flush is not None:
+            parent_flush()
+        dict.__setitem__(parent, key, self)
+
     def __setitem__(self, key, value):
+        self._flush_pending_parent()
         if key != "_box_config" and self._box_config["frozen_box"] and self._box_config["__created"]:
             raise BoxError("Box is frozen")
         if self.__process_dotted_key(key):
@@ -687,6 +702,8 @@ class Box(dict):
         self.__convert_and_store(key, value)
 
     def __setattr__(self, key, value):
+        if key != "_box_config":
+            self._flush_pending_parent()
         if key == "_box_config":
             return object.__setattr__(self, key, value)
         if self._box_config["frozen_box"] and self._box_config["__created"]:
@@ -705,6 +722,7 @@ class Box(dict):
             self.__setitem__(key, value)
 
     def __delitem__(self, key):
+        self._flush_pending_parent()
         if self._box_config["frozen_box"]:
             raise BoxError("Box is frozen")
         if key not in self.keys() and self.__process_dotted_key(key):
