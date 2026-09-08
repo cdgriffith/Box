@@ -127,7 +127,12 @@ class ConfigBox(Box):
         return f"{self.__class__.__name__}({str(self.to_dict())})"
 
     def copy(self):
-        return ConfigBox(super().copy())
+        config = {
+            key: value
+            for key, value in self._box_config.items()
+            if not key.startswith("__") and key != "box_namespace"
+        }
+        return ConfigBox(super().copy(), **config)
 
     def __copy__(self):
-        return ConfigBox(super().copy())
+        return ConfigBox.copy(self)
