@@ -1427,6 +1427,15 @@ class TestBox:
 
         assert box2 == Box()
 
+        box2.foo.bar = 1
+        assert box2.foo.bar == 1
+        assert box2 == Box({"foo": {"bar": 1}})
+
+        box3 = Box(default_box=True, default_box_create_on_get=False)
+        box3.a.b.c = "nested"
+        assert box3.a.b.c == "nested"
+        assert box3["a"]["b"]["c"] == "nested"
+
     def test_box_property_support(self):
         class BoxWithProperty(Box):
             def __init__(self, *args, **kwargs):
