@@ -471,7 +471,7 @@ class Box(dict):
     def copy(self) -> Box:
         config = self.__box_config()
         config.pop("box_namespace")  # Detach namespace; it will be reassigned if we nest again
-        return Box(super().copy(), **config)
+        return self.__class__(super().copy(), **config)
 
     def __copy__(self) -> Box:
         return self.copy()

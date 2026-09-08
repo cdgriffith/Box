@@ -125,9 +125,3 @@ class ConfigBox(Box):
 
     def __repr__(self):
         return f"{self.__class__.__name__}({str(self.to_dict())})"
-
-    def copy(self):
-        return ConfigBox(super().copy())
-
-    def __copy__(self):
-        return ConfigBox(super().copy())

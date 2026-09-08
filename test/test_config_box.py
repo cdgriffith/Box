@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from copy import copy
+
+import pytest
+
 from test.common import test_dict
 
-from box import Box, ConfigBox
+from box import Box, BoxError, ConfigBox
 
 
 class TestConfigBox:
@@ -49,3 +53,21 @@ class TestConfigBox:
     def test_config_default(self):
         bx4 = Box(default_box=True, default_box_attr=ConfigBox)
         assert isinstance(bx4.bbbbb, ConfigBox)
+
+
+@pytest.mark.parametrize("copier", [copy, lambda value: value.copy()])
+def test_copy_preserves_frozen_config(copier):
+    original = ConfigBox(value=1, frozen_box=True)
+    copied = copier(original)
+    assert isinstance(copied, ConfigBox)
+    assert copied is not original
+    with pytest.raises(BoxError):
+        copied.value = 2
+
+
+@pytest.mark.parametrize("copier", [copy, lambda value: value.copy()])
+def test_copy_preserves_default_config(copier):
+    original = ConfigBox(default_box=True, default_box_attr=7)
+    copied = copier(original)
+    assert copied.missing == 7
+    assert "missing" not in original

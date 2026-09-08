@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Preserve ConfigBox options when copying, including frozen_box and default_box.
+
 Version 7.4.1
 -------------
 
