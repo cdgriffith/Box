@@ -71,3 +71,27 @@ def test_copy_preserves_default_config(copier):
     copied = copier(original)
     assert copied.missing == 7
     assert "missing" not in original
+
+
+@pytest.mark.parametrize("copier", [copy, lambda value: value.copy()])
+@pytest.mark.parametrize("base", [Box, ConfigBox])
+def test_copy_preserves_base_type_for_subclass_with_required_argument(copier, base):
+    class CustomBox(base):
+        def __init__(self, required, **kwargs):
+            super().__init__(value=required, **kwargs)
+
+    original = CustomBox(1, frozen_box=True)
+    copied = copier(original)
+    assert type(copied) is base
+    assert copied.value == 1
+    assert copied is not original
+    with pytest.raises(BoxError):
+        copied.value = 2
+
+
+@pytest.mark.parametrize("copier", [copy, lambda value: value.copy()])
+def test_config_copy_detaches_namespace_and_hides_internal_config(copier):
+    original = ConfigBox(value=1, box_namespace=("parent",))
+    copied = copier(original)
+    assert copied == {"value": 1}
+    assert copied._box_config["box_namespace"] == ()
