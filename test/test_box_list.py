@@ -3,6 +3,7 @@
 # Test files gathered from json.org and yaml.org
 
 import json
+import operator
 import os
 import shutil
 import sys
@@ -274,3 +275,27 @@ class TestBoxList:
         circular_list.append(circular_list)
         circular_box = BoxList(circular_list)
         assert circular_box[0] == circular_box
+
+
+@pytest.mark.parametrize(
+    "mutate, expected",
+    [
+        (lambda value: value.clear(), []),
+        (lambda value: operator.iadd(value, [3]), [1, 2, 3]),
+        (lambda value: operator.imul(value, 2), [1, 2, 1, 2]),
+        (lambda value: operator.imul(value, 0), []),
+    ],
+)
+def test_frozen_list_inplace_mutations(mutate, expected):
+    frozen = BoxList([1, 2], frozen_box=True)
+    original_hash = hash(frozen)
+    with pytest.raises(BoxError, match="BoxList is frozen"):
+        mutate(frozen)
+    assert frozen == [1, 2]
+    assert hash(frozen) == original_hash
+
+    mutable = BoxList([1, 2])
+    alias = mutable
+    mutate(mutable)
+    assert mutable is alias
+    assert mutable == expected

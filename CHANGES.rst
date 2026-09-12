@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Prevent frozen BoxList mutation through clear, in-place addition, and in-place multiplication.
+
 Version 7.4.1
 -------------
 

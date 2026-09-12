@@ -62,7 +62,7 @@ class BoxList(list):
             def frozen(*args, **kwargs):
                 raise BoxError("BoxList is frozen")
 
-            for method in ["append", "extend", "insert", "pop", "remove", "reverse", "sort"]:
+            for method in ["append", "clear", "extend", "insert", "pop", "remove", "reverse", "sort"]:
                 self.__setattr__(method, frozen)
 
     def __getitem__(self, item):
@@ -112,6 +112,16 @@ class BoxList(list):
                     super().__setitem__(pos, self.box_options.get("box_class")(**self.box_options))
             return super().__getitem__(pos).__setitem__(children, value)
         super().__setitem__(key, value)
+
+    def __iadd__(self, value):
+        if self.box_options.get("frozen_box"):
+            raise BoxError("BoxList is frozen")
+        return super().__iadd__(value)
+
+    def __imul__(self, value):
+        if self.box_options.get("frozen_box"):
+            raise BoxError("BoxList is frozen")
+        return super().__imul__(value)
 
     def _is_intact_type(self, obj):
         if self.box_options.get("box_intact_types") and isinstance(obj, self.box_options["box_intact_types"]):
