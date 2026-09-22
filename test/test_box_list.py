@@ -50,6 +50,59 @@ class TestBoxList:
         assert isinstance(new_list[1], BoxList)
         assert not isinstance(new_list.to_list(), BoxList)
 
+    @pytest.mark.parametrize("key", [0, -1, "[0]", "[2]"])
+    @pytest.mark.parametrize("nested_list", [False, True])
+    def test_setitem_converts_containers(self, key, nested_list):
+        bl = BoxList([None], box_dots=True, default_box=True, camel_killer_box=True)
+        value = {"CamelKey": 1}
+        bl[key] = [value] if nested_list else value
+
+        item = bl[-1]
+        if nested_list:
+            assert isinstance(item, BoxList)
+            item = item[0]
+        assert isinstance(item, Box)
+        assert item.camel_key == 1
+
+    @pytest.mark.parametrize("key", [slice(None), slice(None, None, 2)])
+    def test_setitem_slice_converts_containers(self, key):
+        bl = BoxList([0, 1, 2], camel_killer_box=True)
+        bl[key] = iter([{"CamelKey": 1}, [{"CamelKey": 2}]])
+
+        assert isinstance(bl[0], Box)
+        assert bl[0].camel_key == 1
+        assert isinstance(bl[-1], BoxList)
+        assert bl[-1][0].camel_key == 2
+        if key.step == 2:
+            assert bl[1] == 1
+
+    def test_setitem_preserves_intact_types(self):
+        class IntactDict(dict):
+            pass
+
+        class IntactList(list):
+            pass
+
+        value = IntactDict(a=1)
+        values = IntactList([value])
+        bl = BoxList([None, None], box_intact_types=(IntactDict, IntactList))
+        bl[0] = value
+        bl[1:] = [values]
+        assert bl[0] is value
+        assert bl[1] is values
+
+    def test_setitem_invalid_extended_slice(self):
+        bl = BoxList([0, 1, 2])
+        with pytest.raises(ValueError):
+            bl[::2] = iter([{"a": 1}])
+        assert bl == [0, 1, 2]
+
+    def test_frozen_list_slice_assignment(self):
+        bl = BoxList([0, 1, 2], frozen_box=True)
+        with pytest.raises(BoxError):
+            bl[:] = [{"a": 1}]
+        assert bl == [0, 1, 2]
+
     def test_frozen_list(self):
         bl = BoxList([5, 4, 3], frozen_box=True)
         with pytest.raises(BoxError):

@@ -37,6 +37,7 @@ Code contributions:
 - Jesper Schlegel (jesperschlegel)
 - J vanBemmel (jbemmel)
 - m-janicki
+- Eric3-jp (with OpenAI Codex assistance)
 
 
 Suggestions and bug reporting:

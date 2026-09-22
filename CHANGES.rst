@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Convert dictionaries and lists assigned to BoxList items and slices, matching append and insert.
+
 Version 7.4.1
 -------------
 
