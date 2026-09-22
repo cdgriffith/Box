@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Correct installation examples for optional dependencies and shell quoting.
+
 Version 7.4.1
 -------------
 

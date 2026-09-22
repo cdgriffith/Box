@@ -44,7 +44,7 @@ Install from command line
 .. code:: bash
 
         python -m pip install --upgrade pip
-        pip install python-box[all]~=7.0 --upgrade
+        pip install "python-box[all]~=7.0" --upgrade
 
 Install with selected dependencies
 ----------------------------------
@@ -54,9 +54,10 @@ for example, `[all]` is shorthand for:
 
 .. code:: bash
 
-        pip install python-box[ruamel.yaml,tomli_w,msgpack]~=7.0 --upgrade
+        pip install "python-box[ruamel.yaml,toml,msgpack]~=7.0" --upgrade
 
-But you can also sub out `ruamel.yaml` for `PyYAML`.
+But you can also sub out `ruamel.yaml` for `PyYAML`. To use ``tomli-w`` for TOML output,
+select the ``tomli`` extra instead of ``toml``.
 
 Check out `more details <https://github.com/cdgriffith/Box/wiki/Installation>`_ on installation details.
 
@@ -81,7 +82,7 @@ You will then need `Cython` and `wheel` installed and then install (or re-instal
 .. code:: bash
 
         pip install Cython wheel
-        pip install python-box[all]~=7.0 --upgrade --force
+        pip install "python-box[all]~=7.0" --upgrade --force
 
 If you have any issues please open a github issue with the error you are experiencing!
 
