@@ -103,7 +103,7 @@ class BoxList(list):
             if pos >= len(self) and self.box_options.get("default_box"):
                 self.extend([None] * (pos - len(self) + 1))
             if len(list_pos.group()) == len(key):
-                return super().__setitem__(pos, value)
+                return super().__setitem__(pos, self._convert(value))
             children = key[len(list_pos.group()) :].lstrip(".")
             if self.box_options.get("default_box"):
                 if children[0] == "[":
@@ -111,6 +111,10 @@ class BoxList(list):
                 else:
                     super().__setitem__(pos, self.box_options.get("box_class")(**self.box_options))
             return super().__getitem__(pos).__setitem__(children, value)
+        if isinstance(key, slice):
+            value = [self._convert(item) for item in value]
+        else:
+            value = self._convert(value)
         super().__setitem__(key, value)
 
     def _is_intact_type(self, obj):
