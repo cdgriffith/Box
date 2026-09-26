@@ -137,6 +137,8 @@ class BoxList(list):
         super().append(self._convert(p_object))
 
     def extend(self, iterable):
+        if iterable is self:
+            iterable = list(self)
         for item in iterable:
             self.append(item)
 

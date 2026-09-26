@@ -50,6 +50,42 @@ class TestBoxList:
         assert isinstance(new_list[1], BoxList)
         assert not isinstance(new_list.to_list(), BoxList)
 
+    @pytest.mark.parametrize("values", [[], [1], [1, 2], [{"SomeKey": 3}, [4]]])
+    def test_extend_self(self, values, monkeypatch):
+        data = BoxList(values, camel_killer_box=True)
+        expected = data.to_list() * 2
+        append = data.append
+        remaining = len(data)
+
+        def bounded_append(item):
+            nonlocal remaining
+            assert remaining > 0, "extend revisited an appended element"
+            remaining -= 1
+            append(item)
+
+        # Bound the regression test even if extend iterates its growing destination.
+        monkeypatch.setattr(data, "append", bounded_append)
+        assert data.extend(data) is None
+        assert remaining == 0
+        assert data.to_list() == expected
+        if values and isinstance(values[0], dict):
+            assert isinstance(data[2], Box)
+            assert data[2].some_key == 3
+            assert isinstance(data[3], BoxList)
+
+    def test_extend_generator_preserves_partial_progress(self):
+        data = BoxList([0])
+
+        def items():
+            yield {"value": 1}
+            raise ValueError("unfinished input")
+
+        with pytest.raises(ValueError, match="unfinished input"):
+            data.extend(items())
+        assert data[0] == 0
+        assert isinstance(data[1], Box)
+        assert data[1].value == 1
+
     def test_frozen_list(self):
         bl = BoxList([5, 4, 3], frozen_box=True)
         with pytest.raises(BoxError):

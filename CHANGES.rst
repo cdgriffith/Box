@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Allow BoxList.extend to append its own contents once, like list.extend (thanks to x0Lazarus).
+
 Version 7.4.1
 -------------
 
