@@ -74,6 +74,117 @@ class TestBoxList:
         bl2[1] = 4
         assert bl2[1] == 4
 
+    @pytest.mark.parametrize("index", [0, -1, "[0]", "[1]"])
+    @pytest.mark.parametrize("container", ["mapping", "sequence"])
+    def test_assigned_containers_are_converted(self, index, container):
+        class ChildBox(Box):
+            pass
+
+        data = BoxList([None], box_dots=True, default_box=True, camel_killer_box=True, box_class=ChildBox)
+        value = {"SomeKey": 7} if container == "mapping" else [{"SomeKey": 7}]
+        data[index] = value
+        assigned = data[1 if index == "[1]" else 0]
+        if container == "sequence":
+            assert isinstance(assigned, BoxList)
+            assigned = assigned[0]
+        assert isinstance(assigned, ChildBox)
+        assert assigned.some_key == 7
+        assert assigned._box_config["box_dots"] is True
+
+    @pytest.mark.parametrize(
+        "selection, count", [(slice(1, 2), 2), (slice(None, None, 2), 2), (slice(None, None, -1), 3), (slice(2, 2), 2)]
+    )
+    def test_slice_assignment_converts_containers(self, selection, count):
+        data = BoxList([0, 1, 2], camel_killer_box=True)
+        values = [{"SomeKey": number} if number % 2 == 0 else [{"SomeKey": number}] for number in range(count)]
+        expected = [0, 1, 2]
+        expected[selection] = [
+            {"some_key": number} if number % 2 == 0 else [{"some_key": number}] for number in range(count)
+        ]
+        data[selection] = (value for value in values)
+        assert data.to_list() == expected
+        for value in data:
+            if isinstance(value, dict):
+                assert isinstance(value, Box)
+                assert value.some_key in range(count)
+            elif isinstance(value, list):
+                assert isinstance(value, BoxList)
+                assert isinstance(value[0], Box)
+                assert value[0].some_key in range(count)
+
+    @pytest.mark.parametrize("index", [0, "[0]", slice(None)])
+    def test_assignment_respects_intact_types(self, index):
+        value = {"SomeKey": 7}
+        data = BoxList([None], box_dots=True, box_intact_types=(dict,))
+        data[index] = [value] if isinstance(index, slice) else value
+        assert data[0] is value
+
+    @pytest.mark.parametrize("index", [0, "[0]", slice(None)])
+    def test_frozen_assignment_keeps_contents(self, index):
+        data = BoxList([1], frozen_box=True, box_dots=True)
+        with pytest.raises(BoxError):
+            data[index] = [{"key": 2}] if isinstance(index, slice) else {"key": 2}
+        assert data == [1]
+
+    def test_invalid_slice_assignment_keeps_contents(self):
+        data = BoxList([0, 1, 2])
+        with pytest.raises(ValueError):
+            data[::2] = [{"key": 1}]
+        assert data == [0, 1, 2]
+        with pytest.raises(TypeError):
+            data[:] = 3
+        assert data == [0, 1, 2]
+
+    @pytest.mark.parametrize("replacement_kind", ["generator", "iterable", "noniterable"])
+    def test_zero_step_does_not_consume_replacements(self, replacement_kind):
+        consumed = []
+
+        def replacements():
+            consumed.append(True)
+            yield {"key": 1}
+
+        class Unreadable:
+            def __iter__(self):
+                raise RuntimeError("replacement must not be read")
+
+        value = {"generator": replacements(), "iterable": Unreadable(), "noniterable": 3}[replacement_kind]
+        data = BoxList([0, 1, 2])
+        with pytest.raises(ValueError, match="slice step cannot be zero"):
+            data[::0] = value
+        assert consumed == []
+        assert data == [0, 1, 2]
+
+    @pytest.mark.parametrize("bounds", [(0, 4, 1), (3, -5, -2)])
+    def test_slice_bounds_are_evaluated_once_before_replacements(self, bounds):
+        def assign(list_type):
+            events = []
+
+            class Index:
+                def __init__(self, name, value):
+                    self.name = name
+                    self.value = value
+
+                def __index__(self):
+                    events.append(self.name)
+                    return self.value
+
+            class Replacements:
+                def __iter__(self):
+                    events.append("iter")
+                    return iter([8, 9])
+
+            selection = slice(*(Index(name, value) for name, value in zip(("start", "stop", "step"), bounds)))
+            data = list_type([0, 1, 2, 3])
+            data[selection] = Replacements()
+            return data, events
+
+        expected, expected_events = assign(list)
+        actual, actual_events = assign(BoxList)
+        assert actual == expected
+        assert actual_events == expected_events
+        assert sorted(actual_events[:3]) == ["start", "step", "stop"]
+        assert actual_events[3:] == ["iter"]
+
     def test_box_list_to_json(self):
         bl = BoxList([{"item": 1, "CamelBad": 2}])
         assert json.loads(bl.to_json())[0]["item"] == 1

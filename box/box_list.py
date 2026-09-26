@@ -103,7 +103,7 @@ class BoxList(list):
             if pos >= len(self) and self.box_options.get("default_box"):
                 self.extend([None] * (pos - len(self) + 1))
             if len(list_pos.group()) == len(key):
-                return super().__setitem__(pos, value)
+                return super().__setitem__(pos, self._convert(value))
             children = key[len(list_pos.group()) :].lstrip(".")
             if self.box_options.get("default_box"):
                 if children[0] == "[":
@@ -111,7 +111,15 @@ class BoxList(list):
                 else:
                     super().__setitem__(pos, self.box_options.get("box_class")(**self.box_options))
             return super().__getitem__(pos).__setitem__(children, value)
-        super().__setitem__(key, value)
+        if isinstance(key, slice):
+
+            def converted_items():
+                for item in value:
+                    yield self._convert(item)
+
+            # Let list validate the slice before consuming replacement values.
+            return super().__setitem__(key, converted_items())
+        super().__setitem__(key, self._convert(value))
 
     def _is_intact_type(self, obj):
         if self.box_options.get("box_intact_types") and isinstance(obj, self.box_options["box_intact_types"]):

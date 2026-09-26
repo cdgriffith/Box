@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Convert dictionaries and lists assigned to BoxList items and slices, preserving the list's options (thanks to x0Lazarus).
+
 Version 7.4.1
 -------------
 
