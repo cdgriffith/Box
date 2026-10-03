@@ -37,6 +37,7 @@ Code contributions:
 - Jesper Schlegel (jesperschlegel)
 - J vanBemmel (jbemmel)
 - m-janicki
+- machines-6657 (machines-6657)
 
 
 Suggestions and bug reporting:
