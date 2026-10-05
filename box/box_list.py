@@ -68,6 +68,8 @@ class BoxList(list):
     def __getitem__(self, item):
         if self.box_options.get("box_dots") and isinstance(item, str) and item.startswith("["):
             list_pos = _list_pos_re.search(item)
+            if list_pos is None:
+                raise BoxTypeError(f"Invalid list index: {item!r}")
             value = super().__getitem__(int(list_pos.groups()[0]))
             if len(list_pos.group()) == len(item):
                 return value
@@ -87,6 +89,8 @@ class BoxList(list):
             raise BoxError("BoxList is frozen")
         if self.box_options.get("box_dots") and isinstance(key, str) and key.startswith("["):
             list_pos = _list_pos_re.search(key)
+            if list_pos is None:
+                raise BoxTypeError(f"Invalid list index: {key!r}")
             pos = int(list_pos.groups()[0])
             if len(list_pos.group()) == len(key):
                 return super().__delitem__(pos)
@@ -99,6 +103,8 @@ class BoxList(list):
             raise BoxError("BoxList is frozen")
         if self.box_options.get("box_dots") and isinstance(key, str) and key.startswith("["):
             list_pos = _list_pos_re.search(key)
+            if list_pos is None:
+                raise BoxTypeError(f"Invalid list index: {key!r}")
             pos = int(list_pos.groups()[0])
             if pos >= len(self) and self.box_options.get("default_box"):
                 self.extend([None] * (pos - len(self) + 1))

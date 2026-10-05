@@ -222,6 +222,61 @@ class TestBoxList:
         for key in keys:
             db[key]
 
+    @pytest.mark.parametrize("key", ["[x]", "[]", "[", "[1x]"])
+    @pytest.mark.parametrize("default_box", [False, True])
+    def test_box_list_dots_invalid_get(self, key, default_box):
+        data = BoxList([{"value": 1}], box_dots=True, default_box=default_box)
+        with pytest.raises(BoxError) as error:
+            data[key]
+        assert "Invalid list index" in str(error.value)
+        assert repr(key) in str(error.value)
+        assert data.to_list() == [{"value": 1}]
+
+    @pytest.mark.parametrize("key", ["[x]", "[]", "[", "[1x]"])
+    @pytest.mark.parametrize("default_box", [False, True])
+    def test_box_list_dots_invalid_set(self, key, default_box):
+        data = BoxList([{"value": 1}], box_dots=True, default_box=default_box)
+        with pytest.raises(BoxError) as error:
+            data[key] = 2
+        assert "Invalid list index" in str(error.value)
+        assert repr(key) in str(error.value)
+        assert data.to_list() == [{"value": 1}]
+
+    @pytest.mark.parametrize("key", ["[x]", "[]", "[", "[1x]"])
+    @pytest.mark.parametrize("default_box", [False, True])
+    def test_box_list_dots_invalid_delete(self, key, default_box):
+        data = BoxList([{"value": 1}], box_dots=True, default_box=default_box)
+        with pytest.raises(BoxError) as error:
+            del data[key]
+        assert "Invalid list index" in str(error.value)
+        assert repr(key) in str(error.value)
+        assert data.to_list() == [{"value": 1}]
+
+    @pytest.mark.parametrize("method, args", [("__getitem__", ()), ("__setitem__", (2,)), ("__delitem__", ())])
+    def test_box_list_dots_invalid_nested_index(self, method, args):
+        data = BoxList([[1]], box_dots=True)
+        with pytest.raises(BoxError) as error:
+            getattr(data, method)("[0][x]", *args)
+        assert "Invalid list index: '[x]'" in str(error.value)
+        assert data.to_list() == [[1]]
+
+    def test_box_list_dots_frozen_invalid_index(self):
+        data = BoxList([1], box_dots=True, frozen_box=True)
+        with pytest.raises(BoxError, match="Invalid list index"):
+            data["[x]"]
+        with pytest.raises(BoxError, match="BoxList is frozen"):
+            data["[x]"] = 2
+        with pytest.raises(BoxError, match="BoxList is frozen"):
+            del data["[x]"]
+        assert data.to_list() == [1]
+
+    @pytest.mark.parametrize("method, args", [("__getitem__", ()), ("__setitem__", (2,)), ("__delitem__", ())])
+    def test_box_list_invalid_index_without_dots(self, method, args):
+        data = BoxList([1], box_dots=False)
+        with pytest.raises(TypeError, match="list indices must be integers or slices"):
+            getattr(data, method)("[x]", *args)
+        assert data.to_list() == [1]
+
     def test_box_list_default_dots(self):
         box_1 = Box(default_box=True, box_dots=True)
         box_1["a[0]"] = 42
