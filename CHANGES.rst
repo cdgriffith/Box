@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Raise a clear error for bracket paths without a numeric list index instead of AttributeError (#265).
+
 Version 7.4.1
 -------------
 

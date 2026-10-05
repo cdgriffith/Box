@@ -349,6 +349,15 @@ class TestBox:
         assert isinstance(bx, Box)
         assert bx.widget.window.height == 500
 
+    def test_from_yaml_invalid_bracket_key(self):
+        key = r"^[^_^\d][\w]*$"
+        yaml_string = f"'{key}': {{}}"
+        with pytest.raises(BoxError) as error:
+            Box.from_yaml(yaml_string, default_box=True, box_dots=True)
+        assert "Invalid list index" in str(error.value)
+        assert repr(key[1:]) in str(error.value)
+        assert Box.from_yaml(yaml_string, default_box=True, box_dots=False).to_dict() == {key: {}}
+
     def test_from_yaml_file(self):
         bx = Box.from_yaml(filename=data_yaml_file)
         assert isinstance(bx, Box)
