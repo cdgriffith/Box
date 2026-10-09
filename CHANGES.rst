@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Fix BoxList construction from iterable inputs with false or ambiguous truth values.
+
 Version 7.4.1
 -------------
 
