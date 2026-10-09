@@ -53,7 +53,8 @@ class BoxList(list):
         self.box_options = box_options
         self.box_options["box_class"] = box_class
         self.box_org_ref = iterable
-        if iterable:
+        # 2026-10-10: Iteration does not require a truth value.
+        if iterable is not None:
             for x in iterable:
                 self.append(x)
         self.box_org_ref = None
