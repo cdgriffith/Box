@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Honor explicit ``ensure_ascii`` options in ``Box`` and ``BoxList`` JSON output.
+
 Version 7.4.1
 -------------
 
