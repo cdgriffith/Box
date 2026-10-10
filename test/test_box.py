@@ -1506,3 +1506,42 @@ class TestBox:
         my_box = DDBox(default_box_attr=func)
 
         assert my_box.a == {"bi": "{}", "key": "a"}
+
+
+@pytest.mark.parametrize("create_on_get", [True, False])
+@pytest.mark.parametrize("default", [None, 0, [], {"fallback": True}])
+def test_pop_explicit_default_without_autovivification(create_on_get, default):
+    calls = []
+
+    def factory():
+        calls.append(None)
+        return "generated"
+
+    value = Box(default_box=True, default_box_attr=factory, default_box_create_on_get=create_on_get)
+    assert value.pop("missing", default) is default
+    assert value == {}
+    assert calls == []
+    value.present = 1
+    assert value.pop("present", default) == 1
+    assert value == {}
+
+
+def test_pop_explicit_default_dotted_path():
+    value = Box({"nested": {}}, default_box=True, box_dots=True)
+    default = object()
+    assert value.pop("nested.missing", default) is default
+    assert value.to_dict() == {"nested": {}}
+
+
+def test_pop_explicit_default_camel_case_key():
+    value = Box({"actualKey": 1}, default_box=True, camel_killer_box=True)
+    assert value.pop("actualKey", None) == 1
+    assert value == {}
+
+
+@pytest.mark.parametrize("path", ["items[0].missing", "items[1][0].missing"])
+def test_pop_explicit_default_dotted_list_path(path):
+    value = Box({"items": [{}, [{}]]}, default_box=True, box_dots=True)
+    default = object()
+    assert value.pop(path, default) is default
+    assert value.to_dict() == {"items": [{}, [{}]]}

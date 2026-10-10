@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Honor explicit ``pop`` defaults without creating missing default-box values.
+
 Version 7.4.1
 -------------
 

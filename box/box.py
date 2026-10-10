@@ -5,6 +5,7 @@
 """
 Improved dictionary access through dot notation with additional tools.
 """
+
 from __future__ import annotations
 
 import copy
@@ -621,8 +622,11 @@ class Box(dict):
                         return self.__get_default(item)
                     raise BoxKeyError(str(item)) from _exception_cause(err)
                 if first_item in self.keys():
-                    if hasattr(self[first_item], "__getitem__"):
-                        return self[first_item][children]
+                    child = self[first_item]
+                    if hasattr(child, "__getitem__"):
+                        if _ignore_default and isinstance(child, (Box, box.BoxList)):
+                            return child.__getitem__(children, _ignore_default=True)
+                        return child[children]
             if self._box_config["camel_killer_box"] and isinstance(item, str):
                 converted = _camel_killer(item)
                 if converted in self.keys():
@@ -758,7 +762,7 @@ class Box(dict):
             if len(args) != 1:
                 raise BoxError('pop() takes only one optional argument "default"')
             try:
-                item = self[key]
+                item = self.__getitem__(key, _ignore_default=True)
             except KeyError:
                 return args[0]
             else:
