@@ -210,14 +210,18 @@ class BoxList(list):
         :param filename: If provided will save to file
         :param encoding: File encoding
         :param errors: How to handle encoding errors
-        :param multiline: Put each item in list onto it's own line
+        :param multiline: Put each item in list onto its own line, in a string or file
         :param json_kwargs: additional arguments to pass to json.dump(s)
         :return: string of JSON or return of `json.dump`
         """
-        if filename and multiline:
+        if multiline:
             lines = [_to_json(item, filename=None, encoding=encoding, errors=errors, **json_kwargs) for item in self]
-            with open(filename, "w", encoding=encoding, errors=errors) as f:
-                f.write("\n".join(lines))
+            text = "\n".join(lines)
+            if filename:
+                with open(filename, "w", encoding=encoding, errors=errors) as f:
+                    f.write(text)
+            else:
+                return text
         else:
             return _to_json(self.to_list(), filename=filename, encoding=encoding, errors=errors, **json_kwargs)
 
@@ -239,7 +243,7 @@ class BoxList(list):
         :param filename: filename to open and pass to `json.load`
         :param encoding: File encoding
         :param errors: How to handle encoding errors
-        :param multiline: One object per line
+        :param multiline: One object per line, in a string or file
         :param kwargs: parameters to pass to `Box()` or `json.loads`
         :return: BoxList object from json data
         """

@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Honor ``multiline=True`` for BoxList JSON string input and output, matching file behavior.
+
 Version 7.4.1
 -------------
 
