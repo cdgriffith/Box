@@ -65,13 +65,16 @@ class BoxList(list):
             for method in ["append", "extend", "insert", "pop", "remove", "reverse", "sort"]:
                 self.__setattr__(method, frozen)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item, _ignore_default=False):
         if self.box_options.get("box_dots") and isinstance(item, str) and item.startswith("["):
             list_pos = _list_pos_re.search(item)
             value = super().__getitem__(int(list_pos.groups()[0]))
             if len(list_pos.group()) == len(item):
                 return value
-            return value.__getitem__(item[len(list_pos.group()) :].lstrip("."))
+            children = item[len(list_pos.group()) :].lstrip(".")
+            if _ignore_default and isinstance(value, (box.Box, BoxList)):
+                return value.__getitem__(children, _ignore_default=True)
+            return value.__getitem__(children)
         if isinstance(item, tuple):
             result = self
             for idx in item:
