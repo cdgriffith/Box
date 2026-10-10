@@ -10,7 +10,7 @@ import msgpack
 import pytest
 from ruamel.yaml import YAML
 
-from box import BoxError
+from box import Box, BoxError, BoxList
 from box.converters import _from_toml, _to_json, _to_msgpack, _to_toml, _to_yaml
 
 toml_string = """[movies.Spaceballs]
@@ -74,6 +74,53 @@ class TestConverters:
         _to_json(movie_data, filename=m_file)
         assert "Rick Moranis" in open(m_file).read()
         assert json.load(open(m_file)) == json.loads(movie_string)
+
+    @pytest.mark.parametrize("box_type", [Box, BoxList])
+    @pytest.mark.parametrize("to_file", [False, True])
+    @pytest.mark.parametrize(
+        "ensure_ascii, expected",
+        [
+            (None, '{"café": "你好😀"}'),
+            (False, '{"café": "你好😀"}'),
+            (True, r'{"caf\u00e9": "\u4f60\u597d\ud83d\ude00"}'),
+        ],
+    )
+    def test_to_json_ensure_ascii(self, box_type, to_file, ensure_ascii, expected, tmp_path):
+        data = {"café": "你好😀"}
+        if box_type is BoxList:
+            data = [data]
+            expected = f"[{expected}]"
+        value = box_type(data)
+        kwargs = {} if ensure_ascii is None else {"ensure_ascii": ensure_ascii}
+
+        if to_file:
+            filename = tmp_path / "unicode.json"
+            encoding = "ascii" if ensure_ascii else "utf-8"
+            assert value.to_json(filename=filename, encoding=encoding, **kwargs) is None
+            actual = filename.read_text(encoding=encoding)
+        else:
+            actual = value.to_json(**kwargs)
+
+        assert actual == expected
+        assert json.loads(actual) == data
+
+    @pytest.mark.parametrize("ensure_ascii", [None, False, True])
+    def test_to_json_multiline_ensure_ascii(self, ensure_ascii, tmp_path):
+        value = BoxList([{"text": "你好"}, {"text": "😀"}])
+        kwargs = {} if ensure_ascii is None else {"ensure_ascii": ensure_ascii}
+        filename = tmp_path / "unicode.jsonl"
+
+        assert value.to_json(filename=filename, multiline=True, **kwargs) is None
+
+        expected = '{"text": "你好"}\n{"text": "😀"}'
+        if ensure_ascii:
+            expected = r'{"text": "\u4f60\u597d"}' + "\n" + r'{"text": "\ud83d\ude00"}'
+        assert filename.read_text(encoding="utf-8") == expected
+
+    def test_to_json_ensure_ascii_with_other_options(self):
+        value = Box(z="你好", a=1)
+
+        assert value.to_json(ensure_ascii=True, sort_keys=True, separators=(",", ":")) == r'{"a":1,"z":"\u4f60\u597d"}'
 
     def test_to_yaml(self):
         m_file = os.path.join(tmp_dir, "movie_data")
