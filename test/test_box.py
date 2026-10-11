@@ -7,6 +7,7 @@ import os
 import pickle
 import platform
 import shutil
+import warnings
 from multiprocessing import Queue
 from pathlib import Path
 from io import StringIO
@@ -28,6 +29,7 @@ import pytest
 from ruamel.yaml import YAML
 
 from box import Box, BoxError, BoxKeyError, BoxList, ConfigBox, SBox, DDBox
+from box.exceptions import BoxWarning
 from box.box import _get_dot_paths, _camel_killer, _recursive_tuples  # type: ignore
 from box.converters import BOX_PARAMETERS
 
@@ -629,6 +631,26 @@ class TestBox:
         my_box = Box({"?a": 1}, box_duplicates="error")
         with pytest.raises(BoxError):
             my_box["^a"] = 3
+
+    @pytest.mark.parametrize("policy", ["error", "warn"])
+    @pytest.mark.parametrize("use_attribute", [False, True])
+    def test_duplicate_checks_allow_reassigning_same_key(self, policy, use_attribute):
+        my_box = Box({"a b": 1}, box_duplicates=policy)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", BoxWarning)
+            if use_attribute:
+                my_box.a_b = 2
+            else:
+                my_box["a b"] = 2
+        assert my_box.to_dict() == {"a b": 2}
+        assert my_box.a_b == 2
+        if policy == "error":
+            with pytest.raises(BoxError):
+                my_box["a-b"] = 3
+            assert my_box.to_dict() == {"a b": 2}
+        else:
+            with pytest.warns(BoxWarning):
+                my_box["a-b"] = 3
 
     def test_copy(self):
         my_box = Box(movie_data, camel_killer_box=True)
