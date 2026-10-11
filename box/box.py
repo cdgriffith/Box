@@ -957,7 +957,7 @@ class Box(dict):
         """
         safe_item = self._safe_attr(item)
 
-        if safe_item in self._box_config["__safe_keys"]:
+        if safe_item in self._box_config["__safe_keys"] and self._box_config["__safe_keys"][safe_item] != item:
             dups = [f"{item}({safe_item})", f'{self._box_config["__safe_keys"][safe_item]}({safe_item})']
             if self._box_config["box_duplicates"].startswith("warn"):
                 warnings.warn(f"Duplicate conversion attributes exist: {dups}", BoxWarning)

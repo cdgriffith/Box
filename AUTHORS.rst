@@ -5,6 +5,8 @@ reporting, all input is greatly appreciated!
 
 Code contributions:
 
+- Muneeb Sheikh (muneikh)
+
 - Alexandre Decan (AlexandreDecan)
 - dhilipsiva (dhilipsiva)
 - MAA (FooBarQuaxx)
