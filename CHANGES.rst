@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Fix `Box.popitem()` to remove the most recently inserted item, matching `dict.popitem()`.
+
 Version 7.4.1
 -------------
 

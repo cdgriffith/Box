@@ -782,7 +782,7 @@ class Box(dict):
         if self._box_config["frozen_box"]:
             raise BoxError("Box is frozen")
         try:
-            key = next(self.__iter__())
+            key = next(self.__reversed__())
         except StopIteration:
             raise BoxKeyError("Empty box") from None
         return key, self.pop(key)

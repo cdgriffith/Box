@@ -882,7 +882,8 @@ class TestBox:
         assert bx.pop("c", True) is not True
 
     def test_pop_items(self):
-        bx = Box(a=4)
+        bx = Box(a=4, b=5)
+        assert bx.popitem() == ("b", 5)
         assert bx.popitem() == ("a", 4)
         with pytest.raises(BoxKeyError):
             assert bx.popitem()
