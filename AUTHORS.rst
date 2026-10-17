@@ -37,6 +37,7 @@ Code contributions:
 - Jesper Schlegel (jesperschlegel)
 - J vanBemmel (jbemmel)
 - m-janicki
+- AryanRG (AryanRG)
 
 
 Suggestions and bug reporting:
