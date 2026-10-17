@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Fix ``Box.update`` rejecting a positional mapping or iterable when keyword updates are also supplied.
+
 Version 7.4.1
 -------------
 

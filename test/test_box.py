@@ -268,6 +268,47 @@ class TestBox:
         assert a.key1.gg == 4
         assert "new" not in a.key1.keys()
 
+    @pytest.mark.parametrize("source_type", [dict, list, iter])
+    def test_update_source_and_keywords(self, source_type):
+        pairs = [("mode", "source"), ("service", {"timeout": 10})]
+        overrides = {"mode": "override", "workers": [{"id": 1}]}
+        expected = {"keep": True}
+        expected.update(source_type(pairs), **overrides)
+        bx = Box(keep=True)
+
+        assert bx.update(source_type(pairs), **overrides) is None
+
+        assert bx.to_dict() == expected
+        assert isinstance(bx.service, Box)
+        assert bx.service.timeout == 10
+        assert isinstance(bx.workers, BoxList)
+        assert isinstance(bx.workers[0], Box)
+        assert bx.workers[0].id == 1
+
+    def test_update_empty_source_and_keywords(self):
+        bx = Box(keep=True)
+
+        assert bx.update({}, mode="override") is None
+
+        assert bx.to_dict() == {"keep": True, "mode": "override"}
+
+    @pytest.mark.parametrize("kwargs", [{}, {"mode": "override"}])
+    def test_update_rejects_multiple_sources(self, kwargs):
+        bx = Box(keep=True)
+
+        with pytest.raises(TypeError, match="update expected at most 1 argument"):
+            bx.update({"first": 1}, {"second": 2}, **kwargs)
+
+        assert bx.to_dict() == {"keep": True}
+
+    def test_update_source_and_keywords_frozen(self):
+        bx = Box(keep=True, frozen_box=True)
+
+        with pytest.raises(BoxError, match="Box is frozen"):
+            bx.update({"first": 1}, mode="override")
+
+        assert bx.to_dict() == {"keep": True}
+
     def test_merge_update(self):
         a = Box(test_dict)
         a.grand = 1000

@@ -820,8 +820,8 @@ class Box(dict):
     def update(self, *args, **kwargs):
         if self._box_config["frozen_box"]:
             raise BoxError("Box is frozen")
-        if (len(args) + int(bool(kwargs))) > 1:
-            raise BoxTypeError(f"update expected at most 1 argument, got {len(args) + int(bool(kwargs))}")
+        if len(args) > 1:
+            raise BoxTypeError(f"update expected at most 1 argument, got {len(args)}")
         single_arg = next(iter(args), None)
         if single_arg:
             if hasattr(single_arg, "keys"):
