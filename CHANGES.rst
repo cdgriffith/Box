@@ -1,6 +1,8 @@
 Changelog
 =========
 
+* Fixing #344 Frozen BoxList instances cannot be pickled (thanks to Abhinav Maurya)
+
 Version 7.4.1
 -------------
 
