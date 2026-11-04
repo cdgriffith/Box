@@ -10,12 +10,14 @@ Breaking changes
 * Removing support for Python 3.10 as it is EOL, Python 3.11+ is now required
 * merge_update now raises BoxValueError for an unrecognized box_merge_lists value instead of silently replacing the list
 * Box.copy() / copy.copy() / copy.deepcopy() now return the same class as the original (subclasses of Box, ConfigBox, SBox and DDBox were previously turned into a plain Box / ConfigBox / SBox)
+* ConfigBox string keys are now case-insensitive for every kind of access (not only attribute lookups), and a ConfigBox no longer holds keys that differ only by case: the latest write wins, keeping its value and spelling, so ConfigBox({'Foo': 1, 'foo': 2}) is ConfigBox({'foo': 2})
 * Build and development tooling changed (see below): installing from an sdist now needs setuptools>=77, and building the Cython version from source requires --no-build-isolation
 
 Changes
 
 * Fixing #274 default_box_create_on_get=False not creating missing parent keys on assignment, e.g. box.a.b = 1 (thanks to gyanu2507 for the fix and wrdls for reporting)
 * Adding #263 "merge" option for box_merge_lists to merge lists of dictionaries element by element (thanks to ChrisJr404)
+* Adding #314 case-insensitive ConfigBox keys for [] access, in, del, update, merge_update and box_dots paths, matching configparser (thanks to binggao1230)
 * Adding #269 internal-only attributes for Box subclasses via _box_internal_attrs (thanks to bwanshoom and gtkacz for the suggestion)
 * Adding support for Python 3.15
 * Adding manylinux Cython wheels for Python 3.14 and 3.15
