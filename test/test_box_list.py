@@ -67,6 +67,7 @@ class TestBoxList:
         result = BoxList(Rows())
         assert len(result) == 1
         assert result[0].value == 1
+
     @pytest.mark.parametrize("values", [[], [1], [1, 2], [{"SomeKey": 3}, [4]]])
     def test_extend_self(self, values, monkeypatch):
         data = BoxList(values, camel_killer_box=True)
@@ -174,6 +175,7 @@ class TestBoxList:
             assert loaded[0] == 9
             del loaded[0]
             assert loaded == [2, 3, 4]
+
     def test_deepcopy_preserves_box_options(self):
         import copy
 
@@ -195,6 +197,7 @@ class TestBoxList:
         with pytest.raises(BoxError):
             clone.append(1)
         assert hash(clone) == hash(frozen)
+
     @pytest.mark.parametrize("index", [0, -1, "[0]", "[1]"])
     @pytest.mark.parametrize("container", ["mapping", "sequence"])
     def test_assigned_containers_are_converted(self, index, container):

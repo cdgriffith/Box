@@ -460,8 +460,8 @@ class TestBox:
         """
         Test for issue #305: Dotted keys read from YAML are lost with box_dots / default_box
         when the dotted key appears before a non-dotted key with the same prefix.
-        
-        This test documents the bug where a.b: c followed by a: {d: e} causes a.b to be lost.
+
+        Previously a.b: c followed by a: {d: e} caused a.b to be lost.
         """
         # Create a temporary YAML file with dotted key before non-dotted key
         yaml_content = """a.b: c
@@ -479,13 +479,10 @@ a:
         assert bx1["a"]["d"] == "e"
 
         # Test with box_dots=True and default_box=True
-        # Expected behavior: a.b should be merged into a.b, so a.b == "c" and a.d == "e"
-        # Current bug: a.b is lost when it appears before a:
+        # a.b should be merged into a, so a.b == "c" and a.d == "e"
         bx2 = Box.from_yaml(filename=yaml_file, box_dots=True, default_box=True)
         assert "a" in bx2
         assert bx2["a"]["d"] == "e"
-        # This assertion will fail until the bug is fixed:
-        # The dotted key a.b should be accessible as either a["b"] or via dotted notation
         assert "b" in bx2["a"], "Bug #305: a.b key is lost when it appears before a: in YAML"
         assert bx2["a"]["b"] == "c"
 
