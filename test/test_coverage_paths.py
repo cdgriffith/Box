@@ -169,6 +169,28 @@ class TestBoxListPaths:
         assert bl == [5]
 
 
+class TestBoxListPickleFormats:
+    def test_loads_box_7_pickles(self, monkeypatch):
+        import pickle
+
+        # Box 7 had no __reduce_ex__: items were appended first, then the instance state restored
+        with monkeypatch.context() as patch:
+            patch.delattr(BoxList, "__reduce_ex__")
+            data = pickle.dumps(BoxList([1, {"a": 1}], box_dots=True), protocol=2)
+        out = pickle.loads(data)
+        assert type(out) is BoxList
+        assert out.to_list() == [1, {"a": 1}]
+        assert out.box_options["box_dots"] is True
+
+    def test_self_referencing_items_survive_pickle(self):
+        import pickle
+
+        bl = BoxList([{"a": 1}])
+        bl[0].parent = bl
+        out = pickle.loads(pickle.dumps(bl))
+        assert out[0].parent is out
+
+
 class TestConfigBoxPaths:
     def test_update_non_string_and_exact_keys(self):
         cb = ConfigBox({"a": 1})

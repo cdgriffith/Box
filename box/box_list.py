@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import copy
+import copyreg
 import re
 from collections.abc import Iterable
 from os import PathLike
@@ -205,15 +206,27 @@ class BoxList(list):
         return self.__class__((x for x in self), **self.box_options)
 
     def __deepcopy__(self, memo=None):
-        frozen = self.box_options.get("frozen_box")
         out = self.__class__(**{**self.box_options, "frozen_box": False})
         memo = memo or {}
         memo[id(self)] = out
-        for k in self:
-            out.append(copy.deepcopy(k, memo=memo))
-        if frozen:
-            out.__init__(**self.box_options)
+        items = [copy.deepcopy(k, memo=memo) for k in self]
+        # Filling through __init__ applies the options (frozen included) to the copied items
+        out.__init__(items, **self.box_options)
         return out
+
+    def __reduce_ex__(self, protocol):
+        # The default list pickling appends the items before restoring box_options, which
+        # re-created every item with default options. Keep the items in the state instead,
+        # so __setstate__ restores the options first. Self references still work because
+        # pickle memoizes the new list before the state is saved.
+        return copyreg.__newobj__, (self.__class__,), {"box_options": self.box_options, "items": list(self)}
+
+    def __setstate__(self, state):
+        if "items" not in state:
+            # Pickled by Box 7 or earlier: the items were already appended
+            self.__dict__.update(state)
+            return
+        self.__init__(state["items"], **state["box_options"])
 
     def __hash__(self) -> int:  # type: ignore[override]
         if self.box_options.get("frozen_box"):

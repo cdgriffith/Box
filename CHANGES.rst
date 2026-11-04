@@ -25,6 +25,13 @@ Changes
 * Adding #296 _box_defaults class attribute so subclasses can change Box option defaults without overriding __init__ (also #223, #210, thanks to marcelloromani, 12rambau and miversen33 for reporting)
 * Adding #279 camel_killer_box_keep_keys to keep the original CamelCase keys and only add snake_case attribute aliases (thanks to jacobtomlinson for the suggestion)
 * Adding #123 box_dots path segments made of digits also match integer keys, e.g. box['servers.2'] for {'servers': {2: ...}} (thanks to richieadler for reporting)
+* Fixing ``in`` and get() returning False / None for box_dots paths through lists, e.g. 'a[0].x' in box, and ``in`` treating substrings of string values as keys ('a.b' in Box(a='xbz'))
+* Fixing IndexError setting a box_dots key ending with a dot on a default_box
+* Fixing AttributeError instead of BoxKeyError when setting to_msgpack, from_msgpack, to_toon or from_toon as attributes (now protected), and setting other non property class attributes
+* Fixing frozen BoxList copy.deepcopy and pickle leaving the contained Boxes unfrozen
+* Fixing unpickled BoxList re-creating its Boxes with default options (box_dots, box_class, default_box and so on were lost). BoxList pickles made by earlier versions still load
+* Removing the tomli and toml read fallbacks, TOML is always read with tomllib (part of Python 3.11+). Writing still uses tomli-w, or the toml package if installed
+* Reaching 100% line and branch test coverage, enforced in CI
 * Fixing Box(default_box=True) pop() of a missing key and argparse namespaces (hasattr then delattr) with default_box_create_on_get=False
 * Adding #269 internal-only attributes for Box subclasses via _box_internal_attrs (thanks to bwanshoom and gtkacz for the suggestion)
 * Adding support for Python 3.15

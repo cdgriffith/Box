@@ -207,11 +207,9 @@ def _get_property_func(obj, key):
     :param key: property name
     :return: a tuple for helper functions(fget, fset, fdel). If no such property, a (None, None, None) returns
     """
-    obj_type = type(obj)
-
-    if not hasattr(obj_type, key):
+    attr = getattr(type(obj), key, None)
+    if not isinstance(attr, property):
         return None, None, None
-    attr = getattr(obj_type, key)
     return attr.fget, attr.fset, attr.fdel
 
 
@@ -266,6 +264,10 @@ class Box(dict):
         "from_json",
         "from_toml",
         "to_toml",
+        "to_msgpack",
+        "from_msgpack",
+        "to_toon",
+        "from_toon",
         "merge_update",
     ] + [attr for attr in dir({}) if not attr.startswith("_")]
 
@@ -430,7 +432,7 @@ class Box(dict):
             return in_me
         if in_me:
             return True
-        if "." not in item:
+        if not self.__process_dotted_key(item):
             return False
         first_item, children = _parse_box_dots(self, item)
         first_item = self.__dots_int_key(first_item)
@@ -438,8 +440,16 @@ class Box(dict):
             return False
         it = self[first_item]
         if isinstance(it, Box):
-            children = it.__dots_int_key(children)
-        return isinstance(it, Iterable) and children in it
+            return it.__dots_int_key(children) in it
+        if isinstance(it, box.BoxList):
+            # children is the rest of the path starting with "[", e.g. "[0].x"
+            try:
+                it.__getitem__(children, _ignore_default=True)
+            except (KeyError, IndexError, TypeError):
+                return False
+            return True
+        # Other values (strings, numbers) are not traversed by box_dots lookups either
+        return False
 
     def keys(self, dotted: bool = False):
         if not dotted:
@@ -782,7 +792,7 @@ class Box(dict):
                     return child.__setitem__(children, value)
             elif self._box_config["default_box"]:
                 self._flush_pending_parent()
-                if children[0] == "[":
+                if children.startswith("["):
                     super().__setitem__(first_item, box.BoxList(**self.__box_config(extra_namespace=first_item)))
                 else:
                     super().__setitem__(
@@ -1069,10 +1079,6 @@ class Box(dict):
     def setdefault(self, item, default=None):
         if item in self:
             return self[item]
-
-        if self._box_config["box_dots"]:
-            if item in _get_dot_paths(self):
-                return self[item]
 
         if isinstance(default, dict):
             default = self._box_config["box_class"](default, **self.__box_config(extra_namespace=item))
