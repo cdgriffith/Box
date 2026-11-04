@@ -1,81 +1,29 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+All package metadata lives in pyproject.toml.
 
-# Must import multiprocessing as a fix for issues with testing, experienced on win10
-import multiprocessing  # noqa: F401
-import os
-import re
-from pathlib import Path
+This file only exists to optionally compile the library with Cython. If Cython is
+installed in the build environment the modules are compiled, otherwise a pure Python
+package is built (which is what happens with the default isolated build).
+"""
+
 import sys
-import shutil
+from pathlib import Path
 
 from setuptools import setup
 
-root = os.path.abspath(os.path.dirname(__file__))
+root = Path(__file__).resolve().parent
 
 try:
     from Cython.Build import cythonize
 except ImportError:
-    extra = None
+    ext_modules = []
+    print("WARNING: Cython not installed, could not optimize box.", file=sys.stderr)
 else:
-    extra = cythonize(
-        [str(file.relative_to(root)) for file in Path(root, "box").glob("*.py") if file.name != "__init__.py"],
+    ext_modules = cythonize(
+        [str(file.relative_to(root)) for file in (root / "box").glob("*.py") if file.name != "__init__.py"],
         compiler_directives={"language_level": 3},
     )
 
-with open(os.path.join(root, "box", "__init__.py"), "r") as init_file:
-    init_content = init_file.read()
-
-attrs = dict(re.findall(r"__([a-z]+)__ *= *['\"](.+)['\"]", init_content))
-
-with open("README.rst", "r") as readme_file:
-    long_description = readme_file.read()
-
-setup(
-    name="python-box",
-    version=attrs["version"],
-    url="https://github.com/cdgriffith/Box",
-    license="MIT",
-    author=attrs["author"],
-    install_requires=[],
-    author_email="chris@cdgriffith.com",
-    description="Advanced Python dictionaries with dot notation access",
-    long_description=long_description,
-    long_description_content_type="text/x-rst",
-    py_modules=["box"],
-    packages=["box"],
-    ext_modules=extra,
-    python_requires=">=3.11",
-    include_package_data=True,
-    platforms="any",
-    classifiers=[
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3.12",
-        "Programming Language :: Python :: 3.13",
-        "Programming Language :: Python :: 3.14",
-        "Programming Language :: Python :: 3.15",
-        "Programming Language :: Python :: Implementation :: CPython",
-        "Development Status :: 5 - Production/Stable",
-        "Natural Language :: English",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-        "Topic :: Utilities",
-        "Topic :: Software Development",
-        "Topic :: Software Development :: Libraries :: Python Modules",
-    ],
-    extras_require={
-        "all": ["ruamel.yaml>=0.19.1", "toml", "msgpack"],
-        "yaml": ["ruamel.yaml>=0.19.1"],
-        "ruamel.yaml": ["ruamel.yaml>=0.19.1"],
-        "PyYAML": ["PyYAML"],
-        "tomli": ["tomli-w"],
-        "toml": ["toml"],
-        "msgpack": ["msgpack"],
-    },
-)
-
-if not extra:
-    print("WARNING: Cython not installed, could not optimize box.", file=sys.stderr)
+setup(ext_modules=ext_modules)

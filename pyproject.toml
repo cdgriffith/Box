@@ -1,0 +1,58 @@
+[build-system]
+# Cython is intentionally NOT listed here: a normal install (pip install python-box from an sdist) builds the
+# pure Python version. To build the compiled version, install Cython in the build environment and build with
+# `--no-isolation` (see CONTRIBUTING.rst).
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "python-box"
+dynamic = ["version"]
+description = "Advanced Python dictionaries with dot notation access"
+readme = { file = "README.rst", content-type = "text/x-rst" }
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Chris Griffith", email = "chris@cdgriffith.com" }]
+requires-python = ">=3.11"
+dependencies = []
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Development Status :: 5 - Production/Stable",
+    "Natural Language :: English",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Topic :: Utilities",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://github.com/cdgriffith/Box"
+Changelog = "https://github.com/cdgriffith/Box/blob/master/CHANGES.rst"
+Issues = "https://github.com/cdgriffith/Box/issues"
+
+[project.optional-dependencies]
+all = ["ruamel.yaml>=0.19.1", "toml", "msgpack"]
+yaml = ["ruamel.yaml>=0.19.1"]
+"ruamel.yaml" = ["ruamel.yaml>=0.19.1"]
+PyYAML = ["PyYAML"]
+tomli = ["tomli-w"]
+toml = ["toml"]
+msgpack = ["msgpack"]
+
+[tool.setuptools]
+packages = ["box"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+box = ["py.typed", "*.pyi"]
+
+[tool.setuptools.dynamic]
+version = { attr = "box.__version__" }
