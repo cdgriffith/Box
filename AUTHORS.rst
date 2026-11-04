@@ -50,6 +50,11 @@ Code contributions:
 - AryanRG (AryanRG)
 
 
+Documentation contributions:
+
+- Likio3000
+
+
 Suggestions and bug reporting:
 
 - JiuLi Gao (gaojiuli)
