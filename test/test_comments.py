@@ -396,3 +396,29 @@ class TestEdgeCases:
         assert bx.to_yaml() == "&id001\na: 1\nme: *id001\n"
         bx.set_comment("a", "x")
         assert "a: 1  # x" in bx.to_yaml()
+
+
+class TestCommentTextIsNeverYaml:
+    @pytest.mark.parametrize("brk", ["\n", "\r", "\r\n", "\x85", "\u2028", "\u2029"])
+    def test_end_of_line_comments_reject_every_line_break(self, brk):
+        with pytest.raises(BoxValueError, match="single line"):
+            Box(a=1).set_comment("a", f"x{brk}injected: 1")
+
+    @pytest.mark.parametrize("brk", ["\n", "\r", "\r\n", "\x85", "\u2028", "\u2029"])
+    @pytest.mark.parametrize("key, position", [("a", "before"), (None, "start"), (None, "end")])
+    def test_multi_line_comments_stay_comments(self, brk, key, position):
+        bx = Box(a=1)
+        bx.set_comment(key, f"one{brk}injected: 1", position=position)
+        out = bx.to_yaml()
+        assert Box.from_yaml(out).to_dict() == {"a": 1}, out
+        assert "# injected: 1" in out
+
+    @pytest.mark.parametrize("char", ["\x00", "\x08", "\x0b", "\x0c", "\x1b", "\x7f"])
+    def test_control_characters_are_rejected(self, char):
+        with pytest.raises(BoxValueError, match="control characters"):
+            Box(a=1).set_comment("a", f"x{char}y", position="before")
+
+    def test_tabs_are_fine(self):
+        bx = Box(a=1)
+        bx.set_comment("a", "x\ty")
+        assert Box.from_yaml(bx.to_yaml()).get_comment("a") == {"eol": "x\ty"}

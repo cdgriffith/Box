@@ -14,6 +14,7 @@ back. ruamel attaches a comment line above a key to the previous key's token whi
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from box.converters import _ruamel_to_builtin
@@ -31,20 +32,24 @@ __all__ = [
 ]
 
 POSITIONS = ("before", "eol")
+# Every character YAML treats as a line break. A comment line must never contain one, or the text
+# after it would be read back as YAML content.
+_LINE_BREAKS = re.compile("\r\n|[\r\n\x85\u2028\u2029]")
+_CONTROL = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 DOCUMENT_POSITIONS = ("start", "end")
 
 
 def _token_lines(value: str) -> list[str]:
     """Comment token text to comment lines without the "#", blank lines kept as ""."""
     out = []
-    for line in value.split("\n"):
+    for line in _LINE_BREAKS.split(value):
         line = line.strip()
         out.append(line[1:].lstrip() if line.startswith("#") else line)
     return out
 
 
 def _text_to_lines(text: str) -> list[str]:
-    return [line[1:].lstrip() if line.strip().startswith("#") else line for line in text.split("\n")]
+    return [line[1:].lstrip() if line.strip().startswith("#") else line for line in _LINE_BREAKS.split(text)]
 
 
 def normalize(position: Any, text: Any, document: bool = False) -> Any:
@@ -56,8 +61,10 @@ def normalize(position: Any, text: Any, document: bool = False) -> Any:
         return None
     if not isinstance(text, str):
         raise BoxValueError(f"comment must be a string, not {type(text).__name__}")
+    if _CONTROL.search(text):
+        raise BoxValueError("comments can't contain control characters")
     if position == "eol":
-        if "\n" in text:
+        if _LINE_BREAKS.search(text):
             raise BoxValueError("an end of line comment must be a single line")
         return _text_to_lines(text)[0]
     return _text_to_lines(text)
