@@ -55,6 +55,7 @@ Changes
 * Fixing BoxList.__deepcopy__ not preserving box options (thanks to chuenchen309)
 * Fixing second dotted write into an existing BoxList element discarding data (thanks to binggao1230)
 * Fixing dicts and lists assigned to BoxList items and slices not being converted (thanks to x0Lazarus)
+* Fixing dicts and lists added with BoxList ``+=`` not being converted (thanks to lin)
 * Fixing BoxList.extend(self) revisiting its own appended values (thanks to x0Lazarus)
 * Fixing BoxList construction testing the truth value of the iterable (thanks to fhgffy)
 * Fixing BoxList to_json / from_json multiline not working with strings (thanks to shguild)

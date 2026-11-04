@@ -148,7 +148,8 @@ class BoxList(list):
     def __iadd__(self, value):  # type: ignore[misc]  # list accepts any iterable for +=, not only lists
         if self.box_options.get("frozen_box"):
             raise BoxError("BoxList is frozen")
-        return super().__iadd__(value)
+        self.extend(value)
+        return self
 
     def __imul__(self, value):  # type: ignore[misc]
         if self.box_options.get("frozen_box"):

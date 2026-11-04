@@ -857,7 +857,6 @@ class TestBoxListBehavior:
         assert type(bl[2]) is Box and type(bl[3]) is Box
         assert type(bl[-1].f) is BoxList and type(bl[-1].f[0]) is Box
 
-    @pytest.mark.xfail(strict=True, reason="BUG: BoxList += does not convert dicts and lists, fixed by PR #347")
     def test_iadd_converts_items_like_extend(self):
         bl = BoxList()
         bl += [{"a": 1}, [{"b": 2}]]
