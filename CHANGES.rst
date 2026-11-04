@@ -5,6 +5,7 @@ Version 8.0.0
 -------------
 
 * BREAKING CHANGE: Box.popitem() now removes the most recently inserted item (LIFO) like dict.popitem(), instead of the first inserted item (thanks to machines-6657)
+* Adding #263 "merge" option for box_merge_lists to merge lists of dictionaries element by element (thanks to ChrisJr404)
 * Adding #269 internal-only attributes for Box subclasses via _box_internal_attrs (thanks to bwanshoom and gtkacz for the suggestion)
 * Adding support for Python 3.15
 * Adding manylinux Cython wheels for Python 3.14 and 3.15
@@ -29,6 +30,7 @@ Version 8.0.0
 * Fixing Box.update not accepting a positional source and keyword overrides together like dict.update (thanks to AryanRG)
 * Fixing duplicate conversion check raising when re-assigning the same key (thanks to Muneeb Sheikh)
 * Fixing deleted keys not releasing their converted attribute alias (thanks to Gary)
+* Changing merge_update to raise BoxValueError for an unrecognized box_merge_lists value instead of silently replacing the list
 * Fixing Box.copy() (and copy.copy / copy.deepcopy) returning a plain Box, ConfigBox or SBox instead of the same subclass
 * Fixing optional dependency installation examples in README (thanks to Likio3000)
 * Removing support for Python 3.10 as it is EOL

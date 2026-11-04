@@ -55,6 +55,7 @@ Code contributions:
 - apoorvdarshan
 - chuenchen309
 - machines-6657 (machines-6657)
+- Chris (ChrisJr404)
 
 
 Suggestions and bug reporting:

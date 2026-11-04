@@ -1580,6 +1580,27 @@ a.b: c
             {"app": {"S3": {"S3Service": [{"bucket": "bucket001"}, {"expirationDate": "2099-10-25"}]}}}
         ), box1
 
+    def test_merge_list_merge_option(self):
+        # Lists of dictionaries are merged element by element
+        box1 = Box({"data": [{"foo": 1, "foobar": 20}, {"bar": 2}]})
+        box1.merge_update({"data": [{"foo": 1, "baz": 10}]}, box_merge_lists="merge")
+        assert box1 == Box({"data": [{"foo": 1, "foobar": 20, "baz": 10}, {"bar": 2}]}), box1
+
+        # Extra incoming elements are appended, nested dictionaries recurse
+        box2 = Box({"app": {"servers": [{"name": "web", "tags": {"a": 1}}]}})
+        box2.merge_update({"app": {"servers": [{"tags": {"b": 2}}, {"name": "db"}]}}, box_merge_lists="merge")
+        assert box2 == Box({"app": {"servers": [{"name": "web", "tags": {"a": 1, "b": 2}}, {"name": "db"}]}}), box2
+
+        # Non-dict elements at a shared index are overwritten
+        box3 = Box({"nums": [1, 2, 3]})
+        box3.merge_update({"nums": [9, 8]}, box_merge_lists="merge")
+        assert box3.nums == [9, 8, 3]
+
+        # Falls back to assignment when the existing value is not a list
+        box4 = Box({"data": 5})
+        box4.merge_update({"data": [{"a": 1}]}, box_merge_lists="merge")
+        assert box4 == Box({"data": [{"a": 1}]}), box4
+
     def test_box_from_empty_yaml(self):
         out = Box.from_yaml("---")
         assert out == Box()
@@ -2045,3 +2066,75 @@ def test_popitem_frozen_and_alias_cleanup():
     assert bx.popitem() == ("c", 2)
     assert not hasattr(bx, "c")
     assert bx.a_b == 1
+
+
+def test_merge_lists_merge_nested_lists_of_lists():
+    bx = Box({"m": [[{"a": 1}, 2], [3]]})
+    bx.merge_update({"m": [[{"b": 2}, 9, 10], [4], [5]]}, box_merge_lists="merge")
+    assert bx.to_dict() == {"m": [[{"a": 1, "b": 2}, 9, 10], [4], [5]]}
+    assert isinstance(bx.m[0][0], Box) and isinstance(bx.m[2], BoxList)
+
+
+def test_merge_lists_merge_list_vs_dict_and_scalar_replace():
+    bx = Box({"m": [{"a": 1}, [1], 5]})
+    bx.merge_update({"m": [[1, 2], {"b": 1}, {"c": 1}]}, box_merge_lists="merge")
+    assert bx.to_dict() == {"m": [[1, 2], {"b": 1}, {"c": 1}]}
+
+
+def test_merge_lists_merge_with_plain_list_and_boxlist_values():
+    bx = Box({"m": [{"a": 1}]})
+    bx.merge_update({"m": BoxList([{"b": 2}])}, box_merge_lists="merge")
+    bx.merge_update({"m": ({"c": 3},)}, box_merge_lists="merge")  # tuple is not a list: replaced
+    assert bx.m == ({"c": 3},)
+    bx2 = Box({"m": [{"a": 1}]})
+    bx2.merge_update(m=[{"b": 2}], box_merge_lists="merge")
+    assert bx2.to_dict() == {"m": [{"a": 1, "b": 2}]}
+
+
+def test_merge_lists_merge_empty_lists():
+    bx = Box({"m": [{"a": 1}]})
+    bx.merge_update({"m": []}, box_merge_lists="merge")
+    assert bx.to_dict() == {"m": [{"a": 1}]}
+    bx.merge_update({"new": [{"x": 1}]}, box_merge_lists="merge")
+    assert bx.to_dict() == {"m": [{"a": 1}], "new": [{"x": 1}]}
+
+
+def test_merge_lists_merge_frozen():
+    bx = Box({"m": [{"a": 1}]}, frozen_box=True)
+    with pytest.raises(BoxError):
+        bx.merge_update({"m": [{"b": 2}]}, box_merge_lists="merge")
+    with pytest.raises(BoxError):
+        bx.merge_update({"m": [{"a": 1}, {"b": 2}]}, box_merge_lists="merge")
+    assert bx.to_dict() == {"m": ({"a": 1},)}  # frozen boxes store lists as tuples
+
+
+@pytest.mark.parametrize("bad", ["Merge", "replace", True, 1, ""])
+def test_merge_lists_invalid_value(bad):
+    from box.exceptions import BoxValueError
+
+    bx = Box({"m": [1]})
+    with pytest.raises(BoxValueError):
+        bx.merge_update({"m": [2]}, box_merge_lists=bad)
+    assert bx.to_dict() == {"m": [1]}
+
+
+def test_merge_lists_valid_values_still_work():
+    for mode, expected in (("extend", [1, 1]), ("unique", [1]), (None, [1]), (False, [1])):
+        bx = Box({"m": [1]})
+        bx.merge_update({"m": [1]}, box_merge_lists=mode)
+        assert bx.m == expected, mode
+
+
+def test_merge_lists_merge_deep_dict_in_list_in_dict():
+    bx = Box({"a": {"l": [{"b": {"l2": [{"x": 1}]}}]}})
+    bx.merge_update({"a": {"l": [{"b": {"l2": [{"y": 2}, {"z": 3}]}}]}}, box_merge_lists="merge")
+    assert bx.to_dict() == {"a": {"l": [{"b": {"l2": [{"x": 1, "y": 2}, {"z": 3}]}}]}}
+
+
+def test_merge_lists_merge_intact_dict_type():
+    class MyDict(dict):
+        pass
+
+    bx = Box({"m": [MyDict(a=1)]}, box_intact_types=(MyDict,))
+    bx.merge_update({"m": [{"b": 2}]}, box_merge_lists="merge")
+    assert bx.m[0] == {"b": 2}

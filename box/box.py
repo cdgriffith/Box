@@ -912,9 +912,40 @@ class Box(dict):
             self.__convert_and_store(k, kwargs[k])
 
     def merge_update(self, *args, **kwargs):
+        """
+        Recursively update the Box, merging nested dictionaries instead of
+        overwriting them like the built-in ``dict.update``.
+
+        The ``box_merge_lists`` keyword controls how lists sharing a key are
+        combined:
+
+        * ``None`` (default) - the incoming list replaces the existing one
+        * ``"extend"`` - the incoming items are appended to the existing list
+        * ``"unique"`` - only incoming items not already present are appended
+        * ``"merge"`` - lists are merged element by element, recursing into
+          dictionaries that share the same index so their keys are combined.
+          Lists nested directly inside lists are merged the same way, any other
+          value at a shared index is replaced by the incoming one, and extra
+          incoming elements are appended. If the existing value is not a list,
+          the incoming list simply replaces it.
+
+        Any other value raises ``BoxValueError``. Note that merging is done in place
+        and is not atomic, if an error is raised (for example the Box is frozen)
+        part of the update may already have been applied.
+
+        .. code-block:: python
+
+            box_one = Box({"data": [{"a": 1}, {"b": 2}]})
+            box_one.merge_update({"data": [{"c": 3}]}, box_merge_lists="merge")
+            # Box({'data': [{'a': 1, 'c': 3}, {'b': 2}]})
+
+        :param box_merge_lists: strategy used to merge lists, see above
+        """
         merge_type = None
         if "box_merge_lists" in kwargs:
             merge_type = kwargs.pop("box_merge_lists")
+        if merge_type not in (None, False, "extend", "unique", "merge"):
+            raise BoxValueError(f'box_merge_lists must be None, "extend", "unique" or "merge", got {merge_type!r}')
         force_unfrozen = kwargs.pop("_force_unfrozen", False)
 
         was_frozen = self._box_config["frozen_box"]
@@ -922,6 +953,22 @@ class Box(dict):
             self._box_config["frozen_box"] = False
 
         try:
+
+            def merge_lists(target, incoming):
+                # Element by element: dicts at the same index are merged recursively, lists at the
+                # same index are merged the same way, anything else is replaced by the incoming
+                # value, and incoming elements beyond the end of `target` are appended.
+                for index, item in enumerate(incoming):
+                    if index >= len(target):
+                        target.append(item)
+                        continue
+                    current = target[index]
+                    if isinstance(current, Box) and isinstance(item, dict):
+                        current.merge_update(item, box_merge_lists=merge_type, _force_unfrozen=force_unfrozen)
+                    elif isinstance(current, list) and isinstance(item, list):
+                        merge_lists(current, item)
+                    else:
+                        target[index] = item
 
             def convert_and_set(k, v):
                 intact_type = self._box_config["box_intact_types"] and isinstance(
@@ -943,6 +990,9 @@ class Box(dict):
                         for item in v:
                             if item not in self[k]:
                                 self[k].append(item)
+                        return
+                    if merge_type == "merge" and k in self and isinstance(self[k], list):
+                        merge_lists(self[k], v)
                         return
                 self.__setitem__(k, v)
 
