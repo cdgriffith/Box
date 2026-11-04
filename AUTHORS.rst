@@ -107,3 +107,5 @@ Suggestions and bug reporting:
 - Ward Loos (wrdls)
 - Vitaliy Voloshin (vitalivo)
 - x0Lazarus
+
+- Huanyi Xie (xiehuanyi)
