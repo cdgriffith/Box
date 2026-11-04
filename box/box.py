@@ -15,7 +15,7 @@ from collections.abc import Callable, Generator, Iterable, Mapping
 from inspect import signature
 from keyword import iskeyword
 from os import PathLike
-from typing import Any, Literal
+from typing import Any
 
 import box
 from box.converters import (
@@ -157,6 +157,49 @@ def _get_box_config():
     }
 
 
+#: Every Box option and its default. Subclasses can change these defaults with ``_box_defaults``.
+BOX_OPTION_DEFAULTS: dict[str, Any] = {
+    "default_box": False,
+    "default_box_attr": NO_DEFAULT,
+    "default_box_none_transform": True,
+    "default_box_create_on_get": False,
+    "frozen_box": False,
+    "camel_killer_box": False,
+    "camel_killer_box_keep_keys": False,
+    "conversion_box": True,
+    "modify_tuples_box": False,
+    "box_safe_prefix": "x",
+    "box_duplicates": "ignore",
+    "box_intact_types": (),
+    "box_recast": None,
+    "box_dots": False,
+    "box_dots_exclude": None,
+    "box_class": None,
+    "box_namespace": (),
+}
+
+
+def _build_box_config(cls, kwargs: dict) -> dict:
+    """
+    Build the box config for `cls`, removing the Box options from `kwargs` so only data keys remain.
+
+    An option passed explicitly wins, then the class ``_box_defaults``, then ``BOX_OPTION_DEFAULTS``.
+    """
+    options = {**BOX_OPTION_DEFAULTS, **cls._box_resolved_defaults}
+    for name in BOX_OPTION_DEFAULTS:
+        if name in kwargs:
+            options[name] = kwargs.pop(name)
+    config = _get_box_config()
+    config.update(options)
+    if config["default_box_attr"] is NO_DEFAULT:
+        config["default_box_attr"] = cls
+    if config["box_class"] is None:
+        config["box_class"] = cls
+    config["box_intact_types"] = tuple(config["box_intact_types"])
+    config["box_dots_exclude"] = re.compile(config["box_dots_exclude"]) if config["box_dots_exclude"] else None
+    return config
+
+
 def _get_property_func(obj, key):
     """
     Try to get property helper functions of given object and property name.
@@ -181,9 +224,12 @@ class Box(dict):
     :param default_box_attr: Specify the default replacement.
         WARNING: If this is not the default 'Box', it will not be recursive
     :param default_box_none_transform: When using default_box, treat keys with none values as absent. True by default
-    :param default_box_create_on_get: On lookup of a key that doesn't exist, create it if missing
+    :param default_box_create_on_get: On lookup of a key that doesn't exist, also store the default value.
+        False by default: lookups never change the Box, assigning through a missing key still creates it
     :param frozen_box: After creation, the box cannot be modified
     :param camel_killer_box: Convert CamelCase to snake_case
+    :param camel_killer_box_keep_keys: With camel_killer_box, keep the original keys and only add
+        snake_case attribute aliases for them (needs conversion_box)
     :param conversion_box: Check for near matching keys as attributes
     :param modify_tuples_box: Recreate incoming tuples with dicts into Boxes
     :param box_safe_prefix: Conversion box prefix for unsafe attributes
@@ -207,6 +253,12 @@ class Box(dict):
     #: exported, iterated, compared or hashed. See the "Internal Attributes" docs.
     _box_internal_attrs: tuple[str, ...] = ()
 
+    #: Box options this class uses when they are not passed explicitly, for example
+    #: ``_box_defaults = {"default_box": True}``. Subclasses inherit and extend them.
+    #: See the "Subclassing Box" docs.
+    _box_defaults: dict[str, Any] = {}
+    _box_resolved_defaults: dict[str, Any] = {}
+
     _protected_keys = [
         "to_dict",
         "to_json",
@@ -218,104 +270,40 @@ class Box(dict):
         "merge_update",
     ] + [attr for attr in dir({}) if not attr.startswith("_")]
 
-    def __new__(
-        cls,
-        *args: Any,
-        default_box: bool = False,
-        default_box_attr: Any = NO_DEFAULT,
-        default_box_none_transform: bool = True,
-        default_box_create_on_get: bool = True,
-        frozen_box: bool = False,
-        camel_killer_box: bool = False,
-        conversion_box: bool = True,
-        modify_tuples_box: bool = False,
-        box_safe_prefix: str = "x",
-        box_duplicates: str = "ignore",
-        box_intact_types: tuple | list = (),
-        box_recast: dict | None = None,
-        box_dots: bool = False,
-        box_dots_exclude: str | None = None,
-        box_class: dict | type[Box] | None = None,
-        box_namespace: tuple[str, ...] | Literal[False] = (),
-        **kwargs: Any,
-    ):
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        own = cls.__dict__.get("_box_defaults", {})
+        unknown = sorted(set(own) - set(BOX_OPTION_DEFAULTS))
+        if unknown:
+            raise BoxError(f"Unknown Box options in {cls.__name__}._box_defaults: {', '.join(unknown)}")
+        # Merged along the inheritance chain, so a subclass only lists what it changes
+        cls._box_resolved_defaults = {**getattr(cls, "_box_resolved_defaults", {}), **own}
+
+    def __new__(cls, *args: Any, **kwargs: Any):
         """
         Due to the way pickling works in python 3, we need to make sure
         the box config is created as early as possible.
         """
+        config = _build_box_config(cls, kwargs)
         obj = super().__new__(cls, *args, **kwargs)
-        obj._box_config = _get_box_config()
-        obj._box_config.update(
-            {
-                "default_box": default_box,
-                "default_box_attr": cls.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
-                "default_box_none_transform": default_box_none_transform,
-                "default_box_create_on_get": default_box_create_on_get,
-                "conversion_box": conversion_box,
-                "box_safe_prefix": box_safe_prefix,
-                "frozen_box": frozen_box,
-                "camel_killer_box": camel_killer_box,
-                "modify_tuples_box": modify_tuples_box,
-                "box_duplicates": box_duplicates,
-                "box_intact_types": tuple(box_intact_types),
-                "box_recast": box_recast,
-                "box_dots": box_dots,
-                "box_dots_exclude": re.compile(box_dots_exclude) if box_dots_exclude else None,
-                "box_class": box_class if box_class is not None else cls,
-                "box_namespace": box_namespace,
-            }
-        )
+        obj._box_config = config
         # Pickle reconstructs via __new__ + item assignment + __setstate__.
         # Item assignment happens first, while this Box still has default options,
         # so nested Box/BoxList values must be stored as-is (see __convert_and_store).
         obj._box_config["__unpickling"] = True
         return obj
 
-    def __init__(
-        self,
-        *args: Any,
-        default_box: bool = False,
-        default_box_attr: Any = NO_DEFAULT,
-        default_box_none_transform: bool = True,
-        default_box_create_on_get: bool = True,
-        frozen_box: bool = False,
-        camel_killer_box: bool = False,
-        conversion_box: bool = True,
-        modify_tuples_box: bool = False,
-        box_safe_prefix: str = "x",
-        box_duplicates: str = "ignore",
-        box_intact_types: tuple | list = (),
-        box_recast: dict | None = None,
-        box_dots: bool = False,
-        box_dots_exclude: str | None = None,
-        box_class: dict | type[Box] | None = None,
-        box_namespace: tuple[str, ...] | Literal[False] = (),
-        **kwargs: Any,
-    ):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__()
-        self._box_config = _get_box_config()
-        self._box_config.update(
-            {
-                "default_box": default_box,
-                "default_box_attr": self.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
-                "default_box_none_transform": default_box_none_transform,
-                "default_box_create_on_get": default_box_create_on_get,
-                "conversion_box": conversion_box,
-                "box_safe_prefix": box_safe_prefix,
-                "frozen_box": frozen_box,
-                "camel_killer_box": camel_killer_box,
-                "modify_tuples_box": modify_tuples_box,
-                "box_duplicates": box_duplicates,
-                "box_intact_types": tuple(box_intact_types),
-                "box_recast": box_recast,
-                "box_dots": box_dots,
-                "box_dots_exclude": re.compile(box_dots_exclude) if box_dots_exclude else None,
-                "box_class": box_class if box_class is not None else self.__class__,
-                "box_namespace": box_namespace,
-            }
-        )
+        self._box_config = _build_box_config(self.__class__, kwargs)
         if not self._box_config["conversion_box"] and self._box_config["box_duplicates"] != "ignore":
             raise BoxError("box_duplicates are only for conversion_boxes")
+        if (
+            self._box_config["camel_killer_box_keep_keys"]
+            and self._box_config["camel_killer_box"]
+            and not self._box_config["conversion_box"]
+        ):
+            raise BoxError("camel_killer_box_keep_keys needs conversion_box, it provides the snake_case aliases")
         if len(args) == 1:
             if isinstance(args[0], str):
                 raise BoxValueError("Cannot extrapolate Box from string")
@@ -427,8 +415,9 @@ class Box(dict):
             if key.isidentifier() and not iskeyword(key):
                 items.add(key)
 
+        keep_keys = self._box_config["camel_killer_box_keep_keys"] and self._box_config["camel_killer_box"]
         for key in self.keys():
-            if key not in items:
+            if key not in items or keep_keys:
                 if self._box_config["conversion_box"]:
                     key = self._safe_attr(key)
                     if key:
@@ -449,9 +438,12 @@ class Box(dict):
         except BoxError:
             return False
         else:
+            first_item = self.__dots_int_key(first_item)
             if not super().__contains__(first_item):
                 return False
             it = self[first_item]
+            if isinstance(it, Box):
+                children = it.__dots_int_key(children)
             return isinstance(it, Iterable) and children in it
 
     def keys(self, dotted: bool = False):
@@ -534,6 +526,28 @@ class Box(dict):
         self.__dict__.update(state)
         self._box_config["__created"] = True
         self._box_config["__unpickling"] = False
+
+    def __dots_int_key(self, item):
+        """
+        A segment of a box_dots path made of digits also matches the int key with that value, so
+        "a.2" reaches {"a": {2: ...}} (#123). Only used for path segments, a str key of the same
+        value wins, and plain (non dotted) keys are never mapped.
+        """
+        if (
+            self._box_config["box_dots"]
+            and isinstance(item, str)
+            and item.isascii()
+            and item.lstrip("-").isdigit()
+            and not dict.__contains__(self, item)
+        ):
+            as_int = int(item)
+            if dict.__contains__(self, as_int):
+                return as_int
+        return item
+
+    def __camel_destructive(self):
+        """camel_killer_box renames keys to snake_case unless camel_killer_box_keep_keys is set"""
+        return self._box_config["camel_killer_box"] and not self._box_config["camel_killer_box_keep_keys"]
 
     def __process_dotted_key(self, item):
         if self._box_config["box_dots"] and isinstance(item, str):
@@ -689,15 +703,18 @@ class Box(dict):
                     if self._box_config["default_box"] and not _ignore_default:
                         return self.__get_default(item)
                     raise BoxKeyError(str(item)) from _exception_cause(err)
-                if first_item not in self.keys() and self._box_config["camel_killer_box"]:
+                first_item = self.__dots_int_key(first_item)
+                if first_item not in self.keys() and self.__camel_destructive():
                     first_item = _camel_killer(first_item)
                 if first_item in self.keys():
                     child = self[first_item]
+                    if isinstance(child, Box):
+                        children = child.__dots_int_key(children)
                     if hasattr(child, "__getitem__"):
                         if _ignore_default and isinstance(child, (Box, box.BoxList)):
                             return child.__getitem__(children, _ignore_default=True)
                         return child[children]
-            if self._box_config["camel_killer_box"] and isinstance(item, str):
+            if self.__camel_destructive() and isinstance(item, str):
                 converted = _camel_killer(item)
                 if converted in self.keys():
                     return super().__getitem__(converted)
@@ -770,9 +787,13 @@ class Box(dict):
             raise BoxError("Box is frozen")
         if self.__process_dotted_key(key):
             first_item, children = _parse_box_dots(self, key, setting=True)
+            first_item = self.__dots_int_key(first_item)
             if first_item in self.keys():
-                if hasattr(self[first_item], "__setitem__"):
-                    return self[first_item].__setitem__(children, value)
+                child = self[first_item]
+                if isinstance(child, Box):
+                    children = child.__dots_int_key(children)
+                if hasattr(child, "__setitem__"):
+                    return child.__setitem__(children, value)
             elif self._box_config["default_box"]:
                 self._flush_pending_parent()
                 if children[0] == "[":
@@ -785,8 +806,8 @@ class Box(dict):
             else:
                 raise BoxKeyError(f"'{self.__class__}' object has no attribute {first_item}")
         value = self.__recast(key, value)
-        if key not in self.keys() and self._box_config["camel_killer_box"]:
-            if self._box_config["camel_killer_box"] and isinstance(key, str):
+        if key not in self.keys() and self.__camel_destructive():
+            if isinstance(key, str):
                 key = _camel_killer(key)
         if self._box_config["conversion_box"] and self._box_config["box_duplicates"] != "ignore":
             self._conversion_checks(key)
@@ -820,10 +841,14 @@ class Box(dict):
                 first_item, children = _parse_box_dots(self, key)
             except BoxError:
                 raise BoxKeyError(str(key)) from None
-            if hasattr(self[first_item], "__delitem__"):
-                return self[first_item].__delitem__(children)
-        if key not in self.keys() and self._box_config["camel_killer_box"]:
-            if self._box_config["camel_killer_box"] and isinstance(key, str):
+            first_item = self.__dots_int_key(first_item)
+            child = self[first_item]
+            if isinstance(child, Box):
+                children = child.__dots_int_key(children)
+            if hasattr(child, "__delitem__"):
+                return child.__delitem__(children)
+        if key not in self.keys() and self.__camel_destructive():
+            if isinstance(key, str):
                 for each_key in self:
                     if _camel_killer(key) == each_key:
                         key = each_key
@@ -862,6 +887,10 @@ class Box(dict):
                 if safe_key in self._box_config["__safe_keys"]:
                     self.__delitem__(self._box_config["__safe_keys"][safe_key])
                     return
+            if self._box_config["default_box"] and not self._box_config["default_box_create_on_get"]:
+                # Every attribute of a default_box looks present (hasattr is True) without being
+                # stored, so deleting a missing one is a no-op. argparse.parse_args relies on this.
+                return
             raise BoxKeyError(str(err)) from _exception_cause(err)
 
     def pop(self, key, *args):
@@ -883,7 +912,9 @@ class Box(dict):
         except KeyError:
             raise BoxKeyError(f"{key}") from None
         else:
-            del self[key]
+            if key in self:
+                del self[key]
+            # else: a default_box returned a default without storing it, there is nothing to remove
             return item
 
     def clear(self):
@@ -1069,6 +1100,10 @@ class Box(dict):
 
     def _safe_attr(self, attr):
         """Convert a key into something that is accessible as an attribute"""
+        if self._box_config["camel_killer_box_keep_keys"] and self._box_config["camel_killer_box"]:
+            # Keys keep their spelling, the attribute alias is the snake_case form
+            if isinstance(attr, str):
+                attr = _camel_killer(attr)
         if isinstance(attr, str):
             # By assuming most people are using string first we get substantial speed ups
             if attr.isidentifier() and not iskeyword(attr):
@@ -1198,6 +1233,7 @@ class Box(dict):
             :param encoding: File encoding
             :param errors: How to handle encoding errors
             :param width: Line width for YAML output
+            :param sort_keys: True sorts keys alphabetically, the default False keeps insertion order
             :param yaml_kwargs: additional arguments to pass to yaml.dump
             :return: string of YAML (if no filename provided)
             """

@@ -124,6 +124,7 @@ BOX_PARAMETERS = (
     "default_box_create_on_get",
     "frozen_box",
     "camel_killer_box",
+    "camel_killer_box_keep_keys",
     "conversion_box",
     "modify_tuples_box",
     "box_safe_prefix",
@@ -206,39 +207,44 @@ def _to_yaml(
     ruamel_typ: str = "rt",
     ruamel_attrs: dict | None = None,
     width: int = 120,
+    sort_keys: bool = False,
     **yaml_kwargs,
 ):
+    """
+    Keys are written in insertion order. ``sort_keys=True`` sorts them alphabetically instead
+    (PyYAML and the ruamel ``safe`` / ``unsafe`` dumpers, the default ruamel ``rt`` dumper never sorts).
+    """
+    if not ruamel_available and not pyyaml_available:
+        raise BoxError(MISSING_PARSER_ERROR)
+
+    def ruamel_dump(stream):
+        yaml_dumper = YAML(typ=ruamel_typ)
+        yaml_dumper.default_flow_style = default_flow_style
+        yaml_dumper.width = width
+        if hasattr(yaml_dumper.representer, "sort_base_mapping_type_on_output"):
+            yaml_dumper.representer.sort_base_mapping_type_on_output = sort_keys
+        for attr, value in ruamel_attrs.items():
+            setattr(yaml_dumper, attr, value)
+        return yaml_dumper.dump(obj, stream=stream, **yaml_kwargs)
+
+    def pyyaml_dump(stream=None):
+        return yaml.dump(
+            obj, stream=stream, default_flow_style=default_flow_style, width=width, sort_keys=sort_keys, **yaml_kwargs
+        )
+
     if not ruamel_attrs:
         ruamel_attrs = {}
     if filename:
         _exists(filename, create=True)
         with open(filename, "w", encoding=encoding, errors=errors) as f:
             if ruamel_available:
-                yaml_dumper = YAML(typ=ruamel_typ)
-                yaml_dumper.default_flow_style = default_flow_style
-                yaml_dumper.width = width
-                for attr, value in ruamel_attrs.items():
-                    setattr(yaml_dumper, attr, value)
-                return yaml_dumper.dump(obj, stream=f, **yaml_kwargs)
-            elif pyyaml_available:
-                return yaml.dump(obj, stream=f, default_flow_style=default_flow_style, width=width, **yaml_kwargs)
-            else:
-                raise BoxError(MISSING_PARSER_ERROR)
-
-    else:
-        if ruamel_available:
-            yaml_dumper = YAML(typ=ruamel_typ)
-            yaml_dumper.default_flow_style = default_flow_style
-            yaml_dumper.width = width
-            for attr, value in ruamel_attrs.items():
-                setattr(yaml_dumper, attr, value)
-            with StringIO() as string_stream:
-                yaml_dumper.dump(obj, stream=string_stream, **yaml_kwargs)
-                return string_stream.getvalue()
-        elif pyyaml_available:
-            return yaml.dump(obj, default_flow_style=default_flow_style, width=width, **yaml_kwargs)
-        else:
-            raise BoxError(MISSING_PARSER_ERROR)
+                return ruamel_dump(f)
+            return pyyaml_dump(f)
+    if ruamel_available:
+        with StringIO() as string_stream:
+            ruamel_dump(string_stream)
+            return string_stream.getvalue()
+    return pyyaml_dump()
 
 
 def _ruamel_to_builtin(obj):

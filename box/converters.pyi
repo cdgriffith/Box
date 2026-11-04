@@ -29,6 +29,7 @@ def _to_yaml(
     ruamel_typ: str = ...,
     ruamel_attrs: dict | None = ...,
     width: int = ...,
+    sort_keys: bool = ...,
     **yaml_kwargs,
 ): ...
 def _from_yaml(

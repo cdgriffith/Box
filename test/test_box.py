@@ -629,13 +629,13 @@ a.b: c
         bx4 = Box(default_box=True, default_box_attr=None)
         assert bx4.who_is_there is None
 
-        bx5 = Box(default_box=True, default_box_attr=[])
+        bx5 = Box(default_box=True, default_box_attr=[], default_box_create_on_get=True)
         assert isinstance(bx5.empty_list_please, list)
         assert len(bx5.empty_list_please) == 0
         bx5.empty_list_please.append(1)
         assert bx5.empty_list_please[0] == 1
 
-        bx6 = Box(default_box=True, default_box_attr=[])
+        bx6 = Box(default_box=True, default_box_attr=[], default_box_create_on_get=True)
         my_list = bx6.get("new_list")
         my_list.append(5)
         assert bx6.get("new_list")[0] == 5
@@ -1536,7 +1536,7 @@ a.b: c
         assert id(a) != id(b.a)
 
     def test_default_box_restricted_calls(self):
-        a = Box(default_box=True)
+        a = Box(default_box=True, default_box_create_on_get=True)
         with pytest.raises(BoxKeyError):
             a._test_thing_
         assert len(list(a.keys())) == 0
@@ -1552,11 +1552,11 @@ a.b: c
         assert len(list(a.keys())) == 2
 
     def test_default_dots(self):
-        bx1 = Box(default_box=True, box_dots=True)
+        bx1 = Box(default_box=True, box_dots=True, default_box_create_on_get=True)
         bx1["a.a.a"]
         assert bx1 == {"a": {"a": {"a": {}}}}
 
-        a = Box(default_box=True, box_dots=True)
+        a = Box(default_box=True, box_dots=True, default_box_create_on_get=True)
         a["a."]
         a["a.."]
         assert a == {"a": {"": {"": {}}}}
@@ -1695,7 +1695,7 @@ a.b: c
         assert a == Box({"σeq": 1, "μeq": 2})
 
     def test_box_default_not_create_on_get(self):
-        box = Box(default_box=True)
+        box = Box(default_box=True, default_box_create_on_get=True)
 
         assert box.a.b.c == Box()
 
@@ -2194,8 +2194,7 @@ class TestCreateOnSetWithoutCreateOnGet:
 
     def test_failed_operations_do_not_create(self):
         b = _no_create_box()
-        with pytest.raises(BoxKeyError):
-            del b.x.nothing
+        del b.x.nothing  # a missing attribute of a default_box looks present, deleting it is a no-op
         with pytest.raises(BoxKeyError):
             b.x.items = 1  # protected key
         b.x.update({})
@@ -2306,11 +2305,53 @@ class TestCreateOnSetWithoutCreateOnGet:
         b.x.y = 1
         assert type(b.x) is Sub
 
-    def test_create_on_get_default_unchanged(self):
-        b = Box(default_box=True)
+    def test_create_on_get_true_stores_on_lookup(self):
+        b = Box(default_box=True, default_box_create_on_get=True)
         b.a.b
         assert b.to_dict() == {"a": {"b": {}}}
         assert "__pending_parent" not in b.a._box_config
+
+    def test_create_on_get_is_off_by_default(self):
+        b = Box(default_box=True)
+        assert b._box_config["default_box_create_on_get"] is False
+        assert b.a.b == Box()
+        assert b.to_dict() == {}
+        b.a.b = 1
+        assert b.to_dict() == {"a": {"b": 1}}
+
+    def test_ipython_style_probing_does_not_add_keys(self):
+        # IPython / Spyder look up attributes such as size and compute on objects (#262)
+        b = Box(default_box=True)
+        for name in ("size", "compute", "shape", "_repr_html_"):
+            hasattr(b, name)
+        assert b.to_dict() == {}
+
+    def test_in_place_change_of_default_value_is_not_kept(self):
+        # Documented trade off of the default: store the value first, or use default_box_create_on_get=True
+        b = Box(default_box=True, default_box_attr=[])
+        b.tags.append(1)
+        assert b.to_dict() == {}
+        b.tags = b.tags + [1]
+        assert b.to_dict() == {"tags": [1]}
+
+    def test_pop_and_delattr_of_missing_key(self):
+        b = Box(default_box=True)
+        assert b.pop("missing") == Box()
+        assert hasattr(b, "_unrecognized_args")  # what argparse.parse_args does with a namespace
+        delattr(b, "_unrecognized_args")
+        assert b.to_dict() == {}
+        with pytest.raises(KeyError):
+            Box().pop("missing")
+        with pytest.raises(AttributeError):
+            delattr(Box(), "missing")
+
+    def test_argparse_namespace(self):
+        import argparse
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--name", default="x")
+        args = parser.parse_args(["--name", "y"], namespace=Box(default_box=True))
+        assert args.to_dict() == {"name": "y"}
 
     def test_no_default_box_unchanged(self):
         with pytest.raises(BoxKeyError):

@@ -6,6 +6,7 @@ from _typeshed import Incomplete
 
 class Box(dict):
     _box_internal_attrs: tuple[str, ...]
+    _box_defaults: dict[str, Any]
     def __new__(
         cls,
         *args: Any,
@@ -15,6 +16,7 @@ class Box(dict):
         default_box_create_on_get: bool = ...,
         frozen_box: bool = ...,
         camel_killer_box: bool = ...,
+        camel_killer_box_keep_keys: bool = ...,
         conversion_box: bool = ...,
         modify_tuples_box: bool = ...,
         box_safe_prefix: str = ...,
@@ -36,6 +38,7 @@ class Box(dict):
         default_box_create_on_get: bool = ...,
         frozen_box: bool = ...,
         camel_killer_box: bool = ...,
+        camel_killer_box_keep_keys: bool = ...,
         conversion_box: bool = ...,
         modify_tuples_box: bool = ...,
         box_safe_prefix: str = ...,

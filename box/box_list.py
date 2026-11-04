@@ -318,6 +318,7 @@ class BoxList(list):
             :param encoding: File encoding
             :param errors: How to handle encoding errors
             :param width: Line width for YAML output
+            :param sort_keys: True sorts keys alphabetically, the default False keeps insertion order
             :param yaml_kwargs: additional arguments to pass to yaml.dump
             :return: string of YAML or return of `yaml.dump`
             """
