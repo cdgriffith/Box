@@ -182,8 +182,15 @@ def _from_json(
                 ]
             else:
                 data = json.load(f, **kwargs)
-    elif json_string:
-        data = json.loads(json_string, **kwargs)
+    elif json_string or (multiline and json_string is not None):
+        if multiline:
+            data = [
+                json.loads(line.strip(), **kwargs)
+                for line in StringIO(json_string, newline=None)
+                if line.strip() and not line.strip().startswith("#")
+            ]
+        else:
+            data = json.loads(json_string, **kwargs)
     else:
         raise BoxError("from_json requires a string or filename")
     return data

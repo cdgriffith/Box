@@ -43,6 +43,7 @@ Code contributions:
 - Guo Jiarui (Jerry-val)
 - Abhinav Maurya (Fire162)
 - Arindam Sikder (arindamsikder)
+- shguild
 
 
 Suggestions and bug reporting:
