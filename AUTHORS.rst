@@ -38,6 +38,7 @@ Code contributions:
 - J vanBemmel (jbemmel)
 - m-janicki
 - DSeaStar (DSeaStar)
+- Guo Jiarui (Jerry-val)
 
 
 Suggestions and bug reporting:
