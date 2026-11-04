@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Version 7.5.0
+-------------
+
+* Adding support for Python 3.15
+* Adding manylinux Cython wheels for Python 3.14 and 3.15
+* Fixing python_requires to match supported versions
+* Updating GitHub Actions to latest major versions
+* Removing support for Python 3.10 as it is EOL
+
 Version 7.4.1
 -------------
 
