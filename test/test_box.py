@@ -2347,6 +2347,8 @@ class TestRuamelScalarConversion:
     def test_pyyaml_backend_unaffected(self, monkeypatch):
         import box.converters as cv
 
+        if not cv.pyyaml_available:
+            pytest.skip("PyYAML is not installed")
         monkeypatch.setattr(cv, "ruamel_available", False)
         bx = Box.from_yaml("a: 1.10\nb: true\n")
         assert bx.to_dict() == {"a": 1.1, "b": True}
