@@ -604,3 +604,65 @@ def test_frozen_list_inplace_mutations(mutate, expected):
     mutate(mutable)
     assert mutable is alias
     assert mutable == expected
+
+
+@pytest.mark.parametrize("as_iterator", [False, True])
+def test_iadd_converts_containers_and_preserves_options(as_iterator):
+    class CustomBox(Box):
+        pass
+
+    values = [{"someKey": 1}, [{"otherKey": 2}]]
+    source = iter(values) if as_iterator else values
+    data = BoxList([0], box_class=CustomBox, camel_killer_box=True)
+    original = data
+
+    data += source
+
+    assert data is original
+    assert data[0] == 0
+    assert isinstance(data[1], CustomBox)
+    assert data[1].some_key == 1
+    assert isinstance(data[2], BoxList)
+    assert isinstance(data[2][0], CustomBox)
+    assert data[2][0].other_key == 2
+    assert data.box_options["box_class"] is CustomBox
+    assert data[2].box_options["camel_killer_box"] is True
+    assert values == [{"someKey": 1}, [{"otherKey": 2}]]
+
+
+def test_iadd_respects_intact_types():
+    item = {"value": 1}
+    data = BoxList(box_intact_types=(dict,))
+    data += [item]
+    assert data[0] is item
+
+
+@pytest.mark.parametrize("values", [[], [1, 2], [{"value": 1}]])
+def test_iadd_self(values):
+    data = BoxList(values)
+    original = data
+    data += data
+    assert data is original
+    assert data.to_list() == values + values
+
+
+def test_iadd_partial_iterator_failure():
+    def source():
+        yield {"value": 1}
+        raise RuntimeError("source failed")
+
+    data = BoxList()
+    with pytest.raises(RuntimeError, match="source failed"):
+        data += source()
+    assert len(data) == 1
+    assert isinstance(data[0], Box)
+    assert data[0].value == 1
+
+
+def test_iadd_frozen_does_not_consume_source():
+    source = iter([{"value": 1}])
+    data = BoxList([0], frozen_box=True)
+    with pytest.raises(BoxError, match="BoxList is frozen"):
+        data += source
+    assert next(source) == {"value": 1}
+    assert data == [0]
