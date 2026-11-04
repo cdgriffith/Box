@@ -16,7 +16,6 @@ repos:
     # Python checks
     - id: check-docstring-first
     - id: debug-statements
-    - id: requirements-txt-fixer
     - id: fix-encoding-pragma
     - id: fix-byte-order-marker
     # General quality checks
@@ -28,24 +27,18 @@ repos:
     - id: end-of-file-fixer
       exclude: ^test/data/.+
 
-- repo: https://github.com/ambv/black
-  rev: 24.10.0
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.17.3
   hooks:
-    - id: black
-      args: [--config=.black.toml]
+    - id: ruff-check
+      args: [--fix]
+    - id: ruff-format
 
 - repo: local
   hooks:
-    - id: cythonize-check
-      name: Cythonize
-      entry: pip install -e .
-      language: system
-      types: [python]
-      pass_filenames: false
-    # cythonize must come before the pytest to make sure we update all c code
     - id: pytest-check
       name: Check pytest
-      entry: pytest
+      entry: uv run --group test pytest
       language: system
       pass_filenames: false
       always_run: true
