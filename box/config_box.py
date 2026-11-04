@@ -238,7 +238,8 @@ class ConfigBox(Box):
         if isinstance(item, (bool, int)):
             return bool(item)
 
-        if isinstance(item, str) and item.lower() in ("n", "no", "false", "f", "0"):
+        # The configparser false values, plus "n" and "f"
+        if isinstance(item, str) and item.strip().lower() in ("n", "no", "false", "f", "0", "off"):
             return False
 
         return True if item else False

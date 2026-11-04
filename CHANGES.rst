@@ -31,6 +31,9 @@ Changes
 * Fixing frozen BoxList copy.deepcopy and pickle leaving the contained Boxes unfrozen
 * Fixing unpickled BoxList re-creating its Boxes with default options (box_dots, box_class, default_box and so on were lost). BoxList pickles made by earlier versions still load
 * Removing the tomli and toml read fallbacks, TOML is always read with tomllib (part of Python 3.11+). Writing still uses tomli-w, or the toml package if installed
+* Fixing dict | Box and dict + Box returning a Box without the right side's options (box_dots, default_box, box_class and so on)
+* Fixing default_box_attr with classes such as list, int or set raising an error, they now work like defaultdict factories (list gives a BoxList). Only required parameters of a default_box_attr function have to be named key or box_instance
+* Fixing ConfigBox.bool treating "off" as True, it now matches the configparser false values
 * Reaching 100% line and branch test coverage, enforced in CI
 * Updating development dependencies to their latest versions (pytest 9, pytest-cov 7, mypy 2, twine 7, Cython 3.3.1, pre-commit-hooks 6)
 * Fixing Box(default_box=True) pop() of a missing key and argparse namespaces (hasattr then delattr) with default_box_create_on_get=False

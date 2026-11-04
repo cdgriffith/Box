@@ -56,7 +56,7 @@ class TestBoxPaths:
         def bad(name):
             return name
 
-        with pytest.raises(BoxError, match="can only have the arguments"):
+        with pytest.raises(BoxError, match="only have the required arguments .key. and .box_instance., not .name."):
             Box(default_box=True, default_box_attr=bad).hi
 
     def test_create_on_get_dotted_through_non_container(self):

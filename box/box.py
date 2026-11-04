@@ -341,12 +341,17 @@ class Box(dict):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
 
-        new_box = other.copy()
-        if not isinstance(other, Box):
-            new_box = self._box_config["box_class"](new_box)
+        new_box = other.copy() if isinstance(other, Box) else self.__new_from_plain(other)
         new_box.merge_update(self, _force_unfrozen=True)  # type: ignore[attr-defined]
         new_box._box_config["frozen_box"] = self._box_config["frozen_box"]  # type: ignore[attr-defined]
         return new_box
+
+    def __new_from_plain(self, other):
+        """A Box of this box's class and options (unfrozen, top level) holding a plain dict's data"""
+        config = self.__box_config()
+        config["frozen_box"] = False
+        config.pop("box_namespace")
+        return self._box_config["box_class"](other, **config)
 
     def __iadd__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
@@ -366,9 +371,7 @@ class Box(dict):
     def __ror__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
-        new_box = other.copy()
-        if not isinstance(other, Box):
-            new_box = self._box_config["box_class"](new_box)
+        new_box = other.copy() if isinstance(other, Box) else self.__new_from_plain(other)
         new_box._box_config["frozen_box"] = False  # type: ignore[attr-defined]
         new_box.update(self)  # type: ignore[attr-defined]
         new_box._box_config["frozen_box"] = self._box_config["frozen_box"]  # type: ignore[attr-defined]
@@ -570,28 +573,31 @@ class Box(dict):
             value = self._box_config["box_class"](**self.__box_config(extra_namespace=item))
         elif isinstance(default_value, dict):
             value = self._box_config["box_class"](**self.__box_config(extra_namespace=item), **default_value)
-        elif isinstance(default_value, list):
+        elif isinstance(default_value, list) or default_value is list:
             value = box.BoxList(**self.__box_config(extra_namespace=item))
         elif isinstance(default_value, Callable):
+            # Parameters named key / box_instance receive the missing key and this box. Any other
+            # parameter must be optional, so plain factories such as int, set or a lambda work too.
             args = []
             kwargs = {}
-            p_sigs = [
-                p.name
-                for p in signature(default_value).parameters.values()
-                if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
-            ]
-            k_sigs = [p.name for p in signature(default_value).parameters.values() if p.kind is p.KEYWORD_ONLY]
-            for name in p_sigs:
-                if name not in ("key", "box_instance"):
-                    raise BoxError("default_box_attr can only have the arguments 'key' and 'box_instance'")
-            if "key" in p_sigs:
-                args.append(item)
-            if "box_instance" in p_sigs:
-                args.insert(p_sigs.index("box_instance"), self)
-            if "key" in k_sigs:
-                kwargs["key"] = item
-            if "box_instance" in k_sigs:
-                kwargs["box_instance"] = self
+            try:
+                params = list(signature(default_value).parameters.values())
+            except (TypeError, ValueError):  # pragma: no cover (callables without a readable signature)
+                params = []
+            for param in params:
+                if param.kind in (param.VAR_POSITIONAL, param.VAR_KEYWORD):
+                    continue
+                if param.name in ("key", "box_instance"):
+                    passed = item if param.name == "key" else self
+                    if param.kind is param.POSITIONAL_ONLY:
+                        args.append(passed)
+                    else:
+                        kwargs[param.name] = passed
+                elif param.default is param.empty:
+                    raise BoxError(
+                        "default_box_attr can only have the required arguments 'key' and 'box_instance', "
+                        f"not {param.name!r}"
+                    )
             value = default_value(*args, **kwargs)
         elif hasattr(default_value, "copy"):
             value = default_value.copy()
