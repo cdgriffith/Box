@@ -50,6 +50,22 @@ class TestBoxList:
         assert isinstance(new_list[1], BoxList)
         assert not isinstance(new_list.to_list(), BoxList)
 
+    @pytest.mark.parametrize("falsey", [False, True])
+    def test_box_list_does_not_require_iterable_truth_value(self, falsey):
+        # 2026-10-10: Iterable inputs can be falsey or have no boolean value.
+        class Rows:
+            def __iter__(self):
+                return iter([{"value": 1}])
+
+            def __bool__(self):
+                if falsey:
+                    return False
+                raise ValueError("ambiguous truth value")
+
+        result = BoxList(Rows())
+        assert len(result) == 1
+        assert result[0].value == 1
+
     def test_frozen_list(self):
         bl = BoxList([5, 4, 3], frozen_box=True)
         with pytest.raises(BoxError):
