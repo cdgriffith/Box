@@ -35,6 +35,10 @@ from box.exceptions import BoxError, BoxTypeError
 _list_pos_re = re.compile(r"\[(\d+)\]")
 
 
+def _frozen_box_list_method(*args, **kwargs):
+    raise BoxError("BoxList is frozen")
+
+
 class BoxList(list):
     """
     Drop in replacement of list, that converts added objects to Box or BoxList
@@ -59,12 +63,8 @@ class BoxList(list):
                 self.append(x)
         self.box_org_ref = None
         if box_options.get("frozen_box"):
-
-            def frozen(*args, **kwargs):
-                raise BoxError("BoxList is frozen")
-
             for method in ["append", "extend", "insert", "pop", "remove", "reverse", "sort"]:
-                self.__setattr__(method, frozen)
+                self.__setattr__(method, _frozen_box_list_method)
 
     def __getitem__(self, item):
         if self.box_options.get("box_dots") and isinstance(item, str) and item.startswith("["):

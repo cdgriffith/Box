@@ -4,6 +4,7 @@
 
 import json
 import os
+import pickle
 import shutil
 import sys
 import platform
@@ -89,6 +90,54 @@ class TestBoxList:
         assert bl2[0] == 4
         bl2[1] = 4
         assert bl2[1] == 4
+
+    def test_frozen_list_pickle(self):
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            bl = BoxList([5, 4, 3], frozen_box=True)
+            dumped = pickle.dumps(bl, protocol=protocol)
+            loaded = pickle.loads(dumped)
+            assert loaded == [5, 4, 3]
+            assert loaded.box_options.get("frozen_box") is True
+            with pytest.raises(BoxError):
+                loaded.append(2)
+            with pytest.raises(BoxError):
+                loaded.extend([1])
+            with pytest.raises(BoxError):
+                loaded.pop(0)
+            with pytest.raises(BoxError):
+                loaded.remove(5)
+            with pytest.raises(BoxError):
+                loaded.insert(0, 9)
+            with pytest.raises(BoxError):
+                loaded.reverse()
+            with pytest.raises(BoxError):
+                loaded.sort()
+            with pytest.raises(BoxError):
+                del loaded[0]
+            with pytest.raises(BoxError):
+                loaded[0] = 99
+
+            empty_bl = BoxList([], frozen_box=True)
+            empty_dumped = pickle.dumps(empty_bl, protocol=protocol)
+            empty_loaded = pickle.loads(empty_dumped)
+            assert empty_loaded == []
+            assert empty_loaded.box_options.get("frozen_box") is True
+            with pytest.raises(BoxError):
+                empty_loaded.append(1)
+
+    def test_box_list_pickle(self):
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            bl = BoxList([1, 2, 3])
+            dumped = pickle.dumps(bl, protocol=protocol)
+            loaded = pickle.loads(dumped)
+            assert loaded == [1, 2, 3]
+            assert not loaded.box_options.get("frozen_box")
+            loaded.append(4)
+            assert loaded == [1, 2, 3, 4]
+            loaded[0] = 9
+            assert loaded[0] == 9
+            del loaded[0]
+            assert loaded == [2, 3, 4]
 
     def test_box_list_to_json(self):
         bl = BoxList([{"item": 1, "CamelBad": 2}])
