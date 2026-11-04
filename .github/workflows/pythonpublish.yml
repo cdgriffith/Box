@@ -36,7 +36,7 @@ jobs:
     - name: Build and check
       run: |
         uv build
-        uvx twine==6.2.0 check dist/*
+        uvx twine==7.0.0 check dist/*
 
     - name: Upload distribution artifact
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
@@ -70,12 +70,12 @@ jobs:
     - name: Install build dependencies
       run: |
         uv venv --python "${{ steps.setup-python.outputs.python-path }}"
-        uv pip install "setuptools>=77" wheel "Cython>=3.3.0"
+        uv pip install "setuptools>=77" wheel "Cython>=3.3.1"
     # No build isolation so the Cython installed above is used to build the compiled wheel
     - name: Build and check
       run: |
         uv build --wheel --no-build-isolation
-        uvx twine==6.2.0 check dist/*
+        uvx twine==7.0.0 check dist/*
     - name: Upload wheel artifact
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
       with:

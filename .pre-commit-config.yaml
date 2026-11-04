@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v5.0.0
+  rev: v6.0.0
   hooks:
     # Identify invalid files
     - id: check-ast
@@ -16,7 +16,6 @@ repos:
     # Python checks
     - id: check-docstring-first
     - id: debug-statements
-    - id: fix-encoding-pragma
     - id: fix-byte-order-marker
     # General quality checks
 #    - id: mixed-line-ending
@@ -44,8 +43,8 @@ repos:
       always_run: true
 
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: 'v1.13.0'
+  rev: 'v2.4.1'
   hooks:
     - id: mypy
       types: [python]
-      additional_dependencies: [ruamel.yaml,toml,types-toml,tomli,tomli-w,msgpack,types-PyYAML]
+      additional_dependencies: [ruamel.yaml, tomli-w, msgpack, types-PyYAML, toon-format]

@@ -138,12 +138,12 @@ class BoxList(list):
             return super().__setitem__(key, converted_items())
         super().__setitem__(key, self._convert(value))
 
-    def __iadd__(self, value):
+    def __iadd__(self, value):  # type: ignore[misc]  # list accepts any iterable for +=, not only lists
         if self.box_options.get("frozen_box"):
             raise BoxError("BoxList is frozen")
         return super().__iadd__(value)
 
-    def __imul__(self, value):
+    def __imul__(self, value):  # type: ignore[misc]
         if self.box_options.get("frozen_box"):
             raise BoxError("BoxList is frozen")
         return super().__imul__(value)

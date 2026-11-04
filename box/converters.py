@@ -9,7 +9,7 @@ import tomllib
 from io import StringIO
 from os import PathLike
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
 
 from box.exceptions import BoxError
 
@@ -375,6 +375,7 @@ def _to_csv(
         if list(row.keys()) != csv_column_names:
             raise BoxError("BoxList must contain the same dictionary structure for every item to convert to csv")
 
+    out_data: IO[str]
     if filename:
         _exists(filename, create=True)
         out_data = open(filename, "w", encoding=encoding, errors=errors, newline="")

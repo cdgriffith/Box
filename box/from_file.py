@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+from collections.abc import Callable
 from json import JSONDecodeError
 from os import PathLike
 from pathlib import Path
@@ -90,7 +91,7 @@ def _to_toon(file, encoding, errors, **kwargs):
         return BoxList.from_toon(filename=file, encoding=encoding, errors=errors, **kwargs)
 
 
-converters = {
+converters: dict[str, Callable] = {
     "json": _to_json,
     "jsn": _to_json,
     "yaml": _to_yaml,
@@ -101,7 +102,7 @@ converters = {
     "msgpack": _to_msgpack,
     "pack": _to_msgpack,
     "csv": _to_csv,
-}  # type: dict[str, Callable]
+}
 
 
 def box_from_file(

@@ -32,6 +32,7 @@ Changes
 * Fixing unpickled BoxList re-creating its Boxes with default options (box_dots, box_class, default_box and so on were lost). BoxList pickles made by earlier versions still load
 * Removing the tomli and toml read fallbacks, TOML is always read with tomllib (part of Python 3.11+). Writing still uses tomli-w, or the toml package if installed
 * Reaching 100% line and branch test coverage, enforced in CI
+* Updating development dependencies to their latest versions (pytest 9, pytest-cov 7, mypy 2, twine 7, Cython 3.3.1, pre-commit-hooks 6)
 * Fixing Box(default_box=True) pop() of a missing key and argparse namespaces (hasattr then delattr) with default_box_create_on_get=False
 * Adding #269 internal-only attributes for Box subclasses via _box_internal_attrs (thanks to bwanshoom and gtkacz for the suggestion)
 * Adding support for Python 3.15
