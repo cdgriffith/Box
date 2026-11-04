@@ -119,3 +119,4 @@ Suggestions and bug reporting:
 - Sébastien Weber (seb5g)
 - Ward Loos (wrdls)
 - bwanshoom
+- tan_unique (vinson0522)

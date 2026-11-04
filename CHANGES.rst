@@ -44,6 +44,7 @@ Changes
 * Moving package metadata from setup.py to pyproject.toml (PEP 621), setup.py now only handles the optional Cython build
 * Moving development and CI to uv (dependency groups and uv.lock replace the requirements files) and ruff (replaces black)
 * Fixing optional dependency installation examples in README (thanks to Likio3000)
+* Fixing #264 ruamel.yaml ScalarFloat / ScalarInt / ScalarBoolean values left as non-builtin types after from_yaml, which broke libraries expecting float / int / bool (thanks to tan_unique)
 
 Version 7.4.1
 -------------
