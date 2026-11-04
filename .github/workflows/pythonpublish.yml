@@ -49,12 +49,9 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install uv
       uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
-    - name: Use the matrix interpreter for uv
-      shell: bash
-      run: echo "UV_PYTHON=${{ steps.setup-python.outputs.python-path }}" >> "$GITHUB_ENV"
     - name: Install build dependencies
       run: |
-        uv venv
+        uv venv --python "${{ steps.setup-python.outputs.python-path }}"
         uv pip install "setuptools>=77" wheel "Cython>=3.3.0"
     - name: Build and publish
       env:

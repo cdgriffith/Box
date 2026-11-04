@@ -40,12 +40,9 @@ jobs:
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
         with:
           enable-cache: true
-      - name: Use the matrix interpreter for uv
-        shell: bash
-        run: echo "UV_PYTHON=${{ steps.setup-python.outputs.python-path }}" >> "$GITHUB_ENV"
       - name: Install dependencies
         # Cython is part of the dev group, so the build below produces a compiled wheel
-        run: uv sync --group dev --no-install-project
+        run: uv sync --python "${{ steps.setup-python.outputs.python-path }}" --group dev --no-install-project
       - name: Run mypy
         if: "!startsWith(matrix.python-version, 'pypy')"
         run: uv run --no-sync mypy box
@@ -107,12 +104,9 @@ jobs:
       uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
       with:
         enable-cache: true
-    - name: Use the matrix interpreter for uv
-      shell: bash
-      run: echo "UV_PYTHON=${{ steps.setup-python.outputs.python-path }}" >> "$GITHUB_ENV"
     - name: Install dependencies
       run: |
-        uv sync --group dev --no-install-project
+        uv sync --python "${{ steps.setup-python.outputs.python-path }}" --group dev --no-install-project
         # Editable install without build isolation compiles box in place using the Cython from the dev group
         uv pip install -e . --no-build-isolation
     - name: Test with pytest
