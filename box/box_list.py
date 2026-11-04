@@ -104,7 +104,7 @@ class BoxList(list):
             if pos >= len(self) and self.box_options.get("default_box"):
                 self.extend([None] * (pos - len(self) + 1))
             if len(list_pos.group()) == len(key):
-                return super().__setitem__(pos, value)
+                return super().__setitem__(pos, self._convert(value))
             children = key[len(list_pos.group()) :].lstrip(".")
             if self.box_options.get("default_box"):
                 # Only replace the element at ``pos`` with a fresh container when it is
@@ -118,7 +118,15 @@ class BoxList(list):
                 elif not isinstance(current, box.Box):
                     super().__setitem__(pos, self.box_options.get("box_class")(**self.box_options))
             return super().__getitem__(pos).__setitem__(children, value)
-        super().__setitem__(key, value)
+        if isinstance(key, slice):
+
+            def converted_items():
+                for item in value:
+                    yield self._convert(item)
+
+            # Let list validate the slice before consuming replacement values.
+            return super().__setitem__(key, converted_items())
+        super().__setitem__(key, self._convert(value))
 
     def __iadd__(self, value):
         if self.box_options.get("frozen_box"):

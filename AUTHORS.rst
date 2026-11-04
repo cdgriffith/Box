@@ -104,3 +104,4 @@ Suggestions and bug reporting:
 - Sébastien Weber (seb5g)
 - Ward Loos (wrdls)
 - Vitaliy Voloshin (vitalivo)
+- x0Lazarus
