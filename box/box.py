@@ -774,6 +774,11 @@ class Box(dict):
             super().__delitem__(key)
         except KeyError as err:
             raise BoxKeyError(str(err)) from _exception_cause(err)
+        if self._box_config["conversion_box"]:
+            safe_key = self._safe_attr(key)
+            safe_keys = self._box_config["__safe_keys"]
+            if safe_key in safe_keys and safe_keys[safe_key] == key:
+                del safe_keys[safe_key]
 
     def __delattr__(self, item):
         if self._box_config["frozen_box"]:
@@ -796,7 +801,6 @@ class Box(dict):
                 safe_key = self._safe_attr(item)
                 if safe_key in self._box_config["__safe_keys"]:
                     self.__delitem__(self._box_config["__safe_keys"][safe_key])
-                    del self._box_config["__safe_keys"][safe_key]
                     return
             raise BoxKeyError(str(err)) from _exception_cause(err)
 

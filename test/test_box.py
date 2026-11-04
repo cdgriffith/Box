@@ -60,6 +60,37 @@ class TestBox:
         yield
         shutil.rmtree(str(tmp_dir), ignore_errors=True)
 
+    @pytest.mark.parametrize("removal", ["item", "attribute", "converted_attribute", "pop", "popitem"])
+    def test_removed_key_releases_conversion_alias(self, removal):
+        bx = Box({"a b": 1}, box_duplicates="error")
+        if removal == "item":
+            del bx["a b"]
+        elif removal == "attribute":
+            delattr(bx, "a b")
+        elif removal == "converted_attribute":
+            del bx.a_b
+        elif removal == "pop":
+            bx.pop("a b")
+        else:
+            bx.popitem()
+
+        bx["a-b"] = 2
+        assert bx.to_dict() == {"a-b": 2}
+        assert bx.a_b == 2
+        with pytest.raises(BoxError):
+            bx["a b"] = 3
+
+    def test_deleting_none_key_after_conversion_alias_owner(self):
+        bx = Box({None: 1, "None": 2})
+        del bx["None"]
+        del bx[None]
+        assert bx.to_dict() == {}
+
+    def test_deleting_colliding_key_keeps_other_conversion_alias(self):
+        bx = Box({"a b": 1, "a-b": 2})
+        del bx["a b"]
+        assert bx.a_b == 2
+
     def test_safe_attrs(self):
         assert Box()._safe_attr("BAD!KEY!1") == "BAD_KEY_1"
         assert Box(camel_killer_box=True)._safe_attr("BAD!KEY!2") == "bad_key_2"
