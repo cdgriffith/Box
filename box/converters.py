@@ -241,27 +241,30 @@ def _to_yaml(
             raise BoxError(MISSING_PARSER_ERROR)
 
 
-
 def _ruamel_to_builtin(obj):
-    """Convert ruamel.yaml scalar types to plain Python builtins.
+    """Convert ruamel.yaml numeric and boolean scalar types to plain Python builtins.
 
     ScalarFloat/ScalarInt survive Box.to_dict() and break serializers
     that only accept builtin float/int (issue #264).
+
+    Only numbers and booleans are converted. ruamel string types (literal and folded
+    blocks, quoted strings) are left alone so to_yaml keeps their formatting, and
+    ScalarBoolean (used for anchored booleans) is not an int subclass, so it is checked
+    explicitly rather than falling through to int.
     """
     if isinstance(obj, dict):
-        return {k: _ruamel_to_builtin(v) for k, v in obj.items()}
+        return {_ruamel_to_builtin(k): _ruamel_to_builtin(v) for k, v in obj.items()}
     if isinstance(obj, list):
         return [_ruamel_to_builtin(v) for v in obj]
-    module = type(obj).__module__
-    if module.startswith("ruamel"):
-        if isinstance(obj, bool):
+    if type(obj).__module__.startswith("ruamel"):
+        from ruamel.yaml.scalarbool import ScalarBoolean
+
+        if isinstance(obj, (bool, ScalarBoolean)):
             return bool(obj)
         if isinstance(obj, int):
             return int(obj)
         if isinstance(obj, float):
             return float(obj)
-        if isinstance(obj, str):
-            return str(obj)
     return obj
 
 

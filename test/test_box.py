@@ -2315,3 +2315,38 @@ class TestCreateOnSetWithoutCreateOnGet:
     def test_no_default_box_unchanged(self):
         with pytest.raises(BoxKeyError):
             Box().x.y = 1
+
+
+class TestRuamelScalarConversion:
+    """from_yaml returns builtin numbers and bools without disturbing strings (#264, PR #321)."""
+
+    def test_anchored_boolean_stays_bool(self):
+        bx = Box.from_yaml("a: &x true\nb: *x\nc: false\n")
+        assert bx.a is True and bx.b is True and bx.c is False
+
+    def test_anchored_boolean_round_trips_as_bool(self):
+        assert Box.from_yaml("a: &x true\nb: *x\n").to_yaml() == "a: true\nb: true\n"
+        assert Box.from_yaml("a: &x true\n").to_json() == '{"a": true}'
+
+    def test_multiline_string_dump_unchanged(self):
+        bx = Box.from_yaml("lit: |\n  line1\n  line2\n")
+        assert bx.to_yaml() == "lit: |\n  line1\n  line2\n"
+
+    def test_preserve_quotes_attr_still_effective(self):
+        bx = Box.from_yaml("a: 'x'\n", ruamel_attrs={"preserve_quotes": True})
+        assert bx.to_yaml() == "a: 'x'\n"
+
+    def test_numbers_become_builtin(self):
+        bx = Box.from_yaml("f: 1.10\ni: 0x1F\nu: 1_000\no: 0o17\nb: 0b101\n")
+        assert [type(v) for v in bx.values()] == [float, int, int, int, int]
+
+    def test_keys_are_builtin(self):
+        bx = Box.from_yaml("1.5: a\n", conversion_box=False)
+        assert [type(k) for k in bx.keys()] == [float]
+
+    def test_pyyaml_backend_unaffected(self, monkeypatch):
+        import box.converters as cv
+
+        monkeypatch.setattr(cv, "ruamel_available", False)
+        bx = Box.from_yaml("a: 1.10\nb: true\n")
+        assert bx.to_dict() == {"a": 1.1, "b": True}
