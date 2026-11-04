@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 # Abstract converter functions for use in any Box class
-
 import csv
 import json
 from collections.abc import Callable
@@ -19,7 +18,7 @@ ruamel_available = True
 msgpack_available = True
 
 try:
-    from ruamel.yaml import version_info, YAML
+    from ruamel.yaml import YAML, version_info
 except ImportError:
     ruamel_available = False
 else:
@@ -111,7 +110,8 @@ except ImportError:
 toon_available = True
 
 try:
-    from toon_format import encode as toon_encode, decode as toon_decode
+    from toon_format import decode as toon_decode
+    from toon_format import encode as toon_encode
 except ImportError:
     toon_available = False
 

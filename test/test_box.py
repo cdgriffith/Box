@@ -8,9 +8,17 @@ import pickle
 import platform
 import shutil
 import warnings
+from io import StringIO
 from multiprocessing import Queue
 from pathlib import Path
-from io import StringIO
+
+import pytest
+from ruamel.yaml import YAML
+
+from box import Box, BoxError, BoxKeyError, BoxList, ConfigBox, DDBox, SBox
+from box.box import _camel_killer, _get_dot_paths, _recursive_tuples  # type: ignore
+from box.converters import BOX_PARAMETERS
+from box.exceptions import BoxWarning
 from test.common import (
     data_json_file,
     data_yaml_file,
@@ -24,14 +32,6 @@ from test.common import (
     tmp_toon_file,
     tmp_yaml_file,
 )
-
-import pytest
-from ruamel.yaml import YAML
-
-from box import Box, BoxError, BoxKeyError, BoxList, ConfigBox, SBox, DDBox
-from box.exceptions import BoxWarning
-from box.box import _get_dot_paths, _camel_killer, _recursive_tuples  # type: ignore
-from box.converters import BOX_PARAMETERS
 
 
 class _SubclassBox(Box):
@@ -1205,7 +1205,7 @@ a.b: c
             box_dots=True,
             box_dots_exclude=r"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+",
         )
-        assert bx["0.0.0.1"] == True
+        assert bx["0.0.0.1"] == True  # noqa: E712
         with pytest.raises(BoxKeyError):
             del bx["0"]
 
@@ -1618,7 +1618,7 @@ a.b: c
         assert box["b"] == 2
         assert box["c"] == "test"
         assert isinstance(box["d"], Box)
-        assert box["d"]["e"] == True
+        assert box["d"]["e"] == True  # noqa: E712
         assert isinstance(box["f"], BoxList)
         assert box["f"][1] == 2
 
@@ -1633,7 +1633,7 @@ a.b: c
         assert box.b == 2
         assert box.c.e == "test"
         assert isinstance(box["d"], Box)
-        assert box.d.e == True
+        assert box.d.e == True  # noqa: E712
         assert isinstance(box["f"], BoxList)
         assert box.f[1] == 2
 
@@ -1737,7 +1737,7 @@ a.b: c
         assert box.field == 5
         assert box._field == 5
         del box.field
-        assert not "_field" in box
+        assert "_field" not in box
 
     def test_box_namespace(self):
         bx = Box(default_box=True)

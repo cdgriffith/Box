@@ -26,8 +26,8 @@ from box.converters import (
     _to_toon,
     _to_yaml,
     msgpack_available,
-    toon_available,
     toml_read_library,
+    toon_available,
     yaml_available,
 )
 from box.exceptions import BoxError, BoxTypeError

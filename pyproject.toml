@@ -98,6 +98,10 @@ line-ending = "auto"
 # Deliberately conservative: pycodestyle, pyflakes and import sorting only
 select = ["E", "F", "W", "I"]
 
+[tool.ruff.lint.per-file-ignores]
+# The package imports are order sensitive (circular imports) and re-exported on purpose
+"box/__init__.py" = ["F401", "I001"]
+
 [tool.ruff.lint.isort]
 # "test" is also a stdlib module name, make sure our test package is sorted with the first party code
 known-first-party = ["box", "test"]

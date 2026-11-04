@@ -1,7 +1,8 @@
-from _typeshed import Incomplete
 from collections.abc import Generator, Mapping
 from os import PathLike
 from typing import Any, Literal
+
+from _typeshed import Incomplete
 
 class Box(dict):
     def __new__(

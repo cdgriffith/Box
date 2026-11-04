@@ -1,7 +1,8 @@
-from box.box import Box as Box
-from box.box_list import BoxList as BoxList
 from os import PathLike
 from typing import Any
+
+from box.box import Box as Box
+from box.box_list import BoxList as BoxList
 
 def box_from_file(
     file: str | PathLike,

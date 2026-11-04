@@ -2,15 +2,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-import sys
-from collections.abc import Callable
 from json import JSONDecodeError
 from os import PathLike
 from pathlib import Path
 
 from box.box import Box
 from box.box_list import BoxList
-from box.converters import msgpack_available, toon_available, toml_read_library, yaml_available, toml_decode_error
+from box.converters import msgpack_available, toml_decode_error, toml_read_library, toon_available, yaml_available
 from box.exceptions import BoxError
 
 try:

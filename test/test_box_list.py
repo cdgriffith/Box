@@ -7,17 +7,15 @@ import operator
 import os
 import pickle
 import shutil
-import sys
-import platform
-from pathlib import Path
 from io import StringIO
-from test.common import test_root, tmp_dir
+from pathlib import Path
 
 import pytest
 from ruamel.yaml import YAML
 
 from box import Box, BoxError, BoxList
 from box.converters import toml_read_library, toml_write_library
+from test.common import test_root, tmp_dir
 
 
 class TestBoxList:
@@ -386,7 +384,7 @@ class TestBoxList:
         bl = BoxList.from_csv(filename=Path(test_root, "data", "csv_file.csv"))
         assert bl[1].Name == "Sam"
         b2 = BoxList.from_csv(
-            "Number,Name,Country\r\n1,Chris,US\r\n2,Sam" ",US\r\n3,Jess,US\r\n4,Frank,UK\r\n5,Demo,CA\r\n"
+            "Number,Name,Country\r\n1,Chris,US\r\n2,Sam,US\r\n3,Jess,US\r\n4,Frank,UK\r\n5,Demo,CA\r\n"
         )
         assert b2[2].Name == "Jess"
 

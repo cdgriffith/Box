@@ -4,7 +4,6 @@ import json
 import os
 import shutil
 from pathlib import Path
-from test.common import movie_data, tmp_dir
 
 import msgpack
 import pytest
@@ -12,6 +11,7 @@ from ruamel.yaml import YAML
 
 from box import Box, BoxError, BoxList
 from box.converters import _from_toml, _to_json, _to_msgpack, _to_toml, _to_yaml
+from test.common import movie_data, tmp_dir
 
 toml_string = """[movies.Spaceballs]
 imdb_stars = 7.1
@@ -141,5 +141,5 @@ class TestConverters:
 
     def test_to_yaml_ruamel(self):
         movie_string = _to_yaml(movie_data, ruamel_attrs={"width": 12})
-        multiline_except = """    - name: \n        Roger\n        Rees\n      imdb: \n        nm0715953\n      role: \n        Sheriff\n        of \n        Rottingham\n    - name: \n        Amy \n        Yasbeck"""
+        multiline_except = """    - name: \n        Roger\n        Rees\n      imdb: \n        nm0715953\n      role: \n        Sheriff\n        of \n        Rottingham\n    - name: \n        Amy \n        Yasbeck"""  # noqa: E501
         assert multiline_except in movie_string

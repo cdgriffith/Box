@@ -17,7 +17,6 @@ from keyword import iskeyword
 from os import PathLike
 from typing import Any, Literal
 
-
 import box
 from box.converters import (
     BOX_PARAMETERS,
@@ -32,9 +31,9 @@ from box.converters import (
     _to_toon,
     _to_yaml,
     msgpack_available,
-    toon_available,
     toml_read_library,
     toml_write_library,
+    toon_available,
     yaml_available,
 )
 from box.exceptions import BoxError, BoxKeyError, BoxTypeError, BoxValueError, BoxWarning
@@ -741,8 +740,9 @@ class Box(dict):
         not stored in its parent. The first time something is actually written to that child, attach it
         (and any ephemeral ancestors) to the parent so `b.a.b = 1` creates `a`.
 
-        Nothing is attached if the key has been given a real value since the child was handed out: the stale child is left detached rather than overwriting
-        data, so writes to it are lost just like any other ephemeral lookup.
+        Nothing is attached if the key has been given a real value since the child was handed out:
+        the stale child is left detached rather than overwriting data, so writes to it are lost
+        just like any other ephemeral lookup.
         """
         pending = self._box_config.pop("__pending_parent", None)
         if pending is None:
@@ -1085,7 +1085,7 @@ class Box(dict):
             return attr
 
         if sum(1 for character in attr if character.isidentifier() and not iskeyword(character)) == 0:
-            attr = f'{self.__box_config()["box_safe_prefix"]}{attr}'
+            attr = f"{self.__box_config()['box_safe_prefix']}{attr}"
             if attr.isidentifier() and not iskeyword(attr):
                 return attr
 
@@ -1108,10 +1108,10 @@ class Box(dict):
         except (ValueError, IndexError):
             pass
         else:
-            out = f'{self.__box_config()["box_safe_prefix"]}{out}'
+            out = f"{self.__box_config()['box_safe_prefix']}{out}"
 
         if iskeyword(out):
-            out = f'{self.__box_config()["box_safe_prefix"]}{out}'
+            out = f"{self.__box_config()['box_safe_prefix']}{out}"
 
         return out
 
@@ -1124,7 +1124,7 @@ class Box(dict):
         safe_item = self._safe_attr(item)
 
         if safe_item in self._box_config["__safe_keys"] and self._box_config["__safe_keys"][safe_item] != item:
-            dups = [f"{item}({safe_item})", f'{self._box_config["__safe_keys"][safe_item]}({safe_item})']
+            dups = [f"{item}({safe_item})", f"{self._box_config['__safe_keys'][safe_item]}({safe_item})"]
             if self._box_config["box_duplicates"].startswith("warn"):
                 warnings.warn(f"Duplicate conversion attributes exist: {dups}", BoxWarning)
             else:
