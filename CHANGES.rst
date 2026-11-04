@@ -13,6 +13,8 @@ Version 7.5.0
 Version 7.4.1
 -------------
 
+* Allow reassigning an existing key when duplicate conversion checks are enabled.
+
 * Fixing #303 Wrong version number (7.3.3) in 7.4.0 release (thanks to Michał Górny)
 
 Version 7.4.0
