@@ -858,7 +858,7 @@ class Box(dict):
         if self._box_config["frozen_box"]:
             raise BoxError("Box is frozen")
         try:
-            key = next(self.__iter__())
+            key = next(reversed(super().keys()))  # O(1), most recently inserted like dict
         except StopIteration:
             raise BoxKeyError("Empty box") from None
         return key, self.pop(key)

@@ -1133,7 +1133,8 @@ a.b: c
         assert bx.pop("c", True) is not True
 
     def test_pop_items(self):
-        bx = Box(a=4)
+        bx = Box(a=4, b=5)
+        assert bx.popitem() == ("b", 5)
         assert bx.popitem() == ("a", 4)
         with pytest.raises(BoxKeyError):
             assert bx.popitem()
@@ -2015,3 +2016,32 @@ def test_copy_preserves_configbox_sbox_ddbox_types():
         assert type(copy.copy(b)) is cls
         assert type(copy.deepcopy(b)) is cls
         assert b.copy() == b
+
+
+def test_popitem_is_lifo_like_dict():
+    for cls in (Box, ConfigBox, SBox):
+        bx = cls(a=1, b=2, c=3)
+        ref = {"a": 1, "b": 2, "c": 3}
+        while ref:
+            assert bx.popitem() == ref.popitem()
+        with pytest.raises(BoxKeyError):
+            bx.popitem()
+
+
+def test_popitem_lifo_nested_value_and_reinsert():
+    bx = Box(a=1, b={"x": 1}, c=3)
+    del bx["a"]
+    bx["a"] = 9  # re-inserted keys move to the end
+    assert bx.popitem() == ("a", 9)
+    assert bx.popitem() == ("c", 3)
+    key, value = bx.popitem()
+    assert key == "b" and isinstance(value, Box)
+
+
+def test_popitem_frozen_and_alias_cleanup():
+    with pytest.raises(BoxError):
+        Box(a=1, frozen_box=True).popitem()
+    bx = Box({"a b": 1, "c": 2})
+    assert bx.popitem() == ("c", 2)
+    assert not hasattr(bx, "c")
+    assert bx.a_b == 1

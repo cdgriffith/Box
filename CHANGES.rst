@@ -4,6 +4,7 @@ Changelog
 Version 8.0.0
 -------------
 
+* BREAKING CHANGE: Box.popitem() now removes the most recently inserted item (LIFO) like dict.popitem(), instead of the first inserted item (thanks to machines-6657)
 * Adding #269 internal-only attributes for Box subclasses via _box_internal_attrs (thanks to bwanshoom and gtkacz for the suggestion)
 * Adding support for Python 3.15
 * Adding manylinux Cython wheels for Python 3.14 and 3.15
