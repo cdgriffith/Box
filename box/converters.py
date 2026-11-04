@@ -156,12 +156,13 @@ def _exists(filename: str | PathLike, create: bool = False) -> Path:
 def _to_json(
     obj, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict", **json_kwargs
 ):
+    json_kwargs.setdefault("ensure_ascii", False)
     if filename:
         _exists(filename, create=True)
         with open(filename, "w", encoding=encoding, errors=errors) as f:
-            json.dump(obj, f, ensure_ascii=False, **json_kwargs)
+            json.dump(obj, f, **json_kwargs)
     else:
-        return json.dumps(obj, ensure_ascii=False, **json_kwargs)
+        return json.dumps(obj, **json_kwargs)
 
 
 def _from_json(

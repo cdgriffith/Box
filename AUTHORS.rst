@@ -44,6 +44,7 @@ Code contributions:
 - Abhinav Maurya (Fire162)
 - Arindam Sikder (arindamsikder)
 - shguild
+- fhgffy
 
 
 Suggestions and bug reporting:
