@@ -237,6 +237,10 @@ class Box(dict):
                 "box_namespace": box_namespace,
             }
         )
+        # Pickle reconstructs via __new__ + item assignment + __setstate__.
+        # Item assignment happens first, while this Box still has default options,
+        # so nested Box/BoxList values must be stored as-is (see __convert_and_store).
+        obj._box_config["__unpickling"] = True
         return obj
 
     def __init__(
@@ -491,6 +495,8 @@ class Box(dict):
     def __setstate__(self, state):
         self._box_config = state["_box_config"]
         self.__dict__.update(state)
+        self._box_config["__created"] = True
+        self._box_config["__unpickling"] = False
 
     def __process_dotted_key(self, item):
         if self._box_config["box_dots"] and isinstance(item, str):
@@ -580,6 +586,11 @@ class Box(dict):
             return super().__setitem__(item, value)
         # If the value has already been converted or should not be converted, return it as-is
         if self._box_config["box_intact_types"] and isinstance(value, self._box_config["box_intact_types"]):
+            return super().__setitem__(item, value)
+        # Pickle sets items before __setstate__, so this Box still has default
+        # options. Nested Box/BoxList objects already carry the correct config
+        # from their own unpickle; recreating them here would drop box_dots etc.
+        if self._box_config.get("__unpickling") and isinstance(value, (Box, box.BoxList)):
             return super().__setitem__(item, value)
         # This is the magic sauce that makes sub dictionaries into new box objects
         if isinstance(value, dict):
