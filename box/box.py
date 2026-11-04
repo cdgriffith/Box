@@ -18,18 +18,18 @@ from os import PathLike
 from typing import Any
 
 import box
+from box import comments as _comments
 from box.converters import (
     BOX_PARAMETERS,
     _from_json,
     _from_msgpack,
     _from_toml,
     _from_toon,
-    _from_yaml,
+    _from_yaml_with_comments,
     _to_json,
     _to_msgpack,
     _to_toml,
     _to_toon,
-    _to_yaml,
     msgpack_available,
     toml_read_library,
     toml_write_library,
@@ -269,6 +269,9 @@ class Box(dict):
         "to_toon",
         "from_toon",
         "merge_update",
+        "get_comment",
+        "set_comment",
+        "del_comment",
     ] + [attr for attr in dir({}) if not attr.startswith("_")]
 
     def __init_subclass__(cls, **kwargs):
@@ -320,6 +323,8 @@ class Box(dict):
                     self.__setitem__(k, v)
             else:
                 raise BoxValueError("First argument must be mapping or iterable")
+            if isinstance(args[0], Box):
+                args[0]._comment_copy_to(self)
         elif args:
             raise BoxTypeError(f"Box expected at most 1 argument, got {len(args)}")
 
@@ -501,7 +506,8 @@ class Box(dict):
         return self[key]
 
     def __copy_internals(self, new, deep=False, memo=None):
-        """Carry instance-only attributes listed in `_box_internal_attrs` over to `new`."""
+        """Carry instance-only attributes listed in `_box_internal_attrs`, and comments, over to `new`."""
+        self._comment_copy_to(new)
         for name in self._box_internal_attrs:
             if name in self.__dict__:
                 value = self.__dict__[name]
@@ -776,6 +782,82 @@ class Box(dict):
             parent._box_config["__safe_keys"][parent._safe_attr(key)] = key
         dict.__setitem__(parent, key, self)
 
+    def _comment_store(self, create: bool = True) -> Any:
+        store = self._box_config.get("__comments")
+        if store is None and create:
+            store = self._box_config["__comments"] = {}
+        return store
+
+    def _comment_document(self, create: bool = True) -> Any:
+        document = self._box_config.get("__comments_document")
+        if document is None and create:
+            document = self._box_config["__comments_document"] = {}
+        return document
+
+    def _comment_check_frozen(self):
+        if self._box_config["frozen_box"] and self._box_config["__created"]:
+            raise BoxError("Box is frozen")
+
+    def _comment_resolve(self, key):
+        """The stored key a key from YAML or the comment API refers to (camel_killer renames keys)."""
+        if dict.__contains__(self, key):
+            return key
+        if isinstance(key, str) and self.__camel_destructive():
+            converted = _camel_killer(key)
+            if dict.__contains__(self, converted):
+                return converted
+        return key
+
+    def _comment_owner(self, key):
+        """(container, key) that holds the comment for `key`, following box_dots paths."""
+        if key is None:
+            return self, None
+        resolved = self._comment_resolve(key)
+        if dict.__contains__(self, resolved):
+            return self, resolved
+        if self.__process_dotted_key(key):
+            first, children = _parse_box_dots(self, key)
+            first = self._comment_resolve(self.__dots_int_key(first))
+            if dict.__contains__(self, first):
+                child = dict.__getitem__(self, first)
+                if isinstance(child, Box):
+                    return child._comment_owner(child.__dots_int_key(children))
+                if isinstance(child, box.BoxList):
+                    return child._comment_owner(children)
+        raise BoxKeyError(f"{key!r} is not in the Box, comments can only be attached to existing keys")
+
+    def _comment_copy_to(self, other):
+        store = self._box_config.get("__comments")
+        if store:
+            other._comment_store().update(
+                {k: copy.deepcopy(v) for k, v in store.items() if dict.__contains__(other, k)}
+            )
+        document = self._box_config.get("__comments_document")
+        if document:
+            other._comment_document().update(copy.deepcopy(document))
+
+    # ---- Comments (#184): kept outside the data, written by to_yaml with ruamel.yaml ----
+
+    def get_comment(self, key: Any = None) -> dict | None:
+        """
+        Return the comments of `key` as ``{"before": text, "eol": text}`` (a position without a comment
+        is left out), or None. ``key=None`` returns the document comments ``{"start": ..., "end": ...}``.
+        With box_dots, `key` can be a dotted path.
+        """
+        return _comments.get_comment(self, key)
+
+    def set_comment(self, key: Any, text: Any, position: str | None = None) -> None:
+        """
+        Attach a comment to an existing key. `position` is "eol" (default, on the key's line) or
+        "before" (lines above the key, may contain newlines). ``key=None`` sets a document comment,
+        position "start" (default) or "end". An empty `text` removes the comment at that position.
+        """
+        _comments.set_comment(self, key, text, position)
+
+    def del_comment(self, key: Any = None) -> None:
+        """Remove every comment of `key` (``None``: the document comments)."""
+        _comments.del_comment(self, key)
+
     def __getstate__(self):
         # Ephemeral-child bookkeeping (a reference to the parent) must never be pickled
         state = self.__dict__.copy()
@@ -856,6 +938,9 @@ class Box(dict):
             super().__delitem__(key)
         except KeyError as err:
             raise BoxKeyError(str(err)) from _exception_cause(err)
+        store = self._box_config.get("__comments")
+        if store:
+            store.pop(key, None)
         if self._box_config["conversion_box"]:
             safe_key = self._safe_attr(key)
             safe_keys = self._box_config["__safe_keys"]
@@ -921,6 +1006,7 @@ class Box(dict):
             raise BoxError("Box is frozen")
         super().clear()
         self._box_config["__safe_keys"].clear()
+        self._box_config.pop("__comments", None)
 
     def popitem(self):
         if self._box_config["frozen_box"]:
@@ -1232,7 +1318,8 @@ class Box(dict):
             :param yaml_kwargs: additional arguments to pass to yaml.dump
             :return: string of YAML (if no filename provided)
             """
-            return _to_yaml(
+            return _comments.dump_yaml(
+                self,
                 self.to_dict(),
                 filename=filename,
                 default_flow_style=default_flow_style,
@@ -1266,12 +1353,17 @@ class Box(dict):
                 if arg in BOX_PARAMETERS:
                     box_args[arg] = kwargs.pop(arg)
 
-            data = _from_yaml(yaml_string=yaml_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
+            data, comments = _from_yaml_with_comments(
+                yaml_string=yaml_string, filename=filename, encoding=encoding, errors=errors, **kwargs
+            )
             if not data:
-                return cls(**box_args)
-            if not isinstance(data, dict):
+                result = cls(**box_args)
+            elif not isinstance(data, dict):
                 raise BoxError(f"yaml data not returned as a dictionary but rather a {type(data).__name__}")
-            return cls(data, **box_args)
+            else:
+                result = cls(data, **box_args)
+            _comments.apply_comments(result, comments)
+            return result
 
     else:
 

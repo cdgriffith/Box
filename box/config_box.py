@@ -120,6 +120,9 @@ class ConfigBox(Box):
         if existing is None or existing == key:
             return
         self._ci_check_frozen()
+        comments = self._box_config.get("__comments")
+        if comments and existing in comments:
+            comments[key] = comments.pop(existing)  # the comment stays with the key under its new spelling
         value = dict.__getitem__(self, existing)
         len_before = dict.__len__(self)
         dict.__delitem__(self, existing)
@@ -135,6 +138,10 @@ class ConfigBox(Box):
                 self._box_config["__safe_keys"][self._safe_attr(key)] = key
             dict.__setitem__(self, key, value)
             self._ci_after_write(key, len_before, False)
+
+    def _comment_resolve(self, key):
+        found = self._ci_key(key)
+        return found if found is not None else super()._comment_resolve(key)
 
     def __getitem__(self, item, _ignore_default=False):
         return super().__getitem__(self._ci_resolve(item), _ignore_default=_ignore_default)

@@ -3,6 +3,8 @@ from os import PathLike
 from typing import Any
 
 yaml_available: bool
+ruamel_available: bool
+pyyaml_available: bool
 toml_available: bool
 msgpack_available: bool
 toon_available: bool
@@ -11,6 +13,10 @@ toml_read_library: Any | None
 toml_write_library: Any | None
 toml_decode_error: Callable | None
 
+def _exists(filename: str | PathLike, create: bool = ...) -> Any: ...
+def _ruamel_to_builtin(obj: Any) -> Any: ...
+def _load_yaml(*args: Any, **kwargs: Any) -> Any: ...
+def _from_yaml_with_comments(*args: Any, **kwargs: Any) -> tuple[Any, dict | None]: ...
 def _to_json(obj, filename: str | PathLike | None = ..., encoding: str = ..., errors: str = ..., **json_kwargs): ...
 def _from_json(
     json_string: str | None = ...,

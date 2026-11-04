@@ -255,6 +255,29 @@ def _from_yaml(
     ruamel_attrs: dict | None = None,
     **kwargs,
 ):
+    return _ruamel_to_builtin(
+        _load_yaml(yaml_string, filename, encoding, errors, ruamel_typ=ruamel_typ, ruamel_attrs=ruamel_attrs, **kwargs)
+    )
+
+
+def _from_yaml_with_comments(*args, **kwargs):
+    """Like _from_yaml, also returning the comments found in the document (see box.comments)."""
+    from box.comments import extract_comments
+
+    raw = _load_yaml(*args, **kwargs)
+    return _ruamel_to_builtin(raw), extract_comments(raw)
+
+
+def _load_yaml(
+    yaml_string: str | None = None,
+    filename: str | PathLike | None = None,
+    encoding: str = "utf-8",
+    errors: str = "strict",
+    ruamel_typ: str = "rt",
+    ruamel_attrs: dict | None = None,
+    **kwargs,
+):
+    """Load YAML as the parser returns it (ruamel round trip types included)."""
     if not ruamel_attrs:
         ruamel_attrs = {}
     if filename:
@@ -285,7 +308,7 @@ def _from_yaml(
             raise BoxError(MISSING_PARSER_ERROR)
     else:
         raise BoxError("from_yaml requires a string or filename")
-    return _ruamel_to_builtin(data)
+    return data
 
 
 def _to_toml(obj, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict"):

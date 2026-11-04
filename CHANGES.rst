@@ -15,6 +15,7 @@ Breaking changes
 * to_yaml writes keys in insertion order with PyYAML and the ruamel safe / unsafe dumpers too (the default ruamel round trip dumper already did), pass sort_keys=True to sort them (#104, thanks to philipsd6 for reporting)
 * Box options are no longer named parameters of Box.__new__ / Box.__init__, they are read from keyword arguments (behavior is the same, the type stubs still list them)
 * DDBox options can now be overridden, e.g. DDBox(default_box=False)
+* to_yaml now writes the comments of YAML loaded with ruamel.yaml's default round trip loader (#184), and get_comment, set_comment and del_comment are new protected key names
 * Build and development tooling changed (see below): installing from an sdist now needs setuptools>=77, and building the Cython version from source requires --no-build-isolation
 
 Changes
@@ -22,6 +23,7 @@ Changes
 * Fixing #274 default_box_create_on_get=False not creating missing parent keys on assignment, e.g. box.a.b = 1 (thanks to gyanu2507 for the fix and wrdls for reporting)
 * Adding #263 "merge" option for box_merge_lists to merge lists of dictionaries element by element (thanks to ChrisJr404)
 * Adding #314 case-insensitive ConfigBox keys for [] access, in, del, update, merge_update and box_dots paths, matching configparser (thanks to binggao1230)
+* Adding #184 comments on keys and list items: from_yaml keeps the comments of the document and to_yaml writes them back, and get_comment / set_comment / del_comment manage them on any Box or BoxList (thanks to philipsd6 for the request and michaelaye for the push)
 * Adding #296 _box_defaults class attribute so subclasses can change Box option defaults without overriding __init__ (also #223, #210, thanks to marcelloromani, 12rambau and miversen33 for reporting)
 * Adding #279 camel_killer_box_keep_keys to keep the original CamelCase keys and only add snake_case attribute aliases (thanks to jacobtomlinson for the suggestion)
 * Adding #123 box_dots path segments made of digits also match integer keys, e.g. box['servers.2'] for {'servers': {2: ...}} (thanks to richieadler for reporting)
