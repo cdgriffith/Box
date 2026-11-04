@@ -126,6 +126,42 @@ allowing for recursive dot notation access.
 `Box` also includes helper functions to transform it back into a `dict`,
 as well as into `JSON`, `YAML`, `TOML`, or `msgpack` strings or files.
 
+Internal Attributes on Subclasses
+---------------------------------
+
+If you subclass `Box` and need attributes that are *not* part of the data (a source path, a cache, a
+logger...), list their names in ``_box_internal_attrs``. Setting or deleting those names with attribute access
+stores them on the instance, like a normal Python object, instead of in the dictionary.
+
+.. code:: python
+
+        from box import Box
+
+        class Config(Box):
+            _box_internal_attrs = ("source_path", "_cache")
+
+            def __init__(self, *args, source_path=None, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.source_path = source_path
+                self._cache = {}
+
+        c = Config({"name": "app"}, source_path="/etc/app.yml")
+        c.source_path        # '/etc/app.yml'
+        c.to_dict()          # {'name': 'app'}
+        "source_path" in c   # False
+
+Internal attributes are excluded from ``to_dict``, ``to_json``, ``to_yaml``, ``to_toml``, ``to_msgpack``, ``keys()``,
+iteration, ``in``, ``len``, equality and hashing. They survive ``pickle``, and are carried over by ``copy()``,
+``copy.copy`` (shared, shallow) and ``copy.deepcopy`` (deep copied). They can be set and deleted even on a
+``frozen_box``, since they are not data.
+
+Things to keep in mind:
+
+* Nested boxes are created through your subclass (as `box_class` defaults to it), so every nested box gets its
+  own fresh internal attributes from ``__init__``, they are not shared with the parent.
+* Only attribute access is affected. ``c["source_path"]`` still refers to the dictionary data, and if a data key
+  and an internal attribute share a name, attribute access returns the internal attribute.
+
 
 Thanks
 ======

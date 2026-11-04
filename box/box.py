@@ -195,9 +195,18 @@ class Box(dict):
     :param box_dots_exclude: optional regular expression for dotted keys to exclude
     :param box_class: change what type of class sub-boxes will be created as
     :param box_namespace: the namespace this (possibly nested) Box lives within
+
+    Subclasses may set ``_box_internal_attrs`` to a tuple of attribute names that are stored on
+    the instance instead of in the dict data (see ``_box_internal_attrs`` below).
     """
 
     _box_config: dict[str, Any]
+
+    #: Names that subclasses can list to keep "internal-only" attributes.
+    #: Setting or deleting one of these names with attribute access stores it on the
+    #: instance (``object.__setattr__``) rather than in the dict data, so it is never
+    #: exported, iterated, compared or hashed. See the "Internal Attributes" docs.
+    _box_internal_attrs: tuple[str, ...] = ()
 
     _protected_keys = [
         "to_dict",
@@ -492,23 +501,32 @@ class Box(dict):
             return default
         return self[key]
 
-    def copy(self) -> Box:
+    def __copy_internals(self, new, deep=False, memo=None):
+        """Carry instance-only attributes listed in `_box_internal_attrs` over to `new`."""
+        for name in self._box_internal_attrs:
+            if name in self.__dict__:
+                value = self.__dict__[name]
+                object.__setattr__(new, name, copy.deepcopy(value, memo) if deep else value)
+        return new
+
+    def copy(self):
         config = self.__box_config()
         config.pop("box_namespace")  # Detach namespace; it will be reassigned if we nest again
-        return Box(super().copy(), **config)
+        return self.__copy_internals(self.__class__(super().copy(), **config))
 
-    def __copy__(self) -> Box:
+    def __copy__(self):
         return self.copy()
 
-    def __deepcopy__(self, memodict=None) -> Box:
+    def __deepcopy__(self, memodict=None):
         frozen = self._box_config["frozen_box"]
         config = self.__box_config()
         config["frozen_box"] = False
-        out = self._box_config["box_class"](**config)
-        memodict = memodict or {}
+        out = self.__class__(**config)
+        memodict = memodict if memodict is not None else {}
         memodict[id(self)] = out
         for k, v in self.items():
             out[copy.deepcopy(k, memodict)] = copy.deepcopy(v, memodict)
+        self.__copy_internals(out, deep=True, memo=memodict)
         out._box_config["frozen_box"] = frozen
         return out
 
@@ -739,6 +757,8 @@ class Box(dict):
     def __setattr__(self, key, value):
         if key == "_box_config":
             return object.__setattr__(self, key, value)
+        if key in self._box_internal_attrs:
+            return object.__setattr__(self, key, value)
         if self._box_config["frozen_box"] and self._box_config["__created"]:
             raise BoxError("Box is frozen")
         if key in self._protected_keys:
@@ -781,6 +801,8 @@ class Box(dict):
                 del safe_keys[safe_key]
 
     def __delattr__(self, item):
+        if item in self._box_internal_attrs:
+            return object.__delattr__(self, item)
         if self._box_config["frozen_box"]:
             raise BoxError("Box is frozen")
         if item == "_box_config":

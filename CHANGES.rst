@@ -4,6 +4,7 @@ Changelog
 Version 8.0.0
 -------------
 
+* Adding #269 internal-only attributes for Box subclasses via _box_internal_attrs (thanks to bwanshoom and gtkacz for the suggestion)
 * Adding support for Python 3.15
 * Adding manylinux Cython wheels for Python 3.14 and 3.15
 * Fixing python_requires to match supported versions
@@ -27,6 +28,7 @@ Version 8.0.0
 * Fixing Box.update not accepting a positional source and keyword overrides together like dict.update (thanks to AryanRG)
 * Fixing duplicate conversion check raising when re-assigning the same key (thanks to Muneeb Sheikh)
 * Fixing deleted keys not releasing their converted attribute alias (thanks to Gary)
+* Fixing Box.copy() (and copy.copy / copy.deepcopy) returning a plain Box, ConfigBox or SBox instead of the same subclass
 * Fixing optional dependency installation examples in README (thanks to Likio3000)
 * Removing support for Python 3.10 as it is EOL
 

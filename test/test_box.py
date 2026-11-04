@@ -1796,3 +1796,222 @@ def test_pop_explicit_default_dotted_list_path(path):
     default = object()
     assert value.pop(path, default) is default
     assert value.to_dict() == {"items": [{}, [{}]]}
+
+
+class _InternalBox(Box):
+    _box_internal_attrs = ("source_path", "_cache")
+
+    def __init__(self, *args, source_path=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.source_path = source_path
+        self._cache = {}
+
+
+class _InternalConfigBox(ConfigBox):
+    _box_internal_attrs = ("meta",)
+
+
+class _InternalSBox(SBox):
+    _box_internal_attrs = ("meta",)
+
+
+def _make_internal():
+    c = _InternalBox({"name": "app", "db": {"host": "x"}}, source_path="/etc/app.yml")
+    c._cache["hits"] = 1
+    c.normal = "data"
+    return c
+
+
+class TestInternalAttrs:
+    def test_not_in_data(self):
+        c = _make_internal()
+        assert c.source_path == "/etc/app.yml"
+        assert c.to_dict() == {"name": "app", "db": {"host": "x"}, "normal": "data"}
+        assert "source_path" not in c and "_cache" not in c
+        assert list(c) == ["name", "db", "normal"]
+        assert list(c.keys()) == ["name", "db", "normal"]
+        assert len(c) == 3
+        assert c == {"name": "app", "db": {"host": "x"}, "normal": "data"}
+        assert c.__dict__["source_path"] == "/etc/app.yml"
+
+    def test_exports(self):
+        c = _make_internal()
+        assert "source_path" not in c.to_json() and "_cache" not in c.to_json()
+        assert "source_path" not in c.to_yaml()
+        assert "source_path" not in c.to_toml()
+        assert "source_path" not in str(c) and "source_path" not in repr(c)
+        assert b"source_path" not in c.to_msgpack()
+        assert _InternalBox.from_json(c.to_json()).to_dict() == c.to_dict()
+
+    def test_copy_variants(self):
+        c = _make_internal()
+        for name, clone in [
+            ("copy", copy.copy(c)),
+            ("deepcopy", copy.deepcopy(c)),
+            (".copy()", c.copy()),
+            ("pickle", pickle.loads(pickle.dumps(c))),
+        ]:
+            assert type(clone) is _InternalBox, name
+            assert clone.source_path == "/etc/app.yml", name
+            assert clone._cache == {"hits": 1}, name
+            assert clone.to_dict() == c.to_dict(), name
+        assert copy.copy(c)._cache is c._cache
+        assert c.copy()._cache is c._cache
+        assert copy.deepcopy(c)._cache is not c._cache
+        assert type(pickle.loads(pickle.dumps(c)).db) is _InternalBox
+
+    def test_deepcopy_memo(self):
+        shared = {"x": 1}
+        c = _InternalBox(a=1)
+        c._cache = {"one": shared, "two": shared}
+        d = copy.deepcopy(c)
+        assert d._cache["one"] is d._cache["two"]
+        assert d._cache["one"] is not shared
+        o2 = copy.deepcopy([c, c])
+        assert o2[0] is o2[1]
+        assert o2[0]._cache["one"] is o2[0]._cache["two"]
+
+    def test_deepcopy_self_reference_in_internal(self):
+        c = _InternalBox(a=1)
+        c._cache = {"owner": c}
+        d = copy.deepcopy(c)
+        assert d._cache["owner"] is d
+
+    def test_copy_does_not_share_assignment(self):
+        c = _make_internal()
+        d = c.copy()
+        d.source_path = "other"
+        assert c.source_path == "/etc/app.yml"
+
+    def test_unset_internal_is_not_copied(self):
+        class Plain(Box):
+            _box_internal_attrs = ("source_path",)
+
+        c = Plain(a=1)
+        c.source_path = 1
+        del c.source_path
+        assert "source_path" not in c.copy().__dict__
+        assert "source_path" not in copy.deepcopy(c).__dict__
+
+    def test_delete(self):
+        c = _make_internal()
+        del c.source_path
+        assert not hasattr(c, "source_path")
+        with pytest.raises(AttributeError):
+            del c.source_path
+        assert c.to_dict()["name"] == "app"
+
+    def test_frozen(self):
+        f = _InternalBox({"a": 1}, frozen_box=True)
+        f._cache["x"] = 1
+        f.source_path = "ok"
+        assert f.source_path == "ok"
+        del f.source_path
+        with pytest.raises(BoxError):
+            f.a = 2
+        with pytest.raises(BoxError):
+            del f.a
+        assert hash(f) == hash(_InternalBox({"a": 1}, frozen_box=True))
+        g = f.copy()
+        assert g._cache == {"x": 1}
+        with pytest.raises(BoxError):
+            g.a = 3
+        h = copy.deepcopy(f)
+        with pytest.raises(BoxError):
+            h.a = 3
+        h.source_path = "still ok"
+
+    def test_nested_fresh_internals(self):
+        c = _make_internal()
+        assert type(c.db) is _InternalBox
+        assert c.db.source_path is None
+        assert c.db._cache == {}
+        c.db._cache["k"] = 1
+        assert c._cache == {"hits": 1}
+        c.new = {"deep": {"x": 1}}
+        assert type(c.new.deep) is _InternalBox and c.new.deep._cache == {}
+
+    def test_name_collision(self):
+        c = _InternalBox({"source_path": "data-value"}, source_path="attr-value")
+        assert c.source_path == "attr-value"
+        assert c["source_path"] == "data-value"
+        assert c.to_dict() == {"source_path": "data-value"}
+        assert "source_path" in c
+
+    def test_item_assignment_is_data(self):
+        c = _InternalBox()
+        c["source_path"] = 5
+        assert c.to_dict() == {"source_path": 5}
+        assert c.source_path is None
+
+    def test_internal_checked_before_protected_keys(self):
+        class Weird(Box):
+            _box_internal_attrs = ("items",)
+
+        w = Weird(a=1)
+        w.items = "mine"
+        assert w.__dict__["items"] == "mine"
+        assert w.to_dict() == {"a": 1}
+        del w.items
+
+    def test_no_internals_unaffected(self):
+        assert Box._box_internal_attrs == ()
+        b = Box(a=1)
+        b.source_path = 3
+        assert b.to_dict() == {"a": 1, "source_path": 3}
+        assert "source_path" not in b.__dict__
+        del b.source_path
+        assert "source_path" not in b
+        assert type(copy.copy(b)) is Box and type(copy.deepcopy(b)) is Box
+
+    def test_equality_and_hash_ignore_internals(self):
+        a = _InternalBox({"a": 1}, frozen_box=True, source_path="one")
+        b = _InternalBox({"a": 1}, frozen_box=True, source_path="two")
+        assert a == b and hash(a) == hash(b)
+
+    def test_box_options_preserved_on_copy(self):
+        c = _InternalBox({"a-b": 1}, camel_killer_box=True, box_dots=True, source_path="p")
+        d = c.copy()
+        assert d._box_config["box_dots"] is True
+        assert d.source_path == "p"
+        assert copy.deepcopy(c)._box_config["camel_killer_box"] is True
+
+    def test_configbox_subclass(self):
+        c = _InternalConfigBox({"key": "1"})
+        c.meta = {"m": 1}
+        assert c.to_dict() == {"key": "1"}
+        for clone in (c.copy(), copy.copy(c), copy.deepcopy(c), pickle.loads(pickle.dumps(c))):
+            assert type(clone) is _InternalConfigBox
+            assert clone.meta == {"m": 1}
+            assert clone.int("key") == 1
+        assert copy.copy(c).meta is c.meta
+        assert copy.deepcopy(c).meta is not c.meta
+
+    def test_sbox_subclass(self):
+        c = _InternalSBox({"a": 1})
+        c.meta = [1]
+        assert c.to_dict() == {"a": 1}
+        for clone in (c.copy(), copy.copy(c), copy.deepcopy(c), pickle.loads(pickle.dumps(c))):
+            assert type(clone) is _InternalSBox
+            assert clone.meta == [1]
+
+
+def test_copy_preserves_subclass():
+    class Sub(Box):
+        pass
+
+    s = Sub({"a": {"b": 1}}, default_box=True)
+    assert type(s.copy()) is Sub
+    assert type(copy.copy(s)) is Sub
+    assert type(copy.deepcopy(s)) is Sub
+    assert s.copy()._box_config["default_box"] is True
+    assert type(Box(a=1).copy()) is Box
+
+
+def test_copy_preserves_configbox_sbox_ddbox_types():
+    for cls in (ConfigBox, SBox, DDBox):
+        b = cls({"a": 1})
+        assert type(b.copy()) is cls
+        assert type(copy.copy(b)) is cls
+        assert type(copy.deepcopy(b)) is cls
+        assert b.copy() == b
