@@ -5,7 +5,7 @@ from __future__ import annotations
 # Abstract converter functions for use in any Box class
 import csv
 import json
-from collections.abc import Callable
+import tomllib
 from io import StringIO
 from os import PathLike
 from pathlib import Path
@@ -19,22 +19,20 @@ msgpack_available = True
 
 try:
     from ruamel.yaml import YAML, version_info
-except ImportError:
+except ImportError:  # pragma: no cover (depends on installed packages)
     ruamel_available = False
 else:
-    if version_info[1] < 17:
+    if version_info[1] < 17:  # pragma: no cover (depends on installed packages)
         ruamel_available = False
 
 try:
     import yaml
-except ImportError:
+except ImportError:  # pragma: no cover (depends on installed packages)
     pyyaml_available = False
 
 MISSING_PARSER_ERROR = "No YAML Parser available, please install ruamel.yaml>=0.17 or PyYAML"
 
-toml_read_library: Any | None = None
 toml_write_library: Any | None = None
-toml_decode_error: Callable | None = None
 
 __all__ = [
     "_to_json",
@@ -52,51 +50,25 @@ __all__ = [
 ]
 
 
-class BoxTomlDecodeError(BoxError):
+# Reading uses tomllib, which is always available on the supported Python versions (3.11+)
+toml_read_library = tomllib
+toml_decode_error = tomllib.TOMLDecodeError
+
+
+class BoxTomlDecodeError(BoxError, tomllib.TOMLDecodeError):  # type: ignore
     """Toml Decode Error"""
 
 
-try:
-    import toml
-except ImportError:
-    pass
-else:
-    toml_read_library = toml
-    toml_write_library = toml
-    toml_decode_error = toml.TomlDecodeError
-
-    class BoxTomlDecodeError(BoxError, toml.TomlDecodeError):  # type: ignore
-        """Toml Decode Error"""
-
-
-try:
-    import tomllib
-except ImportError:
-    pass
-else:
-    toml_read_library = tomllib
-    toml_decode_error = tomllib.TOMLDecodeError
-
-    class BoxTomlDecodeError(BoxError, tomllib.TOMLDecodeError):  # type: ignore
-        """Toml Decode Error"""
-
-
-try:
-    import tomli
-except ImportError:
-    pass
-else:
-    toml_read_library = tomli
-    toml_decode_error = tomli.TOMLDecodeError
-
-    class BoxTomlDecodeError(BoxError, tomli.TOMLDecodeError):  # type: ignore
-        """Toml Decode Error"""
-
-
+# Writing needs tomli-w, or the older toml package as a fallback
 try:
     import tomli_w
-except ImportError:
-    pass
+except ImportError:  # pragma: no cover (depends on installed packages)
+    try:
+        import toml
+    except ImportError:
+        pass
+    else:
+        toml_write_library = toml
 else:
     toml_write_library = tomli_w
 
@@ -221,7 +193,7 @@ def _to_yaml(
         yaml_dumper = YAML(typ=ruamel_typ)
         yaml_dumper.default_flow_style = default_flow_style
         yaml_dumper.width = width
-        if hasattr(yaml_dumper.representer, "sort_base_mapping_type_on_output"):
+        if hasattr(yaml_dumper.representer, "sort_base_mapping_type_on_output"):  # pragma: no branch (older ruamel)
             yaml_dumper.representer.sort_base_mapping_type_on_output = sort_keys
         for attr, value in ruamel_attrs.items():
             setattr(yaml_dumper, attr, value)
@@ -320,22 +292,14 @@ def _to_toml(obj, filename: str | PathLike | None = None, encoding: str = "utf-8
     if filename:
         _exists(filename, create=True)
         if toml_write_library.__name__ == "toml":  # type: ignore
+            # The toml package writes text, tomli-w writes bytes
             with open(filename, "w", encoding=encoding, errors=errors) as f:
-                try:
-                    toml_write_library.dump(obj, f)  # type: ignore
-                except toml_decode_error as err:  # type: ignore
-                    raise BoxTomlDecodeError(err) from err
+                toml_write_library.dump(obj, f)  # type: ignore
         else:
             with open(filename, "wb") as f:
-                try:
-                    toml_write_library.dump(obj, f)  # type: ignore
-                except toml_decode_error as err:  # type: ignore
-                    raise BoxTomlDecodeError(err) from err
+                toml_write_library.dump(obj, f)  # type: ignore
     else:
-        try:
-            return toml_write_library.dumps(obj)  # type: ignore
-        except toml_decode_error as err:  # type: ignore
-            raise BoxTomlDecodeError(err) from err
+        return toml_write_library.dumps(obj)  # type: ignore
 
 
 def _from_toml(
@@ -346,12 +310,8 @@ def _from_toml(
 ):
     if filename:
         _exists(filename)
-        if toml_read_library.__name__ == "toml":  # type: ignore
-            with open(filename, "r", encoding=encoding, errors=errors) as f:
-                data = toml_read_library.load(f)  # type: ignore
-        else:
-            with open(filename, "rb") as f:
-                data = toml_read_library.load(f)  # type: ignore
+        with open(filename, "rb") as f:
+            data = toml_read_library.load(f)
     elif toml_string:
         data = toml_read_library.loads(toml_string)  # type: ignore
     else:

@@ -23,6 +23,25 @@ jobs:
       - name: Ruff format
         run: uvx ruff@0.17.3 format --check .
 
+  coverage:
+    # Pure Python on purpose: Cython compiled modules can't be traced by coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Python
+        id: setup-python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.15"
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --python "${{ steps.setup-python.outputs.python-path }}" --group test --no-install-project
+      - name: Require 100% line and branch coverage
+        run: uv run --no-sync pytest --cov=box --cov-branch --cov-report=term-missing --cov-fail-under=100 test/
+
   package-checks:
     strategy:
       matrix:

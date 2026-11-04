@@ -116,14 +116,13 @@ def _to_native_tuple(iterable):
     return tuple(out_list)
 
 
-def _parse_box_dots(bx, item, setting=False):
+def _parse_box_dots(bx, item):
+    """Split a box_dots key at its first "." or "[". Callers only pass keys that contain one."""
     for idx, char in enumerate(item):
         if char == "[":
             return item[:idx], item[idx:]
         elif char == ".":
             return item[:idx], item[idx + 1 :]
-    if setting and "." in item:
-        return item.split(".", 1)
     raise BoxError("Could not split box dots properly")
 
 
@@ -433,18 +432,14 @@ class Box(dict):
             return True
         if "." not in item:
             return False
-        try:
-            first_item, children = _parse_box_dots(self, item)
-        except BoxError:
+        first_item, children = _parse_box_dots(self, item)
+        first_item = self.__dots_int_key(first_item)
+        if not super().__contains__(first_item):
             return False
-        else:
-            first_item = self.__dots_int_key(first_item)
-            if not super().__contains__(first_item):
-                return False
-            it = self[first_item]
-            if isinstance(it, Box):
-                children = it.__dots_int_key(children)
-            return isinstance(it, Iterable) and children in it
+        it = self[first_item]
+        if isinstance(it, Box):
+            children = it.__dots_int_key(children)
+        return isinstance(it, Iterable) and children in it
 
     def keys(self, dotted: bool = False):
         if not dotted:
@@ -557,7 +552,7 @@ class Box(dict):
             )
         return False
 
-    def __get_default(self, item, attr=False):
+    def __get_default(self, item):
         if item in ("getdoc", "shape") and _is_ipython():
             return None
         default_value = self._box_config["default_box_attr"]
@@ -593,20 +588,18 @@ class Box(dict):
         else:
             value = default_value
         if self._box_config["default_box_create_on_get"]:
-            if not attr or not (item.startswith("_") and item.endswith("_")):
-                if self.__process_dotted_key(item):
-                    first_item, children = _parse_box_dots(self, item, setting=True)
-                    if first_item in self.keys():
-                        if hasattr(self[first_item], "__setitem__"):
-                            self[first_item].__setitem__(children, value)
-                    else:
-                        self._flush_pending_parent()
-                        super().__setitem__(
-                            first_item, self._box_config["box_class"](**self.__box_config(extra_namespace=first_item))
-                        )
-                        self[first_item].__setitem__(children, value)
-                else:
-                    super().__setitem__(item, value)
+            if self.__process_dotted_key(item):
+                first_item, children = _parse_box_dots(self, item)
+                # An existing first_item only gets here when its value can't be looked into
+                # (for example an int), so there is nowhere to store the default
+                if first_item not in self.keys():
+                    self._flush_pending_parent()
+                    super().__setitem__(
+                        first_item, self._box_config["box_class"](**self.__box_config(extra_namespace=first_item))
+                    )
+                    self[first_item].__setitem__(children, value)
+            else:
+                super().__setitem__(item, value)
         elif isinstance(value, Box) and not self.__process_dotted_key(item):
             # Lookups stay ephemeral, but a later assignment on this child
             # should create the missing parent keys (see _flush_pending_parent).
@@ -697,12 +690,7 @@ class Box(dict):
                     new_box[x] = self[x]
                 return new_box
             if self.__process_dotted_key(item):
-                try:
-                    first_item, children = _parse_box_dots(self, item)
-                except BoxError:
-                    if self._box_config["default_box"] and not _ignore_default:
-                        return self.__get_default(item)
-                    raise BoxKeyError(str(item)) from _exception_cause(err)
+                first_item, children = _parse_box_dots(self, item)
                 first_item = self.__dots_int_key(first_item)
                 if first_item not in self.keys() and self.__camel_destructive():
                     first_item = _camel_killer(first_item)
@@ -722,7 +710,7 @@ class Box(dict):
                 return self.__get_default(item)
             raise BoxKeyError(str(err)) from _exception_cause(err)
         except TypeError as err:
-            if isinstance(item, slice):
+            if isinstance(item, slice):  # pragma: no cover (Python 3.11, slices became hashable in 3.12)
                 new_box = self._box_config["box_class"](**self.__box_config())
                 for x in list(super().keys())[item.start : item.stop : item.step]:
                     new_box[x] = self[x]
@@ -736,8 +724,6 @@ class Box(dict):
             except KeyError:
                 value = object.__getattribute__(self, item)
         except AttributeError as err:
-            if item == "__getstate__":
-                raise BoxKeyError(item) from _exception_cause(err)
             if item == "_box_config":
                 raise BoxError("_box_config key must exist") from _exception_cause(err)
             if self._box_config["conversion_box"]:
@@ -747,7 +733,7 @@ class Box(dict):
             if self._box_config["default_box"]:
                 if item.startswith("_") and item.endswith("_"):
                     raise BoxKeyError(f"{item}: Does not exist and internal methods are never defaulted")
-                return self.__get_default(item, attr=True)
+                return self.__get_default(item)
             raise BoxKeyError(str(err)) from _exception_cause(err)
         return value
 
@@ -786,7 +772,7 @@ class Box(dict):
         if key != "_box_config" and self._box_config["frozen_box"] and self._box_config["__created"]:
             raise BoxError("Box is frozen")
         if self.__process_dotted_key(key):
-            first_item, children = _parse_box_dots(self, key, setting=True)
+            first_item, children = _parse_box_dots(self, key)
             first_item = self.__dots_int_key(first_item)
             if first_item in self.keys():
                 child = self[first_item]
@@ -837,10 +823,7 @@ class Box(dict):
         if self._box_config["frozen_box"]:
             raise BoxError("Box is frozen")
         if key not in self.keys() and self.__process_dotted_key(key):
-            try:
-                first_item, children = _parse_box_dots(self, key)
-            except BoxError:
-                raise BoxKeyError(str(key)) from None
+            first_item, children = _parse_box_dots(self, key)
             first_item = self.__dots_int_key(first_item)
             child = self[first_item]
             if isinstance(child, Box):

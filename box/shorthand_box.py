@@ -51,6 +51,3 @@ class DDBox(SBox):
     """SBox with box_dots and default_box turned on by default"""
 
     _box_defaults = {"box_dots": True, "default_box": True}
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self})"

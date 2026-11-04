@@ -153,8 +153,7 @@ def box_from_string(content: str, string_type: str = "json") -> Box | BoxList:
             return Box.from_toml(toml_string=content)
         except toml_decode_error:  # type: ignore
             raise BoxError("File is not TOML as expected")
-        except BoxError:
-            return BoxList.from_toml(toml_string=content)
+        # A TOML document is always a table, so unlike the other formats it is never a BoxList
     elif string_type == "yaml":
         try:
             return Box.from_yaml(yaml_string=content)

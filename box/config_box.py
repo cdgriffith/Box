@@ -78,10 +78,7 @@ class ConfigBox(Box):
             if config["box_dots_exclude"] and config["box_dots_exclude"].match(key):
                 return key
             # Match the first segment of a dotted path, nested ConfigBoxes match the rest
-            try:
-                first, rest = _parse_box_dots(self, key)
-            except BoxError:
-                return key
+            first, rest = _parse_box_dots(self, key)
             found = self._ci_key(first)
             if found is not None and found != first:
                 return f"{found}{rest}" if rest.startswith("[") else f"{found}.{rest}"
