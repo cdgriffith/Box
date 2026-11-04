@@ -587,15 +587,17 @@ class Box(dict):
                         if hasattr(self[first_item], "__setitem__"):
                             self[first_item].__setitem__(children, value)
                     else:
+                        self._flush_pending_parent()
                         super().__setitem__(
                             first_item, self._box_config["box_class"](**self.__box_config(extra_namespace=first_item))
                         )
                         self[first_item].__setitem__(children, value)
                 else:
                     super().__setitem__(item, value)
-        elif isinstance(value, Box):
+        elif isinstance(value, Box) and not self.__process_dotted_key(item):
             # Lookups stay ephemeral, but a later assignment on this child
-            # should create the missing parent keys.
+            # should create the missing parent keys (see _flush_pending_parent).
+            # A strong reference is required: intermediate ephemeral parents are otherwise garbage collected.
             value._box_config["__pending_parent"] = (self, item)
         return value
 
@@ -621,6 +623,7 @@ class Box(dict):
         return value
 
     def __convert_and_store(self, item, value):
+        self._flush_pending_parent()
         if self._box_config["conversion_box"]:
             safe_key = self._safe_attr(item)
             self._box_config["__safe_keys"][safe_key] = item
@@ -733,17 +736,36 @@ class Box(dict):
         return value
 
     def _flush_pending_parent(self):
+        """
+        With `default_box_create_on_get=False` a missing key returns an ephemeral child Box that is
+        not stored in its parent. The first time something is actually written to that child, attach it
+        (and any ephemeral ancestors) to the parent so `b.a.b = 1` creates `a`.
+
+        Nothing is attached if the key has been given a real value since the child was handed out: the stale child is left detached rather than overwriting
+        data, so writes to it are lost just like any other ephemeral lookup.
+        """
         pending = self._box_config.pop("__pending_parent", None)
         if pending is None:
             return
         parent, key = pending
-        parent_flush = getattr(parent, "_flush_pending_parent", None)
-        if parent_flush is not None:
-            parent_flush()
+        parent._flush_pending_parent()
+        if dict.__contains__(parent, key):
+            return
+        if parent._box_config["frozen_box"] and parent._box_config["__created"]:
+            raise BoxError("Box is frozen")
+        if parent._box_config["conversion_box"]:
+            parent._box_config["__safe_keys"][parent._safe_attr(key)] = key
         dict.__setitem__(parent, key, self)
 
+    def __getstate__(self):
+        # Ephemeral-child bookkeeping (a reference to the parent) must never be pickled
+        state = self.__dict__.copy()
+        config = state.get("_box_config")
+        if config is not None and "__pending_parent" in config:
+            state["_box_config"] = {k: v for k, v in config.items() if k != "__pending_parent"}
+        return state
+
     def __setitem__(self, key, value):
-        self._flush_pending_parent()
         if key != "_box_config" and self._box_config["frozen_box"] and self._box_config["__created"]:
             raise BoxError("Box is frozen")
         if self.__process_dotted_key(key):
@@ -752,6 +774,7 @@ class Box(dict):
                 if hasattr(self[first_item], "__setitem__"):
                     return self[first_item].__setitem__(children, value)
             elif self._box_config["default_box"]:
+                self._flush_pending_parent()
                 if children[0] == "[":
                     super().__setitem__(first_item, box.BoxList(**self.__box_config(extra_namespace=first_item)))
                 else:
@@ -770,8 +793,6 @@ class Box(dict):
         self.__convert_and_store(key, value)
 
     def __setattr__(self, key, value):
-        if key != "_box_config":
-            self._flush_pending_parent()
         if key == "_box_config":
             return object.__setattr__(self, key, value)
         if key in self._box_internal_attrs:
@@ -792,7 +813,6 @@ class Box(dict):
             self.__setitem__(key, value)
 
     def __delitem__(self, key):
-        self._flush_pending_parent()
         if self._box_config["frozen_box"]:
             raise BoxError("Box is frozen")
         if key not in self.keys() and self.__process_dotted_key(key):

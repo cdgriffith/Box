@@ -2147,3 +2147,161 @@ def test_merge_lists_merge_intact_dict_type():
     bx = Box({"m": [MyDict(a=1)]}, box_intact_types=(MyDict,))
     bx.merge_update({"m": [{"b": 2}]}, box_merge_lists="merge")
     assert bx.m[0] == {"b": 2}
+
+
+def _no_create_box(**kwargs):
+    return Box(default_box=True, default_box_create_on_get=False, **kwargs)
+
+
+class TestCreateOnSetWithoutCreateOnGet:
+    def test_issue_274(self):
+        b = _no_create_box()
+        assert b.foo.bar == Box()
+        assert b == {}
+        b.foo.bar = 1
+        assert b.to_dict() == {"foo": {"bar": 1}}
+
+    def test_reads_never_create(self):
+        b = _no_create_box()
+        b.x.y.z
+        b["a"]["b"]
+        assert b == {}
+
+    def test_deep_assignment_and_item_forms(self):
+        b = _no_create_box()
+        b.a.b.c.d = 1
+        b["e"]["f"] = 2
+        b.g.h.update({"i": 3})
+        b.j.k.setdefault("l", 4)
+        b.m.merge_update({"n": 5})
+        assert b.to_dict() == {
+            "a": {"b": {"c": {"d": 1}}},
+            "e": {"f": 2},
+            "g": {"h": {"i": 3}},
+            "j": {"k": {"l": 4}},
+            "m": {"n": 5},
+        }
+
+    def test_failed_operations_do_not_create(self):
+        b = _no_create_box()
+        with pytest.raises(BoxKeyError):
+            del b.x.nothing
+        with pytest.raises(BoxKeyError):
+            b.x.items = 1  # protected key
+        b.x.update({})
+        assert b == {}
+
+    def test_children_do_not_leak_bookkeeping(self):
+        b = _no_create_box()
+        child = b.x
+        assert "__pending_parent" in child._box_config
+        assert child.to_dict() == {} and repr(child) == "Box({})"
+        for clone in (copy.copy(child), copy.deepcopy(child), pickle.loads(pickle.dumps(child))):
+            assert "__pending_parent" not in clone._box_config
+            clone.z = 1
+            assert b == {}
+        # box options handed to new children never include internal "__" keys
+        child.sub.q = 1
+        assert child.to_dict() == {"sub": {"q": 1}}
+        assert not any(k.startswith("__pending") for k in child.sub._box_config["box_namespace"] if isinstance(k, str))
+        # pickling a flushed child does not drag the old parent reference along
+        assert "__pending_parent" not in pickle.loads(pickle.dumps(b.x))._box_config
+
+    def test_pickled_child_does_not_pickle_parent(self):
+        b = _no_create_box()
+        b.big = list(range(5000))
+        child = b.x
+        assert len(pickle.dumps(child)) < 2000
+
+    def test_stale_child_does_not_clobber_scalar(self):
+        b = _no_create_box()
+        c = b.x
+        b.x = 5
+        c.y = 1
+        assert b.to_dict() == {"x": 5}
+
+    def test_stale_child_does_not_clobber_dict(self):
+        b = _no_create_box()
+        c = b.x
+        b.x = {"q": 1}
+        c.y = 1
+        assert b.to_dict() == {"x": {"q": 1}}
+        assert c.to_dict() == {"y": 1}
+
+    def test_two_children_first_write_wins(self):
+        b = _no_create_box()
+        c1, c2 = b.x, b.x
+        c1.a = 1
+        c2.b = 2  # stale: x already exists, detached child is not merged
+        assert b.to_dict() == {"x": {"a": 1}}
+
+    def test_real_child_deleted_stays_detached(self):
+        b = _no_create_box()
+        b.x.y = 1
+        c = b.x  # a real, stored child
+        del b["x"]
+        c.z = 2
+        assert b.to_dict() == {}
+
+    def test_ephemeral_chain_with_stale_ancestor(self):
+        b = _no_create_box()
+        deep = b.a.b
+        b.a = {"keep": 1}
+        deep.c = 1
+        assert b.to_dict() == {"a": {"keep": 1}}
+
+    def test_frozen_is_never_mutated(self):
+        f = _no_create_box(frozen_box=True)
+        child = f.x
+        with pytest.raises(BoxError):
+            child.y = 1
+        with pytest.raises(BoxError):
+            child["y"] = 1
+        with pytest.raises(BoxError):
+            child.update(y=1)
+        assert f == {}
+
+    def test_box_dots(self):
+        b = _no_create_box(box_dots=True)
+        b["a.b.c"] = 1
+        b.d.e = 2
+        assert b.to_dict() == {"a": {"b": {"c": 1}}, "d": {"e": 2}}
+        # dotted lookups stay ephemeral and never create a literal dotted key
+        c = b["z.y"]
+        c.k = 1
+        assert "z.y" not in b.keys()
+        assert b.to_dict() == {"a": {"b": {"c": 1}}, "d": {"e": 2}}
+
+    def test_conversion_box_alias_registered(self):
+        b = _no_create_box()
+        b["my key"].v = 1
+        assert b.to_dict() == {"my key": {"v": 1}}
+        assert b.my_key.v == 1
+
+    def test_inside_boxlist(self):
+        b = _no_create_box(items_list=[{}])
+        b.items_list[0].x.y = 1
+        assert b.to_dict() == {"items_list": [{"x": {"y": 1}}]}
+
+    def test_default_box_attr_dict(self):
+        b = _no_create_box(default_box_attr={"d": 1})
+        b.x.d = 2
+        assert b.to_dict() == {"x": {"d": 2}}
+
+    def test_subclass_keeps_type(self):
+        class Sub(Box):
+            pass
+
+        b = Sub(default_box=True, default_box_create_on_get=False)
+        b.x.y = 1
+        assert type(b.x) is Sub
+
+    def test_create_on_get_default_unchanged(self):
+        b = Box(default_box=True)
+        b.a.b
+        assert b.to_dict() == {"a": {"b": {}}}
+        assert "__pending_parent" not in b.a._box_config
+
+    def test_no_default_box_unchanged(self):
+        with pytest.raises(BoxKeyError):
+            Box().x.y = 1

@@ -5,6 +5,7 @@ Version 8.0.0
 -------------
 
 * BREAKING CHANGE: Box.popitem() now removes the most recently inserted item (LIFO) like dict.popitem(), instead of the first inserted item (thanks to machines-6657)
+* Fixing #274 default_box_create_on_get=False not creating missing parent keys on assignment, e.g. box.a.b = 1 (thanks to gyanu2507 for the fix and wrdls for reporting)
 * Adding #263 "merge" option for box_merge_lists to merge lists of dictionaries element by element (thanks to ChrisJr404)
 * Adding #269 internal-only attributes for Box subclasses via _box_internal_attrs (thanks to bwanshoom and gtkacz for the suggestion)
 * Adding support for Python 3.15
