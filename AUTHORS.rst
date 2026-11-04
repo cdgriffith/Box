@@ -42,6 +42,7 @@ Code contributions:
 - DSeaStar (DSeaStar)
 - Guo Jiarui (Jerry-val)
 - Abhinav Maurya (Fire162)
+- Arindam Sikder (arindamsikder)
 
 
 Suggestions and bug reporting:
