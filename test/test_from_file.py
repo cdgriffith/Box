@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from pathlib import Path
-from test.common import test_root
 
 import pytest
 
 from box import Box, BoxError, BoxList, box_from_file, box_from_string
+from test.common import test_root
 
 
 class TestFromFile:

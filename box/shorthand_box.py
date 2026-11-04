@@ -46,24 +46,8 @@ class SBox(Box):
     def __repr__(self):
         return f"{self.__class__.__name__}({self})"
 
-    def copy(self) -> SBox:
-        return SBox(super(SBox, self).copy())
-
-    def __copy__(self) -> SBox:
-        return SBox(super(SBox, self).copy())
-
 
 class DDBox(SBox):
-    def __init__(self, *args, **kwargs):
-        kwargs["box_dots"] = True
-        kwargs["default_box"] = True
-        super().__init__(*args, **kwargs)
+    """SBox with box_dots and default_box turned on by default"""
 
-    def __new__(cls, *args, **kwargs):
-        obj = super().__new__(cls, *args, **kwargs)
-        obj._box_config["box_dots"] = True
-        obj._box_config["default_box"] = True
-        return obj
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self})"
+    _box_defaults = {"box_dots": True, "default_box": True}

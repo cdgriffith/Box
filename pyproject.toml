@@ -1,0 +1,147 @@
+[build-system]
+# Cython is intentionally NOT listed here: a normal install (pip install python-box from an sdist) builds the
+# pure Python version. To build the compiled version, install Cython in the build environment and build with
+# `--no-isolation` (see CONTRIBUTING.rst).
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "python-box"
+dynamic = ["version"]
+description = "Advanced Python dictionaries with dot notation access"
+readme = { file = "README.rst", content-type = "text/x-rst" }
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Chris Griffith", email = "chris@cdgriffith.com" }]
+requires-python = ">=3.11"
+dependencies = []
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Development Status :: 5 - Production/Stable",
+    "Natural Language :: English",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Topic :: Utilities",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://github.com/cdgriffith/Box"
+Changelog = "https://github.com/cdgriffith/Box/blob/master/CHANGES.rst"
+Issues = "https://github.com/cdgriffith/Box/issues"
+
+[project.optional-dependencies]
+all = ["ruamel.yaml>=0.19.1", "toml", "msgpack"]
+yaml = ["ruamel.yaml>=0.19.1"]
+"ruamel.yaml" = ["ruamel.yaml>=0.19.1"]
+PyYAML = ["PyYAML"]
+tomli = ["tomli-w"]
+toml = ["toml"]
+msgpack = ["msgpack"]
+
+[tool.setuptools]
+packages = ["box"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+box = ["py.typed", "*.pyi"]
+
+[tool.setuptools.dynamic]
+version = { attr = "box.__version__" }
+
+[dependency-groups]
+# Everything the test suite needs (also used by cibuildwheel via `test-groups`)
+test = [
+    "coverage>=7.17.1",
+    "msgpack>=1.2.4",
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
+    "ruamel.yaml>=0.19.1",
+    "tomli-w>=1.2.0",
+    "toon-format>=1.2.0",
+    "types-PyYAML>=6.0.12.20261103",
+]
+# Development tooling: linting, type checking, building and releasing
+dev = [
+    { include-group = "test" },
+    "build>=1.6.1",
+    "Cython>=3.3.1",
+    "mypy>=2.4.1",
+    "pre-commit>=4.7.0",
+    "ruff>=0.17.3",
+    "setuptools>=84.2.1",
+    "twine>=7.0.0",
+    "wheel>=0.48.0",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["build", "dist", ".idea"]
+
+[tool.ruff.format]
+# Black compatible defaults (double quotes, magic trailing comma, 88 -> 120 columns above)
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint]
+# Deliberately conservative: pycodestyle, pyflakes and import sorting only
+select = ["E", "F", "W", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+# The package imports are order sensitive (circular imports) and re-exported on purpose
+"box/__init__.py" = ["F401", "I001"]
+
+[tool.ruff.lint.isort]
+# "test" is also a stdlib module name, make sure our test package is sorted with the first party code
+known-first-party = ["box", "test"]
+
+[tool.cibuildwheel]
+build = "cp311-manylinux_x86_64 cp312-manylinux_x86_64 cp313-manylinux_x86_64 cp314-manylinux_x86_64 cp315-manylinux_x86_64"
+# Cython (and setuptools) must be present in the build environment, so build without isolation
+before-build = "pip install 'Cython>=3.3.1' setuptools wheel"
+build-frontend = { name = "build", args = ["--no-isolation"] }
+build-verbosity = 1
+test-groups = ["test"]
+test-command = "pytest {package}/test -vv"
+
+[tool.coverage.report]
+omit = [
+    "*/python?.?/*",
+    "*/site-packages/nose/*",
+    "*/test/*",
+    "*/pypy/*",
+    "*/nose/*",
+    "*/.*/*",
+    "*/*.egg-info/*",
+]
+exclude_lines = [
+    "pragma: no cover",
+    "raise err",
+    "except ImportError",
+    "yaml = none",
+    'raise BoxError\("_box_config key must exist',
+    "raise err",
+    "if \"box_class\" in self.__dict__:",
+    'raise BoxError\(f"File',
+    "except OSError",
+    'raise BoxError\(f"{filename}',
+    'item._box_config["__box_heritage"] = \(\)',
+    'raise BoxKeyError\(err',
+    "(.*)is unavailable on this system",
+    "def to_",
+    "def from_",
+    "warnings.warn",
+    "@classmethod",
+    "no package is available to open it",
+]

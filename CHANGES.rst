@@ -1,6 +1,75 @@
 Changelog
 =========
 
+Version 8.0.0
+-------------
+
+Breaking changes
+
+* Box.popitem() now removes the most recently inserted item (LIFO) like dict.popitem(), instead of the first inserted item (thanks to machines-6657)
+* Removing support for Python 3.10 as it is EOL, Python 3.11+ is now required
+* merge_update now raises BoxValueError for an unrecognized box_merge_lists value instead of silently replacing the list
+* Box.copy() / copy.copy() / copy.deepcopy() now return the same class as the original (subclasses of Box, ConfigBox, SBox and DDBox were previously turned into a plain Box / ConfigBox / SBox)
+* ConfigBox string keys are now case-insensitive for every kind of access (not only attribute lookups), and a ConfigBox no longer holds keys that differ only by case: the latest write wins, keeping its value and spelling, so ConfigBox({'Foo': 1, 'foo': 2}) is ConfigBox({'foo': 2})
+* default_box_create_on_get now defaults to False (#262): looking up a missing key returns the default without storing it, so tools that probe attributes (IPython, Spyder) no longer add keys. Assigning through a missing key still creates it (box.a.b = 1). Changing a default value in place, such as box.tags.append(1) with default_box_attr=[], is no longer kept, pass default_box_create_on_get=True for the old behavior (thanks to wtld for reporting)
+* to_yaml writes keys in insertion order with PyYAML and the ruamel safe / unsafe dumpers too (the default ruamel round trip dumper already did), pass sort_keys=True to sort them (#104, thanks to philipsd6 for reporting)
+* Box options are no longer named parameters of Box.__new__ / Box.__init__, they are read from keyword arguments (behavior is the same, the type stubs still list them)
+* DDBox options can now be overridden, e.g. DDBox(default_box=False)
+* to_yaml now writes the comments of YAML loaded with ruamel.yaml's default round trip loader (#184), and get_comment, set_comment and del_comment are new protected key names
+* Build and development tooling changed (see below): installing from an sdist now needs setuptools>=77, and building the Cython version from source requires --no-build-isolation
+
+Changes
+
+* Fixing #274 default_box_create_on_get=False not creating missing parent keys on assignment, e.g. box.a.b = 1 (thanks to gyanu2507 for the fix and wrdls for reporting)
+* Adding #263 "merge" option for box_merge_lists to merge lists of dictionaries element by element (thanks to ChrisJr404)
+* Adding #314 case-insensitive ConfigBox keys for [] access, in, del, update, merge_update and box_dots paths, matching configparser (thanks to binggao1230)
+* Adding #184 comments on keys and list items: from_yaml keeps the comments of the document and to_yaml writes them back, and get_comment / set_comment / del_comment manage them on any Box or BoxList (thanks to philipsd6 for the request and michaelaye for the push)
+* Adding #296 _box_defaults class attribute so subclasses can change Box option defaults without overriding __init__ (also #223, #210, thanks to marcelloromani, 12rambau and miversen33 for reporting)
+* Adding #279 camel_killer_box_keep_keys to keep the original CamelCase keys and only add snake_case attribute aliases (thanks to jacobtomlinson for the suggestion)
+* Adding #123 box_dots path segments made of digits also match integer keys, e.g. box['servers.2'] for {'servers': {2: ...}} (thanks to richieadler for reporting)
+* Fixing ``in`` and get() returning False / None for box_dots paths through lists, e.g. 'a[0].x' in box, and ``in`` treating substrings of string values as keys ('a.b' in Box(a='xbz'))
+* Fixing IndexError setting a box_dots key ending with a dot on a default_box
+* Fixing AttributeError instead of BoxKeyError when setting to_msgpack, from_msgpack, to_toon or from_toon as attributes (now protected), and setting other non property class attributes
+* Fixing frozen BoxList copy.deepcopy and pickle leaving the contained Boxes unfrozen
+* Fixing unpickled BoxList re-creating its Boxes with default options (box_dots, box_class, default_box and so on were lost). BoxList pickles made by earlier versions still load
+* Removing the tomli and toml read fallbacks, TOML is always read with tomllib (part of Python 3.11+). Writing still uses tomli-w, or the toml package if installed
+* Fixing dict | Box and dict + Box returning a Box without the right side's options (box_dots, default_box, box_class and so on)
+* Fixing default_box_attr with classes such as list, int or set raising an error, they now work like defaultdict factories (list gives a BoxList). Only required parameters of a default_box_attr function have to be named key or box_instance
+* Fixing ConfigBox.bool treating "off" as True, it now matches the configparser false values
+* Reaching 100% line and branch test coverage, enforced in CI
+* Updating development dependencies to their latest versions (pytest 9, pytest-cov 7, mypy 2, twine 7, Cython 3.3.1, pre-commit-hooks 6)
+* Fixing Box(default_box=True) pop() of a missing key and argparse namespaces (hasattr then delattr) with default_box_create_on_get=False
+* Adding #269 internal-only attributes for Box subclasses via _box_internal_attrs (thanks to bwanshoom and gtkacz for the suggestion)
+* Adding support for Python 3.15
+* Adding manylinux Cython wheels for Python 3.14 and 3.15
+* Fixing python_requires to match supported versions
+* Updating GitHub Actions to latest major versions
+* Fixing #260 nested boxes losing box_dots after pickle (thanks to DSeaStar)
+* Fixing #265 unclear error for malformed BoxList bracket indices with box_dots (thanks to Arindam Sikder)
+* Fixing #272 frozen_box with lists could not be serialized to YAML / JSON (thanks to apoorvdarshan)
+* Fixing #300 CamelCase keys in dotted lookups with camel_killer_box (thanks to Guo Jiarui)
+* Fixing #305 dotted keys lost with box_dots when a non-dotted key with the same prefix follows (thanks to J vanBemmel)
+* Fixing #308 subclass of Box not preserved for nested boxes after unpickling (thanks to koriyoshi2041)
+* Fixing #344 frozen BoxList instances could not be pickled (thanks to Abhinav Maurya)
+* Fixing frozen BoxList could be mutated via clear, ``+=`` and ``*=`` (thanks to Vitaliy Voloshin)
+* Fixing BoxList.__deepcopy__ not preserving box options (thanks to chuenchen309)
+* Fixing second dotted write into an existing BoxList element discarding data (thanks to binggao1230)
+* Fixing dicts and lists assigned to BoxList items and slices not being converted (thanks to x0Lazarus)
+* Fixing dicts and lists added with BoxList ``+=`` not being converted (thanks to lin)
+* Fixing BoxList.extend(self) revisiting its own appended values (thanks to x0Lazarus)
+* Fixing BoxList construction testing the truth value of the iterable (thanks to fhgffy)
+* Fixing BoxList to_json / from_json multiline not working with strings (thanks to shguild)
+* Fixing explicit ensure_ascii option being ignored in JSON output (thanks to fhgffy)
+* Fixing Box.pop with an explicit default creating missing values with default_box (thanks to Huanyi Xie)
+* Fixing Box.update not accepting a positional source and keyword overrides together like dict.update (thanks to AryanRG)
+* Fixing duplicate conversion check raising when re-assigning the same key (thanks to Muneeb Sheikh)
+* Fixing deleted keys not releasing their converted attribute alias (thanks to Gary)
+* Fixing Box.copy() (and copy.copy / copy.deepcopy) returning a plain Box, ConfigBox or SBox instead of the same subclass
+* Moving package metadata from setup.py to pyproject.toml (PEP 621), setup.py now only handles the optional Cython build
+* Moving development and CI to uv (dependency groups and uv.lock replace the requirements files) and ruff (replaces black)
+* Fixing optional dependency installation examples in README (thanks to Likio3000)
+* Fixing #264 ruamel.yaml ScalarFloat / ScalarInt / ScalarBoolean values left as non-builtin types after from_yaml, which broke libraries expecting float / int / bool (thanks to tan_unique)
+
 Version 7.4.1
 -------------
 

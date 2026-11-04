@@ -33,7 +33,7 @@ requirements.txt
 
 .. code:: text
 
-        python-box[all]~=7.0
+        python-box[all]~=8.0
 
 As Box adheres to semantic versioning (aka API changes will only occur on between major version),
 it is best to use `Compatible release <https://www.python.org/dev/peps/pep-0440/#compatible-release>`_ matching using the `~=` clause.
@@ -44,7 +44,7 @@ Install from command line
 .. code:: bash
 
         python -m pip install --upgrade pip
-        pip install python-box[all]~=7.0 --upgrade
+        pip install "python-box[all]~=8.0" --upgrade
 
 Install with selected dependencies
 ----------------------------------
@@ -54,13 +54,14 @@ for example, `[all]` is shorthand for:
 
 .. code:: bash
 
-        pip install python-box[ruamel.yaml,tomli_w,msgpack]~=7.0 --upgrade
+        pip install "python-box[ruamel.yaml,toml,msgpack]~=8.0" --upgrade
 
-But you can also sub out `ruamel.yaml` for `PyYAML`.
+But you can also sub out `ruamel.yaml` for `PyYAML`. To use ``tomli-w`` for TOML output,
+select the ``tomli`` extra instead of ``toml``.
 
 Check out `more details <https://github.com/cdgriffith/Box/wiki/Installation>`_ on installation details.
 
-Box 7 is tested on python 3.7+, if you are upgrading from previous versions, please look through
+Box 8 is tested on python 3.11+, if you are upgrading from previous versions, please look through
 `any breaking changes and new features <https://github.com/cdgriffith/Box/wiki/Major-Version-Breaking-Changes>`_.
 
 Optimized Version
@@ -71,17 +72,18 @@ Loading large data sets can be up to 10x faster!
 
 If you are **not** on a x86_64 supported system you will need to do some extra work to install the optimized version.
 There will be an warning of "WARNING: Cython not installed, could not optimize box" during install.
-You will need python development files, system compiler, and the python packages `Cython` and `wheel`.
+You will need python development files, system compiler, and the python packages `Cython`, `setuptools` and `wheel`.
 
 **Linux Example:**
 
 First make sure you have python development files installed (`python3-dev` or `python3-devel` in most repos).
-You will then need `Cython` and `wheel` installed and then install (or re-install with `--force`) `python-box`.
+You will then need `Cython`, `setuptools` and `wheel` installed and then install (or re-install with `--force`) `python-box`.
+As Cython is not a build requirement, the build has to run without isolation so it can see your installed copy.
 
 .. code:: bash
 
-        pip install Cython wheel
-        pip install python-box[all]~=7.0 --upgrade --force
+        pip install Cython "setuptools>=77" wheel
+        pip install "python-box[all]~=8.0" --upgrade --force --no-binary python-box --no-build-isolation
 
 If you have any issues please open a github issue with the error you are experiencing!
 
@@ -124,6 +126,42 @@ allowing for recursive dot notation access.
 
 `Box` also includes helper functions to transform it back into a `dict`,
 as well as into `JSON`, `YAML`, `TOML`, or `msgpack` strings or files.
+
+Internal Attributes on Subclasses
+---------------------------------
+
+If you subclass `Box` and need attributes that are *not* part of the data (a source path, a cache, a
+logger...), list their names in ``_box_internal_attrs``. Setting or deleting those names with attribute access
+stores them on the instance, like a normal Python object, instead of in the dictionary.
+
+.. code:: python
+
+        from box import Box
+
+        class Config(Box):
+            _box_internal_attrs = ("source_path", "_cache")
+
+            def __init__(self, *args, source_path=None, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.source_path = source_path
+                self._cache = {}
+
+        c = Config({"name": "app"}, source_path="/etc/app.yml")
+        c.source_path        # '/etc/app.yml'
+        c.to_dict()          # {'name': 'app'}
+        "source_path" in c   # False
+
+Internal attributes are excluded from ``to_dict``, ``to_json``, ``to_yaml``, ``to_toml``, ``to_msgpack``, ``keys()``,
+iteration, ``in``, ``len``, equality and hashing. They survive ``pickle``, and are carried over by ``copy()``,
+``copy.copy`` (shared, shallow) and ``copy.deepcopy`` (deep copied). They can be set and deleted even on a
+``frozen_box``, since they are not data.
+
+Things to keep in mind:
+
+* Nested boxes are created through your subclass (as `box_class` defaults to it), so every nested box gets its
+  own fresh internal attributes from ``__init__``, they are not shared with the parent.
+* Only attribute access is affected. ``c["source_path"]`` still refers to the dictionary data, and if a data key
+  and an internal attribute share a name, attribute access returns the internal attribute.
 
 
 Thanks

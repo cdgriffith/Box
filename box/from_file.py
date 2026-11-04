@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-import sys
 from collections.abc import Callable
 from json import JSONDecodeError
 from os import PathLike
@@ -10,7 +9,7 @@ from pathlib import Path
 
 from box.box import Box
 from box.box_list import BoxList
-from box.converters import msgpack_available, toon_available, toml_read_library, yaml_available, toml_decode_error
+from box.converters import msgpack_available, toml_decode_error, toml_read_library, toon_available, yaml_available
 from box.exceptions import BoxError
 
 try:
@@ -92,7 +91,7 @@ def _to_toon(file, encoding, errors, **kwargs):
         return BoxList.from_toon(filename=file, encoding=encoding, errors=errors, **kwargs)
 
 
-converters = {
+converters: dict[str, Callable] = {
     "json": _to_json,
     "jsn": _to_json,
     "yaml": _to_yaml,
@@ -103,7 +102,7 @@ converters = {
     "msgpack": _to_msgpack,
     "pack": _to_msgpack,
     "csv": _to_csv,
-}  # type: dict[str, Callable]
+}
 
 
 def box_from_file(
@@ -155,8 +154,7 @@ def box_from_string(content: str, string_type: str = "json") -> Box | BoxList:
             return Box.from_toml(toml_string=content)
         except toml_decode_error:  # type: ignore
             raise BoxError("File is not TOML as expected")
-        except BoxError:
-            return BoxList.from_toml(toml_string=content)
+        # A TOML document is always a table, so unlike the other formats it is never a BoxList
     elif string_type == "yaml":
         try:
             return Box.from_yaml(yaml_string=content)

@@ -5,6 +5,7 @@
 """
 Improved dictionary access through dot notation with additional tools.
 """
+
 from __future__ import annotations
 
 import copy
@@ -14,26 +15,25 @@ from collections.abc import Callable, Generator, Iterable, Mapping
 from inspect import signature
 from keyword import iskeyword
 from os import PathLike
-from typing import Any, Literal
-
+from typing import Any
 
 import box
+from box import comments as _comments
 from box.converters import (
     BOX_PARAMETERS,
     _from_json,
     _from_msgpack,
     _from_toml,
     _from_toon,
-    _from_yaml,
+    _from_yaml_with_comments,
     _to_json,
     _to_msgpack,
     _to_toml,
     _to_toon,
-    _to_yaml,
     msgpack_available,
-    toon_available,
     toml_read_library,
     toml_write_library,
+    toon_available,
     yaml_available,
 )
 from box.exceptions import BoxError, BoxKeyError, BoxTypeError, BoxValueError, BoxWarning
@@ -97,14 +97,32 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
     return tuple(out_list)
 
 
-def _parse_box_dots(bx, item, setting=False):
+def _to_native_tuple(iterable):
+    """Convert a tuple's Box/BoxList members back to native types.
+
+    ``frozen_box`` stores lists as tuples of Boxes, so ``to_dict`` needs to
+    turn those nested Boxes back into plain dicts to remain serializable.
+    """
+    out_list = []
+    for i in iterable:
+        if isinstance(i, Box):
+            out_list.append(i.to_dict())
+        elif isinstance(i, box.BoxList):
+            out_list.append(i.to_list())
+        elif isinstance(i, tuple):
+            out_list.append(_to_native_tuple(i))
+        else:
+            out_list.append(i)
+    return tuple(out_list)
+
+
+def _parse_box_dots(bx, item):
+    """Split a box_dots key at its first "." or "[". Callers only pass keys that contain one."""
     for idx, char in enumerate(item):
         if char == "[":
             return item[:idx], item[idx:]
         elif char == ".":
             return item[:idx], item[idx + 1 :]
-    if setting and "." in item:
-        return item.split(".", 1)
     raise BoxError("Could not split box dots properly")
 
 
@@ -138,6 +156,49 @@ def _get_box_config():
     }
 
 
+#: Every Box option and its default. Subclasses can change these defaults with ``_box_defaults``.
+BOX_OPTION_DEFAULTS: dict[str, Any] = {
+    "default_box": False,
+    "default_box_attr": NO_DEFAULT,
+    "default_box_none_transform": True,
+    "default_box_create_on_get": False,
+    "frozen_box": False,
+    "camel_killer_box": False,
+    "camel_killer_box_keep_keys": False,
+    "conversion_box": True,
+    "modify_tuples_box": False,
+    "box_safe_prefix": "x",
+    "box_duplicates": "ignore",
+    "box_intact_types": (),
+    "box_recast": None,
+    "box_dots": False,
+    "box_dots_exclude": None,
+    "box_class": None,
+    "box_namespace": (),
+}
+
+
+def _build_box_config(cls, kwargs: dict) -> dict:
+    """
+    Build the box config for `cls`, removing the Box options from `kwargs` so only data keys remain.
+
+    An option passed explicitly wins, then the class ``_box_defaults``, then ``BOX_OPTION_DEFAULTS``.
+    """
+    options = {**BOX_OPTION_DEFAULTS, **cls._box_resolved_defaults}
+    for name in BOX_OPTION_DEFAULTS:
+        if name in kwargs:
+            options[name] = kwargs.pop(name)
+    config = _get_box_config()
+    config.update(options)
+    if config["default_box_attr"] is NO_DEFAULT:
+        config["default_box_attr"] = cls
+    if config["box_class"] is None:
+        config["box_class"] = cls
+    config["box_intact_types"] = tuple(config["box_intact_types"])
+    config["box_dots_exclude"] = re.compile(config["box_dots_exclude"]) if config["box_dots_exclude"] else None
+    return config
+
+
 def _get_property_func(obj, key):
     """
     Try to get property helper functions of given object and property name.
@@ -146,11 +207,9 @@ def _get_property_func(obj, key):
     :param key: property name
     :return: a tuple for helper functions(fget, fset, fdel). If no such property, a (None, None, None) returns
     """
-    obj_type = type(obj)
-
-    if not hasattr(obj_type, key):
+    attr = getattr(type(obj), key, None)
+    if not isinstance(attr, property):
         return None, None, None
-    attr = getattr(obj_type, key)
     return attr.fget, attr.fset, attr.fdel
 
 
@@ -162,9 +221,12 @@ class Box(dict):
     :param default_box_attr: Specify the default replacement.
         WARNING: If this is not the default 'Box', it will not be recursive
     :param default_box_none_transform: When using default_box, treat keys with none values as absent. True by default
-    :param default_box_create_on_get: On lookup of a key that doesn't exist, create it if missing
+    :param default_box_create_on_get: On lookup of a key that doesn't exist, also store the default value.
+        False by default: lookups never change the Box, assigning through a missing key still creates it
     :param frozen_box: After creation, the box cannot be modified
     :param camel_killer_box: Convert CamelCase to snake_case
+    :param camel_killer_box_keep_keys: With camel_killer_box, keep the original keys and only add
+        snake_case attribute aliases for them (needs conversion_box)
     :param conversion_box: Check for near matching keys as attributes
     :param modify_tuples_box: Recreate incoming tuples with dicts into Boxes
     :param box_safe_prefix: Conversion box prefix for unsafe attributes
@@ -175,9 +237,24 @@ class Box(dict):
     :param box_dots_exclude: optional regular expression for dotted keys to exclude
     :param box_class: change what type of class sub-boxes will be created as
     :param box_namespace: the namespace this (possibly nested) Box lives within
+
+    Subclasses may set ``_box_internal_attrs`` to a tuple of attribute names that are stored on
+    the instance instead of in the dict data (see ``_box_internal_attrs`` below).
     """
 
     _box_config: dict[str, Any]
+
+    #: Names that subclasses can list to keep "internal-only" attributes.
+    #: Setting or deleting one of these names with attribute access stores it on the
+    #: instance (``object.__setattr__``) rather than in the dict data, so it is never
+    #: exported, iterated, compared or hashed. See the "Internal Attributes" docs.
+    _box_internal_attrs: tuple[str, ...] = ()
+
+    #: Box options this class uses when they are not passed explicitly, for example
+    #: ``_box_defaults = {"default_box": True}``. Subclasses inherit and extend them.
+    #: See the "Subclassing Box" docs.
+    _box_defaults: dict[str, Any] = {}
+    _box_resolved_defaults: dict[str, Any] = {}
 
     _protected_keys = [
         "to_dict",
@@ -187,103 +264,50 @@ class Box(dict):
         "from_json",
         "from_toml",
         "to_toml",
+        "to_msgpack",
+        "from_msgpack",
+        "to_toon",
+        "from_toon",
         "merge_update",
+        "get_comment",
+        "set_comment",
+        "del_comment",
     ] + [attr for attr in dir({}) if not attr.startswith("_")]
 
-    def __new__(
-        cls,
-        *args: Any,
-        default_box: bool = False,
-        default_box_attr: Any = NO_DEFAULT,
-        default_box_none_transform: bool = True,
-        default_box_create_on_get: bool = True,
-        frozen_box: bool = False,
-        camel_killer_box: bool = False,
-        conversion_box: bool = True,
-        modify_tuples_box: bool = False,
-        box_safe_prefix: str = "x",
-        box_duplicates: str = "ignore",
-        box_intact_types: tuple | list = (),
-        box_recast: dict | None = None,
-        box_dots: bool = False,
-        box_dots_exclude: str | None = None,
-        box_class: dict | type[Box] | None = None,
-        box_namespace: tuple[str, ...] | Literal[False] = (),
-        **kwargs: Any,
-    ):
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        own = cls.__dict__.get("_box_defaults", {})
+        unknown = sorted(set(own) - set(BOX_OPTION_DEFAULTS))
+        if unknown:
+            raise BoxError(f"Unknown Box options in {cls.__name__}._box_defaults: {', '.join(unknown)}")
+        # Merged along the inheritance chain, so a subclass only lists what it changes
+        cls._box_resolved_defaults = {**getattr(cls, "_box_resolved_defaults", {}), **own}
+
+    def __new__(cls, *args: Any, **kwargs: Any):
         """
         Due to the way pickling works in python 3, we need to make sure
         the box config is created as early as possible.
         """
+        config = _build_box_config(cls, kwargs)
         obj = super().__new__(cls, *args, **kwargs)
-        obj._box_config = _get_box_config()
-        obj._box_config.update(
-            {
-                "default_box": default_box,
-                "default_box_attr": cls.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
-                "default_box_none_transform": default_box_none_transform,
-                "default_box_create_on_get": default_box_create_on_get,
-                "conversion_box": conversion_box,
-                "box_safe_prefix": box_safe_prefix,
-                "frozen_box": frozen_box,
-                "camel_killer_box": camel_killer_box,
-                "modify_tuples_box": modify_tuples_box,
-                "box_duplicates": box_duplicates,
-                "box_intact_types": tuple(box_intact_types),
-                "box_recast": box_recast,
-                "box_dots": box_dots,
-                "box_dots_exclude": re.compile(box_dots_exclude) if box_dots_exclude else None,
-                "box_class": box_class if box_class is not None else Box,
-                "box_namespace": box_namespace,
-            }
-        )
+        obj._box_config = config
+        # Pickle reconstructs via __new__ + item assignment + __setstate__.
+        # Item assignment happens first, while this Box still has default options,
+        # so nested Box/BoxList values must be stored as-is (see __convert_and_store).
+        obj._box_config["__unpickling"] = True
         return obj
 
-    def __init__(
-        self,
-        *args: Any,
-        default_box: bool = False,
-        default_box_attr: Any = NO_DEFAULT,
-        default_box_none_transform: bool = True,
-        default_box_create_on_get: bool = True,
-        frozen_box: bool = False,
-        camel_killer_box: bool = False,
-        conversion_box: bool = True,
-        modify_tuples_box: bool = False,
-        box_safe_prefix: str = "x",
-        box_duplicates: str = "ignore",
-        box_intact_types: tuple | list = (),
-        box_recast: dict | None = None,
-        box_dots: bool = False,
-        box_dots_exclude: str | None = None,
-        box_class: dict | type[Box] | None = None,
-        box_namespace: tuple[str, ...] | Literal[False] = (),
-        **kwargs: Any,
-    ):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__()
-        self._box_config = _get_box_config()
-        self._box_config.update(
-            {
-                "default_box": default_box,
-                "default_box_attr": self.__class__ if default_box_attr is NO_DEFAULT else default_box_attr,
-                "default_box_none_transform": default_box_none_transform,
-                "default_box_create_on_get": default_box_create_on_get,
-                "conversion_box": conversion_box,
-                "box_safe_prefix": box_safe_prefix,
-                "frozen_box": frozen_box,
-                "camel_killer_box": camel_killer_box,
-                "modify_tuples_box": modify_tuples_box,
-                "box_duplicates": box_duplicates,
-                "box_intact_types": tuple(box_intact_types),
-                "box_recast": box_recast,
-                "box_dots": box_dots,
-                "box_dots_exclude": re.compile(box_dots_exclude) if box_dots_exclude else None,
-                "box_class": box_class if box_class is not None else self.__class__,
-                "box_namespace": box_namespace,
-            }
-        )
+        self._box_config = _build_box_config(self.__class__, kwargs)
         if not self._box_config["conversion_box"] and self._box_config["box_duplicates"] != "ignore":
             raise BoxError("box_duplicates are only for conversion_boxes")
+        if (
+            self._box_config["camel_killer_box_keep_keys"]
+            and self._box_config["camel_killer_box"]
+            and not self._box_config["conversion_box"]
+        ):
+            raise BoxError("camel_killer_box_keep_keys needs conversion_box, it provides the snake_case aliases")
         if len(args) == 1:
             if isinstance(args[0], str):
                 raise BoxValueError("Cannot extrapolate Box from string")
@@ -299,6 +323,8 @@ class Box(dict):
                     self.__setitem__(k, v)
             else:
                 raise BoxValueError("First argument must be mapping or iterable")
+            if isinstance(args[0], Box):
+                args[0]._comment_copy_to(self)
         elif args:
             raise BoxTypeError(f"Box expected at most 1 argument, got {len(args)}")
 
@@ -320,12 +346,17 @@ class Box(dict):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
 
-        new_box = other.copy()
-        if not isinstance(other, Box):
-            new_box = self._box_config["box_class"](new_box)
+        new_box = other.copy() if isinstance(other, Box) else self.__new_from_plain(other)
         new_box.merge_update(self, _force_unfrozen=True)  # type: ignore[attr-defined]
         new_box._box_config["frozen_box"] = self._box_config["frozen_box"]  # type: ignore[attr-defined]
         return new_box
+
+    def __new_from_plain(self, other):
+        """A Box of this box's class and options (unfrozen, top level) holding a plain dict's data"""
+        config = self.__box_config()
+        config["frozen_box"] = False
+        config.pop("box_namespace")
+        return self._box_config["box_class"](other, **config)
 
     def __iadd__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
@@ -345,9 +376,7 @@ class Box(dict):
     def __ror__(self, other: Mapping[Any, Any]):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
-        new_box = other.copy()
-        if not isinstance(other, Box):
-            new_box = self._box_config["box_class"](new_box)
+        new_box = other.copy() if isinstance(other, Box) else self.__new_from_plain(other)
         new_box._box_config["frozen_box"] = False  # type: ignore[attr-defined]
         new_box.update(self)  # type: ignore[attr-defined]
         new_box._box_config["frozen_box"] = self._box_config["frozen_box"]  # type: ignore[attr-defined]
@@ -395,8 +424,9 @@ class Box(dict):
             if key.isidentifier() and not iskeyword(key):
                 items.add(key)
 
+        keep_keys = self._box_config["camel_killer_box_keep_keys"] and self._box_config["camel_killer_box"]
         for key in self.keys():
-            if key not in items:
+            if key not in items or keep_keys:
                 if self._box_config["conversion_box"]:
                     key = self._safe_attr(key)
                     if key:
@@ -410,17 +440,24 @@ class Box(dict):
             return in_me
         if in_me:
             return True
-        if "." not in item:
+        if not self.__process_dotted_key(item):
             return False
-        try:
-            first_item, children = _parse_box_dots(self, item)
-        except BoxError:
+        first_item, children = _parse_box_dots(self, item)
+        first_item = self.__dots_int_key(first_item)
+        if not super().__contains__(first_item):
             return False
-        else:
-            if not super().__contains__(first_item):
+        it = self[first_item]
+        if isinstance(it, Box):
+            return it.__dots_int_key(children) in it
+        if isinstance(it, box.BoxList):
+            # children is the rest of the path starting with "[", e.g. "[0].x"
+            try:
+                it.__getitem__(children, _ignore_default=True)
+            except (KeyError, IndexError, TypeError):
                 return False
-            it = self[first_item]
-            return isinstance(it, Iterable) and children in it
+            return True
+        # Other values (strings, numbers) are not traversed by box_dots lookups either
+        return False
 
     def keys(self, dotted: bool = False):
         if not dotted:
@@ -468,29 +505,63 @@ class Box(dict):
             return default
         return self[key]
 
-    def copy(self) -> Box:
+    def __copy_internals(self, new, deep=False, memo=None):
+        """Carry instance-only attributes listed in `_box_internal_attrs`, and comments, over to `new`."""
+        self._comment_copy_to(new)
+        for name in self._box_internal_attrs:
+            if name in self.__dict__:
+                value = self.__dict__[name]
+                object.__setattr__(new, name, copy.deepcopy(value, memo) if deep else value)
+        return new
+
+    def copy(self):
         config = self.__box_config()
         config.pop("box_namespace")  # Detach namespace; it will be reassigned if we nest again
-        return Box(super().copy(), **config)
+        return self.__copy_internals(self.__class__(super().copy(), **config))
 
-    def __copy__(self) -> Box:
+    def __copy__(self):
         return self.copy()
 
-    def __deepcopy__(self, memodict=None) -> Box:
+    def __deepcopy__(self, memodict=None):
         frozen = self._box_config["frozen_box"]
         config = self.__box_config()
         config["frozen_box"] = False
-        out = self._box_config["box_class"](**config)
-        memodict = memodict or {}
+        out = self.__class__(**config)
+        memodict = memodict if memodict is not None else {}
         memodict[id(self)] = out
         for k, v in self.items():
             out[copy.deepcopy(k, memodict)] = copy.deepcopy(v, memodict)
+        self.__copy_internals(out, deep=True, memo=memodict)
         out._box_config["frozen_box"] = frozen
         return out
 
     def __setstate__(self, state):
         self._box_config = state["_box_config"]
         self.__dict__.update(state)
+        self._box_config["__created"] = True
+        self._box_config["__unpickling"] = False
+
+    def __dots_int_key(self, item):
+        """
+        A segment of a box_dots path made of digits also matches the int key with that value, so
+        "a.2" reaches {"a": {2: ...}} (#123). Only used for path segments, a str key of the same
+        value wins, and plain (non dotted) keys are never mapped.
+        """
+        if (
+            self._box_config["box_dots"]
+            and isinstance(item, str)
+            and item.isascii()
+            and item.lstrip("-").isdigit()
+            and not dict.__contains__(self, item)
+        ):
+            as_int = int(item)
+            if dict.__contains__(self, as_int):
+                return as_int
+        return item
+
+    def __camel_destructive(self):
+        """camel_killer_box renames keys to snake_case unless camel_killer_box_keep_keys is set"""
+        return self._box_config["camel_killer_box"] and not self._box_config["camel_killer_box_keep_keys"]
 
     def __process_dotted_key(self, item):
         if self._box_config["box_dots"] and isinstance(item, str):
@@ -500,7 +571,7 @@ class Box(dict):
             )
         return False
 
-    def __get_default(self, item, attr=False):
+    def __get_default(self, item):
         if item in ("getdoc", "shape") and _is_ipython():
             return None
         default_value = self._box_config["default_box_attr"]
@@ -508,47 +579,54 @@ class Box(dict):
             value = self._box_config["box_class"](**self.__box_config(extra_namespace=item))
         elif isinstance(default_value, dict):
             value = self._box_config["box_class"](**self.__box_config(extra_namespace=item), **default_value)
-        elif isinstance(default_value, list):
+        elif isinstance(default_value, list) or default_value is list:
             value = box.BoxList(**self.__box_config(extra_namespace=item))
         elif isinstance(default_value, Callable):
+            # Parameters named key / box_instance receive the missing key and this box. Any other
+            # parameter must be optional, so plain factories such as int, set or a lambda work too.
             args = []
             kwargs = {}
-            p_sigs = [
-                p.name
-                for p in signature(default_value).parameters.values()
-                if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
-            ]
-            k_sigs = [p.name for p in signature(default_value).parameters.values() if p.kind is p.KEYWORD_ONLY]
-            for name in p_sigs:
-                if name not in ("key", "box_instance"):
-                    raise BoxError("default_box_attr can only have the arguments 'key' and 'box_instance'")
-            if "key" in p_sigs:
-                args.append(item)
-            if "box_instance" in p_sigs:
-                args.insert(p_sigs.index("box_instance"), self)
-            if "key" in k_sigs:
-                kwargs["key"] = item
-            if "box_instance" in k_sigs:
-                kwargs["box_instance"] = self
+            try:
+                params = list(signature(default_value).parameters.values())
+            except (TypeError, ValueError):  # pragma: no cover (callables without a readable signature)
+                params = []
+            for param in params:
+                if param.kind in (param.VAR_POSITIONAL, param.VAR_KEYWORD):
+                    continue
+                if param.name in ("key", "box_instance"):
+                    passed = item if param.name == "key" else self
+                    if param.kind is param.POSITIONAL_ONLY:
+                        args.append(passed)
+                    else:
+                        kwargs[param.name] = passed
+                elif param.default is param.empty:
+                    raise BoxError(
+                        "default_box_attr can only have the required arguments 'key' and 'box_instance', "
+                        f"not {param.name!r}"
+                    )
             value = default_value(*args, **kwargs)
         elif hasattr(default_value, "copy"):
             value = default_value.copy()
         else:
             value = default_value
         if self._box_config["default_box_create_on_get"]:
-            if not attr or not (item.startswith("_") and item.endswith("_")):
-                if self.__process_dotted_key(item):
-                    first_item, children = _parse_box_dots(self, item, setting=True)
-                    if first_item in self.keys():
-                        if hasattr(self[first_item], "__setitem__"):
-                            self[first_item].__setitem__(children, value)
-                    else:
-                        super().__setitem__(
-                            first_item, self._box_config["box_class"](**self.__box_config(extra_namespace=first_item))
-                        )
-                        self[first_item].__setitem__(children, value)
-                else:
-                    super().__setitem__(item, value)
+            if self.__process_dotted_key(item):
+                first_item, children = _parse_box_dots(self, item)
+                # An existing first_item only gets here when its value can't be looked into
+                # (for example an int), so there is nowhere to store the default
+                if first_item not in self.keys():
+                    self._flush_pending_parent()
+                    super().__setitem__(
+                        first_item, self._box_config["box_class"](**self.__box_config(extra_namespace=first_item))
+                    )
+                    self[first_item].__setitem__(children, value)
+            else:
+                super().__setitem__(item, value)
+        elif isinstance(value, Box) and not self.__process_dotted_key(item):
+            # Lookups stay ephemeral, but a later assignment on this child
+            # should create the missing parent keys (see _flush_pending_parent).
+            # A strong reference is required: intermediate ephemeral parents are otherwise garbage collected.
+            value._box_config["__pending_parent"] = (self, item)
         return value
 
     def __box_config(self, extra_namespace: Any = NO_NAMESPACE) -> dict:
@@ -573,6 +651,7 @@ class Box(dict):
         return value
 
     def __convert_and_store(self, item, value):
+        self._flush_pending_parent()
         if self._box_config["conversion_box"]:
             safe_key = self._safe_attr(item)
             self._box_config["__safe_keys"][safe_key] = item
@@ -581,8 +660,27 @@ class Box(dict):
         # If the value has already been converted or should not be converted, return it as-is
         if self._box_config["box_intact_types"] and isinstance(value, self._box_config["box_intact_types"]):
             return super().__setitem__(item, value)
+        # Pickle sets items before __setstate__, so this Box still has default
+        # options. Nested Box/BoxList objects already carry the correct config
+        # from their own unpickle; recreating them here would drop box_dots etc.
+        if self._box_config.get("__unpickling") and isinstance(value, (Box, box.BoxList)):
+            return super().__setitem__(item, value)
         # This is the magic sauce that makes sub dictionaries into new box objects
         if isinstance(value, dict):
+            # If box_dots is enabled and the key already exists as a Box (possibly created from dotted keys),
+            # merge the new dict into the existing Box instead of overwriting it
+            # This fixes issue #305 where dotted keys are lost when a non-dotted key with the same prefix comes after
+            if (
+                self._box_config["box_dots"]
+                and item in self
+                and isinstance(self[item], Box)
+                and not self._box_config["__created"]
+            ):
+                # Merge the new dict into the existing Box by setting each key-value pair
+                # This ensures proper conversion of nested structures
+                for k, v in value.items():
+                    self[item].__setitem__(k, v)
+                return
             # We always re-create even if it was already a Box object to pass down configurations correctly
             value = self._box_config["box_class"](value, **self.__box_config(extra_namespace=item))
         elif isinstance(value, list) and not isinstance(value, box.BoxList):
@@ -614,16 +712,19 @@ class Box(dict):
                     new_box[x] = self[x]
                 return new_box
             if self.__process_dotted_key(item):
-                try:
-                    first_item, children = _parse_box_dots(self, item)
-                except BoxError:
-                    if self._box_config["default_box"] and not _ignore_default:
-                        return self.__get_default(item)
-                    raise BoxKeyError(str(item)) from _exception_cause(err)
+                first_item, children = _parse_box_dots(self, item)
+                first_item = self.__dots_int_key(first_item)
+                if first_item not in self.keys() and self.__camel_destructive():
+                    first_item = _camel_killer(first_item)
                 if first_item in self.keys():
-                    if hasattr(self[first_item], "__getitem__"):
-                        return self[first_item][children]
-            if self._box_config["camel_killer_box"] and isinstance(item, str):
+                    child = self[first_item]
+                    if isinstance(child, Box):
+                        children = child.__dots_int_key(children)
+                    if hasattr(child, "__getitem__"):
+                        if _ignore_default and isinstance(child, (Box, box.BoxList)):
+                            return child.__getitem__(children, _ignore_default=True)
+                        return child[children]
+            if self.__camel_destructive() and isinstance(item, str):
                 converted = _camel_killer(item)
                 if converted in self.keys():
                     return super().__getitem__(converted)
@@ -631,7 +732,7 @@ class Box(dict):
                 return self.__get_default(item)
             raise BoxKeyError(str(err)) from _exception_cause(err)
         except TypeError as err:
-            if isinstance(item, slice):
+            if isinstance(item, slice):  # pragma: no cover (Python 3.11, slices became hashable in 3.12)
                 new_box = self._box_config["box_class"](**self.__box_config())
                 for x in list(super().keys())[item.start : item.stop : item.step]:
                     new_box[x] = self[x]
@@ -645,8 +746,6 @@ class Box(dict):
             except KeyError:
                 value = object.__getattribute__(self, item)
         except AttributeError as err:
-            if item == "__getstate__":
-                raise BoxKeyError(item) from _exception_cause(err)
             if item == "_box_config":
                 raise BoxError("_box_config key must exist") from _exception_cause(err)
             if self._box_config["conversion_box"]:
@@ -656,20 +755,132 @@ class Box(dict):
             if self._box_config["default_box"]:
                 if item.startswith("_") and item.endswith("_"):
                     raise BoxKeyError(f"{item}: Does not exist and internal methods are never defaulted")
-                return self.__get_default(item, attr=True)
+                return self.__get_default(item)
             raise BoxKeyError(str(err)) from _exception_cause(err)
         return value
+
+    def _flush_pending_parent(self):
+        """
+        With `default_box_create_on_get=False` a missing key returns an ephemeral child Box that is
+        not stored in its parent. The first time something is actually written to that child, attach it
+        (and any ephemeral ancestors) to the parent so `b.a.b = 1` creates `a`.
+
+        Nothing is attached if the key has been given a real value since the child was handed out:
+        the stale child is left detached rather than overwriting data, so writes to it are lost
+        just like any other ephemeral lookup.
+        """
+        pending = self._box_config.pop("__pending_parent", None)
+        if pending is None:
+            return
+        parent, key = pending
+        parent._flush_pending_parent()
+        if dict.__contains__(parent, key):
+            return
+        if parent._box_config["frozen_box"] and parent._box_config["__created"]:
+            raise BoxError("Box is frozen")
+        if parent._box_config["conversion_box"]:
+            parent._box_config["__safe_keys"][parent._safe_attr(key)] = key
+        dict.__setitem__(parent, key, self)
+
+    def _comment_store(self, create: bool = True) -> Any:
+        store = self._box_config.get("__comments")
+        if store is None and create:
+            store = self._box_config["__comments"] = {}
+        return store
+
+    def _comment_document(self, create: bool = True) -> Any:
+        document = self._box_config.get("__comments_document")
+        if document is None and create:
+            document = self._box_config["__comments_document"] = {}
+        return document
+
+    def _comment_check_frozen(self):
+        if self._box_config["frozen_box"] and self._box_config["__created"]:
+            raise BoxError("Box is frozen")
+
+    def _comment_resolve(self, key):
+        """The stored key a key from YAML or the comment API refers to (camel_killer renames keys)."""
+        if dict.__contains__(self, key):
+            return key
+        if isinstance(key, str) and self.__camel_destructive():
+            converted = _camel_killer(key)
+            if dict.__contains__(self, converted):
+                return converted
+        return key
+
+    def _comment_owner(self, key):
+        """(container, key) that holds the comment for `key`, following box_dots paths."""
+        if key is None:
+            return self, None
+        resolved = self._comment_resolve(key)
+        if dict.__contains__(self, resolved):
+            return self, resolved
+        if self.__process_dotted_key(key):
+            first, children = _parse_box_dots(self, key)
+            first = self._comment_resolve(self.__dots_int_key(first))
+            if dict.__contains__(self, first):
+                child = dict.__getitem__(self, first)
+                if isinstance(child, Box):
+                    return child._comment_owner(child.__dots_int_key(children))
+                if isinstance(child, box.BoxList):
+                    return child._comment_owner(children)
+        raise BoxKeyError(f"{key!r} is not in the Box, comments can only be attached to existing keys")
+
+    def _comment_copy_to(self, other):
+        store = self._box_config.get("__comments")
+        if store:
+            other._comment_store().update(
+                {k: copy.deepcopy(v) for k, v in store.items() if dict.__contains__(other, k)}
+            )
+        document = self._box_config.get("__comments_document")
+        if document:
+            other._comment_document().update(copy.deepcopy(document))
+
+    # ---- Comments (#184): kept outside the data, written by to_yaml with ruamel.yaml ----
+
+    def get_comment(self, key: Any = None) -> dict | None:
+        """
+        Return the comments of `key` as ``{"before": text, "eol": text}`` (a position without a comment
+        is left out), or None. ``key=None`` returns the document comments ``{"start": ..., "end": ...}``.
+        With box_dots, `key` can be a dotted path.
+        """
+        return _comments.get_comment(self, key)
+
+    def set_comment(self, key: Any, text: Any, position: str | None = None) -> None:
+        """
+        Attach a comment to an existing key. `position` is "eol" (default, on the key's line) or
+        "before" (lines above the key, may contain newlines). ``key=None`` sets a document comment,
+        position "start" (default) or "end". An empty `text` removes the comment at that position.
+        """
+        _comments.set_comment(self, key, text, position)
+
+    def del_comment(self, key: Any = None) -> None:
+        """Remove every comment of `key` (``None``: the document comments)."""
+        _comments.del_comment(self, key)
+
+    def __getstate__(self):
+        # Ephemeral-child bookkeeping (a reference to the parent) must never be pickled
+        state = self.__dict__.copy()
+        config = state.get("_box_config")
+        if config is not None and "__pending_parent" in config:
+            state["_box_config"] = {k: v for k, v in config.items() if k != "__pending_parent"}
+        return state
 
     def __setitem__(self, key, value):
         if key != "_box_config" and self._box_config["frozen_box"] and self._box_config["__created"]:
             raise BoxError("Box is frozen")
         if self.__process_dotted_key(key):
-            first_item, children = _parse_box_dots(self, key, setting=True)
+            first_item, children = _parse_box_dots(self, key)
+            first_item = self.__dots_int_key(first_item)
             if first_item in self.keys():
-                if hasattr(self[first_item], "__setitem__"):
-                    return self[first_item].__setitem__(children, value)
+                child = self[first_item]
+                if isinstance(child, Box):
+                    children = child.__dots_int_key(children)
+                if hasattr(child, "__setitem__"):
+                    return child.__setitem__(children, value)
             elif self._box_config["default_box"]:
-                if children[0] == "[":
+                self._flush_pending_parent()
+                if children.startswith("["):
                     super().__setitem__(first_item, box.BoxList(**self.__box_config(extra_namespace=first_item)))
                 else:
                     super().__setitem__(
@@ -679,8 +890,8 @@ class Box(dict):
             else:
                 raise BoxKeyError(f"'{self.__class__}' object has no attribute {first_item}")
         value = self.__recast(key, value)
-        if key not in self.keys() and self._box_config["camel_killer_box"]:
-            if self._box_config["camel_killer_box"] and isinstance(key, str):
+        if key not in self.keys() and self.__camel_destructive():
+            if isinstance(key, str):
                 key = _camel_killer(key)
         if self._box_config["conversion_box"] and self._box_config["box_duplicates"] != "ignore":
             self._conversion_checks(key)
@@ -688,6 +899,8 @@ class Box(dict):
 
     def __setattr__(self, key, value):
         if key == "_box_config":
+            return object.__setattr__(self, key, value)
+        if key in self._box_internal_attrs:
             return object.__setattr__(self, key, value)
         if self._box_config["frozen_box"] and self._box_config["__created"]:
             raise BoxError("Box is frozen")
@@ -708,14 +921,15 @@ class Box(dict):
         if self._box_config["frozen_box"]:
             raise BoxError("Box is frozen")
         if key not in self.keys() and self.__process_dotted_key(key):
-            try:
-                first_item, children = _parse_box_dots(self, key)
-            except BoxError:
-                raise BoxKeyError(str(key)) from None
-            if hasattr(self[first_item], "__delitem__"):
-                return self[first_item].__delitem__(children)
-        if key not in self.keys() and self._box_config["camel_killer_box"]:
-            if self._box_config["camel_killer_box"] and isinstance(key, str):
+            first_item, children = _parse_box_dots(self, key)
+            first_item = self.__dots_int_key(first_item)
+            child = self[first_item]
+            if isinstance(child, Box):
+                children = child.__dots_int_key(children)
+            if hasattr(child, "__delitem__"):
+                return child.__delitem__(children)
+        if key not in self.keys() and self.__camel_destructive():
+            if isinstance(key, str):
                 for each_key in self:
                     if _camel_killer(key) == each_key:
                         key = each_key
@@ -724,8 +938,18 @@ class Box(dict):
             super().__delitem__(key)
         except KeyError as err:
             raise BoxKeyError(str(err)) from _exception_cause(err)
+        store = self._box_config.get("__comments")
+        if store:
+            store.pop(key, None)
+        if self._box_config["conversion_box"]:
+            safe_key = self._safe_attr(key)
+            safe_keys = self._box_config["__safe_keys"]
+            if safe_key in safe_keys and safe_keys[safe_key] == key:
+                del safe_keys[safe_key]
 
     def __delattr__(self, item):
+        if item in self._box_internal_attrs:
+            return object.__delattr__(self, item)
         if self._box_config["frozen_box"]:
             raise BoxError("Box is frozen")
         if item == "_box_config":
@@ -746,8 +970,11 @@ class Box(dict):
                 safe_key = self._safe_attr(item)
                 if safe_key in self._box_config["__safe_keys"]:
                     self.__delitem__(self._box_config["__safe_keys"][safe_key])
-                    del self._box_config["__safe_keys"][safe_key]
                     return
+            if self._box_config["default_box"] and not self._box_config["default_box_create_on_get"]:
+                # Every attribute of a default_box looks present (hasattr is True) without being
+                # stored, so deleting a missing one is a no-op. argparse.parse_args relies on this.
+                return
             raise BoxKeyError(str(err)) from _exception_cause(err)
 
     def pop(self, key, *args):
@@ -758,7 +985,7 @@ class Box(dict):
             if len(args) != 1:
                 raise BoxError('pop() takes only one optional argument "default"')
             try:
-                item = self[key]
+                item = self.__getitem__(key, _ignore_default=True)
             except KeyError:
                 return args[0]
             else:
@@ -769,7 +996,9 @@ class Box(dict):
         except KeyError:
             raise BoxKeyError(f"{key}") from None
         else:
-            del self[key]
+            if key in self:
+                del self[key]
+            # else: a default_box returned a default without storing it, there is nothing to remove
             return item
 
     def clear(self):
@@ -777,12 +1006,13 @@ class Box(dict):
             raise BoxError("Box is frozen")
         super().clear()
         self._box_config["__safe_keys"].clear()
+        self._box_config.pop("__comments", None)
 
     def popitem(self):
         if self._box_config["frozen_box"]:
             raise BoxError("Box is frozen")
         try:
-            key = next(self.__iter__())
+            key = next(reversed(super().keys()))  # O(1), most recently inserted like dict
         except StopIteration:
             raise BoxKeyError("Empty box") from None
         return key, self.pop(key)
@@ -815,13 +1045,15 @@ class Box(dict):
                 out_dict[k] = v.to_dict()
             elif isinstance(v, box.BoxList):
                 out_dict[k] = v.to_list()
+            elif isinstance(v, tuple):
+                out_dict[k] = _to_native_tuple(v)
         return out_dict
 
     def update(self, *args, **kwargs):
         if self._box_config["frozen_box"]:
             raise BoxError("Box is frozen")
-        if (len(args) + int(bool(kwargs))) > 1:
-            raise BoxTypeError(f"update expected at most 1 argument, got {len(args) + int(bool(kwargs))}")
+        if len(args) > 1:
+            raise BoxTypeError(f"update expected at most 1 argument, got {len(args)}")
         single_arg = next(iter(args), None)
         if single_arg:
             if hasattr(single_arg, "keys"):
@@ -834,9 +1066,40 @@ class Box(dict):
             self.__convert_and_store(k, kwargs[k])
 
     def merge_update(self, *args, **kwargs):
+        """
+        Recursively update the Box, merging nested dictionaries instead of
+        overwriting them like the built-in ``dict.update``.
+
+        The ``box_merge_lists`` keyword controls how lists sharing a key are
+        combined:
+
+        * ``None`` (default) - the incoming list replaces the existing one
+        * ``"extend"`` - the incoming items are appended to the existing list
+        * ``"unique"`` - only incoming items not already present are appended
+        * ``"merge"`` - lists are merged element by element, recursing into
+          dictionaries that share the same index so their keys are combined.
+          Lists nested directly inside lists are merged the same way, any other
+          value at a shared index is replaced by the incoming one, and extra
+          incoming elements are appended. If the existing value is not a list,
+          the incoming list simply replaces it.
+
+        Any other value raises ``BoxValueError``. Note that merging is done in place
+        and is not atomic, if an error is raised (for example the Box is frozen)
+        part of the update may already have been applied.
+
+        .. code-block:: python
+
+            box_one = Box({"data": [{"a": 1}, {"b": 2}]})
+            box_one.merge_update({"data": [{"c": 3}]}, box_merge_lists="merge")
+            # Box({'data': [{'a': 1, 'c': 3}, {'b': 2}]})
+
+        :param box_merge_lists: strategy used to merge lists, see above
+        """
         merge_type = None
         if "box_merge_lists" in kwargs:
             merge_type = kwargs.pop("box_merge_lists")
+        if merge_type not in (None, False, "extend", "unique", "merge"):
+            raise BoxValueError(f'box_merge_lists must be None, "extend", "unique" or "merge", got {merge_type!r}')
         force_unfrozen = kwargs.pop("_force_unfrozen", False)
 
         was_frozen = self._box_config["frozen_box"]
@@ -844,6 +1107,22 @@ class Box(dict):
             self._box_config["frozen_box"] = False
 
         try:
+
+            def merge_lists(target, incoming):
+                # Element by element: dicts at the same index are merged recursively, lists at the
+                # same index are merged the same way, anything else is replaced by the incoming
+                # value, and incoming elements beyond the end of `target` are appended.
+                for index, item in enumerate(incoming):
+                    if index >= len(target):
+                        target.append(item)
+                        continue
+                    current = target[index]
+                    if isinstance(current, Box) and isinstance(item, dict):
+                        current.merge_update(item, box_merge_lists=merge_type, _force_unfrozen=force_unfrozen)
+                    elif isinstance(current, list) and isinstance(item, list):
+                        merge_lists(current, item)
+                    else:
+                        target[index] = item
 
             def convert_and_set(k, v):
                 intact_type = self._box_config["box_intact_types"] and isinstance(
@@ -865,6 +1144,9 @@ class Box(dict):
                         for item in v:
                             if item not in self[k]:
                                 self[k].append(item)
+                        return
+                    if merge_type == "merge" and k in self and isinstance(self[k], list):
+                        merge_lists(self[k], v)
                         return
                 self.__setitem__(k, v)
 
@@ -890,10 +1172,6 @@ class Box(dict):
         if item in self:
             return self[item]
 
-        if self._box_config["box_dots"]:
-            if item in _get_dot_paths(self):
-                return self[item]
-
         if isinstance(default, dict):
             default = self._box_config["box_class"](default, **self.__box_config(extra_namespace=item))
         if isinstance(default, list):
@@ -903,6 +1181,10 @@ class Box(dict):
 
     def _safe_attr(self, attr):
         """Convert a key into something that is accessible as an attribute"""
+        if self._box_config["camel_killer_box_keep_keys"] and self._box_config["camel_killer_box"]:
+            # Keys keep their spelling, the attribute alias is the snake_case form
+            if isinstance(attr, str):
+                attr = _camel_killer(attr)
         if isinstance(attr, str):
             # By assuming most people are using string first we get substantial speed ups
             if attr.isidentifier() and not iskeyword(attr):
@@ -919,7 +1201,7 @@ class Box(dict):
             return attr
 
         if sum(1 for character in attr if character.isidentifier() and not iskeyword(character)) == 0:
-            attr = f'{self.__box_config()["box_safe_prefix"]}{attr}'
+            attr = f"{self.__box_config()['box_safe_prefix']}{attr}"
             if attr.isidentifier() and not iskeyword(attr):
                 return attr
 
@@ -942,10 +1224,10 @@ class Box(dict):
         except (ValueError, IndexError):
             pass
         else:
-            out = f'{self.__box_config()["box_safe_prefix"]}{out}'
+            out = f"{self.__box_config()['box_safe_prefix']}{out}"
 
         if iskeyword(out):
-            out = f'{self.__box_config()["box_safe_prefix"]}{out}'
+            out = f"{self.__box_config()['box_safe_prefix']}{out}"
 
         return out
 
@@ -957,8 +1239,8 @@ class Box(dict):
         """
         safe_item = self._safe_attr(item)
 
-        if safe_item in self._box_config["__safe_keys"]:
-            dups = [f"{item}({safe_item})", f'{self._box_config["__safe_keys"][safe_item]}({safe_item})']
+        if safe_item in self._box_config["__safe_keys"] and self._box_config["__safe_keys"][safe_item] != item:
+            dups = [f"{item}({safe_item})", f"{self._box_config['__safe_keys'][safe_item]}({safe_item})"]
             if self._box_config["box_duplicates"].startswith("warn"):
                 warnings.warn(f"Duplicate conversion attributes exist: {dups}", BoxWarning)
             else:
@@ -1032,10 +1314,12 @@ class Box(dict):
             :param encoding: File encoding
             :param errors: How to handle encoding errors
             :param width: Line width for YAML output
+            :param sort_keys: True sorts keys alphabetically, the default False keeps insertion order
             :param yaml_kwargs: additional arguments to pass to yaml.dump
             :return: string of YAML (if no filename provided)
             """
-            return _to_yaml(
+            return _comments.dump_yaml(
+                self,
                 self.to_dict(),
                 filename=filename,
                 default_flow_style=default_flow_style,
@@ -1069,12 +1353,17 @@ class Box(dict):
                 if arg in BOX_PARAMETERS:
                     box_args[arg] = kwargs.pop(arg)
 
-            data = _from_yaml(yaml_string=yaml_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
+            data, comments = _from_yaml_with_comments(
+                yaml_string=yaml_string, filename=filename, encoding=encoding, errors=errors, **kwargs
+            )
             if not data:
-                return cls(**box_args)
-            if not isinstance(data, dict):
+                result = cls(**box_args)
+            elif not isinstance(data, dict):
                 raise BoxError(f"yaml data not returned as a dictionary but rather a {type(data).__name__}")
-            return cls(data, **box_args)
+            else:
+                result = cls(data, **box_args)
+            _comments.apply_comments(result, comments)
+            return result
 
     else:
 

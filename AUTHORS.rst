@@ -37,6 +37,26 @@ Code contributions:
 - Jesper Schlegel (jesperschlegel)
 - J vanBemmel (jbemmel)
 - m-janicki
+- DSeaStar (DSeaStar)
+- Guo Jiarui (Jerry-val)
+- Abhinav Maurya (Fire162)
+- Arindam Sikder (arindamsikder)
+- shguild
+- fhgffy
+- AryanRG (AryanRG)
+- Muneeb Sheikh (muneikh)
+- Gary (gary1110086)
+- Vitaliy Voloshin (vitalivo)
+- x0Lazarus
+- Huanyi Xie (xiehuanyi)
+- Likio3000
+- koriyoshi2041
+- binggao1230
+- apoorvdarshan
+- chuenchen309
+- machines-6657 (machines-6657)
+- Chris (ChrisJr404)
+- gyanu2507 (gyanu2507)
 
 
 Suggestions and bug reporting:
@@ -98,3 +118,6 @@ Suggestions and bug reporting:
 - d00m514y3r
 - Sébastien Weber (seb5g)
 - Ward Loos (wrdls)
+- bwanshoom
+- tan_unique (vinson0522)
+- lin (theman6660)

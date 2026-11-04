@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 # Abstract converter functions for use in any Box class
-
 import csv
 import json
-from collections.abc import Callable
+import tomllib
 from io import StringIO
 from os import PathLike
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
 
 from box.exceptions import BoxError
 
@@ -19,23 +18,21 @@ ruamel_available = True
 msgpack_available = True
 
 try:
-    from ruamel.yaml import version_info, YAML
-except ImportError:
+    from ruamel.yaml import YAML, version_info
+except ImportError:  # pragma: no cover (depends on installed packages)
     ruamel_available = False
 else:
-    if version_info[1] < 17:
+    if version_info[1] < 17:  # pragma: no cover (depends on installed packages)
         ruamel_available = False
 
 try:
     import yaml
-except ImportError:
+except ImportError:  # pragma: no cover (depends on installed packages)
     pyyaml_available = False
 
 MISSING_PARSER_ERROR = "No YAML Parser available, please install ruamel.yaml>=0.17 or PyYAML"
 
-toml_read_library: Any | None = None
 toml_write_library: Any | None = None
-toml_decode_error: Callable | None = None
 
 __all__ = [
     "_to_json",
@@ -53,51 +50,25 @@ __all__ = [
 ]
 
 
-class BoxTomlDecodeError(BoxError):
+# Reading uses tomllib, which is always available on the supported Python versions (3.11+)
+toml_read_library = tomllib
+toml_decode_error = tomllib.TOMLDecodeError
+
+
+class BoxTomlDecodeError(BoxError, tomllib.TOMLDecodeError):  # type: ignore
     """Toml Decode Error"""
 
 
-try:
-    import toml
-except ImportError:
-    pass
-else:
-    toml_read_library = toml
-    toml_write_library = toml
-    toml_decode_error = toml.TomlDecodeError
-
-    class BoxTomlDecodeError(BoxError, toml.TomlDecodeError):  # type: ignore
-        """Toml Decode Error"""
-
-
-try:
-    import tomllib
-except ImportError:
-    pass
-else:
-    toml_read_library = tomllib
-    toml_decode_error = tomllib.TOMLDecodeError
-
-    class BoxTomlDecodeError(BoxError, tomllib.TOMLDecodeError):  # type: ignore
-        """Toml Decode Error"""
-
-
-try:
-    import tomli
-except ImportError:
-    pass
-else:
-    toml_read_library = tomli
-    toml_decode_error = tomli.TOMLDecodeError
-
-    class BoxTomlDecodeError(BoxError, tomli.TOMLDecodeError):  # type: ignore
-        """Toml Decode Error"""
-
-
+# Writing needs tomli-w, or the older toml package as a fallback
 try:
     import tomli_w
-except ImportError:
-    pass
+except ImportError:  # pragma: no cover (depends on installed packages)
+    try:
+        import toml
+    except ImportError:
+        pass
+    else:
+        toml_write_library = toml
 else:
     toml_write_library = tomli_w
 
@@ -111,7 +82,8 @@ except ImportError:
 toon_available = True
 
 try:
-    from toon_format import encode as toon_encode, decode as toon_decode
+    from toon_format import decode as toon_decode
+    from toon_format import encode as toon_encode
 except ImportError:
     toon_available = False
 
@@ -124,6 +96,7 @@ BOX_PARAMETERS = (
     "default_box_create_on_get",
     "frozen_box",
     "camel_killer_box",
+    "camel_killer_box_keep_keys",
     "conversion_box",
     "modify_tuples_box",
     "box_safe_prefix",
@@ -156,12 +129,13 @@ def _exists(filename: str | PathLike, create: bool = False) -> Path:
 def _to_json(
     obj, filename: str | PathLike | None = None, encoding: str = "utf-8", errors: str = "strict", **json_kwargs
 ):
+    json_kwargs.setdefault("ensure_ascii", False)
     if filename:
         _exists(filename, create=True)
         with open(filename, "w", encoding=encoding, errors=errors) as f:
-            json.dump(obj, f, ensure_ascii=False, **json_kwargs)
+            json.dump(obj, f, **json_kwargs)
     else:
-        return json.dumps(obj, ensure_ascii=False, **json_kwargs)
+        return json.dumps(obj, **json_kwargs)
 
 
 def _from_json(
@@ -182,8 +156,15 @@ def _from_json(
                 ]
             else:
                 data = json.load(f, **kwargs)
-    elif json_string:
-        data = json.loads(json_string, **kwargs)
+    elif json_string or (multiline and json_string is not None):
+        if multiline:
+            data = [
+                json.loads(line.strip(), **kwargs)
+                for line in StringIO(json_string, newline=None)
+                if line.strip() and not line.strip().startswith("#")
+            ]
+        else:
+            data = json.loads(json_string, **kwargs)
     else:
         raise BoxError("from_json requires a string or filename")
     return data
@@ -198,39 +179,71 @@ def _to_yaml(
     ruamel_typ: str = "rt",
     ruamel_attrs: dict | None = None,
     width: int = 120,
+    sort_keys: bool = False,
     **yaml_kwargs,
 ):
+    """
+    Keys are written in insertion order. ``sort_keys=True`` sorts them alphabetically instead
+    (PyYAML and the ruamel ``safe`` / ``unsafe`` dumpers, the default ruamel ``rt`` dumper never sorts).
+    """
+    if not ruamel_available and not pyyaml_available:
+        raise BoxError(MISSING_PARSER_ERROR)
+
+    def ruamel_dump(stream):
+        yaml_dumper = YAML(typ=ruamel_typ)
+        yaml_dumper.default_flow_style = default_flow_style
+        yaml_dumper.width = width
+        if hasattr(yaml_dumper.representer, "sort_base_mapping_type_on_output"):  # pragma: no branch (older ruamel)
+            yaml_dumper.representer.sort_base_mapping_type_on_output = sort_keys
+        for attr, value in ruamel_attrs.items():
+            setattr(yaml_dumper, attr, value)
+        return yaml_dumper.dump(obj, stream=stream, **yaml_kwargs)
+
+    def pyyaml_dump(stream=None):
+        return yaml.dump(
+            obj, stream=stream, default_flow_style=default_flow_style, width=width, sort_keys=sort_keys, **yaml_kwargs
+        )
+
     if not ruamel_attrs:
         ruamel_attrs = {}
     if filename:
         _exists(filename, create=True)
         with open(filename, "w", encoding=encoding, errors=errors) as f:
             if ruamel_available:
-                yaml_dumper = YAML(typ=ruamel_typ)
-                yaml_dumper.default_flow_style = default_flow_style
-                yaml_dumper.width = width
-                for attr, value in ruamel_attrs.items():
-                    setattr(yaml_dumper, attr, value)
-                return yaml_dumper.dump(obj, stream=f, **yaml_kwargs)
-            elif pyyaml_available:
-                return yaml.dump(obj, stream=f, default_flow_style=default_flow_style, width=width, **yaml_kwargs)
-            else:
-                raise BoxError(MISSING_PARSER_ERROR)
+                return ruamel_dump(f)
+            return pyyaml_dump(f)
+    if ruamel_available:
+        with StringIO() as string_stream:
+            ruamel_dump(string_stream)
+            return string_stream.getvalue()
+    return pyyaml_dump()
 
-    else:
-        if ruamel_available:
-            yaml_dumper = YAML(typ=ruamel_typ)
-            yaml_dumper.default_flow_style = default_flow_style
-            yaml_dumper.width = width
-            for attr, value in ruamel_attrs.items():
-                setattr(yaml_dumper, attr, value)
-            with StringIO() as string_stream:
-                yaml_dumper.dump(obj, stream=string_stream, **yaml_kwargs)
-                return string_stream.getvalue()
-        elif pyyaml_available:
-            return yaml.dump(obj, default_flow_style=default_flow_style, width=width, **yaml_kwargs)
-        else:
-            raise BoxError(MISSING_PARSER_ERROR)
+
+def _ruamel_to_builtin(obj):
+    """Convert ruamel.yaml numeric and boolean scalar types to plain Python builtins.
+
+    ScalarFloat/ScalarInt survive Box.to_dict() and break serializers
+    that only accept builtin float/int (issue #264).
+
+    Only numbers and booleans are converted. ruamel string types (literal and folded
+    blocks, quoted strings) are left alone so to_yaml keeps their formatting, and
+    ScalarBoolean (used for anchored booleans) is not an int subclass, so it is checked
+    explicitly rather than falling through to int.
+    """
+    if isinstance(obj, dict):
+        return {_ruamel_to_builtin(k): _ruamel_to_builtin(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_ruamel_to_builtin(v) for v in obj]
+    if type(obj).__module__.startswith("ruamel"):
+        from ruamel.yaml.scalarbool import ScalarBoolean
+
+        if isinstance(obj, (bool, ScalarBoolean)):
+            return bool(obj)
+        if isinstance(obj, int):
+            return int(obj)
+        if isinstance(obj, float):
+            return float(obj)
+    return obj
 
 
 def _from_yaml(
@@ -242,6 +255,29 @@ def _from_yaml(
     ruamel_attrs: dict | None = None,
     **kwargs,
 ):
+    return _ruamel_to_builtin(
+        _load_yaml(yaml_string, filename, encoding, errors, ruamel_typ=ruamel_typ, ruamel_attrs=ruamel_attrs, **kwargs)
+    )
+
+
+def _from_yaml_with_comments(*args, **kwargs):
+    """Like _from_yaml, also returning the comments found in the document (see box.comments)."""
+    from box.comments import extract_comments
+
+    raw = _load_yaml(*args, **kwargs)
+    return _ruamel_to_builtin(raw), extract_comments(raw)
+
+
+def _load_yaml(
+    yaml_string: str | None = None,
+    filename: str | PathLike | None = None,
+    encoding: str = "utf-8",
+    errors: str = "strict",
+    ruamel_typ: str = "rt",
+    ruamel_attrs: dict | None = None,
+    **kwargs,
+):
+    """Load YAML as the parser returns it (ruamel round trip types included)."""
     if not ruamel_attrs:
         ruamel_attrs = {}
     if filename:
@@ -279,22 +315,14 @@ def _to_toml(obj, filename: str | PathLike | None = None, encoding: str = "utf-8
     if filename:
         _exists(filename, create=True)
         if toml_write_library.__name__ == "toml":  # type: ignore
+            # The toml package writes text, tomli-w writes bytes
             with open(filename, "w", encoding=encoding, errors=errors) as f:
-                try:
-                    toml_write_library.dump(obj, f)  # type: ignore
-                except toml_decode_error as err:  # type: ignore
-                    raise BoxTomlDecodeError(err) from err
+                toml_write_library.dump(obj, f)  # type: ignore
         else:
             with open(filename, "wb") as f:
-                try:
-                    toml_write_library.dump(obj, f)  # type: ignore
-                except toml_decode_error as err:  # type: ignore
-                    raise BoxTomlDecodeError(err) from err
+                toml_write_library.dump(obj, f)  # type: ignore
     else:
-        try:
-            return toml_write_library.dumps(obj)  # type: ignore
-        except toml_decode_error as err:  # type: ignore
-            raise BoxTomlDecodeError(err) from err
+        return toml_write_library.dumps(obj)  # type: ignore
 
 
 def _from_toml(
@@ -305,12 +333,8 @@ def _from_toml(
 ):
     if filename:
         _exists(filename)
-        if toml_read_library.__name__ == "toml":  # type: ignore
-            with open(filename, "r", encoding=encoding, errors=errors) as f:
-                data = toml_read_library.load(f)  # type: ignore
-        else:
-            with open(filename, "rb") as f:
-                data = toml_read_library.load(f)  # type: ignore
+        with open(filename, "rb") as f:
+            data = toml_read_library.load(f)
     elif toml_string:
         data = toml_read_library.loads(toml_string)  # type: ignore
     else:
@@ -374,6 +398,7 @@ def _to_csv(
         if list(row.keys()) != csv_column_names:
             raise BoxError("BoxList must contain the same dictionary structure for every item to convert to csv")
 
+    out_data: IO[str]
     if filename:
         _exists(filename, create=True)
         out_data = open(filename, "w", encoding=encoding, errors=errors, newline="")

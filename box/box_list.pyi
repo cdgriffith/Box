@@ -1,14 +1,23 @@
-import box
-from box.converters import (
-    BOX_PARAMETERS as BOX_PARAMETERS,
-    msgpack_available as msgpack_available,
-    toml_read_library as toml_read_library,
-    toml_write_library as toml_write_library,
-    yaml_available as yaml_available,
-)
 from collections.abc import Iterable
 from os import PathLike as PathLike
 from typing import Any
+
+import box
+from box.converters import (
+    BOX_PARAMETERS as BOX_PARAMETERS,
+)
+from box.converters import (
+    msgpack_available as msgpack_available,
+)
+from box.converters import (
+    toml_read_library as toml_read_library,
+)
+from box.converters import (
+    toml_write_library as toml_write_library,
+)
+from box.converters import (
+    yaml_available as yaml_available,
+)
 
 class BoxList(list):
     def __new__(cls, *args: Any, **kwargs: Any): ...
@@ -24,6 +33,9 @@ class BoxList(list):
     def __copy__(self) -> BoxList: ...
     def __deepcopy__(self, memo: Any | None = ...) -> BoxList: ...
     def __hash__(self) -> int: ...  # type: ignore[override]
+    def get_comment(self, key: Any = ...) -> dict[str, str] | None: ...
+    def set_comment(self, key: Any, text: str | None, position: str | None = ...) -> None: ...
+    def del_comment(self, key: Any = ...) -> None: ...
     def to_list(self) -> list: ...
     def _dotted_helper(self) -> list[str]: ...
     def to_json(

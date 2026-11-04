@@ -1,5 +1,8 @@
-# This workflow will upload a Python Package using Twine when a release is created
-# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
+# Builds and publishes to PyPI when a GitHub release is created.
+# Every build job runs without secrets. A single publish job, whose only permission is
+# id-token: write, uploads all distributions via PyPI Trusted Publishing (OIDC), so no PyPI
+# password or token is stored in GitHub: https://docs.pypi.org/trusted-publishers/
+# All actions are pinned to full commit SHAs; the comment shows the matching release tag.
 
 name: Upload Python Package
 
@@ -7,85 +10,121 @@ on:
   release:
     types: [ created ]
 
-jobs:
-  deploy-generic:
+permissions: {}
 
+jobs:
+  build-generic:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        persist-credentials: false
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
       with:
-        python-version: '3.14'
+        python-version: '3.15'
 
-    - name: Install Dependencies
+    - name: Install uv
+      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
+
+    # Isolated build: Cython is not part of the build requirements, so this is the pure Python sdist and wheel
+    - name: Build and check
       run: |
-        python -m pip install --upgrade pip
-        pip install setuptools wheel twine --upgrade
+        uv build
+        uvx twine==7.0.0 check dist/*
 
+    - name: Upload distribution artifact
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+      with:
+        name: dist-generic
+        path: dist/*
+        if-no-files-found: error
 
-    - name: Build and Publish
-      env:
-        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-
-      run: |
-        python setup.py sdist bdist_wheel
-        twine upload dist/*
-
-  deploy-cython:
+  build-cython:
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        persist-credentials: false
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      id: setup-python
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
+    - name: Install uv
+      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
+    - name: Install build dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install setuptools wheel twine Cython>=3.0.11 --upgrade
-    - name: Build and publish
-      env:
-        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        uv venv --python "${{ steps.setup-python.outputs.python-path }}"
+        uv pip install "setuptools>=77" wheel "Cython>=3.3.1"
+    # No build isolation so the Cython installed above is used to build the compiled wheel
+    - name: Build and check
       run: |
-        python setup.py bdist_wheel
-        twine upload dist/*
-
-  deploy-cython-manylinux:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python 3.13
-      uses: actions/setup-python@v5
+        uv build --wheel --no-build-isolation
+        uvx twine==7.0.0 check dist/*
+    - name: Upload wheel artifact
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
       with:
-        python-version: "3.13"
+        name: dist-cython-${{ matrix.os }}-${{ matrix.python-version }}
+        path: dist/*.whl
+        if-no-files-found: error
 
+  build-cython-manylinux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        persist-credentials: false
+    - name: Install uv
+      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
+
+    # Build targets and test commands are configured in [tool.cibuildwheel] in pyproject.toml
     - name: Build wheels
-      run: |
-        python -m pip install --upgrade pip
-        pip install cibuildwheel setuptools wheel
-        python -m cibuildwheel --output-dir dist
-      env:
-        CIBW_BUILD: cp310-manylinux_x86_64 cp311-manylinux_x86_64 cp312-manylinux_x86_64 cp313-manylinux_x86_64
-        CIBW_BEFORE_BUILD: pip install Cython>=3.0.11 setuptools wheel
-        CIBW_BUILD_FRONTEND: "build; args: --no-isolation"
-        CIBW_BEFORE_TEST: pip install -r requirements.txt -r requirements-test.txt setuptools wheel twine Cython>=3.0.11
-        CIBW_BUILD_VERBOSITY: 1
-        CIBW_TEST_COMMAND: pytest {package}/test -vv
+      run: uvx cibuildwheel==4.3.5 --output-dir dist
 
-    - name: Publish
-      env:
-        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      run: |
-        pip install twine
-        twine upload dist/*-manylinux*.whl
+    - name: Upload wheel artifact
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+      with:
+        name: dist-cython-manylinux
+        path: dist/*-manylinux*.whl
+        if-no-files-found: error
+
+  # Publishes only after every build succeeds, so a release is never left half uploaded
+  publish:
+    needs: [ build-generic, build-cython, build-cython-manylinux ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: pypi
+      url: https://pypi.org/p/python-box
+    permissions:
+      id-token: write  # Required for Trusted Publishing; the only permission this job has
+
+    steps:
+    - name: Download all distributions
+      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
+      with:
+        pattern: dist-*
+        path: dist
+        merge-multiple: true
+
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086  # v1.14.3

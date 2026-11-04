@@ -7,9 +7,18 @@ import os
 import pickle
 import platform
 import shutil
+import warnings
+from io import StringIO
 from multiprocessing import Queue
 from pathlib import Path
-from io import StringIO
+
+import pytest
+from ruamel.yaml import YAML
+
+from box import Box, BoxError, BoxKeyError, BoxList, ConfigBox, DDBox, SBox
+from box.box import _camel_killer, _get_dot_paths, _recursive_tuples  # type: ignore
+from box.converters import BOX_PARAMETERS
+from box.exceptions import BoxWarning
 from test.common import (
     data_json_file,
     data_yaml_file,
@@ -24,12 +33,9 @@ from test.common import (
     tmp_yaml_file,
 )
 
-import pytest
-from ruamel.yaml import YAML
 
-from box import Box, BoxError, BoxKeyError, BoxList, ConfigBox, SBox, DDBox
-from box.box import _get_dot_paths, _camel_killer, _recursive_tuples  # type: ignore
-from box.converters import BOX_PARAMETERS
+class _SubclassBox(Box):
+    """Module-level Box subclass so its instances are picklable in tests."""
 
 
 def mp_queue_test(q):
@@ -53,6 +59,37 @@ class TestBox:
             pass
         yield
         shutil.rmtree(str(tmp_dir), ignore_errors=True)
+
+    @pytest.mark.parametrize("removal", ["item", "attribute", "converted_attribute", "pop", "popitem"])
+    def test_removed_key_releases_conversion_alias(self, removal):
+        bx = Box({"a b": 1}, box_duplicates="error")
+        if removal == "item":
+            del bx["a b"]
+        elif removal == "attribute":
+            delattr(bx, "a b")
+        elif removal == "converted_attribute":
+            del bx.a_b
+        elif removal == "pop":
+            bx.pop("a b")
+        else:
+            bx.popitem()
+
+        bx["a-b"] = 2
+        assert bx.to_dict() == {"a-b": 2}
+        assert bx.a_b == 2
+        with pytest.raises(BoxError):
+            bx["a b"] = 3
+
+    def test_deleting_none_key_after_conversion_alias_owner(self):
+        bx = Box({None: 1, "None": 2})
+        del bx["None"]
+        del bx[None]
+        assert bx.to_dict() == {}
+
+    def test_deleting_colliding_key_keeps_other_conversion_alias(self):
+        bx = Box({"a b": 1, "a-b": 2})
+        del bx["a b"]
+        assert bx.a_b == 2
 
     def test_safe_attrs(self):
         assert Box()._safe_attr("BAD!KEY!1") == "BAD_KEY_1"
@@ -268,6 +305,47 @@ class TestBox:
         assert a.key1.gg == 4
         assert "new" not in a.key1.keys()
 
+    @pytest.mark.parametrize("source_type", [dict, list, iter])
+    def test_update_source_and_keywords(self, source_type):
+        pairs = [("mode", "source"), ("service", {"timeout": 10})]
+        overrides = {"mode": "override", "workers": [{"id": 1}]}
+        expected = {"keep": True}
+        expected.update(source_type(pairs), **overrides)
+        bx = Box(keep=True)
+
+        assert bx.update(source_type(pairs), **overrides) is None
+
+        assert bx.to_dict() == expected
+        assert isinstance(bx.service, Box)
+        assert bx.service.timeout == 10
+        assert isinstance(bx.workers, BoxList)
+        assert isinstance(bx.workers[0], Box)
+        assert bx.workers[0].id == 1
+
+    def test_update_empty_source_and_keywords(self):
+        bx = Box(keep=True)
+
+        assert bx.update({}, mode="override") is None
+
+        assert bx.to_dict() == {"keep": True, "mode": "override"}
+
+    @pytest.mark.parametrize("kwargs", [{}, {"mode": "override"}])
+    def test_update_rejects_multiple_sources(self, kwargs):
+        bx = Box(keep=True)
+
+        with pytest.raises(TypeError, match="update expected at most 1 argument"):
+            bx.update({"first": 1}, {"second": 2}, **kwargs)
+
+        assert bx.to_dict() == {"keep": True}
+
+    def test_update_source_and_keywords_frozen(self):
+        bx = Box(keep=True, frozen_box=True)
+
+        with pytest.raises(BoxError, match="Box is frozen"):
+            bx.update({"first": 1}, mode="override")
+
+        assert bx.to_dict() == {"keep": True}
+
     def test_merge_update(self):
         a = Box(test_dict)
         a.grand = 1000
@@ -349,6 +427,15 @@ class TestBox:
         assert isinstance(bx, Box)
         assert bx.widget.window.height == 500
 
+    def test_from_yaml_invalid_bracket_key(self):
+        key = r"^[^_^\d][\w]*$"
+        yaml_string = f"'{key}': {{}}"
+        with pytest.raises(BoxError) as error:
+            Box.from_yaml(yaml_string, default_box=True, box_dots=True)
+        assert "Invalid list index" in str(error.value)
+        assert repr(key[1:]) in str(error.value)
+        assert Box.from_yaml(yaml_string, default_box=True, box_dots=False).to_dict() == {key: {}}
+
     def test_from_yaml_file(self):
         bx = Box.from_yaml(filename=data_yaml_file)
         assert isinstance(bx, Box)
@@ -368,6 +455,61 @@ class TestBox:
         assert isinstance(bx, Box)
         assert bx.key1 == "value1"
         assert bx.Key_2 == Box()
+
+    def test_from_yaml_box_dots_dotted_key_before_non_dotted(self):
+        """
+        Test for issue #305: Dotted keys read from YAML are lost with box_dots / default_box
+        when the dotted key appears before a non-dotted key with the same prefix.
+
+        Previously a.b: c followed by a: {d: e} caused a.b to be lost.
+        """
+        # Create a temporary YAML file with dotted key before non-dotted key
+        yaml_content = """a.b: c
+a:
+  d: e
+"""
+        yaml_file = Path(tmp_dir, "test_dotted_before.yml")
+        yaml_file.write_text(yaml_content)
+
+        # Test without box_dots/default_box - should preserve both keys as separate entries
+        bx1 = Box.from_yaml(filename=yaml_file)
+        assert "a.b" in bx1
+        assert bx1["a.b"] == "c"
+        assert "a" in bx1
+        assert bx1["a"]["d"] == "e"
+
+        # Test with box_dots=True and default_box=True
+        # a.b should be merged into a, so a.b == "c" and a.d == "e"
+        bx2 = Box.from_yaml(filename=yaml_file, box_dots=True, default_box=True)
+        assert "a" in bx2
+        assert bx2["a"]["d"] == "e"
+        assert "b" in bx2["a"], "Bug #305: a.b key is lost when it appears before a: in YAML"
+        assert bx2["a"]["b"] == "c"
+
+        # Test reverse order (non-dotted before dotted) - this should work correctly
+        yaml_content_reverse = """a:
+  d: e
+a.b: c
+"""
+        yaml_file_reverse = Path(tmp_dir, "test_dotted_after.yml")
+        yaml_file_reverse.write_text(yaml_content_reverse)
+
+        bx3 = Box.from_yaml(filename=yaml_file_reverse, box_dots=True, default_box=True)
+        assert "a" in bx3
+        assert bx3["a"]["d"] == "e"
+        # In reverse order, the dotted key should be properly merged
+        assert "b" in bx3["a"]
+        assert bx3["a"]["b"] == "c"
+
+    def test_from_yaml_builtin_scalars(self):
+        bx = Box.from_yaml("Float: 0.1\nCount: 4\nFlag: true\n")
+        assert type(bx.Float) is float
+        assert type(bx.Count) is int
+        assert type(bx.Flag) is bool
+        dumped = bx.to_dict()
+        assert type(dumped["Float"]) is float
+        assert type(dumped["Count"]) is int
+        assert dumped["Float"] == 0.1
 
     def test_bad_from_json(self):
         with pytest.raises(BoxError):
@@ -435,6 +577,22 @@ class TestBox:
 
         assert hash(bx3)
 
+    def test_frozen_box_with_lists_is_serializable(self):
+        # frozen_box stores lists as tuples of Boxes; to_dict must convert the
+        # nested Boxes back to native dicts so serialization works. See #272.
+        bx = Box({"a": [{"b": 123}, {"b": 222}], "c": [[{"d": 2}], [3, 4]]}, frozen_box=True)
+
+        native = bx.to_dict()
+        assert isinstance(native["a"], tuple)
+        assert native["a"][0] == {"b": 123}
+        assert not isinstance(native["a"][0], Box)
+        assert not isinstance(native["c"][0][0], Box)
+
+        # These used to raise RepresenterError / serialization errors.
+        yaml = YAML(typ="safe")
+        assert yaml.load(bx.to_yaml()) == {"a": [{"b": 123}, {"b": 222}], "c": [[{"d": 2}], [3, 4]]}
+        assert json.loads(bx.to_json()) == {"a": [{"b": 123}, {"b": 222}], "c": [[{"d": 2}], [3, 4]]}
+
     def test_hashing(self):
         bx1 = Box(t=3, g=4, frozen_box=True)
         bx2 = Box(g=4, t=3, frozen_box=True)
@@ -471,13 +629,13 @@ class TestBox:
         bx4 = Box(default_box=True, default_box_attr=None)
         assert bx4.who_is_there is None
 
-        bx5 = Box(default_box=True, default_box_attr=[])
+        bx5 = Box(default_box=True, default_box_attr=[], default_box_create_on_get=True)
         assert isinstance(bx5.empty_list_please, list)
         assert len(bx5.empty_list_please) == 0
         bx5.empty_list_please.append(1)
         assert bx5.empty_list_please[0] == 1
 
-        bx6 = Box(default_box=True, default_box_attr=[])
+        bx6 = Box(default_box=True, default_box_attr=[], default_box_create_on_get=True)
         my_list = bx6.get("new_list")
         my_list.append(5)
         assert bx6.get("new_list")[0] == 5
@@ -538,6 +696,47 @@ class TestBox:
         assert killer_default_box.CamelCase == "Item"
         assert isinstance(killer_default_box.does_not_exist, Box)
         assert isinstance(killer_default_box["does_not_exist"], Box)
+
+    @pytest.mark.parametrize("default_box", [False, True])
+    @pytest.mark.parametrize("conversion_box", [False, True])
+    def test_camel_killer_box_dotted_lookup(self, default_box, conversion_box):
+        bx = Box(
+            {"someKey": [{"innerKey": "value"}], "otherKey": {"innerKey": "value"}},
+            camel_killer_box=True,
+            box_dots=True,
+            default_box=default_box,
+            conversion_box=conversion_box,
+        )
+
+        for key in (
+            "some_key[0].inner_key",
+            "some_key[0].innerKey",
+            "someKey[0].innerKey",
+            "SomeKey[0].InnerKey",
+            "other_key.inner_key",
+            "otherKey.innerKey",
+            "OtherKey.InnerKey",
+        ):
+            assert bx[key] == "value"
+            assert bx.to_dict() == {"some_key": [{"inner_key": "value"}], "other_key": {"inner_key": "value"}}
+
+    @pytest.mark.parametrize("camel_killer_box, box_dots", [(False, True), (True, False)])
+    def test_camel_killer_box_dotted_lookup_disabled(self, camel_killer_box, box_dots):
+        bx = Box({"some_key": {"inner_key": "value"}}, camel_killer_box=camel_killer_box, box_dots=box_dots)
+
+        with pytest.raises(BoxKeyError):
+            bx["someKey.innerKey"]
+        assert bx.to_dict() == {"some_key": {"inner_key": "value"}}
+
+    def test_camel_killer_box_dotted_lookup_exact_key(self):
+        bx = Box({"someKey": {"innerKey": "converted"}}, camel_killer_box=True, box_dots=True)
+        bx.update({"someKey": {"innerKey": "exact"}})
+
+        assert bx["someKey.innerKey"] == "exact"
+        assert bx["some_key.innerKey"] == "converted"
+
+        bx.update({"someKey.innerKey": "literal"})
+        assert bx["someKey.innerKey"] == "literal"
 
     def test_box_modify_tuples(self):
         bx = Box(extended_test_dict, modify_tuples_box=True)
@@ -630,6 +829,26 @@ class TestBox:
         with pytest.raises(BoxError):
             my_box["^a"] = 3
 
+    @pytest.mark.parametrize("policy", ["error", "warn"])
+    @pytest.mark.parametrize("use_attribute", [False, True])
+    def test_duplicate_checks_allow_reassigning_same_key(self, policy, use_attribute):
+        my_box = Box({"a b": 1}, box_duplicates=policy)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", BoxWarning)
+            if use_attribute:
+                my_box.a_b = 2
+            else:
+                my_box["a b"] = 2
+        assert my_box.to_dict() == {"a b": 2}
+        assert my_box.a_b == 2
+        if policy == "error":
+            with pytest.raises(BoxError):
+                my_box["a-b"] = 3
+            assert my_box.to_dict() == {"a b": 2}
+        else:
+            with pytest.warns(BoxWarning):
+                my_box["a-b"] = 3
+
     def test_copy(self):
         my_box = Box(movie_data, camel_killer_box=True)
         bb = my_box.copy()
@@ -686,12 +905,54 @@ class TestBox:
         assert bx == loaded2
         loaded2.box_options = bx.box_options
 
+    def test_pickle_preserves_subclass_on_nested_access(self):
+        if platform.python_implementation() == "PyPy":
+            pytest.skip("Pickling does not work correctly on PyPy")
+        # Unpickling goes through __new__ + __setstate__ but not __init__, so
+        # box_class must be set from cls in __new__ too. Otherwise nested boxes
+        # created on access after unpickling fall back to the base Box (#308).
+        b = _SubclassBox({"a": {"b": 1}})
+        loaded = pickle.loads(pickle.dumps(b))
+        assert isinstance(loaded, _SubclassBox)
+        assert type(loaded.a) is _SubclassBox
+
     def test_pickle_default_box(self):
         if platform.python_implementation() == "PyPy":
             pytest.skip("Pickling does not work correctly on PyPy")
         bb = Box(default_box=True)
         loaded = pickle.loads(pickle.dumps(bb))
         assert bb == loaded
+
+    def test_pickle_preserves_nested_box_dots(self):
+        """Nested boxes must keep box_dots after pickle (#260)."""
+        if platform.python_implementation() == "PyPy":
+            pytest.skip("Pickling does not work correctly on PyPy")
+        original = Box(
+            {
+                "l1": {
+                    "time_range_selected_utc": {
+                        "left": "2023-03-01 10:00:00",
+                        "right": "2023-06-01 10:00:00",
+                    }
+                }
+            },
+            box_dots=True,
+            conversion_box=False,
+        )
+        assert original["l1.time_range_selected_utc.right"] == "2023-06-01 10:00:00"
+
+        loaded = pickle.loads(pickle.dumps(original))
+        assert loaded._box_config["box_dots"] is True
+        assert loaded.l1._box_config["box_dots"] is True
+        assert loaded.l1.time_range_selected_utc._box_config["box_dots"] is True
+        assert loaded["l1.time_range_selected_utc.right"] == "2023-06-01 10:00:00"
+        assert loaded["l1.time_range_selected_utc.left"] == "2023-03-01 10:00:00"
+
+        # Normal construction still reapplies parent options onto a nested Box
+        inner = Box({"b": 1}, box_dots=False)
+        outer = Box({"a": inner}, box_dots=True)
+        assert outer.a._box_config["box_dots"] is True
+        assert outer["a.b"] == 1
 
     def test_conversion_dup_only(self):
         with pytest.raises(BoxError):
@@ -882,7 +1143,8 @@ class TestBox:
         assert bx.pop("c", True) is not True
 
     def test_pop_items(self):
-        bx = Box(a=4)
+        bx = Box(a=4, b=5)
+        assert bx.popitem() == ("b", 5)
         assert bx.popitem() == ("a", 4)
         with pytest.raises(BoxKeyError):
             assert bx.popitem()
@@ -953,7 +1215,7 @@ class TestBox:
             box_dots=True,
             box_dots_exclude=r"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+",
         )
-        assert bx["0.0.0.1"] == True
+        assert bx["0.0.0.1"] == True  # noqa: E712
         with pytest.raises(BoxKeyError):
             del bx["0"]
 
@@ -1274,7 +1536,7 @@ class TestBox:
         assert id(a) != id(b.a)
 
     def test_default_box_restricted_calls(self):
-        a = Box(default_box=True)
+        a = Box(default_box=True, default_box_create_on_get=True)
         with pytest.raises(BoxKeyError):
             a._test_thing_
         assert len(list(a.keys())) == 0
@@ -1290,11 +1552,11 @@ class TestBox:
         assert len(list(a.keys())) == 2
 
     def test_default_dots(self):
-        bx1 = Box(default_box=True, box_dots=True)
+        bx1 = Box(default_box=True, box_dots=True, default_box_create_on_get=True)
         bx1["a.a.a"]
         assert bx1 == {"a": {"a": {"a": {}}}}
 
-        a = Box(default_box=True, box_dots=True)
+        a = Box(default_box=True, box_dots=True, default_box_create_on_get=True)
         a["a."]
         a["a.."]
         assert a == {"a": {"": {"": {}}}}
@@ -1328,6 +1590,27 @@ class TestBox:
             {"app": {"S3": {"S3Service": [{"bucket": "bucket001"}, {"expirationDate": "2099-10-25"}]}}}
         ), box1
 
+    def test_merge_list_merge_option(self):
+        # Lists of dictionaries are merged element by element
+        box1 = Box({"data": [{"foo": 1, "foobar": 20}, {"bar": 2}]})
+        box1.merge_update({"data": [{"foo": 1, "baz": 10}]}, box_merge_lists="merge")
+        assert box1 == Box({"data": [{"foo": 1, "foobar": 20, "baz": 10}, {"bar": 2}]}), box1
+
+        # Extra incoming elements are appended, nested dictionaries recurse
+        box2 = Box({"app": {"servers": [{"name": "web", "tags": {"a": 1}}]}})
+        box2.merge_update({"app": {"servers": [{"tags": {"b": 2}}, {"name": "db"}]}}, box_merge_lists="merge")
+        assert box2 == Box({"app": {"servers": [{"name": "web", "tags": {"a": 1, "b": 2}}, {"name": "db"}]}}), box2
+
+        # Non-dict elements at a shared index are overwritten
+        box3 = Box({"nums": [1, 2, 3]})
+        box3.merge_update({"nums": [9, 8]}, box_merge_lists="merge")
+        assert box3.nums == [9, 8, 3]
+
+        # Falls back to assignment when the existing value is not a list
+        box4 = Box({"data": 5})
+        box4.merge_update({"data": [{"a": 1}]}, box_merge_lists="merge")
+        assert box4 == Box({"data": [{"a": 1}]}), box4
+
     def test_box_from_empty_yaml(self):
         out = Box.from_yaml("---")
         assert out == Box()
@@ -1345,7 +1628,7 @@ class TestBox:
         assert box["b"] == 2
         assert box["c"] == "test"
         assert isinstance(box["d"], Box)
-        assert box["d"]["e"] == True
+        assert box["d"]["e"] == True  # noqa: E712
         assert isinstance(box["f"], BoxList)
         assert box["f"][1] == 2
 
@@ -1360,7 +1643,7 @@ class TestBox:
         assert box.b == 2
         assert box.c.e == "test"
         assert isinstance(box["d"], Box)
-        assert box.d.e == True
+        assert box.d.e == True  # noqa: E712
         assert isinstance(box["f"], BoxList)
         assert box.f[1] == 2
 
@@ -1412,7 +1695,7 @@ class TestBox:
         assert a == Box({"σeq": 1, "μeq": 2})
 
     def test_box_default_not_create_on_get(self):
-        box = Box(default_box=True)
+        box = Box(default_box=True, default_box_create_on_get=True)
 
         assert box.a.b.c == Box()
 
@@ -1426,6 +1709,15 @@ class TestBox:
         assert "c" not in box2.a.b
 
         assert box2 == Box()
+
+        box2.foo.bar = 1
+        assert box2.foo.bar == 1
+        assert box2 == Box({"foo": {"bar": 1}})
+
+        box3 = Box(default_box=True, default_box_create_on_get=False)
+        box3.a.b.c = "nested"
+        assert box3.a.b.c == "nested"
+        assert box3["a"]["b"]["c"] == "nested"
 
     def test_box_property_support(self):
         class BoxWithProperty(Box):
@@ -1455,7 +1747,7 @@ class TestBox:
         assert box.field == 5
         assert box._field == 5
         del box.field
-        assert not "_field" in box
+        assert "_field" not in box
 
     def test_box_namespace(self):
         bx = Box(default_box=True)
@@ -1506,3 +1798,598 @@ class TestBox:
         my_box = DDBox(default_box_attr=func)
 
         assert my_box.a == {"bi": "{}", "key": "a"}
+
+
+@pytest.mark.parametrize("create_on_get", [True, False])
+@pytest.mark.parametrize("default", [None, 0, [], {"fallback": True}])
+def test_pop_explicit_default_without_autovivification(create_on_get, default):
+    calls = []
+
+    def factory():
+        calls.append(None)
+        return "generated"
+
+    value = Box(default_box=True, default_box_attr=factory, default_box_create_on_get=create_on_get)
+    assert value.pop("missing", default) is default
+    assert value == {}
+    assert calls == []
+    value.present = 1
+    assert value.pop("present", default) == 1
+    assert value == {}
+
+
+def test_pop_explicit_default_dotted_path():
+    value = Box({"nested": {}}, default_box=True, box_dots=True)
+    default = object()
+    assert value.pop("nested.missing", default) is default
+    assert value.to_dict() == {"nested": {}}
+
+
+def test_pop_explicit_default_camel_case_key():
+    value = Box({"actualKey": 1}, default_box=True, camel_killer_box=True)
+    assert value.pop("actualKey", None) == 1
+    assert value == {}
+
+
+@pytest.mark.parametrize("path", ["items[0].missing", "items[1][0].missing"])
+def test_pop_explicit_default_dotted_list_path(path):
+    value = Box({"items": [{}, [{}]]}, default_box=True, box_dots=True)
+    default = object()
+    assert value.pop(path, default) is default
+    assert value.to_dict() == {"items": [{}, [{}]]}
+
+
+class _InternalBox(Box):
+    _box_internal_attrs = ("source_path", "_cache")
+
+    def __init__(self, *args, source_path=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.source_path = source_path
+        self._cache = {}
+
+
+class _InternalConfigBox(ConfigBox):
+    _box_internal_attrs = ("meta",)
+
+
+class _InternalSBox(SBox):
+    _box_internal_attrs = ("meta",)
+
+
+def _make_internal():
+    c = _InternalBox({"name": "app", "db": {"host": "x"}}, source_path="/etc/app.yml")
+    c._cache["hits"] = 1
+    c.normal = "data"
+    return c
+
+
+class TestInternalAttrs:
+    def test_not_in_data(self):
+        c = _make_internal()
+        assert c.source_path == "/etc/app.yml"
+        assert c.to_dict() == {"name": "app", "db": {"host": "x"}, "normal": "data"}
+        assert "source_path" not in c and "_cache" not in c
+        assert list(c) == ["name", "db", "normal"]
+        assert list(c.keys()) == ["name", "db", "normal"]
+        assert len(c) == 3
+        assert c == {"name": "app", "db": {"host": "x"}, "normal": "data"}
+        assert c.__dict__["source_path"] == "/etc/app.yml"
+
+    def test_exports(self):
+        c = _make_internal()
+        assert "source_path" not in c.to_json() and "_cache" not in c.to_json()
+        assert "source_path" not in c.to_yaml()
+        assert "source_path" not in c.to_toml()
+        assert "source_path" not in str(c) and "source_path" not in repr(c)
+        assert b"source_path" not in c.to_msgpack()
+        assert _InternalBox.from_json(c.to_json()).to_dict() == c.to_dict()
+
+    def test_copy_variants(self):
+        c = _make_internal()
+        for name, clone in [
+            ("copy", copy.copy(c)),
+            ("deepcopy", copy.deepcopy(c)),
+            (".copy()", c.copy()),
+            ("pickle", pickle.loads(pickle.dumps(c))),
+        ]:
+            assert type(clone) is _InternalBox, name
+            assert clone.source_path == "/etc/app.yml", name
+            assert clone._cache == {"hits": 1}, name
+            assert clone.to_dict() == c.to_dict(), name
+        assert copy.copy(c)._cache is c._cache
+        assert c.copy()._cache is c._cache
+        assert copy.deepcopy(c)._cache is not c._cache
+        assert type(pickle.loads(pickle.dumps(c)).db) is _InternalBox
+
+    def test_deepcopy_memo(self):
+        shared = {"x": 1}
+        c = _InternalBox(a=1)
+        c._cache = {"one": shared, "two": shared}
+        d = copy.deepcopy(c)
+        assert d._cache["one"] is d._cache["two"]
+        assert d._cache["one"] is not shared
+        o2 = copy.deepcopy([c, c])
+        assert o2[0] is o2[1]
+        assert o2[0]._cache["one"] is o2[0]._cache["two"]
+
+    def test_deepcopy_self_reference_in_internal(self):
+        c = _InternalBox(a=1)
+        c._cache = {"owner": c}
+        d = copy.deepcopy(c)
+        assert d._cache["owner"] is d
+
+    def test_copy_does_not_share_assignment(self):
+        c = _make_internal()
+        d = c.copy()
+        d.source_path = "other"
+        assert c.source_path == "/etc/app.yml"
+
+    def test_unset_internal_is_not_copied(self):
+        class Plain(Box):
+            _box_internal_attrs = ("source_path",)
+
+        c = Plain(a=1)
+        c.source_path = 1
+        del c.source_path
+        assert "source_path" not in c.copy().__dict__
+        assert "source_path" not in copy.deepcopy(c).__dict__
+
+    def test_delete(self):
+        c = _make_internal()
+        del c.source_path
+        assert not hasattr(c, "source_path")
+        with pytest.raises(AttributeError):
+            del c.source_path
+        assert c.to_dict()["name"] == "app"
+
+    def test_frozen(self):
+        f = _InternalBox({"a": 1}, frozen_box=True)
+        f._cache["x"] = 1
+        f.source_path = "ok"
+        assert f.source_path == "ok"
+        del f.source_path
+        with pytest.raises(BoxError):
+            f.a = 2
+        with pytest.raises(BoxError):
+            del f.a
+        assert hash(f) == hash(_InternalBox({"a": 1}, frozen_box=True))
+        g = f.copy()
+        assert g._cache == {"x": 1}
+        with pytest.raises(BoxError):
+            g.a = 3
+        h = copy.deepcopy(f)
+        with pytest.raises(BoxError):
+            h.a = 3
+        h.source_path = "still ok"
+
+    def test_nested_fresh_internals(self):
+        c = _make_internal()
+        assert type(c.db) is _InternalBox
+        assert c.db.source_path is None
+        assert c.db._cache == {}
+        c.db._cache["k"] = 1
+        assert c._cache == {"hits": 1}
+        c.new = {"deep": {"x": 1}}
+        assert type(c.new.deep) is _InternalBox and c.new.deep._cache == {}
+
+    def test_name_collision(self):
+        c = _InternalBox({"source_path": "data-value"}, source_path="attr-value")
+        assert c.source_path == "attr-value"
+        assert c["source_path"] == "data-value"
+        assert c.to_dict() == {"source_path": "data-value"}
+        assert "source_path" in c
+
+    def test_item_assignment_is_data(self):
+        c = _InternalBox()
+        c["source_path"] = 5
+        assert c.to_dict() == {"source_path": 5}
+        assert c.source_path is None
+
+    def test_internal_checked_before_protected_keys(self):
+        class Weird(Box):
+            _box_internal_attrs = ("items",)
+
+        w = Weird(a=1)
+        w.items = "mine"
+        assert w.__dict__["items"] == "mine"
+        assert w.to_dict() == {"a": 1}
+        del w.items
+
+    def test_no_internals_unaffected(self):
+        assert Box._box_internal_attrs == ()
+        b = Box(a=1)
+        b.source_path = 3
+        assert b.to_dict() == {"a": 1, "source_path": 3}
+        assert "source_path" not in b.__dict__
+        del b.source_path
+        assert "source_path" not in b
+        assert type(copy.copy(b)) is Box and type(copy.deepcopy(b)) is Box
+
+    def test_equality_and_hash_ignore_internals(self):
+        a = _InternalBox({"a": 1}, frozen_box=True, source_path="one")
+        b = _InternalBox({"a": 1}, frozen_box=True, source_path="two")
+        assert a == b and hash(a) == hash(b)
+
+    def test_box_options_preserved_on_copy(self):
+        c = _InternalBox({"a-b": 1}, camel_killer_box=True, box_dots=True, source_path="p")
+        d = c.copy()
+        assert d._box_config["box_dots"] is True
+        assert d.source_path == "p"
+        assert copy.deepcopy(c)._box_config["camel_killer_box"] is True
+
+    def test_configbox_subclass(self):
+        c = _InternalConfigBox({"key": "1"})
+        c.meta = {"m": 1}
+        assert c.to_dict() == {"key": "1"}
+        for clone in (c.copy(), copy.copy(c), copy.deepcopy(c), pickle.loads(pickle.dumps(c))):
+            assert type(clone) is _InternalConfigBox
+            assert clone.meta == {"m": 1}
+            assert clone.int("key") == 1
+        assert copy.copy(c).meta is c.meta
+        assert copy.deepcopy(c).meta is not c.meta
+
+    def test_sbox_subclass(self):
+        c = _InternalSBox({"a": 1})
+        c.meta = [1]
+        assert c.to_dict() == {"a": 1}
+        for clone in (c.copy(), copy.copy(c), copy.deepcopy(c), pickle.loads(pickle.dumps(c))):
+            assert type(clone) is _InternalSBox
+            assert clone.meta == [1]
+
+
+def test_copy_preserves_subclass():
+    class Sub(Box):
+        pass
+
+    s = Sub({"a": {"b": 1}}, default_box=True)
+    assert type(s.copy()) is Sub
+    assert type(copy.copy(s)) is Sub
+    assert type(copy.deepcopy(s)) is Sub
+    assert s.copy()._box_config["default_box"] is True
+    assert type(Box(a=1).copy()) is Box
+
+
+def test_copy_preserves_configbox_sbox_ddbox_types():
+    for cls in (ConfigBox, SBox, DDBox):
+        b = cls({"a": 1})
+        assert type(b.copy()) is cls
+        assert type(copy.copy(b)) is cls
+        assert type(copy.deepcopy(b)) is cls
+        assert b.copy() == b
+
+
+def test_popitem_is_lifo_like_dict():
+    for cls in (Box, ConfigBox, SBox):
+        bx = cls(a=1, b=2, c=3)
+        ref = {"a": 1, "b": 2, "c": 3}
+        while ref:
+            assert bx.popitem() == ref.popitem()
+        with pytest.raises(BoxKeyError):
+            bx.popitem()
+
+
+def test_popitem_lifo_nested_value_and_reinsert():
+    bx = Box(a=1, b={"x": 1}, c=3)
+    del bx["a"]
+    bx["a"] = 9  # re-inserted keys move to the end
+    assert bx.popitem() == ("a", 9)
+    assert bx.popitem() == ("c", 3)
+    key, value = bx.popitem()
+    assert key == "b" and isinstance(value, Box)
+
+
+def test_popitem_frozen_and_alias_cleanup():
+    with pytest.raises(BoxError):
+        Box(a=1, frozen_box=True).popitem()
+    bx = Box({"a b": 1, "c": 2})
+    assert bx.popitem() == ("c", 2)
+    assert not hasattr(bx, "c")
+    assert bx.a_b == 1
+
+
+def test_merge_lists_merge_nested_lists_of_lists():
+    bx = Box({"m": [[{"a": 1}, 2], [3]]})
+    bx.merge_update({"m": [[{"b": 2}, 9, 10], [4], [5]]}, box_merge_lists="merge")
+    assert bx.to_dict() == {"m": [[{"a": 1, "b": 2}, 9, 10], [4], [5]]}
+    assert isinstance(bx.m[0][0], Box) and isinstance(bx.m[2], BoxList)
+
+
+def test_merge_lists_merge_list_vs_dict_and_scalar_replace():
+    bx = Box({"m": [{"a": 1}, [1], 5]})
+    bx.merge_update({"m": [[1, 2], {"b": 1}, {"c": 1}]}, box_merge_lists="merge")
+    assert bx.to_dict() == {"m": [[1, 2], {"b": 1}, {"c": 1}]}
+
+
+def test_merge_lists_merge_with_plain_list_and_boxlist_values():
+    bx = Box({"m": [{"a": 1}]})
+    bx.merge_update({"m": BoxList([{"b": 2}])}, box_merge_lists="merge")
+    bx.merge_update({"m": ({"c": 3},)}, box_merge_lists="merge")  # tuple is not a list: replaced
+    assert bx.m == ({"c": 3},)
+    bx2 = Box({"m": [{"a": 1}]})
+    bx2.merge_update(m=[{"b": 2}], box_merge_lists="merge")
+    assert bx2.to_dict() == {"m": [{"a": 1, "b": 2}]}
+
+
+def test_merge_lists_merge_empty_lists():
+    bx = Box({"m": [{"a": 1}]})
+    bx.merge_update({"m": []}, box_merge_lists="merge")
+    assert bx.to_dict() == {"m": [{"a": 1}]}
+    bx.merge_update({"new": [{"x": 1}]}, box_merge_lists="merge")
+    assert bx.to_dict() == {"m": [{"a": 1}], "new": [{"x": 1}]}
+
+
+def test_merge_lists_merge_frozen():
+    bx = Box({"m": [{"a": 1}]}, frozen_box=True)
+    with pytest.raises(BoxError):
+        bx.merge_update({"m": [{"b": 2}]}, box_merge_lists="merge")
+    with pytest.raises(BoxError):
+        bx.merge_update({"m": [{"a": 1}, {"b": 2}]}, box_merge_lists="merge")
+    assert bx.to_dict() == {"m": ({"a": 1},)}  # frozen boxes store lists as tuples
+
+
+@pytest.mark.parametrize("bad", ["Merge", "replace", True, 1, ""])
+def test_merge_lists_invalid_value(bad):
+    from box.exceptions import BoxValueError
+
+    bx = Box({"m": [1]})
+    with pytest.raises(BoxValueError):
+        bx.merge_update({"m": [2]}, box_merge_lists=bad)
+    assert bx.to_dict() == {"m": [1]}
+
+
+def test_merge_lists_valid_values_still_work():
+    for mode, expected in (("extend", [1, 1]), ("unique", [1]), (None, [1]), (False, [1])):
+        bx = Box({"m": [1]})
+        bx.merge_update({"m": [1]}, box_merge_lists=mode)
+        assert bx.m == expected, mode
+
+
+def test_merge_lists_merge_deep_dict_in_list_in_dict():
+    bx = Box({"a": {"l": [{"b": {"l2": [{"x": 1}]}}]}})
+    bx.merge_update({"a": {"l": [{"b": {"l2": [{"y": 2}, {"z": 3}]}}]}}, box_merge_lists="merge")
+    assert bx.to_dict() == {"a": {"l": [{"b": {"l2": [{"x": 1, "y": 2}, {"z": 3}]}}]}}
+
+
+def test_merge_lists_merge_intact_dict_type():
+    class MyDict(dict):
+        pass
+
+    bx = Box({"m": [MyDict(a=1)]}, box_intact_types=(MyDict,))
+    bx.merge_update({"m": [{"b": 2}]}, box_merge_lists="merge")
+    assert bx.m[0] == {"b": 2}
+
+
+def _no_create_box(**kwargs):
+    return Box(default_box=True, default_box_create_on_get=False, **kwargs)
+
+
+class TestCreateOnSetWithoutCreateOnGet:
+    def test_issue_274(self):
+        b = _no_create_box()
+        assert b.foo.bar == Box()
+        assert b == {}
+        b.foo.bar = 1
+        assert b.to_dict() == {"foo": {"bar": 1}}
+
+    def test_reads_never_create(self):
+        b = _no_create_box()
+        b.x.y.z
+        b["a"]["b"]
+        assert b == {}
+
+    def test_deep_assignment_and_item_forms(self):
+        b = _no_create_box()
+        b.a.b.c.d = 1
+        b["e"]["f"] = 2
+        b.g.h.update({"i": 3})
+        b.j.k.setdefault("l", 4)
+        b.m.merge_update({"n": 5})
+        assert b.to_dict() == {
+            "a": {"b": {"c": {"d": 1}}},
+            "e": {"f": 2},
+            "g": {"h": {"i": 3}},
+            "j": {"k": {"l": 4}},
+            "m": {"n": 5},
+        }
+
+    def test_failed_operations_do_not_create(self):
+        b = _no_create_box()
+        del b.x.nothing  # a missing attribute of a default_box looks present, deleting it is a no-op
+        with pytest.raises(BoxKeyError):
+            b.x.items = 1  # protected key
+        b.x.update({})
+        assert b == {}
+
+    def test_children_do_not_leak_bookkeeping(self):
+        b = _no_create_box()
+        child = b.x
+        assert "__pending_parent" in child._box_config
+        assert child.to_dict() == {} and repr(child) == "Box({})"
+        for clone in (copy.copy(child), copy.deepcopy(child), pickle.loads(pickle.dumps(child))):
+            assert "__pending_parent" not in clone._box_config
+            clone.z = 1
+            assert b == {}
+        # box options handed to new children never include internal "__" keys
+        child.sub.q = 1
+        assert child.to_dict() == {"sub": {"q": 1}}
+        assert not any(k.startswith("__pending") for k in child.sub._box_config["box_namespace"] if isinstance(k, str))
+        # pickling a flushed child does not drag the old parent reference along
+        assert "__pending_parent" not in pickle.loads(pickle.dumps(b.x))._box_config
+
+    def test_pickled_child_does_not_pickle_parent(self):
+        b = _no_create_box()
+        b.big = list(range(5000))
+        child = b.x
+        assert len(pickle.dumps(child)) < 2000
+
+    def test_stale_child_does_not_clobber_scalar(self):
+        b = _no_create_box()
+        c = b.x
+        b.x = 5
+        c.y = 1
+        assert b.to_dict() == {"x": 5}
+
+    def test_stale_child_does_not_clobber_dict(self):
+        b = _no_create_box()
+        c = b.x
+        b.x = {"q": 1}
+        c.y = 1
+        assert b.to_dict() == {"x": {"q": 1}}
+        assert c.to_dict() == {"y": 1}
+
+    def test_two_children_first_write_wins(self):
+        b = _no_create_box()
+        c1, c2 = b.x, b.x
+        c1.a = 1
+        c2.b = 2  # stale: x already exists, detached child is not merged
+        assert b.to_dict() == {"x": {"a": 1}}
+
+    def test_real_child_deleted_stays_detached(self):
+        b = _no_create_box()
+        b.x.y = 1
+        c = b.x  # a real, stored child
+        del b["x"]
+        c.z = 2
+        assert b.to_dict() == {}
+
+    def test_ephemeral_chain_with_stale_ancestor(self):
+        b = _no_create_box()
+        deep = b.a.b
+        b.a = {"keep": 1}
+        deep.c = 1
+        assert b.to_dict() == {"a": {"keep": 1}}
+
+    def test_frozen_is_never_mutated(self):
+        f = _no_create_box(frozen_box=True)
+        child = f.x
+        with pytest.raises(BoxError):
+            child.y = 1
+        with pytest.raises(BoxError):
+            child["y"] = 1
+        with pytest.raises(BoxError):
+            child.update(y=1)
+        assert f == {}
+
+    def test_box_dots(self):
+        b = _no_create_box(box_dots=True)
+        b["a.b.c"] = 1
+        b.d.e = 2
+        assert b.to_dict() == {"a": {"b": {"c": 1}}, "d": {"e": 2}}
+        # dotted lookups stay ephemeral and never create a literal dotted key
+        c = b["z.y"]
+        c.k = 1
+        assert "z.y" not in b.keys()
+        assert b.to_dict() == {"a": {"b": {"c": 1}}, "d": {"e": 2}}
+
+    def test_conversion_box_alias_registered(self):
+        b = _no_create_box()
+        b["my key"].v = 1
+        assert b.to_dict() == {"my key": {"v": 1}}
+        assert b.my_key.v == 1
+
+    def test_inside_boxlist(self):
+        b = _no_create_box(items_list=[{}])
+        b.items_list[0].x.y = 1
+        assert b.to_dict() == {"items_list": [{"x": {"y": 1}}]}
+
+    def test_default_box_attr_dict(self):
+        b = _no_create_box(default_box_attr={"d": 1})
+        b.x.d = 2
+        assert b.to_dict() == {"x": {"d": 2}}
+
+    def test_subclass_keeps_type(self):
+        class Sub(Box):
+            pass
+
+        b = Sub(default_box=True, default_box_create_on_get=False)
+        b.x.y = 1
+        assert type(b.x) is Sub
+
+    def test_create_on_get_true_stores_on_lookup(self):
+        b = Box(default_box=True, default_box_create_on_get=True)
+        b.a.b
+        assert b.to_dict() == {"a": {"b": {}}}
+        assert "__pending_parent" not in b.a._box_config
+
+    def test_create_on_get_is_off_by_default(self):
+        b = Box(default_box=True)
+        assert b._box_config["default_box_create_on_get"] is False
+        assert b.a.b == Box()
+        assert b.to_dict() == {}
+        b.a.b = 1
+        assert b.to_dict() == {"a": {"b": 1}}
+
+    def test_ipython_style_probing_does_not_add_keys(self):
+        # IPython / Spyder look up attributes such as size and compute on objects (#262)
+        b = Box(default_box=True)
+        for name in ("size", "compute", "shape", "_repr_html_"):
+            hasattr(b, name)
+        assert b.to_dict() == {}
+
+    def test_in_place_change_of_default_value_is_not_kept(self):
+        # Documented trade off of the default: store the value first, or use default_box_create_on_get=True
+        b = Box(default_box=True, default_box_attr=[])
+        b.tags.append(1)
+        assert b.to_dict() == {}
+        b.tags = b.tags + [1]
+        assert b.to_dict() == {"tags": [1]}
+
+    def test_pop_and_delattr_of_missing_key(self):
+        b = Box(default_box=True)
+        assert b.pop("missing") == Box()
+        assert hasattr(b, "_unrecognized_args")  # what argparse.parse_args does with a namespace
+        delattr(b, "_unrecognized_args")
+        assert b.to_dict() == {}
+        with pytest.raises(KeyError):
+            Box().pop("missing")
+        with pytest.raises(AttributeError):
+            delattr(Box(), "missing")
+
+    def test_argparse_namespace(self):
+        import argparse
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--name", default="x")
+        args = parser.parse_args(["--name", "y"], namespace=Box(default_box=True))
+        assert args.to_dict() == {"name": "y"}
+
+    def test_no_default_box_unchanged(self):
+        with pytest.raises(BoxKeyError):
+            Box().x.y = 1
+
+
+class TestRuamelScalarConversion:
+    """from_yaml returns builtin numbers and bools without disturbing strings (#264, PR #321)."""
+
+    def test_anchored_boolean_stays_bool(self):
+        bx = Box.from_yaml("a: &x true\nb: *x\nc: false\n")
+        assert bx.a is True and bx.b is True and bx.c is False
+
+    def test_anchored_boolean_round_trips_as_bool(self):
+        assert Box.from_yaml("a: &x true\nb: *x\n").to_yaml() == "a: true\nb: true\n"
+        assert Box.from_yaml("a: &x true\n").to_json() == '{"a": true}'
+
+    def test_multiline_string_dump_unchanged(self):
+        bx = Box.from_yaml("lit: |\n  line1\n  line2\n")
+        assert bx.to_yaml() == "lit: |\n  line1\n  line2\n"
+
+    def test_preserve_quotes_attr_still_effective(self):
+        bx = Box.from_yaml("a: 'x'\n", ruamel_attrs={"preserve_quotes": True})
+        assert bx.to_yaml() == "a: 'x'\n"
+
+    def test_numbers_become_builtin(self):
+        bx = Box.from_yaml("f: 1.10\ni: 0x1F\nu: 1_000\no: 0o17\nb: 0b101\n")
+        assert [type(v) for v in bx.values()] == [float, int, int, int, int]
+
+    def test_keys_are_builtin(self):
+        bx = Box.from_yaml("1.5: a\n", conversion_box=False)
+        assert [type(k) for k in bx.keys()] == [float]
+
+    def test_pyyaml_backend_unaffected(self, monkeypatch):
+        import box.converters as cv
+
+        if not cv.pyyaml_available:
+            pytest.skip("PyYAML is not installed")
+        monkeypatch.setattr(cv, "ruamel_available", False)
+        bx = Box.from_yaml("a: 1.10\nb: true\n")
+        assert bx.to_dict() == {"a": 1.1, "b": True}
