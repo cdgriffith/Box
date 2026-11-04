@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Version 7.5.0
+Version 8.0.0
 -------------
 
 * Adding support for Python 3.15
