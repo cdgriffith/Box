@@ -241,6 +241,24 @@ class TestBoxList:
         box_3["a.b[0]"] = 42
         assert box_3.a.b[0] == 42
 
+        # A second dotted write into an existing list element must not discard
+        # the keys already written there (regression).
+        box_4 = Box(default_box=True, box_dots=True)
+        box_4["a[0].x"] = 1
+        box_4["a[0].y"] = 2
+        assert box_4.a[0].to_dict() == {"x": 1, "y": 2}
+
+        box_5 = Box(default_box=True, box_dots=True)
+        box_5["a[0][0].x"] = 1
+        box_5["a[0][1].y"] = 2
+        assert box_5.a[0].to_list() == [{"x": 1}, {"y": 2}]
+
+        # A scalar already at the position is still overwritten.
+        box_6 = Box(default_box=True, box_dots=True)
+        box_6["a[0]"] = 5
+        box_6["a[0].x"] = 1
+        assert box_6.a[0].to_dict() == {"x": 1}
+
     def test_box_config_propagate(self):
         structure = Box(a=[Box(default_box=False)], default_box=True, box_inherent_settings=True)
         assert structure._box_config["default_box"] is True

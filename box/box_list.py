@@ -106,9 +106,15 @@ class BoxList(list):
                 return super().__setitem__(pos, value)
             children = key[len(list_pos.group()) :].lstrip(".")
             if self.box_options.get("default_box"):
+                # Only replace the element at ``pos`` with a fresh container when it is
+                # not already the right one; otherwise a second dotted write into an
+                # existing element (e.g. ``a[0].y`` after ``a[0].x``) would discard the
+                # data already stored there. Mirrors the guard in Box.__setitem__.
+                current = super().__getitem__(pos)
                 if children[0] == "[":
-                    super().__setitem__(pos, box.BoxList(**self.box_options))
-                else:
+                    if not isinstance(current, box.BoxList):
+                        super().__setitem__(pos, box.BoxList(**self.box_options))
+                elif not isinstance(current, box.Box):
                     super().__setitem__(pos, self.box_options.get("box_class")(**self.box_options))
             return super().__getitem__(pos).__setitem__(children, value)
         super().__setitem__(key, value)
