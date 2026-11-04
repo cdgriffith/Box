@@ -5,10 +5,6 @@ reporting, all input is greatly appreciated!
 
 Code contributions:
 
-- fhgffy
-- Muneeb Sheikh (muneikh)
-
-- Gary (gary1110086)
 - Alexandre Decan (AlexandreDecan)
 - dhilipsiva (dhilipsiva)
 - MAA (FooBarQuaxx)
@@ -48,11 +44,16 @@ Code contributions:
 - shguild
 - fhgffy
 - AryanRG (AryanRG)
-
-
-Documentation contributions:
-
+- Muneeb Sheikh (muneikh)
+- Gary (gary1110086)
+- Vitaliy Voloshin (vitalivo)
+- x0Lazarus
+- Huanyi Xie (xiehuanyi)
 - Likio3000
+- koriyoshi2041
+- binggao1230
+- apoorvdarshan
+- chuenchen309
 
 
 Suggestions and bug reporting:
@@ -114,7 +115,3 @@ Suggestions and bug reporting:
 - d00m514y3r
 - Sébastien Weber (seb5g)
 - Ward Loos (wrdls)
-- Vitaliy Voloshin (vitalivo)
-- x0Lazarus
-
-- Huanyi Xie (xiehuanyi)

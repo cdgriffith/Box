@@ -8,6 +8,26 @@ Version 7.5.0
 * Adding manylinux Cython wheels for Python 3.14 and 3.15
 * Fixing python_requires to match supported versions
 * Updating GitHub Actions to latest major versions
+* Fixing #260 nested boxes losing box_dots after pickle (thanks to DSeaStar)
+* Fixing #265 unclear error for malformed BoxList bracket indices with box_dots (thanks to Arindam Sikder)
+* Fixing #272 frozen_box with lists could not be serialized to YAML / JSON (thanks to apoorvdarshan)
+* Fixing #300 CamelCase keys in dotted lookups with camel_killer_box (thanks to Guo Jiarui)
+* Fixing #305 dotted keys lost with box_dots when a non-dotted key with the same prefix follows (thanks to J vanBemmel)
+* Fixing #308 subclass of Box not preserved for nested boxes after unpickling (thanks to koriyoshi2041)
+* Fixing #344 frozen BoxList instances could not be pickled (thanks to Abhinav Maurya)
+* Fixing frozen BoxList could be mutated via clear, += and *= (thanks to Vitaliy Voloshin)
+* Fixing BoxList.__deepcopy__ not preserving box options (thanks to chuenchen309)
+* Fixing second dotted write into an existing BoxList element discarding data (thanks to binggao1230)
+* Fixing dicts and lists assigned to BoxList items and slices not being converted (thanks to x0Lazarus)
+* Fixing BoxList.extend(self) revisiting its own appended values (thanks to x0Lazarus)
+* Fixing BoxList construction testing the truth value of the iterable (thanks to fhgffy)
+* Fixing BoxList to_json / from_json multiline not working with strings (thanks to shguild)
+* Fixing explicit ensure_ascii option being ignored in JSON output (thanks to fhgffy)
+* Fixing Box.pop with an explicit default creating missing values with default_box (thanks to Huanyi Xie)
+* Fixing Box.update not accepting a positional source and keyword overrides together like dict.update (thanks to AryanRG)
+* Fixing duplicate conversion check raising when re-assigning the same key (thanks to Muneeb Sheikh)
+* Fixing deleted keys not releasing their converted attribute alias (thanks to Gary)
+* Fixing optional dependency installation examples in README (thanks to Likio3000)
 * Removing support for Python 3.10 as it is EOL
 
 Version 7.4.1
