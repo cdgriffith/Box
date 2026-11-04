@@ -46,6 +46,7 @@ Code contributions:
 - Arindam Sikder (arindamsikder)
 - shguild
 - fhgffy
+- AryanRG (AryanRG)
 
 
 Suggestions and bug reporting:
