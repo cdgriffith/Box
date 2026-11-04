@@ -33,7 +33,7 @@ requirements.txt
 
 .. code:: text
 
-        python-box[all]~=7.0
+        python-box[all]~=8.0
 
 As Box adheres to semantic versioning (aka API changes will only occur on between major version),
 it is best to use `Compatible release <https://www.python.org/dev/peps/pep-0440/#compatible-release>`_ matching using the `~=` clause.
@@ -44,7 +44,7 @@ Install from command line
 .. code:: bash
 
         python -m pip install --upgrade pip
-        pip install "python-box[all]~=7.0" --upgrade
+        pip install "python-box[all]~=8.0" --upgrade
 
 Install with selected dependencies
 ----------------------------------
@@ -54,14 +54,14 @@ for example, `[all]` is shorthand for:
 
 .. code:: bash
 
-        pip install "python-box[ruamel.yaml,toml,msgpack]~=7.0" --upgrade
+        pip install "python-box[ruamel.yaml,toml,msgpack]~=8.0" --upgrade
 
 But you can also sub out `ruamel.yaml` for `PyYAML`. To use ``tomli-w`` for TOML output,
 select the ``tomli`` extra instead of ``toml``.
 
 Check out `more details <https://github.com/cdgriffith/Box/wiki/Installation>`_ on installation details.
 
-Box 7 is tested on python 3.7+, if you are upgrading from previous versions, please look through
+Box 8 is tested on python 3.11+, if you are upgrading from previous versions, please look through
 `any breaking changes and new features <https://github.com/cdgriffith/Box/wiki/Major-Version-Breaking-Changes>`_.
 
 Optimized Version
@@ -72,17 +72,18 @@ Loading large data sets can be up to 10x faster!
 
 If you are **not** on a x86_64 supported system you will need to do some extra work to install the optimized version.
 There will be an warning of "WARNING: Cython not installed, could not optimize box" during install.
-You will need python development files, system compiler, and the python packages `Cython` and `wheel`.
+You will need python development files, system compiler, and the python packages `Cython`, `setuptools` and `wheel`.
 
 **Linux Example:**
 
 First make sure you have python development files installed (`python3-dev` or `python3-devel` in most repos).
-You will then need `Cython` and `wheel` installed and then install (or re-install with `--force`) `python-box`.
+You will then need `Cython`, `setuptools` and `wheel` installed and then install (or re-install with `--force`) `python-box`.
+As Cython is not a build requirement, the build has to run without isolation so it can see your installed copy.
 
 .. code:: bash
 
-        pip install Cython wheel
-        pip install "python-box[all]~=7.0" --upgrade --force
+        pip install Cython "setuptools>=77" wheel
+        pip install "python-box[all]~=8.0" --upgrade --force --no-binary python-box --no-build-isolation
 
 If you have any issues please open a github issue with the error you are experiencing!
 
