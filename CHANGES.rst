@@ -4,7 +4,16 @@ Changelog
 Version 8.0.0
 -------------
 
-* BREAKING CHANGE: Box.popitem() now removes the most recently inserted item (LIFO) like dict.popitem(), instead of the first inserted item (thanks to machines-6657)
+Breaking changes
+
+* Box.popitem() now removes the most recently inserted item (LIFO) like dict.popitem(), instead of the first inserted item (thanks to machines-6657)
+* Removing support for Python 3.10 as it is EOL, Python 3.11+ is now required
+* merge_update now raises BoxValueError for an unrecognized box_merge_lists value instead of silently replacing the list
+* Box.copy() / copy.copy() / copy.deepcopy() now return the same class as the original (subclasses of Box, ConfigBox, SBox and DDBox were previously turned into a plain Box / ConfigBox / SBox)
+* Build and development tooling changed (see below): installing from an sdist now needs setuptools>=77, and building the Cython version from source requires --no-build-isolation
+
+Changes
+
 * Fixing #274 default_box_create_on_get=False not creating missing parent keys on assignment, e.g. box.a.b = 1 (thanks to gyanu2507 for the fix and wrdls for reporting)
 * Adding #263 "merge" option for box_merge_lists to merge lists of dictionaries element by element (thanks to ChrisJr404)
 * Adding #269 internal-only attributes for Box subclasses via _box_internal_attrs (thanks to bwanshoom and gtkacz for the suggestion)
@@ -19,7 +28,7 @@ Version 8.0.0
 * Fixing #305 dotted keys lost with box_dots when a non-dotted key with the same prefix follows (thanks to J vanBemmel)
 * Fixing #308 subclass of Box not preserved for nested boxes after unpickling (thanks to koriyoshi2041)
 * Fixing #344 frozen BoxList instances could not be pickled (thanks to Abhinav Maurya)
-* Fixing frozen BoxList could be mutated via clear, += and *= (thanks to Vitaliy Voloshin)
+* Fixing frozen BoxList could be mutated via clear, ``+=`` and ``*=`` (thanks to Vitaliy Voloshin)
 * Fixing BoxList.__deepcopy__ not preserving box options (thanks to chuenchen309)
 * Fixing second dotted write into an existing BoxList element discarding data (thanks to binggao1230)
 * Fixing dicts and lists assigned to BoxList items and slices not being converted (thanks to x0Lazarus)
@@ -31,10 +40,10 @@ Version 8.0.0
 * Fixing Box.update not accepting a positional source and keyword overrides together like dict.update (thanks to AryanRG)
 * Fixing duplicate conversion check raising when re-assigning the same key (thanks to Muneeb Sheikh)
 * Fixing deleted keys not releasing their converted attribute alias (thanks to Gary)
-* Changing merge_update to raise BoxValueError for an unrecognized box_merge_lists value instead of silently replacing the list
 * Fixing Box.copy() (and copy.copy / copy.deepcopy) returning a plain Box, ConfigBox or SBox instead of the same subclass
+* Moving package metadata from setup.py to pyproject.toml (PEP 621), setup.py now only handles the optional Cython build
+* Moving development and CI to uv (dependency groups and uv.lock replace the requirements files) and ruff (replaces black)
 * Fixing optional dependency installation examples in README (thanks to Likio3000)
-* Removing support for Python 3.10 as it is EOL
 
 Version 7.4.1
 -------------
