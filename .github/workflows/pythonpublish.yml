@@ -31,7 +31,7 @@ jobs:
 
       run: |
         uv build
-        uvx twine upload dist/*
+        uvx twine==6.2.0 upload dist/*
 
   deploy-cython:
     strategy:
@@ -43,11 +43,15 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - name: Set up Python ${{ matrix.python-version }}
+      id: setup-python
       uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install uv
       uses: astral-sh/setup-uv@v10
+    - name: Use the matrix interpreter for uv
+      shell: bash
+      run: echo "UV_PYTHON=${{ steps.setup-python.outputs.python-path }}" >> "$GITHUB_ENV"
     - name: Install build dependencies
       run: |
         uv venv
@@ -59,9 +63,11 @@ jobs:
       # No build isolation so the Cython installed above is used to build the compiled wheel
       run: |
         uv build --wheel --no-build-isolation
-        uvx twine upload dist/*
+        uvx twine==6.2.0 upload dist/*
 
-  deploy-cython-manylinux:
+  # Building runs the test suite (third party test dependencies), so it happens in a job without
+  # access to the PyPI credentials. A separate job only downloads the built wheels and uploads them.
+  build-cython-manylinux:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
@@ -70,11 +76,30 @@ jobs:
 
     # Build targets and test commands are configured in [tool.cibuildwheel] in pyproject.toml
     - name: Build wheels
-      run: uvx cibuildwheel --output-dir dist
+      run: uvx cibuildwheel==4.3.5 --output-dir dist
+
+    - name: Upload wheel artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: python_box_manylinux
+        path: dist/*-manylinux*.whl
+
+  deploy-cython-manylinux:
+    needs: build-cython-manylinux
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download wheels
+      uses: actions/download-artifact@v7
+      with:
+        name: python_box_manylinux
+        path: dist
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v10
 
     - name: Publish
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
-        uvx twine upload dist/*-manylinux*.whl
+        uvx twine==6.2.0 upload dist/*-manylinux*.whl

@@ -1213,7 +1213,7 @@ dev = [
     { name = "ruff", specifier = ">=0.17.3" },
     { name = "setuptools", specifier = ">=77" },
     { name = "tomli-w", specifier = ">=1.0.0" },
-    { name = "toon-format", git = "https://github.com/toon-format/toon-python.git" },
+    { name = "toon-format", specifier = ">=1.2.0" },
     { name = "twine", specifier = ">=5" },
     { name = "types-pyyaml", specifier = ">=6.0.3" },
     { name = "wheel", specifier = ">=0.34.2" },
@@ -1225,7 +1225,7 @@ test = [
     { name = "pytest-cov", specifier = "<6.0.0" },
     { name = "ruamel-yaml", specifier = ">=0.19.1" },
     { name = "tomli-w", specifier = ">=1.0.0" },
-    { name = "toon-format", git = "https://github.com/toon-format/toon-python.git" },
+    { name = "toon-format", specifier = ">=1.2.0" },
     { name = "types-pyyaml", specifier = ">=6.0.3" },
 ]
 
@@ -1445,7 +1445,11 @@ wheels = [
 [[package]]
 name = "toon-format"
 version = "1.2.0"
-source = { git = "https://github.com/toon-format/toon-python.git#536a508d486847cb01ec1869cf21d1f7556b0db0" }
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/06/9e/88b94e00ae3589130bb2bde233c60b55776deb670cc3d077657d6a8b9a2e/toon_format-1.2.0.tar.gz", hash = "sha256:ed09c0cb8ba58f17372f876df1e43400d2d916aef67c641f152d8a28c5898669", size = 20775, upload-time = "2026-10-18T13:23:36.594Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f3/9e/69331571d5b91b3f34f0dcd7c8135bb3241e41c3c3effb4af8f57772a9ca/toon_format-1.2.0-py3-none-any.whl", hash = "sha256:d94db4b088a281a7bbc85e75d7fbd24e6a0ec7bc110edb129285259eca6522c0", size = 22863, upload-time = "2026-10-18T13:23:35.557Z" },
+]
 
 [[package]]
 name = "twine"

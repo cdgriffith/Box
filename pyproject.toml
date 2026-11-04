@@ -66,7 +66,7 @@ test = [
     "pytest-cov<6.0.0",
     "ruamel.yaml>=0.19.1",
     "tomli-w>=1.0.0",
-    "toon_format @ git+https://github.com/toon-format/toon-python.git",
+    "toon-format>=1.2.0",
     "types-PyYAML>=6.0.3",
 ]
 # Development tooling: linting, type checking, building and releasing
@@ -109,7 +109,7 @@ known-first-party = ["box", "test"]
 [tool.cibuildwheel]
 build = "cp311-manylinux_x86_64 cp312-manylinux_x86_64 cp313-manylinux_x86_64 cp314-manylinux_x86_64 cp315-manylinux_x86_64"
 # Cython (and setuptools) must be present in the build environment, so build without isolation
-before-build = "pip install Cython>=3.3.0 setuptools wheel"
+before-build = "pip install 'Cython>=3.3.0' setuptools wheel"
 build-frontend = { name = "build", args = ["--no-isolation"] }
 build-verbosity = 1
 test-groups = ["test"]

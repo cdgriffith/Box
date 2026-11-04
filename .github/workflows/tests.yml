@@ -19,9 +19,9 @@ jobs:
         with:
           enable-cache: true
       - name: Ruff lint
-        run: uvx ruff check .
+        run: uvx ruff@0.17.3 check .
       - name: Ruff format
-        run: uvx ruff format --check .
+        run: uvx ruff@0.17.3 format --check .
 
   package-checks:
     strategy:
@@ -32,6 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}
+        id: setup-python
         uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
@@ -39,6 +40,9 @@ jobs:
         uses: astral-sh/setup-uv@v10
         with:
           enable-cache: true
+      - name: Use the matrix interpreter for uv
+        shell: bash
+        run: echo "UV_PYTHON=${{ steps.setup-python.outputs.python-path }}" >> "$GITHUB_ENV"
       - name: Install dependencies
         # Cython is part of the dev group, so the build below produces a compiled wheel
         run: uv sync --group dev --no-install-project
@@ -78,7 +82,7 @@ jobs:
           enable-cache: true
       # Build targets and test commands are configured in [tool.cibuildwheel] in pyproject.toml
       - name: Build wheels
-        run: uvx cibuildwheel --output-dir dist
+        run: uvx cibuildwheel==4.3.5 --output-dir dist
 
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v7
@@ -95,6 +99,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - name: Set up Python ${{ matrix.python-version }}
+      id: setup-python
       uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python-version }}
@@ -102,6 +107,9 @@ jobs:
       uses: astral-sh/setup-uv@v10
       with:
         enable-cache: true
+    - name: Use the matrix interpreter for uv
+      shell: bash
+      run: echo "UV_PYTHON=${{ steps.setup-python.outputs.python-path }}" >> "$GITHUB_ENV"
     - name: Install dependencies
       run: |
         uv sync --group dev --no-install-project
