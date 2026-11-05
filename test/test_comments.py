@@ -370,6 +370,18 @@ class TestEdgeCases:
         del bl[0:1]
         assert bl == [2, 1]
 
+    def test_dotted_list_deletion_keeps_surviving_comments(self):
+        values = BoxList.from_yaml("- first  # first comment\n- second  # second comment\n", box_dots=True)
+        del values["[0]"]
+        assert values.to_yaml() == "- second  # second comment\n"
+
+    def test_sort_with_comments_evaluates_keys_once(self):
+        values = BoxList.from_yaml("- z  # Z\n- a  # A\n")
+        ranks = {"z": 2, "a": 1}
+        assert values.sort(key=ranks.pop) is None
+        assert ranks == {}
+        assert values.to_yaml() == "- a  # A\n- z  # Z\n"
+
     def test_slice_delete_drops_item_comments(self):
         bl = BoxList([1, 2, 3])
         bl.set_comment(2, "x")
