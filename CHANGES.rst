@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Preserve BoxList item comments after dotted-index deletion, and evaluate sort keys only once when comments are present.
+
 Version 8.0.0
 -------------
 
