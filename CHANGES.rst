@@ -1,10 +1,11 @@
 Changelog
 =========
 
-Unreleased
-----------
+Version 8.0.1
+-------------
 
-* Preserve BoxList item comments after dotted-index deletion, and evaluate sort keys only once when comments are present.
+* Fixing #349 BoxList item comments moving to the wrong items after a box_dots deletion, e.g. del bl["[0]"] (thanks to HocVoNgThai)
+* Fixing #349 BoxList.sort() calling the key function twice when the list has comments (thanks to HocVoNgThai)
 
 Version 8.0.0
 -------------
