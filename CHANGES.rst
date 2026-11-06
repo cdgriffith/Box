@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 8.0.1
+-------------
+
+* Fixing #349 BoxList item comments moving to the wrong items after a box_dots deletion, e.g. del bl["[0]"] (thanks to HocVoNgThai)
+* Fixing #349 BoxList.sort() calling the key function twice when the list has comments (thanks to HocVoNgThai)
+
 Version 8.0.0
 -------------
 

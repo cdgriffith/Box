@@ -101,7 +101,7 @@ class BoxList(list):
                 raise BoxTypeError(f"Invalid list index: {key!r}")
             pos = int(list_pos.groups()[0])
             if len(list_pos.group()) == len(key):
-                return super().__delitem__(pos)
+                return self.__delitem__(pos)
             if hasattr(self[pos], "__delitem__"):
                 return self[pos].__delitem__(key[len(list_pos.group()) :].lstrip("."))  # type: ignore
         length = len(self)
@@ -214,10 +214,10 @@ class BoxList(list):
         if not self.__dict__.get("_box_comments"):
             return super().sort(key=key, reverse=reverse)
         # Work out where every item goes (same stable order as list.sort) so comments follow them
-        sort_key = key or (lambda x: x)
+        sort_key = (lambda x: x) if key is None else key
         order = sorted(range(len(self)), key=lambda i: sort_key(list.__getitem__(self, i)), reverse=reverse)
         new_position = {old: new for new, old in enumerate(order)}
-        super().sort(key=key, reverse=reverse)
+        super().__setitem__(slice(None), [list.__getitem__(self, i) for i in order])
         self._comment_reindex(new_position.get)
 
     # ---- Comments (#184), by item index ----
