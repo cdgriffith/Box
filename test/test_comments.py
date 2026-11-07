@@ -434,3 +434,37 @@ class TestCommentTextIsNeverYaml:
         bx = Box(a=1)
         bx.set_comment("a", "x\ty")
         assert Box.from_yaml(bx.to_yaml()).get_comment("a") == {"eol": "x\ty"}
+
+
+@pytest.mark.parametrize("count", [0, -1, -3])
+def test_inplace_repetition_drops_comments_of_removed_items(count):
+    values = BoxList.from_yaml("# list heading\n- old  # obsolete explanation\n")
+    original = values
+    values *= count
+    assert values is original
+    assert values == []
+    values.append("new")
+    assert values.get_comment(0) is None
+    assert values.get_comment() == {"start": "list heading"}
+    assert values.to_yaml() == "# list heading\n- new\n"
+
+
+@pytest.mark.parametrize("count", [1, 2])
+def test_inplace_repetition_keeps_surviving_item_comments(count):
+    values = BoxList.from_yaml("- old  # explanation\n")
+    original = values
+    values *= count
+    assert values is original
+    assert values == ["old"] * count
+    assert values.get_comment(0) == {"eol": "explanation"}
+
+
+def test_inplace_repetition_keeps_comments_on_false_valued_subclass():
+    class FalseBoxList(BoxList):
+        def __bool__(self):
+            return False
+
+    values = FalseBoxList(["old"])
+    values.set_comment(0, "explanation")
+    values *= 1
+    assert values.get_comment(0) == {"eol": "explanation"}

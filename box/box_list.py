@@ -154,7 +154,10 @@ class BoxList(list):
     def __imul__(self, value):  # type: ignore[misc]
         if self.box_options.get("frozen_box"):
             raise BoxError("BoxList is frozen")
-        return super().__imul__(value)
+        result = super().__imul__(value)
+        if len(self) == 0:
+            self.__dict__.pop("_box_comments", None)
+        return result
 
     def _is_intact_type(self, obj):
         if self.box_options.get("box_intact_types") and isinstance(obj, self.box_options["box_intact_types"]):
