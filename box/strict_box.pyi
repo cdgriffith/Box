@@ -1,0 +1,3 @@
+from box.box import Box as Box
+
+class StrictBox(Box): ...

@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Adding #147 StrictBox to reject new fields in attribute assignments while allowing explicit dictionary updates (thanks to Aschenbath)
+
 Version 8.0.1
 -------------
 

@@ -127,6 +127,37 @@ allowing for recursive dot notation access.
 `Box` also includes helper functions to transform it back into a `dict`,
 as well as into `JSON`, `YAML`, `TOML`, or `msgpack` strings or files.
 
+Restricting Attribute Assignment
+--------------------------------
+
+Use ``StrictBox`` to catch misspelled field names in attribute assignments.
+Existing fields and their values remain mutable; add fields explicitly using
+item assignment or dictionary methods such as ``update``.
+
+.. code:: python
+
+        from box import StrictBox
+
+        settings = StrictBox(host="localhost", port=8000)
+        settings.port = 8080
+        settings.prot = 8080  # raises BoxKeyError
+        settings["debug"] = False
+        settings.debug = True
+
+Nested dictionaries, including dictionaries inside lists, become ``StrictBox``
+instances by default. Attribute aliases such as ``box.a_b`` for a key named
+``"a b"`` still work. Copying, pickling and class methods such as
+``StrictBox.from_json`` preserve the restrictions.
+
+This does not validate a schema: deleting fields, adding them through dictionary
+operations, and replacing a nested dictionary with different fields are allowed.
+After deleting a field, reintroduce it through item assignment before using
+attribute assignment again. ``box_class`` can select a different class for
+nested dictionaries. The usual ``default_box`` lookup behavior still applies;
+checking an attribute assignment never creates its missing destination.
+Subclass property setters and ``_box_internal_attrs`` also retain their behavior.
+
+
 Internal Attributes on Subclasses
 ---------------------------------
 
