@@ -203,7 +203,8 @@ class ConfigBox(Box):
             if hasattr(args[0], "keys"):
                 incoming = list(args[0].keys())
             else:
-                args = (list(args[0]),)  # may be a one-shot iterator, it is read twice
+                # Both the outer iterable and its pairs may be one-shot iterators.
+                args = ([tuple(pair) for pair in args[0]],)
                 incoming = [k for k, _ in args[0]]
         else:
             incoming = []
