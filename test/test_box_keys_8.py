@@ -117,3 +117,38 @@ class TestCamelKillerKeepKeys:
         cb = ConfigBox({"maxConnections": "5"}, camel_killer_box=True, camel_killer_box_keep_keys=True)
         assert cb.int("max_connections") == 5
         assert cb.to_dict() == {"maxConnections": "5"}
+
+
+class TestUpdateDottedPaths:
+    """ update() honors box_dots path semantics, like __setitem__ and merge_update. """
+
+    def test_update_dotted_key_nests(self):
+        b = Box(default_box=True, box_dots=True)
+        b.update({"x.y": 5})
+        assert b["x"]["y"] == 5
+
+    def test_update_dotted_key_extends_existing_path(self):
+        b = Box({"x": {"y": 1}}, box_dots=True)
+        b.update({"x.z": 5})
+        assert b.to_dict() == {"x": {"y": 1, "z": 5}}
+
+    def test_update_dotted_key_with_dots_exclude_stays_literal(self):
+        b = Box(box_dots=True, box_dots_exclude=r"^[a-z]+\.[a-z]+$")
+        b.update({"keep.this": 1})
+        assert b.to_dict() == {"keep.this": 1}
+
+    def test_update_kwargs_dotted_key_nests(self):
+        b = Box(default_box=True, box_dots=True)
+        b.update(**{"k.k": 9})
+        assert b["k"]["k"] == 9
+
+    def test_update_non_dotted_unchanged(self):
+        b = Box({"a": 1})
+        b.update({"b": 2}, c=3)
+        assert b.to_dict() == {"a": 1, "b": 2, "c": 3}
+
+    def test_box_addition_merges_dotted_paths(self):
+        b = Box({"x": {"y": 1}}, default_box=True, box_dots=True) + Box(
+            {"x.z": 2}, default_box=True, box_dots=True
+        )
+        assert b.to_dict() == {"x": {"y": 1, "z": 2}}
