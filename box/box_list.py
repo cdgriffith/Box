@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import copy
 import copyreg
+import operator
 import re
 from collections.abc import Iterable
 from os import PathLike
@@ -104,6 +105,8 @@ class BoxList(list):
                 return self.__delitem__(pos)
             if hasattr(self[pos], "__delitem__"):
                 return self[pos].__delitem__(key[len(list_pos.group()) :].lstrip("."))  # type: ignore
+        if not isinstance(key, slice) and hasattr(type(key), "__index__"):
+            key = operator.index(key)
         length = len(self)
         super().__delitem__(key)
         self._comment_after_delete(key, length)
@@ -186,6 +189,7 @@ class BoxList(list):
             self.append(item)
 
     def insert(self, index, p_object):
+        index = operator.index(index)
         length = len(self)
         super().insert(index, self._convert(p_object))
         if self.__dict__.get("_box_comments"):
@@ -193,6 +197,7 @@ class BoxList(list):
             self._comment_reindex(lambda k: k + 1 if k >= at else k)
 
     def pop(self, index=-1):
+        index = operator.index(index)
         length = len(self)
         value = super().pop(index)
         self._comment_after_delete(index, length)
