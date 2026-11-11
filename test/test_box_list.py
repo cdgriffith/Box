@@ -789,6 +789,16 @@ class TestBoxListOperators:
         assert result.box_options["box_dots"] is True
         assert result.to_list() == [{"a": 1}] * 3
 
+    def test_rmul_and_index_protocol(self):
+        class Two:
+            def __index__(self):
+                return 2
+
+        bl = BoxList([{"a": 1}])
+        for result in (2 * bl, bl * Two()):
+            assert isinstance(result, BoxList)
+            assert result.to_list() == [{"a": 1}] * 2
+
     def test_mul_non_int_raises(self):
         with pytest.raises(BoxTypeError):
             BoxList() * "x"

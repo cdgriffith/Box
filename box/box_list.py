@@ -154,9 +154,13 @@ class BoxList(list):
         return box.BoxList(list(self) + list(other), **self.box_options)
 
     def __mul__(self, count):
-        if not isinstance(count, int):
-            raise BoxTypeError("BoxList can only be multiplied by an integer.")
+        try:
+            count = operator.index(count)
+        except TypeError:
+            raise BoxTypeError("BoxList can only be multiplied by an integer.") from None
         return box.BoxList(list(self) * count, **self.box_options)
+
+    __rmul__ = __mul__
 
     def __iadd__(self, value):  # type: ignore[misc]  # list accepts any iterable for +=, not only lists
         if self.box_options.get("frozen_box"):

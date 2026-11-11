@@ -8,6 +8,8 @@ Version 8.0.1
 * Fix ConfigBox.merge_update consuming one-shot key/value pairs before merging them
 * Preserve BoxList item comments when insert, pop and deletion use objects with __index__ (thanks to parijat1222q)
 
+* Fixing #356 update() storing dotted keys literally with box_dots instead of treating them as paths (thanks to rahul05ranjan)
+* Fixing #358 BoxList + and * returning a plain list instead of a BoxList (thanks to rahul05ranjan)
 * Fixing #349 BoxList item comments moving to the wrong items after a box_dots deletion, e.g. del bl["[0]"] (thanks to HocVoNgThai)
 * Fixing #349 BoxList.sort() calling the key function twice when the list has comments (thanks to HocVoNgThai)
 
