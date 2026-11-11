@@ -6,6 +6,8 @@ reporting, all input is greatly appreciated!
 Code contributions:
 
 - Alexandre Bertho (alexbertho)
+- parijat1222q
+
 - Alexandre Decan (AlexandreDecan)
 - dhilipsiva (dhilipsiva)
 - MAA (FooBarQuaxx)
