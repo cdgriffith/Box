@@ -14,8 +14,8 @@ import pytest
 from ruamel.yaml import YAML
 
 from box import Box, BoxError, BoxList
-from box.exceptions import BoxTypeError
 from box.converters import toml_read_library, toml_write_library
+from box.exceptions import BoxTypeError
 from test.common import test_root, tmp_dir
 
 
