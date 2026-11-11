@@ -85,7 +85,8 @@ def _camel_killer(attr):
     return re.sub(" *_+", "_", s2.lower())
 
 
-_tuple_pos_re = re.compile(r"\[(-?\d+)\]")
+_tuple_pos_re = re.compile(r"\[(\d+)\]")
+_tuple_comment_index_re = re.compile(r"\[(-?\d+)\]")
 
 
 class _BoxTuple(tuple):
@@ -131,7 +132,7 @@ class _BoxTuple(tuple):
             if 0 <= index < len(self):
                 return self, index
         elif isinstance(key, str) and key.startswith("["):
-            list_pos = _tuple_pos_re.match(key)
+            list_pos = _tuple_comment_index_re.match(key)
             if list_pos is not None:
                 index = int(list_pos.group(1))
                 index = index + len(self) if index < 0 else index

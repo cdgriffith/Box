@@ -258,9 +258,8 @@ class TestBoxDots:
         assert bx["a[2]"] == 3
         with pytest.raises(IndexError):
             bx["a[10]"]
-        assert bx["a[-1]"] == 3  # counts from the end, like the comment API and a list
-        with pytest.raises(IndexError):
-            bx["a[-10]"]
+        with pytest.raises(BoxTypeError):
+            bx["a[-1]"]
         with pytest.raises(BoxTypeError):
             bx["a[x]"]
 

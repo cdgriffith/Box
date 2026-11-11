@@ -17,7 +17,6 @@ Version 8.0.1
 * Fixing Box.pop(path, default) raising IndexError for an out of range list index in a box_dots path, it returns the default like get()
 * Fixing a failed dotted del creating the parent key with default_box_create_on_get
 * Fixing BoxList box_dots indexes such as "[x][1]" being accepted and acting on the wrong item, they now raise BoxTypeError
-* BoxList box_dots indexes can be negative, "[-1]", like the comment API already allowed
 * BoxList + and * (and n * BoxList) keep the item comments, also those of the added BoxList, and *= repeats them
 * Fixing #349 BoxList item comments moving to the wrong items after a box_dots deletion, e.g. del bl["[0]"] (thanks to HocVoNgThai)
 * Fixing #349 BoxList.sort() calling the key function twice when the list has comments (thanks to HocVoNgThai)

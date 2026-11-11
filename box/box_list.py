@@ -35,7 +35,8 @@ from box.converters import (
 )
 from box.exceptions import BoxError, BoxKeyError, BoxTypeError
 
-_list_pos_re = re.compile(r"\[(-?\d+)\]")  # negative indexes count from the end, like a list
+_list_pos_re = re.compile(r"\[(\d+)\]")
+_comment_index_re = re.compile(r"\[(-?\d+)\]")  # the comment API also takes negative indexes
 
 
 class BoxList(list):
@@ -334,7 +335,7 @@ class BoxList(list):
             if 0 <= index < len(self):
                 return self, index
         elif isinstance(key, str) and key.startswith("["):
-            list_pos = _list_pos_re.match(key)
+            list_pos = _comment_index_re.match(key)
             if list_pos is not None:
                 index = int(list_pos.groups()[0])
                 index = index + len(self) if index < 0 else index
