@@ -1058,12 +1058,21 @@ class Box(dict):
         if single_arg:
             if hasattr(single_arg, "keys"):
                 for k in single_arg:
-                    self.__convert_and_store(k, single_arg[k])
+                    self._update_store(k, single_arg[k])
             else:
                 for k, v in single_arg:
-                    self.__convert_and_store(k, v)
+                    self._update_store(k, v)
         for k in kwargs:
-            self.__convert_and_store(k, kwargs[k])
+            self._update_store(k, kwargs[k])
+
+    def _update_store(self, key, value):
+        # In box_dots mode a dotted key is a path, the same as in
+        # __setitem__ and merge_update; storing it literally would create
+        # a parallel key that dots lookups cannot reach consistently.
+        if self.__process_dotted_key(key):
+            self.__setitem__(key, value)
+        else:
+            self.__convert_and_store(key, value)
 
     def merge_update(self, *args, **kwargs):
         """
