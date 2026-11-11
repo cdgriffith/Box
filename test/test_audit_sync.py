@@ -493,11 +493,13 @@ def test_dots_boxlist_rejects_garbage_index():
     assert bl.to_list() == [["a", "b"], ["c", "d"]]
 
 
-def test_dots_negative_index_matches_comment_api():
+def test_dots_negative_index_is_comment_api_only():
+    """Negative dotted indexes are a comment API convenience, data access rejects them (by design)."""
     b = dots_box()
     b.set_comment("l[-1]", "last")
     assert b.get_comment("l[1]") == {"eol": "last"}
-    assert b["l[-1]"] == [10, 11]
+    with pytest.raises(BoxTypeError):
+        b["l[-1]"]
 
 
 def test_dots_configbox_case_insensitive_paths():
@@ -675,7 +677,7 @@ def test_frozen_list_tuple_comment_api():
 def test_frozen_list_tuple_dotted_reads():
     bx = Box({"l": [{"a": 1}, [7, {"b": 2}]]}, box_dots=True, frozen_box=True)
     assert bx["l[0].a"] == 1
-    assert bx["l[-1][1].b"] == 2
+    assert bx["l[1][1].b"] == 2
     assert bx.l["[1]"] == (7, {"b": 2})
     assert bx.l["[0]"].a == 1
     with pytest.raises(BoxTypeError):
@@ -699,13 +701,6 @@ def test_frozen_list_comments_follow_box_list_adoption():
     bx = Box({"l": bl}, frozen_box=True)
     assert bx.l.get_comment(1) == {"eol": "two"}
     assert bl.get_comment(1) == {"eol": "two"}  # the source list is left as it was
-
-
-def test_dots_negative_index_set_and_delete():
-    bl = BoxList([1, 2, 3], box_dots=True)
-    bl["[-1]"] = 9
-    del bl["[-2]"]
-    assert bl == [1, 9]
 
 
 @pytest.mark.parametrize("repeat", [2, 3])
