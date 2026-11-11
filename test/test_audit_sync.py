@@ -8,8 +8,7 @@ Audit of the places where BoxList item comments and Box options are kept in sync
 2. box_dots paths must behave the same through every access method.
 3. copy / deepcopy / pickle round trips of every Box flavour, with comments.
 
-Tests marked ``xfail(strict=True)`` reproduce a known bug: run with ``--runxfail`` to see them fail.
-Once a fix lands, the strict xfail turns into a failure, so the marker must be removed with the fix.
+The matrix was written to reproduce the bugs found in the 8.0.1 audit; they are fixed, these tests keep them so.
 """
 
 import copy
@@ -18,6 +17,7 @@ import pickle
 import pytest
 
 from box import Box, BoxError, BoxList, ConfigBox, SBox
+from box.exceptions import BoxKeyError, BoxTypeError
 from box.shorthand_box import DDBox
 
 # --------------------------------------------------------------------------------------------------
@@ -157,11 +157,6 @@ def test_mutator_keeps_comments_and_converts(options, operation, kept):
 
 @pytest.mark.parametrize("options", OPTION_SETS)
 @pytest.mark.parametrize("operation, kept", _ids(SLICE_OPS))
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: slice assignment / deletion drops the comments of every item, also the ones the slice "
-    "does not touch (box_list.py BoxList.__setitem__ slice branch and _comment_after_delete)",
-)
 def test_slice_mutator_keeps_comments_of_untouched_items(options, operation, kept):
     bl = annotated(**options)
     operation(bl)
@@ -251,11 +246,6 @@ def test_binary_operators_convert(operation):
         pytest.param(lambda bl: 2 * bl, id="rmul"),
     ],
 )
-@pytest.mark.xfail(
-    strict=True,
-    reason="INCONSISTENT: + and * drop every item comment while copy(), BoxList(bl), += and *= (n>0) keep "
-    "them on the original items (box_list.py BoxList.__add__ / __mul__)",
-)
 def test_binary_operators_keep_comments_of_left_operand(operation):
     out = operation(annotated())
     check_comments(out, ALL)
@@ -309,8 +299,6 @@ HALF_FROZEN_SOURCES = [
     pytest.param(_frozen_through_box_copy, id="Box(Box, frozen_box)"),
 ]
 
-HALF_FROZEN_LEAKS = {"append", "extend", "insert", "pop", "remove", "clear", "reverse", "sort"}
-
 
 def _frozen_check(source, operation):
     bl = source()
@@ -330,31 +318,12 @@ def test_frozen_boxlist_rejects_every_mutator(source, operation):
 @pytest.mark.parametrize("source", HALF_FROZEN_SOURCES)
 @pytest.mark.parametrize(
     "operation",
-    [
-        pytest.param(
-            fn,
-            id=name,
-            marks=pytest.mark.xfail(
-                strict=True,
-                reason="BUG: a BoxList adopted by a frozen Box only gets frozen_box in box_options; the "
-                "method overrides are installed by BoxList.__init__ only, so append/pop/sort/... still "
-                "mutate (box.py Box.__convert_and_store BoxList branch, box_list.py BoxList.__init__)",
-            )
-            if name in HALF_FROZEN_LEAKS
-            else (),
-        )
-        for name, fn in FROZEN_MUTATORS
-    ],
+    [pytest.param(fn, id=name) for name, fn in FROZEN_MUTATORS],
 )
 def test_boxlist_frozen_by_parent_box_rejects_every_mutator(source, operation):
     _frozen_check(source, operation)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: Box(src, frozen_box=True) shares src's BoxList and writes frozen_box into its options, "
-    "so the unfrozen source list can no longer be assigned to (box.py Box.__convert_and_store)",
-)
 def test_freezing_a_copy_does_not_freeze_the_source_list():
     src = Box({"l": [1, 2]})
     Box(src, frozen_box=True)
@@ -363,12 +332,6 @@ def test_freezing_a_copy_does_not_freeze_the_source_list():
     assert src.l == [9, 2]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: Box(box_with_list, frozen_box=True) adopts the BoxList without re-converting its items, "
-    "so the items stay unfrozen: they can be modified and hash() of the frozen Box raises "
-    "(box.py Box.__convert_and_store BoxList branch)",
-)
 def test_freezing_a_box_freezes_list_items():
     frozen = Box(Box({"lst": [{"i": 0}]}), frozen_box=True)
     assert frozen.lst[0]._box_config["frozen_box"]
@@ -377,12 +340,6 @@ def test_freezing_a_box_freezes_list_items():
     hash(frozen)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: frozen_box turns lists into tuples, which cannot carry comments, so from_yaml(frozen_box=True) "
-    "silently drops every comment on list items and on keys nested under a list (box.py "
-    "Box.__convert_and_store tuple branch, comments.py apply_comments / commented_tree skip tuples)",
-)
 def test_frozen_from_yaml_keeps_list_comments():
     pytest.importorskip("ruamel.yaml")
     text = "# doc\ntop: 1  # top-c\nlst:\n- i: 0  # i0\n- 2  # l1\n"
@@ -450,28 +407,16 @@ def test_dots_missing_path_reads_agree(path):
 
 @pytest.mark.parametrize(
     "path",
-    [
-        pytest.param(p, marks=pytest.mark.xfail(strict=True, reason="BUG: see test docstring")) if "[9]" in p else p
-        for p in MISSING_PATHS
-    ],
+    MISSING_PATHS,
 )
 def test_dots_missing_path_pop_default_agrees_with_get(path):
-    """
-    BUG: Box.pop(key, default) only catches KeyError (box.py Box.pop, the args branch), so a box_dots path
-    with an out of range list index raises IndexError instead of returning the default, while get() and
-    `in` (which catch IndexError in __contains__) treat the same path as missing.
-    """
+    """Box.pop(key, default) treats an out of range list index like get() and `in` do: as missing."""
     b = dots_box()
     before = b.to_dict()
     assert b.pop(path, "default") == "default"
     assert b.to_dict() == before
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: Box.__delitem__ looks the dotted parent up with self[first_item], which with "
-    "default_box_create_on_get stores an empty Box before the KeyError (box.py Box.__delitem__)",
-)
 def test_dots_failed_delete_has_no_side_effect():
     b = Box(box_dots=True, default_box=True, default_box_create_on_get=True)
     with pytest.raises(KeyError):
@@ -487,11 +432,6 @@ def test_dots_missing_reads_have_no_side_effect_with_create_on_get():
     assert b.to_dict() == {}
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: frozen_box stores lists as tuples, which box_dots list paths cannot traverse: "
-    "b['l[0].x'] raises a bare TypeError while 'l[0].x' in b is False (box.py Box.__getitem__)",
-)
 def test_dots_list_paths_in_frozen_box():
     b = dots_box(frozen_box=True)
     assert b["l[0].x"] == 1
@@ -544,12 +484,6 @@ def test_dots_boxlist_index_forms():
     assert bl.to_list() == [{"a": []}, [[]]]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: BoxList dotted indexes are found with _list_pos_re.search, not match, and the rest of the "
-    "key is cut at len(match) from the start, so '[x][1]' reads / deletes item [1][1] / [0][0] instead "
-    "of being rejected (box_list.py BoxList.__getitem__ / __setitem__ / __delitem__)",
-)
 def test_dots_boxlist_rejects_garbage_index():
     bl = BoxList([["a", "b"], ["c", "d"]], box_dots=True)
     with pytest.raises(BoxError):
@@ -559,11 +493,6 @@ def test_dots_boxlist_rejects_garbage_index():
     assert bl.to_list() == [["a", "b"], ["c", "d"]]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="INCONSISTENT: the comment API accepts negative box_dots indexes (b.set_comment('l[-1]')) but "
-    "data access does not (b['l[-1]'] raises BoxTypeError) (box_list.py _list_pos_re vs _comment_index_re)",
-)
 def test_dots_negative_index_matches_comment_api():
     b = dots_box()
     b.set_comment("l[-1]", "last")
@@ -645,19 +574,9 @@ def _box_state(b):
         b.sub._box_config["frozen_box"],
         b.lst.box_options.get("box_dots"),
         b.lst[0]._box_config["box_dots"],
-        # lst[0] frozen_box is left out: Box(b, frozen_box=True) leaves it unfrozen and a pickle /
-        # deepcopy round trip then freezes it, see test_freezing_a_box_freezes_list_items
     )
 
 
-DEEPCOPY_FROZEN_BUG = (
-    "BUG: Box.__deepcopy__ builds the copy unfrozen and re-freezes only the top level; the nested Boxes are "
-    "re-created by __setitem__ with the unfrozen config, so they stay mutable and hash() raises "
-    "(box.py Box.__deepcopy__)"
-)
-
-
-@pytest.mark.xfail(strict=True, reason=DEEPCOPY_FROZEN_BUG)
 def test_deepcopy_of_frozen_box_is_frozen_all_the_way_down():
     frozen = Box({"sub": {"k": 1}}, frozen_box=True)
     out = copy.deepcopy(frozen)
@@ -669,9 +588,7 @@ def test_deepcopy_of_frozen_box_is_frozen_all_the_way_down():
 @pytest.mark.parametrize("cls", BOX_CLASSES, ids=lambda c: c.__name__)
 @pytest.mark.parametrize("options", BOX_OPTIONS)
 @pytest.mark.parametrize("round_trip", ROUND_TRIPS)
-def test_box_round_trip(cls, options, round_trip, request):
-    if options.get("frozen_box") and "deepcopy" in request.node.callspec.id:
-        request.applymarker(pytest.mark.xfail(strict=True, reason=DEEPCOPY_FROZEN_BUG))
+def test_box_round_trip(cls, options, round_trip):
     b = _annotated_box(cls, options)
     out = round_trip(b)
     assert out is not b
@@ -725,3 +642,117 @@ def test_configbox_case_index_after_round_trip(round_trip):
     assert out.to_dict() == {"Port": 1, "HOST": "z"}
     assert out.get_comment("host") == {"eol": "hc"}
     assert c.to_dict() == {"Host": "h", "Port": 1}
+
+
+# ---- fixes of the 8.0.1 audit: frozen lists (tuples), operators ----
+
+
+def _frozen_yaml_box():
+    pytest.importorskip("ruamel.yaml")
+    return Box.from_yaml("l:\n- a: 1  # a\n- - 5  # deep\n- 3  # three\n", frozen_box=True)
+
+
+def test_frozen_list_tuple_comment_api():
+    bx = _frozen_yaml_box()
+    assert type(bx.l) is not tuple and isinstance(bx.l, tuple)
+    assert bx.l.get_comment(2) == {"eol": "three"}
+    assert bx.l.get_comment("[-1]") == {"eol": "three"}
+    assert bx.l.get_comment("[0].a") == {"eol": "a"}
+    assert bx.l.get_comment("[1][0]") == {"eol": "deep"}
+    dots = Box.from_yaml("l:\n- - 5  # deep\n", frozen_box=True, box_dots=True)
+    assert dots.get_comment("l[0][0]") == {"eol": "deep"}
+    assert bx.l.get_comment(None) is None
+    for call in (lambda: bx.l.set_comment(0, "x"), lambda: bx.l.del_comment(0)):
+        with pytest.raises(BoxError):
+            call()
+    for bad in (5, "[9]", "x", "[x]", "[2].nope"):
+        with pytest.raises(BoxKeyError):
+            bx.l.get_comment(bad)
+    bx.l._comment_document()["start"] = ["doc"]
+    assert bx.l.get_comment() == {"start": "doc"}
+
+
+def test_frozen_list_tuple_dotted_reads():
+    bx = Box({"l": [{"a": 1}, [7, {"b": 2}]]}, box_dots=True, frozen_box=True)
+    assert bx["l[0].a"] == 1
+    assert bx["l[-1][1].b"] == 2
+    assert bx.l["[1]"] == (7, {"b": 2})
+    assert bx.l["[0]"].a == 1
+    with pytest.raises(BoxTypeError):
+        bx.l["[x]"]
+    assert bx.l[0].a == 1
+    assert "l[1][1].b" in bx
+    assert "l[1][1].zz" not in bx
+    assert bx.get("l[9].a", "d") == "d"
+
+
+def test_frozen_list_tuple_copies_keep_comments():
+    bx = _frozen_yaml_box()
+    for out in (copy.deepcopy(bx), pickle.loads(pickle.dumps(bx)), copy.copy(bx)):
+        assert out.l.get_comment(2) == {"eol": "three"}
+        assert out.to_yaml() == bx.to_yaml()
+
+
+def test_frozen_list_comments_follow_box_list_adoption():
+    bl = BoxList([{"a": 1}, 2])
+    bl.set_comment(1, "two")
+    bx = Box({"l": bl}, frozen_box=True)
+    assert bx.l.get_comment(1) == {"eol": "two"}
+    assert bl.get_comment(1) == {"eol": "two"}  # the source list is left as it was
+
+
+def test_dots_negative_index_set_and_delete():
+    bl = BoxList([1, 2, 3], box_dots=True)
+    bl["[-1]"] = 9
+    del bl["[-2]"]
+    assert bl == [1, 9]
+
+
+@pytest.mark.parametrize("repeat", [2, 3])
+def test_repeat_copies_comments_to_every_repetition(repeat):
+    bl = annotated()
+    original = len(bl)
+    for out in (bl * repeat, repeat * bl):
+        assert len(out) == original * repeat
+        for index in range(len(out)):
+            assert out.get_comment(index) == {"eol": f"c{index % original}"}
+    bl *= repeat
+    for index in range(len(bl)):
+        assert bl.get_comment(index) == {"eol": f"c{index % original}"}
+
+
+def test_add_copies_comments_of_both_lists_and_document():
+    left = annotated()
+    left.set_comment(None, "doc")
+    right = annotated()
+    out = left + right
+    assert out.get_comment() == {"start": "doc"}
+    for index in range(len(out)):
+        assert out.get_comment(index) == {"eol": f"c{index % len(left)}"}
+    assert (left + [{"id": NEW}]).get_comment(len(left)) is None
+
+
+def test_mul_copies_document_comments():
+    bl = annotated()
+    bl.set_comment(None, "doc")
+    assert (bl * 2).get_comment() == {"start": "doc"}
+    assert (bl * 0).to_list() == []
+
+
+def test_frozen_box_converts_a_box_list_inside_a_plain_list():
+    bl = BoxList([1])
+    bl.set_comment(0, "one")
+    bx = Box({"l": [bl]}, frozen_box=True)
+    assert bx.l[0].get_comment(0) == {"eol": "one"}
+
+
+def test_empty_slice_delete_keeps_comments():
+    bl = annotated()
+    del bl[1:1]
+    check_comments(bl, ALL)
+
+
+def test_from_yaml_comments_inside_an_intact_dict_are_skipped():
+    pytest.importorskip("ruamel.yaml")
+    bx = Box.from_yaml("a:\n  b: 1  # c\nz: 2  # z\n", box_intact_types=(dict,))
+    assert bx.get_comment("z") == {"eol": "z"}

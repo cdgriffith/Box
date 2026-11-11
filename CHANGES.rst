@@ -10,6 +10,15 @@ Version 8.0.1
 
 * Fixing #356 update() storing dotted keys literally with box_dots instead of treating them as paths (thanks to rahul05ranjan)
 * Fixing #358 BoxList + and * returning a plain list instead of a BoxList (thanks to rahul05ranjan)
+* Fixing a BoxList in a frozen Box only being half frozen: append, extend, insert, pop, remove, clear, sort and reverse still changed it, and it was shared with the Box it came from. A frozen Box now gets its own frozen copy, and a BoxList checks frozen_box on every change
+* Fixing copy.deepcopy of a frozen Box leaving the nested Boxes mutable
+* Fixing BoxList slice assignment and slice deletion dropping the item comments of every item, comments now stay with the items they were on
+* Fixing from_yaml(frozen_box=True) dropping the comments on list items, frozen lists (tuples) now keep comments, and box_dots list paths such as "l[0].x" now work in a frozen Box
+* Fixing Box.pop(path, default) raising IndexError for an out of range list index in a box_dots path, it returns the default like get()
+* Fixing a failed dotted del creating the parent key with default_box_create_on_get
+* Fixing BoxList box_dots indexes such as "[x][1]" being accepted and acting on the wrong item, they now raise BoxTypeError
+* BoxList box_dots indexes can be negative, "[-1]", like the comment API already allowed
+* BoxList + and * (and n * BoxList) keep the item comments, also those of the added BoxList, and *= repeats them
 * Fixing #349 BoxList item comments moving to the wrong items after a box_dots deletion, e.g. del bl["[0]"] (thanks to HocVoNgThai)
 * Fixing #349 BoxList.sort() calling the key function twice when the list has comments (thanks to HocVoNgThai)
 

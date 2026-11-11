@@ -763,6 +763,8 @@ def test_out_of_bounds_index_preserves_comments(operation, index):
     assert values == ["a", "b"]
     assert values.get_comment(0) == {"eol": "a"}
     assert values.get_comment(1) == {"eol": "b"}
+
+
 class TestBoxListOperators:
     def test_add_keeps_boxlist_and_converts(self):
         bl = BoxList([{"a": 1}], box_dots=True)

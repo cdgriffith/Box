@@ -120,7 +120,7 @@ class TestCamelKillerKeepKeys:
 
 
 class TestUpdateDottedPaths:
-    """ update() honors box_dots path semantics, like __setitem__ and merge_update. """
+    """update() honors box_dots path semantics, like __setitem__ and merge_update."""
 
     def test_update_dotted_key_nests(self):
         b = Box(default_box=True, box_dots=True)
@@ -148,7 +148,5 @@ class TestUpdateDottedPaths:
         assert b.to_dict() == {"a": 1, "b": 2, "c": 3}
 
     def test_box_addition_merges_dotted_paths(self):
-        b = Box({"x": {"y": 1}}, default_box=True, box_dots=True) + Box(
-            {"x.z": 2}, default_box=True, box_dots=True
-        )
+        b = Box({"x": {"y": 1}}, default_box=True, box_dots=True) + Box({"x.z": 2}, default_box=True, box_dots=True)
         assert b.to_dict() == {"x": {"y": 1, "z": 2}}

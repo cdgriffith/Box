@@ -382,11 +382,13 @@ class TestEdgeCases:
         assert ranks == {}
         assert values.to_yaml() == "- a  # A\n- z  # Z\n"
 
-    def test_slice_delete_drops_item_comments(self):
+    def test_slice_delete_drops_removed_comments_and_moves_the_rest(self):
         bl = BoxList([1, 2, 3])
+        bl.set_comment(0, "gone")
         bl.set_comment(2, "x")
         del bl[0:1]
-        assert bl.get_comment(1) is None
+        assert bl.get_comment(0) is None
+        assert bl.get_comment(1) == {"eol": "x"}
 
     def test_empty_comment_and_missing_final_newline(self):
         bx = Box.from_yaml("a: 1 #\nb: 2  # two\n# end")
@@ -394,9 +396,12 @@ class TestEdgeCases:
         assert bx.get_comment("b") == {"eol": "two"}
         assert bx.get_comment(None) == {"end": "end"}
 
-    def test_frozen_lists_skip_item_comments(self):
-        bx = Box.from_yaml("l:\n- a: 1  # in a frozen list\n", frozen_box=True)
+    def test_frozen_lists_keep_item_comments(self):
+        text = "l:\n- a: 1  # in a frozen list\n"
+        bx = Box.from_yaml(text, frozen_box=True)
         assert bx.to_dict() == {"l": ({"a": 1},)}  # frozen boxes store lists as tuples
+        assert bx.l[0].get_comment("a") == {"eol": "in a frozen list"}
+        assert bx.to_yaml() == text
 
     def test_box_dots_split_parent_key(self):
         bx = Box.from_yaml("a.b:\n  c: 1  # c\n", box_dots=True, default_box=True)
