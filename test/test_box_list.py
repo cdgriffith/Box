@@ -14,6 +14,7 @@ import pytest
 from ruamel.yaml import YAML
 
 from box import Box, BoxError, BoxList
+from box.exceptions import BoxTypeError
 from box.converters import toml_read_library, toml_write_library
 from test.common import test_root, tmp_dir
 
@@ -762,3 +763,39 @@ def test_out_of_bounds_index_preserves_comments(operation, index):
     assert values == ["a", "b"]
     assert values.get_comment(0) == {"eol": "a"}
     assert values.get_comment(1) == {"eol": "b"}
+class TestBoxListOperators:
+    def test_add_keeps_boxlist_and_converts(self):
+        bl = BoxList([{"a": 1}], box_dots=True)
+        result = bl + [{"b": 2}]
+        assert isinstance(result, BoxList)
+        assert isinstance(result[0], Box)
+        assert isinstance(result[1], Box)
+        assert result.box_options["box_dots"] is True
+
+    def test_add_two_boxlists(self):
+        result = BoxList([{"a": 1}]) + BoxList([{"b": 2}])
+        assert isinstance(result, BoxList)
+        assert result.to_list() == [{"a": 1}, {"b": 2}]
+
+    def test_add_non_list_raises(self):
+        with pytest.raises(BoxTypeError):
+            BoxList() + 5
+
+    def test_mul_keeps_boxlist(self):
+        bl = BoxList([{"a": 1}], box_dots=True)
+        result = bl * 3
+        assert isinstance(result, BoxList)
+        assert len(result) == 3
+        assert result.box_options["box_dots"] is True
+        assert result.to_list() == [{"a": 1}] * 3
+
+    def test_mul_non_int_raises(self):
+        with pytest.raises(BoxTypeError):
+            BoxList() * "x"
+
+    def test_frozen_add_result_is_frozen(self):
+        frozen = BoxList([{"a": 1}], frozen_box=True)
+        result = frozen + [{"b": 2}]
+        assert isinstance(result, BoxList)
+        with pytest.raises(BoxError):
+            result.append({"c": 3})
