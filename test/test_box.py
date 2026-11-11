@@ -730,7 +730,8 @@ a.b: c
 
     def test_camel_killer_box_dotted_lookup_exact_key(self):
         bx = Box({"someKey": {"innerKey": "converted"}}, camel_killer_box=True, box_dots=True)
-        bx.update({"someKey": {"innerKey": "exact"}})
+        # Deliberately retain an unnormalized key to test exact-key lookup precedence.
+        dict.__setitem__(bx, "someKey", Box({"innerKey": "exact"}, camel_killer_box=True, box_dots=True))
 
         assert bx["someKey.innerKey"] == "exact"
         assert bx["some_key.innerKey"] == "converted"
