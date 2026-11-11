@@ -1146,13 +1146,7 @@ class Box(dict):
             self._update_store(k, kwargs[k])
 
     def _update_store(self, key, value):
-        # In box_dots mode a dotted key is a path, the same as in
-        # __setitem__ and merge_update; storing it literally would create
-        # a parallel key that dots lookups cannot reach consistently.
-        if self.__process_dotted_key(key):
-            self.__setitem__(key, value)
-        else:
-            self.__convert_and_store(key, value)
+        self.__setitem__(key, value)
 
     def merge_update(self, *args, **kwargs):
         """

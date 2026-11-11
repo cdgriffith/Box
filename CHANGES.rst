@@ -3,6 +3,8 @@ Changelog
 Version 8.0.1
 -------------
 
+* Apply configured value recasting, key conversion and duplicate checks to update and union insertions
+
 * Clear removed BoxList item comments after in-place repetition by zero or a negative count, so new items do not inherit stale YAML comments (thanks to Mrunmayee Daware)
 
 * Fix ConfigBox.merge_update consuming one-shot key/value pairs before merging them
