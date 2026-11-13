@@ -197,7 +197,7 @@ def extract_comments(root: Any) -> dict | None:
 
 def _resolve_key(container, key):
     """The key in `container` the YAML key ended up as, or a sentinel when it isn't there."""
-    if isinstance(container, list):
+    if isinstance(container, (list, tuple)):
         return key if isinstance(key, int) and 0 <= key < len(container) else _MISSING
     if dict.__contains__(container, key):
         return key
@@ -222,7 +222,12 @@ def apply_comments(root, model: dict | None) -> None:
             if found is _MISSING:
                 node = None
                 break
-            node = list.__getitem__(node, found) if isinstance(node, list) else dict.__getitem__(node, found)
+            if isinstance(node, list):
+                node = list.__getitem__(node, found)
+            elif isinstance(node, tuple):
+                node = tuple.__getitem__(node, found)
+            else:
+                node = dict.__getitem__(node, found)
             if not hasattr(node, "_comment_store"):
                 node = None
                 break
@@ -251,7 +256,7 @@ def has_comments(obj, _seen=None) -> bool:
     if id(obj) in seen:
         return False
     seen.add(id(obj))
-    values = obj.values() if isinstance(obj, dict) else obj
+    values = obj.values() if isinstance(obj, dict) else obj  # a list or a frozen list (tuple)
     return any(has_comments(value, seen) for value in values)
 
 
@@ -286,6 +291,8 @@ def commented_tree(obj, plain, column=0, _seen=None):
     from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
     seen = _seen if _seen is not None else set()
+    if isinstance(plain, tuple) and hasattr(obj, "_comment_store"):
+        plain = list(plain)  # a frozen list: a tuple that can carry comments
     if isinstance(plain, (dict, list)):
         if id(plain) in seen:
             return plain  # self references are written as they are
@@ -299,7 +306,11 @@ def commented_tree(obj, plain, column=0, _seen=None):
     elif isinstance(plain, list):
         out = CommentedSeq()
         for index, value in enumerate(plain):
-            child = list.__getitem__(obj, index) if isinstance(obj, list) and index < len(obj) else None
+            child = (
+                (list if isinstance(obj, list) else tuple).__getitem__(obj, index)
+                if isinstance(obj, (list, tuple)) and index < len(obj)
+                else None
+            )
             out.append(commented_tree(child, value, column + 2, seen))
         keys = list(range(len(out)))
     else:

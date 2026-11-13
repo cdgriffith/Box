@@ -85,6 +85,77 @@ def _camel_killer(attr):
     return re.sub(" *_+", "_", s2.lower())
 
 
+_tuple_pos_re = re.compile(r"\[(\d+)\]")
+_tuple_comment_index_re = re.compile(r"\[(-?\d+)\]")
+
+
+class _BoxTuple(tuple):
+    """
+    The tuple ``frozen_box`` stores a list as. Unlike a plain tuple it can carry comments (#184) and
+    follows ``box_dots`` list paths such as ``"[0].key"``.
+    """
+
+    def __getitem__(self, item, _ignore_default=False):
+        if isinstance(item, str) and item.startswith("["):
+            list_pos = _tuple_pos_re.match(item)
+            if list_pos is None:
+                raise BoxTypeError(f"Invalid list index: {item!r}")
+            value = tuple.__getitem__(self, int(list_pos.group(1)))
+            children = item[list_pos.end() :].lstrip(".")
+            if not children:
+                return value
+            if _ignore_default and isinstance(value, (Box, box.BoxList, _BoxTuple)):
+                return value.__getitem__(children, _ignore_default=True)
+            return value[children]
+        return tuple.__getitem__(self, item)
+
+    def _comment_store(self, create: bool = True) -> Any:
+        store = self.__dict__.get("_box_comments")
+        if store is None and create:
+            store = self.__dict__["_box_comments"] = {}
+        return store
+
+    def _comment_document(self, create: bool = True) -> Any:
+        document = self.__dict__.get("_box_comments_document")
+        if document is None and create:
+            document = self.__dict__["_box_comments_document"] = {}
+        return document
+
+    def _comment_check_frozen(self):
+        raise BoxError("Box is frozen")
+
+    def _comment_owner(self, key):
+        if key is None:
+            return self, None
+        if isinstance(key, int) and not isinstance(key, bool):
+            index = key + len(self) if key < 0 else key
+            if 0 <= index < len(self):
+                return self, index
+        elif isinstance(key, str) and key.startswith("["):
+            list_pos = _tuple_comment_index_re.match(key)
+            if list_pos is not None:
+                index = int(list_pos.group(1))
+                index = index + len(self) if index < 0 else index
+                rest = key[list_pos.end() :].lstrip(".")
+                if 0 <= index < len(self):
+                    if not rest:
+                        return self, index
+                    child = tuple.__getitem__(self, index)
+                    if hasattr(child, "_comment_owner"):
+                        return child._comment_owner(rest)
+        raise BoxKeyError(f"{key!r} is not in the frozen list, comments can only be attached to existing items")
+
+    def get_comment(self, key: Any = None) -> dict | None:
+        """The comments of an item (see ``BoxList.get_comment``), ``None`` for the document comments."""
+        return _comments.get_comment(self, key)
+
+    def set_comment(self, key: Any, text: Any, position: str | None = None) -> None:
+        _comments.set_comment(self, key, text, position)
+
+    def del_comment(self, key: Any = None) -> None:
+        _comments.del_comment(self, key)
+
+
 def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
     out_list = []
     for i in iterable:
@@ -94,7 +165,10 @@ def _recursive_tuples(iterable, box_class, recreate_tuples=False, **kwargs):
             out_list.append(_recursive_tuples(i, box_class, recreate_tuples, **kwargs))
         else:
             out_list.append(i)
-    return tuple(out_list)
+    out = _BoxTuple(out_list)
+    if isinstance(iterable, box.BoxList):
+        iterable._comment_copy_to(out)
+    return out
 
 
 def _to_native_tuple(iterable):
@@ -449,7 +523,7 @@ class Box(dict):
         it = self[first_item]
         if isinstance(it, Box):
             return it.__dots_int_key(children) in it
-        if isinstance(it, box.BoxList):
+        if isinstance(it, (box.BoxList, _BoxTuple)):
             # children is the rest of the path starting with "[", e.g. "[0].x"
             try:
                 it.__getitem__(children, _ignore_default=True)
@@ -523,16 +597,18 @@ class Box(dict):
         return self.copy()
 
     def __deepcopy__(self, memodict=None):
-        frozen = self._box_config["frozen_box"]
         config = self.__box_config()
-        config["frozen_box"] = False
         out = self.__class__(**config)
         memodict = memodict if memodict is not None else {}
         memodict[id(self)] = out
+        # Fill it like __init__ does, still "being created", so nested Boxes get the frozen config too
+        frozen = self._box_config["frozen_box"]
+        if frozen:
+            out._box_config["__created"] = False
         for k, v in self.items():
             out[copy.deepcopy(k, memodict)] = copy.deepcopy(v, memodict)
+        out._box_config["__created"] = True
         self.__copy_internals(out, deep=True, memo=memodict)
-        out._box_config["frozen_box"] = frozen
         return out
 
     def __setstate__(self, state):
@@ -693,7 +769,11 @@ class Box(dict):
             else:
                 value = box.BoxList(value, **self.__box_config(extra_namespace=item))
         elif isinstance(value, box.BoxList):
-            value.box_options.update(self.__box_config(extra_namespace=item))
+            if self._box_config["frozen_box"]:
+                # A frozen Box gets its own frozen copy, the list it was given stays as it was
+                value = box.BoxList(value, **self.__box_config(extra_namespace=item))
+            else:
+                value.box_options.update(self.__box_config(extra_namespace=item))
         elif self._box_config["modify_tuples_box"] and isinstance(value, tuple):
             value = _recursive_tuples(value, recreate_tuples=True, **self.__box_config(extra_namespace=item))
         super().__setitem__(item, value)
@@ -721,7 +801,7 @@ class Box(dict):
                     if isinstance(child, Box):
                         children = child.__dots_int_key(children)
                     if hasattr(child, "__getitem__"):
-                        if _ignore_default and isinstance(child, (Box, box.BoxList)):
+                        if _ignore_default and isinstance(child, (Box, box.BoxList, _BoxTuple)):
                             return child.__getitem__(children, _ignore_default=True)
                         return child[children]
             if self.__camel_destructive() and isinstance(item, str):
@@ -822,7 +902,7 @@ class Box(dict):
                 child = dict.__getitem__(self, first)
                 if isinstance(child, Box):
                     return child._comment_owner(child.__dots_int_key(children))
-                if isinstance(child, box.BoxList):
+                if isinstance(child, (box.BoxList, _BoxTuple)):
                     return child._comment_owner(children)
         raise BoxKeyError(f"{key!r} is not in the Box, comments can only be attached to existing keys")
 
@@ -923,7 +1003,7 @@ class Box(dict):
         if key not in self.keys() and self.__process_dotted_key(key):
             first_item, children = _parse_box_dots(self, key)
             first_item = self.__dots_int_key(first_item)
-            child = self[first_item]
+            child = self.__getitem__(first_item, _ignore_default=True)
             if isinstance(child, Box):
                 children = child.__dots_int_key(children)
             if hasattr(child, "__delitem__"):
@@ -986,7 +1066,7 @@ class Box(dict):
                 raise BoxError('pop() takes only one optional argument "default"')
             try:
                 item = self.__getitem__(key, _ignore_default=True)
-            except KeyError:
+            except (KeyError, IndexError):
                 return args[0]
             else:
                 del self[key]
@@ -1058,12 +1138,15 @@ class Box(dict):
         if single_arg:
             if hasattr(single_arg, "keys"):
                 for k in single_arg:
-                    self.__convert_and_store(k, single_arg[k])
+                    self._update_store(k, single_arg[k])
             else:
                 for k, v in single_arg:
-                    self.__convert_and_store(k, v)
+                    self._update_store(k, v)
         for k in kwargs:
-            self.__convert_and_store(k, kwargs[k])
+            self._update_store(k, kwargs[k])
+
+    def _update_store(self, key, value):
+        self.__setitem__(key, value)
 
     def merge_update(self, *args, **kwargs):
         """

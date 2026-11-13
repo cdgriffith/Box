@@ -1,5 +1,42 @@
 Changelog
-=========
+
+Version 8.0.1
+-------------
+
+Breaking changes
+
+These change how Box.update (and the ``|`` and ``|=`` operators, which use it) store values. Code that relied on the old behavior may see different data after upgrading. See the "Box 8.0.1" section of the Major Version Breaking Changes wiki page for before / after examples.
+
+* Fixing #356 update() storing dotted keys literally with box_dots, they are now paths like box["a.b"] = 1 and the Box constructor. Every earlier version (6.x, 7.x, 8.0.0) stored them literally:
+
+  * Box({"a": {"x": 1}}, box_dots=True).update({"a.b": 2}) now gives {"a": {"x": 1, "b": 2}}, previously {"a": {"x": 1}, "a.b": 2}
+  * Box(box_dots=True).update({"a.b": 1}) now raises BoxKeyError because "a" does not exist (as box["a.b"] = 1 already did), previously it stored {"a.b": 1}. Add default_box=True to create the missing parents
+
+  (thanks to rahul05ranjan)
+
+* update() now applies the same rules as box[key] = value and the Box constructor, previously it skipped them (thanks to peterolkhov):
+
+  * box_recast converts updated values, and raises BoxValueError when a value cannot be converted, e.g. update(n="12") with box_recast={"n": int} now stores 12, previously "12"
+  * camel_killer_box converts updated keys, e.g. update(TimeOut=2) now replaces time_out, previously it added a second TimeOut key
+  * box_duplicates checks updated keys, so "error" now raises BoxError and "warn" now warns for keys that collide on attribute access
+  * Box subclasses that override __setitem__ now have it called for every updated key
+
+Changes
+
+* Fixing #358 BoxList + and * returning a plain list instead of a BoxList (thanks to rahul05ranjan)
+* Fixing #354 BoxList insert, pop, deletion and ``*=`` with an object with __index__ raising TypeError after changing the list when the list has item comments (thanks to parijat1222q and Anish Pentyala)
+* Fixing ConfigBox.merge_update consuming one-shot key/value pairs before merging them (thanks to alexbertho)
+* Fixing BoxList in-place repetition by zero or a negative count leaving the removed items' comments behind for new items to inherit (thanks to Mrunmayee Daware)
+* Fixing a BoxList in a frozen Box only being half frozen: append, extend, insert, pop, remove, clear, sort and reverse still changed it, and it was shared with the Box it came from. A frozen Box now gets its own frozen copy, and a BoxList checks frozen_box on every change
+* Fixing copy.deepcopy of a frozen Box leaving the nested Boxes mutable
+* Fixing BoxList slice assignment and slice deletion dropping the item comments of every item, comments now stay with the items they were on
+* Fixing from_yaml(frozen_box=True) dropping the comments on list items, frozen lists (tuples) now keep comments, and box_dots list paths such as "l[0].x" now work in a frozen Box
+* Fixing Box.pop(path, default) raising IndexError for an out of range list index in a box_dots path, it returns the default like get()
+* Fixing a failed dotted del creating the parent key with default_box_create_on_get
+* Fixing BoxList box_dots indexes such as "[x][1]" being accepted and acting on the wrong item, they now raise BoxTypeError
+* BoxList ``+`` and ``*`` (and ``n * BoxList``) keep the item comments, also those of the added BoxList, and ``*=`` repeats them
+* Fixing #349 BoxList item comments moving to the wrong items after a box_dots deletion, e.g. del bl["[0]"] (thanks to HocVoNgThai)
+* Fixing #349 BoxList.sort() calling the key function twice when the list has comments (thanks to HocVoNgThai)
 
 Version 8.0.0
 -------------

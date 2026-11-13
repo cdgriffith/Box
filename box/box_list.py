@@ -4,8 +4,10 @@
 # Copyright (c) 2017-2026 - Chris Griffith - MIT License
 from __future__ import annotations
 
+import bisect
 import copy
 import copyreg
+import operator
 import re
 from collections.abc import Iterable
 from os import PathLike
@@ -37,10 +39,6 @@ _list_pos_re = re.compile(r"\[(\d+)\]")
 _comment_index_re = re.compile(r"\[(-?\d+)\]")  # the comment API also takes negative indexes
 
 
-def _frozen_box_list_method(*args, **kwargs):
-    raise BoxError("BoxList is frozen")
-
-
 class BoxList(list):
     """
     Drop in replacement of list, that converts added objects to Box or BoxList
@@ -62,17 +60,14 @@ class BoxList(list):
         # 2026-10-10: Iteration does not require a truth value.
         if iterable is not None:
             for x in iterable:
-                self.append(x)
+                list.append(self, self._convert(x))
             if isinstance(iterable, BoxList) and iterable is not self:
                 iterable._comment_copy_to(self)
         self.box_org_ref = None
-        if box_options.get("frozen_box"):
-            for method in ["append", "clear", "extend", "insert", "pop", "remove", "reverse", "sort"]:
-                self.__setattr__(method, _frozen_box_list_method)
 
     def __getitem__(self, item, _ignore_default=False):
         if self.box_options.get("box_dots") and isinstance(item, str) and item.startswith("["):
-            list_pos = _list_pos_re.search(item)
+            list_pos = _list_pos_re.match(item)
             if list_pos is None:
                 raise BoxTypeError(f"Invalid list index: {item!r}")
             value = super().__getitem__(int(list_pos.groups()[0]))
@@ -96,14 +91,16 @@ class BoxList(list):
         if self.box_options.get("frozen_box"):
             raise BoxError("BoxList is frozen")
         if self.box_options.get("box_dots") and isinstance(key, str) and key.startswith("["):
-            list_pos = _list_pos_re.search(key)
+            list_pos = _list_pos_re.match(key)
             if list_pos is None:
                 raise BoxTypeError(f"Invalid list index: {key!r}")
             pos = int(list_pos.groups()[0])
             if len(list_pos.group()) == len(key):
-                return super().__delitem__(pos)
+                return self.__delitem__(pos)
             if hasattr(self[pos], "__delitem__"):
                 return self[pos].__delitem__(key[len(list_pos.group()) :].lstrip("."))  # type: ignore
+        if not isinstance(key, slice) and hasattr(type(key), "__index__"):
+            key = operator.index(key)
         length = len(self)
         super().__delitem__(key)
         self._comment_after_delete(key, length)
@@ -112,7 +109,7 @@ class BoxList(list):
         if self.box_options.get("frozen_box"):
             raise BoxError("BoxList is frozen")
         if self.box_options.get("box_dots") and isinstance(key, str) and key.startswith("["):
-            list_pos = _list_pos_re.search(key)
+            list_pos = _list_pos_re.match(key)
             if list_pos is None:
                 raise BoxTypeError(f"Invalid list index: {key!r}")
             pos = int(list_pos.groups()[0])
@@ -139,11 +136,35 @@ class BoxList(list):
                 for item in value:
                     yield self._convert(item)
 
+            length = len(self)
             # Let list validate the slice before consuming replacement values.
             super().__setitem__(key, converted_items())
-            self.__dict__.pop("_box_comments", None)  # items moved, their comments can't follow
+            self._comment_after_slice_set(key, length)
             return
         super().__setitem__(key, self._convert(value))
+
+    def __add__(self, other):
+        if not isinstance(other, list):
+            raise BoxTypeError("BoxList can only be added to another list.")
+        out = box.BoxList(list(self) + list(other), **self.box_options)
+        self._comment_copy_to(out)
+        if isinstance(other, BoxList):
+            other._comment_copy_to(out, offset=len(self), document=False)
+        return out
+
+    def __mul__(self, count):
+        try:
+            count = operator.index(count)
+        except TypeError:
+            raise BoxTypeError("BoxList can only be multiplied by an integer.") from None
+        out = box.BoxList(list(self) * count, **self.box_options)
+        self._comment_repeat(out, count, len(self))
+        document = self.__dict__.get("_box_comments_document")
+        if document:
+            out._comment_document().update(copy.deepcopy(document))
+        return out
+
+    __rmul__ = __mul__
 
     def __iadd__(self, value):  # type: ignore[misc]  # list accepts any iterable for +=, not only lists
         if self.box_options.get("frozen_box"):
@@ -154,7 +175,14 @@ class BoxList(list):
     def __imul__(self, value):  # type: ignore[misc]
         if self.box_options.get("frozen_box"):
             raise BoxError("BoxList is frozen")
-        return super().__imul__(value)
+        value = operator.index(value)
+        length = len(self)
+        result = super().__imul__(value)
+        if len(self) == 0:
+            self.__dict__.pop("_box_comments", None)
+        else:
+            self._comment_repeat(self, value, length, first=1)
+        return result
 
     def _is_intact_type(self, obj):
         if self.box_options.get("box_intact_types") and isinstance(obj, self.box_options["box_intact_types"]):
@@ -177,15 +205,19 @@ class BoxList(list):
         return p_object
 
     def append(self, p_object):
+        self._comment_check_frozen()
         super().append(self._convert(p_object))
 
     def extend(self, iterable):
+        self._comment_check_frozen()
         if iterable is self:
             iterable = list(self)
         for item in iterable:
             self.append(item)
 
     def insert(self, index, p_object):
+        self._comment_check_frozen()
+        index = operator.index(index)
         length = len(self)
         super().insert(index, self._convert(p_object))
         if self.__dict__.get("_box_comments"):
@@ -193,6 +225,8 @@ class BoxList(list):
             self._comment_reindex(lambda k: k + 1 if k >= at else k)
 
     def pop(self, index=-1):
+        self._comment_check_frozen()
+        index = operator.index(index)
         length = len(self)
         value = super().pop(index)
         self._comment_after_delete(index, length)
@@ -202,22 +236,25 @@ class BoxList(list):
         self.pop(self.index(value))
 
     def clear(self):
+        self._comment_check_frozen()
         super().clear()
         self.__dict__.pop("_box_comments", None)
 
     def reverse(self):
+        self._comment_check_frozen()
         super().reverse()
         last = len(self) - 1
         self._comment_reindex(lambda k: last - k)
 
     def sort(self, *, key=None, reverse=False):
+        self._comment_check_frozen()
         if not self.__dict__.get("_box_comments"):
             return super().sort(key=key, reverse=reverse)
         # Work out where every item goes (same stable order as list.sort) so comments follow them
-        sort_key = key or (lambda x: x)
+        sort_key = (lambda x: x) if key is None else key
         order = sorted(range(len(self)), key=lambda i: sort_key(list.__getitem__(self, i)), reverse=reverse)
         new_position = {old: new for new, old in enumerate(order)}
-        super().sort(key=key, reverse=reverse)
+        super().__setitem__(slice(None), [list.__getitem__(self, i) for i in order])
         self._comment_reindex(new_position.get)
 
     # ---- Comments (#184), by item index ----
@@ -252,10 +289,43 @@ class BoxList(list):
         if not self.__dict__.get("_box_comments"):
             return
         if isinstance(key, slice):
-            self.__dict__.pop("_box_comments", None)
+            removed = sorted(range(*key.indices(length)))
+            if removed:
+                gone_set = set(removed)
+                self._comment_reindex(lambda k: None if k in gone_set else k - bisect.bisect_left(removed, k))
             return
         gone = key + length if key < 0 else key
         self._comment_reindex(lambda k: None if k == gone else (k - 1 if k > gone else k))
+
+    def _comment_after_slice_set(self, key, length):
+        """Move the item comments after ``self[key] = values``, `length` is the size before it."""
+        if not self.__dict__.get("_box_comments"):
+            return
+        start, stop, step = key.indices(length)
+        if step != 1:
+            # An extended slice replaces items one for one, the replacements start without a comment
+            replaced = set(range(start, stop, step))
+            self._comment_reindex(lambda k: None if k in replaced else k)
+            return
+        stop = max(start, stop)
+        shift = len(self) - length
+
+        def mapping(k):
+            if k < start:
+                return k
+            return k + shift if k >= stop else None  # replaced items are new, they start without a comment
+
+        self._comment_reindex(mapping)
+
+    def _comment_repeat(self, out, count, length, first=0):
+        """Copy the comments of the first `length` items to repetitions `first`..`count` of them in `out`."""
+        store = self.__dict__.get("_box_comments")
+        if store:
+            target = out._comment_store()
+            for repeat in range(first, max(count, 0)):
+                for index, comment in list(store.items()):
+                    if index < length:
+                        target[index + repeat * length] = copy.deepcopy(comment)
 
     def _comment_owner(self, key):
         """(container, index) that holds the comment for `key`, following box_dots paths."""
@@ -279,11 +349,13 @@ class BoxList(list):
                         return child._comment_owner(rest)
         raise BoxKeyError(f"{key!r} is not in the BoxList, comments can only be attached to existing items")
 
-    def _comment_copy_to(self, other):
+    def _comment_copy_to(self, other, offset=0, document=True):
         store = self.__dict__.get("_box_comments")
         if store:
-            other._comment_store().update({k: copy.deepcopy(v) for k, v in store.items() if k < len(other)})
-        document = self.__dict__.get("_box_comments_document")
+            other._comment_store().update(
+                {k + offset: copy.deepcopy(v) for k, v in store.items() if k + offset < len(other)}
+            )
+        document = self.__dict__.get("_box_comments_document") if document else None
         if document:
             other._comment_document().update(copy.deepcopy(document))
 
