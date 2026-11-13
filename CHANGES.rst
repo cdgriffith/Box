@@ -3,6 +3,8 @@ Changelog
 Version 8.0.1
 -------------
 
+* Preserve BoxList item comments when in-place repetition uses an object with __index__, without raising after changing the list
+
 * Clear removed BoxList item comments after in-place repetition by zero or a negative count, so new items do not inherit stale YAML comments (thanks to Mrunmayee Daware)
 
 * Fix ConfigBox.merge_update consuming one-shot key/value pairs before merging them

@@ -175,6 +175,7 @@ class BoxList(list):
     def __imul__(self, value):  # type: ignore[misc]
         if self.box_options.get("frozen_box"):
             raise BoxError("BoxList is frozen")
+        value = operator.index(value)
         length = len(self)
         result = super().__imul__(value)
         if len(self) == 0:
