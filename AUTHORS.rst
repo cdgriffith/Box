@@ -5,6 +5,8 @@ reporting, all input is greatly appreciated!
 
 Code contributions:
 
+- Anish Pentyala
+
 - Alexandre Bertho (alexbertho)
 - parijat1222q
 
