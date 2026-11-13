@@ -5,6 +5,9 @@ reporting, all input is greatly appreciated!
 
 Code contributions:
 
+- Alexandre Bertho (alexbertho)
+- parijat1222q
+
 - Alexandre Decan (AlexandreDecan)
 - dhilipsiva (dhilipsiva)
 - MAA (FooBarQuaxx)
@@ -121,3 +124,6 @@ Suggestions and bug reporting:
 - bwanshoom
 - tan_unique (vinson0522)
 - lin (theman6660)
+- HocVoNgThai
+
+- Mrunmayee Daware (Mrun25)

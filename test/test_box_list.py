@@ -669,6 +669,100 @@ def test_iadd_frozen_does_not_consume_source():
     assert data == [0]
 
 
+class _IndexOnce:
+    def __init__(self, value):
+        self.value = value
+        self.calls = 0
+
+    def __index__(self):
+        self.calls += 1
+        if self.calls > 1:
+            raise AssertionError("index was evaluated more than once")
+        return self.value
+
+
+@pytest.mark.parametrize("operation", ["insert", "pop", "delete"])
+@pytest.mark.parametrize("index", [0, 1, -1, -3])
+@pytest.mark.parametrize("comments", [False, True])
+def test_index_protocol_keeps_item_comments(operation, index, comments):
+    values = BoxList(["a", "b", "c"])
+    if comments:
+        for position, item in enumerate(values):
+            values.set_comment(position, item)
+    expected = list(values)
+    key = _IndexOnce(index)
+    if operation == "insert":
+        expected.insert(index, "new")
+        values.insert(key, "new")
+    elif operation == "pop":
+        assert values.pop(key) == expected.pop(index)
+    else:
+        del expected[index]
+        del values[key]
+    assert key.calls == 1
+    assert values == expected
+    for position, item in enumerate(values):
+        comment = {"eol": item} if comments and item != "new" else None
+        assert values.get_comment(position) == comment
+
+
+@pytest.mark.parametrize("operation", ["insert", "pop", "delete"])
+@pytest.mark.parametrize("comments", [False, True])
+def test_invalid_index_does_not_change_items_or_comments(operation, comments):
+    class BadIndex:
+        def __index__(self):
+            raise ValueError("invalid index")
+
+    values = BoxList(["a", "b", "c"])
+    if comments:
+        for position, item in enumerate(values):
+            values.set_comment(position, item)
+    with pytest.raises(ValueError, match="invalid index"):
+        if operation == "insert":
+            values.insert(BadIndex(), "new")
+        elif operation == "pop":
+            values.pop(BadIndex())
+        else:
+            del values[BadIndex()]
+    assert values == ["a", "b", "c"]
+    for position, item in enumerate(values):
+        assert values.get_comment(position) == ({"eol": item} if comments else None)
+
+
+@pytest.mark.parametrize("index", [-100, 100])
+@pytest.mark.parametrize("comments", [False, True])
+def test_insert_index_protocol_clamps_and_moves_comments(index, comments):
+    values = BoxList(["a", "b"])
+    if comments:
+        values.set_comment(0, "a")
+        values.set_comment(1, "b")
+    expected = list(values)
+    expected.insert(index, "new")
+    key = _IndexOnce(index)
+    values.insert(key, "new")
+    assert key.calls == 1
+    assert values == expected
+    for position, item in enumerate(values):
+        expected_comment = {"eol": item} if comments and item != "new" else None
+        assert values.get_comment(position) == expected_comment
+
+
+@pytest.mark.parametrize("operation", ["pop", "delete"])
+@pytest.mark.parametrize("index", [-100, 100])
+def test_out_of_bounds_index_preserves_comments(operation, index):
+    values = BoxList(["a", "b"])
+    values.set_comment(0, "a")
+    values.set_comment(1, "b")
+    key = _IndexOnce(index)
+    with pytest.raises(IndexError):
+        if operation == "pop":
+            values.pop(key)
+        else:
+            del values[key]
+    assert key.calls == 1
+    assert values == ["a", "b"]
+    assert values.get_comment(0) == {"eol": "a"}
+    assert values.get_comment(1) == {"eol": "b"}
 class TestBoxListOperators:
     def test_add_keeps_boxlist_and_converts(self):
         bl = BoxList([{"a": 1}], box_dots=True)

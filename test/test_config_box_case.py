@@ -12,6 +12,15 @@ from box import Box, BoxError, ConfigBox
 
 
 class TestConfigBoxCaseInsensitive:
+    @pytest.mark.parametrize("outer", [list, iter])
+    def test_merge_update_one_shot_pairs(self, outer):
+        cb = ConfigBox({"Host": {"port": 80}})
+        pairs = outer([iter(("host", {"name": "localhost"})), iter(("timeout", 30))])
+        cb.merge_update(pairs)
+        assert cb.to_dict() == {"host": {"port": 80, "name": "localhost"}, "timeout": 30}
+        assert list(cb) == ["host", "timeout"]
+        assert cb.HOST.port == 80
+
     def test_lookup_any_case(self):
         cb = ConfigBox({"HOST": "localhost", "ServerPort": 8080})
         assert cb["host"] == cb["Host"] == cb.host == cb.HOST == "localhost"

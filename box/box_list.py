@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import copy
 import copyreg
+import operator
 import re
 from collections.abc import Iterable
 from os import PathLike
@@ -101,9 +102,11 @@ class BoxList(list):
                 raise BoxTypeError(f"Invalid list index: {key!r}")
             pos = int(list_pos.groups()[0])
             if len(list_pos.group()) == len(key):
-                return super().__delitem__(pos)
+                return self.__delitem__(pos)
             if hasattr(self[pos], "__delitem__"):
                 return self[pos].__delitem__(key[len(list_pos.group()) :].lstrip("."))  # type: ignore
+        if not isinstance(key, slice) and hasattr(type(key), "__index__"):
+            key = operator.index(key)
         length = len(self)
         super().__delitem__(key)
         self._comment_after_delete(key, length)
@@ -164,7 +167,10 @@ class BoxList(list):
     def __imul__(self, value):  # type: ignore[misc]
         if self.box_options.get("frozen_box"):
             raise BoxError("BoxList is frozen")
-        return super().__imul__(value)
+        result = super().__imul__(value)
+        if len(self) == 0:
+            self.__dict__.pop("_box_comments", None)
+        return result
 
     def _is_intact_type(self, obj):
         if self.box_options.get("box_intact_types") and isinstance(obj, self.box_options["box_intact_types"]):
@@ -196,6 +202,7 @@ class BoxList(list):
             self.append(item)
 
     def insert(self, index, p_object):
+        index = operator.index(index)
         length = len(self)
         super().insert(index, self._convert(p_object))
         if self.__dict__.get("_box_comments"):
@@ -203,6 +210,7 @@ class BoxList(list):
             self._comment_reindex(lambda k: k + 1 if k >= at else k)
 
     def pop(self, index=-1):
+        index = operator.index(index)
         length = len(self)
         value = super().pop(index)
         self._comment_after_delete(index, length)
@@ -224,10 +232,10 @@ class BoxList(list):
         if not self.__dict__.get("_box_comments"):
             return super().sort(key=key, reverse=reverse)
         # Work out where every item goes (same stable order as list.sort) so comments follow them
-        sort_key = key or (lambda x: x)
+        sort_key = (lambda x: x) if key is None else key
         order = sorted(range(len(self)), key=lambda i: sort_key(list.__getitem__(self, i)), reverse=reverse)
         new_position = {old: new for new, old in enumerate(order)}
-        super().sort(key=key, reverse=reverse)
+        super().__setitem__(slice(None), [list.__getitem__(self, i) for i in order])
         self._comment_reindex(new_position.get)
 
     # ---- Comments (#184), by item index ----

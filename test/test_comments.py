@@ -370,6 +370,18 @@ class TestEdgeCases:
         del bl[0:1]
         assert bl == [2, 1]
 
+    def test_dotted_list_deletion_keeps_surviving_comments(self):
+        values = BoxList.from_yaml("- first  # first comment\n- second  # second comment\n", box_dots=True)
+        del values["[0]"]
+        assert values.to_yaml() == "- second  # second comment\n"
+
+    def test_sort_with_comments_evaluates_keys_once(self):
+        values = BoxList.from_yaml("- z  # Z\n- a  # A\n")
+        ranks = {"z": 2, "a": 1}
+        assert values.sort(key=ranks.pop) is None
+        assert ranks == {}
+        assert values.to_yaml() == "- a  # A\n- z  # Z\n"
+
     def test_slice_delete_drops_item_comments(self):
         bl = BoxList([1, 2, 3])
         bl.set_comment(2, "x")
@@ -422,3 +434,37 @@ class TestCommentTextIsNeverYaml:
         bx = Box(a=1)
         bx.set_comment("a", "x\ty")
         assert Box.from_yaml(bx.to_yaml()).get_comment("a") == {"eol": "x\ty"}
+
+
+@pytest.mark.parametrize("count", [0, -1, -3])
+def test_inplace_repetition_drops_comments_of_removed_items(count):
+    values = BoxList.from_yaml("# list heading\n- old  # obsolete explanation\n")
+    original = values
+    values *= count
+    assert values is original
+    assert values == []
+    values.append("new")
+    assert values.get_comment(0) is None
+    assert values.get_comment() == {"start": "list heading"}
+    assert values.to_yaml() == "# list heading\n- new\n"
+
+
+@pytest.mark.parametrize("count", [1, 2])
+def test_inplace_repetition_keeps_surviving_item_comments(count):
+    values = BoxList.from_yaml("- old  # explanation\n")
+    original = values
+    values *= count
+    assert values is original
+    assert values == ["old"] * count
+    assert values.get_comment(0) == {"eol": "explanation"}
+
+
+def test_inplace_repetition_keeps_comments_on_false_valued_subclass():
+    class FalseBoxList(BoxList):
+        def __bool__(self):
+            return False
+
+    values = FalseBoxList(["old"])
+    values.set_comment(0, "explanation")
+    values *= 1
+    assert values.get_comment(0) == {"eol": "explanation"}
