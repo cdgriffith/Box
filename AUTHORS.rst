@@ -5,11 +5,8 @@ reporting, all input is greatly appreciated!
 
 Code contributions:
 
-- Anish Pentyala
-
 - Alexandre Bertho (alexbertho)
 - parijat1222q
-
 - Alexandre Decan (AlexandreDecan)
 - dhilipsiva (dhilipsiva)
 - MAA (FooBarQuaxx)
@@ -62,7 +59,8 @@ Code contributions:
 - machines-6657 (machines-6657)
 - Chris (ChrisJr404)
 - gyanu2507 (gyanu2507)
-
+- Rahul (rahul05ranjan)
+- Anish Pentyala (anishpentyala)
 
 Suggestions and bug reporting:
 

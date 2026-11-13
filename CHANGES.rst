@@ -25,7 +25,7 @@ Changes
 
 * Fixing #358 BoxList + and * returning a plain list instead of a BoxList (thanks to rahul05ranjan)
 * Fixing #354 BoxList insert, pop, deletion and ``*=`` with an object with __index__ raising TypeError after changing the list when the list has item comments (thanks to parijat1222q and Anish Pentyala)
-* Fixing ConfigBox.merge_update consuming one-shot key/value pairs before merging them
+* Fixing ConfigBox.merge_update consuming one-shot key/value pairs before merging them (thanks to alexbertho)
 * Fixing BoxList in-place repetition by zero or a negative count leaving the removed items' comments behind for new items to inherit (thanks to Mrunmayee Daware)
 * Fixing a BoxList in a frozen Box only being half frozen: append, extend, insert, pop, remove, clear, sort and reverse still changed it, and it was shared with the Box it came from. A frozen Box now gets its own frozen copy, and a BoxList checks frozen_box on every change
 * Fixing copy.deepcopy of a frozen Box leaving the nested Boxes mutable
