@@ -148,6 +148,16 @@ class BoxList(list):
             return
         super().__setitem__(key, self._convert(value))
 
+    def __add__(self, other):
+        if not isinstance(other, list):
+            raise BoxTypeError("BoxList can only be added to another list.")
+        return box.BoxList(list(self) + list(other), **self.box_options)
+
+    def __mul__(self, count):
+        if not isinstance(count, int):
+            raise BoxTypeError("BoxList can only be multiplied by an integer.")
+        return box.BoxList(list(self) * count, **self.box_options)
+
     def __iadd__(self, value):  # type: ignore[misc]  # list accepts any iterable for +=, not only lists
         if self.box_options.get("frozen_box"):
             raise BoxError("BoxList is frozen")
