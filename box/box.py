@@ -573,9 +573,9 @@ class Box(dict):
                 else:
                     return None
             if isinstance(default, dict) and not isinstance(default, Box):
-                return Box(default)
+                return self._box_config["box_class"](default, **self.__box_config(extra_namespace=key))
             if isinstance(default, list) and not isinstance(default, box.BoxList):
-                return box.BoxList(default)
+                return box.BoxList(default, **self.__box_config(extra_namespace=key))
             return default
         return self[key]
 
