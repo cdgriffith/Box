@@ -1,5 +1,10 @@
 Changelog
 
+Unreleased
+----------
+
+* Fixing BoxList.copy() returning a plain list instead of a BoxList, losing its box_options (box_dots, frozen_box) and item comments. A frozen BoxList's copy was even mutable (thanks to Waseem Mushtaq)
+
 Version 8.0.1
 -------------
 
