@@ -1028,6 +1028,22 @@ a.b: c
         assert bx_dot.get("a.b.c") == "me!"
         assert bx_dot.get("def.not.in.the.box", 4) == 4
 
+    def test_get_default_keeps_box_config(self):
+        bx = Box(box_dots=True, default_box=True, camel_killer_box=True)
+        default = bx.get("missing", {"a": {"b": 1}, "CamelCase": 2})
+        assert default["a.b"] == 1
+        assert default.camel_case == 2
+        assert isinstance(default.not_there, Box)
+        listed = bx.get("missing", [{"a": {"b": 1}}])
+        assert isinstance(listed, BoxList)
+        assert listed["[0].a.b"] == 1
+
+        class MyBox(Box):
+            pass
+
+        assert type(MyBox().get("missing", {"a": 1})) is MyBox
+        assert "missing" not in bx
+
     def test_contains(self):
         bx_dot = Box(a=Box(b=Box(c=Box())), box_dots=True)
         assert "a.b.c" in bx_dot
