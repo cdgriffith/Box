@@ -156,6 +156,8 @@ def box_from_string(content: str, string_type: str = "json") -> Box | BoxList:
             raise BoxError("File is not TOML as expected")
         # A TOML document is always a table, so unlike the other formats it is never a BoxList
     elif string_type == "yaml":
+        if not yaml_available:
+            raise BoxError('yaml is unavailable on this system, please install the "ruamel.yaml" or "PyYAML" package')
         try:
             return Box.from_yaml(yaml_string=content)
         except YAMLError:

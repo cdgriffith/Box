@@ -1,5 +1,10 @@
 Changelog
 
+Unreleased
+----------
+
+* Fixing box_from_string(string_type="yaml") raising TypeError instead of BoxError when no YAML library is installed and Box is not compiled with Cython (thanks to SU, Yanyu)
+
 Version 8.0.1
 -------------
 

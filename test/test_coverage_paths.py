@@ -342,6 +342,20 @@ class TestFromFilePaths:
         with pytest.raises(BoxError, match="toon"):
             box_from_string("a: 1", string_type="toon")
 
+    def test_box_from_string_yaml_unavailable(self, monkeypatch):
+        # What from_file and Box look like without ruamel.yaml or PyYAML installed
+        def unavailable(cls, *args, **kwargs):
+            raise BoxError("yaml is unavailable on this system")
+
+        monkeypatch.setattr(from_file, "yaml_available", False)
+        monkeypatch.setattr(from_file, "YAMLError", False)
+        monkeypatch.setattr(Box, "from_yaml", classmethod(unavailable))
+        monkeypatch.setattr(BoxList, "from_yaml", classmethod(unavailable))
+        with pytest.raises(BoxError, match="yaml is unavailable"):
+            box_from_string("a: 1", string_type="yaml")
+        with pytest.raises(BoxError, match="yaml is unavailable"):
+            box_from_string("- 1\n- 2\n", string_type="yaml")
+
     def test_box_from_string_json(self):
         assert box_from_string('{"a": 1}').to_dict() == {"a": 1}
         assert box_from_string("[1, 2]").to_list() == [1, 2]
