@@ -403,10 +403,13 @@ class BoxList(list):
     def __str__(self):
         return str(self.to_list())
 
-    def __copy__(self):
+    def copy(self):
         out = self.__class__((x for x in self), **self.box_options)
         self._comment_copy_to(out)
         return out
+
+    def __copy__(self):
+        return self.copy()
 
     def __deepcopy__(self, memo=None):
         out = self.__class__(**{**self.box_options, "frozen_box": False})

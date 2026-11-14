@@ -61,6 +61,7 @@ Code contributions:
 - gyanu2507 (gyanu2507)
 - Rahul (rahul05ranjan)
 - Anish Pentyala (anishpentyala)
+- Waseem Mushtaq (waseem1302-x)
 
 Suggestions and bug reporting:
 

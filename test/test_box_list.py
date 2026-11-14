@@ -197,6 +197,33 @@ class TestBoxList:
             clone.append(1)
         assert hash(clone) == hash(frozen)
 
+    def test_copy_returns_a_box_list(self):
+        import copy
+
+        # .copy() must return a BoxList like copy.copy does, not a plain list
+        bl = BoxList([{"a": 1}, 2], box_dots=True)
+        copied = bl.copy()
+        assert type(copied) is BoxList
+        assert copied == bl and copied is not bl
+        assert copied.box_options.get("box_dots") is True
+        assert copied["[0].a"] == 1
+        assert type(copy.copy(bl)) is BoxList
+
+    def test_copy_keeps_item_comments(self):
+        bl = BoxList([1, 2])
+        bl.set_comment(0, "first")
+        copied = bl.copy()
+        assert copied.get_comment(0) == {"eol": "first"}
+
+    def test_copy_of_frozen_box_list_stays_frozen(self):
+        frozen = BoxList([1, 2], frozen_box=True)
+        copied = frozen.copy()
+        assert type(copied) is BoxList
+        assert copied.box_options.get("frozen_box") is True
+        with pytest.raises(BoxError):
+            copied.append(3)
+        assert hash(copied) == hash(frozen)
+
     @pytest.mark.parametrize("index", [0, -1, "[0]", "[1]"])
     @pytest.mark.parametrize("container", ["mapping", "sequence"])
     def test_assigned_containers_are_converted(self, index, container):
