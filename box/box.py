@@ -787,10 +787,8 @@ class Box(dict):
                 raise BoxKeyError("_box_config should only exist as an attribute and is never defaulted") from cause
             if isinstance(item, slice):
                 # In Python 3.12 this changes to a KeyError instead of TypeError
-                new_box = self._box_config["box_class"](**self.__box_config())
-                for x in list(super().keys())[item.start : item.stop : item.step]:
-                    new_box[x] = self[x]
-                return new_box
+                keys = list(super().keys())[item]
+                return self._box_config["box_class"](((key, self[key]) for key in keys), **self.__box_config())
             if self.__process_dotted_key(item):
                 first_item, children = _parse_box_dots(self, item)
                 first_item = self.__dots_int_key(first_item)
@@ -813,10 +811,8 @@ class Box(dict):
             raise BoxKeyError(str(err)) from _exception_cause(err)
         except TypeError as err:
             if isinstance(item, slice):  # pragma: no cover (Python 3.11, slices became hashable in 3.12)
-                new_box = self._box_config["box_class"](**self.__box_config())
-                for x in list(super().keys())[item.start : item.stop : item.step]:
-                    new_box[x] = self[x]
-                return new_box
+                keys = list(super().keys())[item]
+                return self._box_config["box_class"](((key, self[key]) for key in keys), **self.__box_config())
             raise BoxTypeError(str(err)) from _exception_cause(err)
 
     def __getattr__(self, item):
