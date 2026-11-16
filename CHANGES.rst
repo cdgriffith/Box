@@ -1,5 +1,10 @@
 Changelog
 
+Unreleased
+----------
+
+* Fixing non-empty slices of frozen Boxes raising BoxError instead of returning a frozen Box (thanks to anticipate218)
+
 Version 8.0.1
 -------------
 
