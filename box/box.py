@@ -1135,7 +1135,7 @@ class Box(dict):
         if len(args) > 1:
             raise BoxTypeError(f"update expected at most 1 argument, got {len(args)}")
         single_arg = next(iter(args), None)
-        if single_arg:
+        if single_arg is not None:
             if hasattr(single_arg, "keys"):
                 for k in single_arg:
                     self._update_store(k, single_arg[k])
@@ -1236,7 +1236,7 @@ class Box(dict):
             if (len(args) + int(bool(kwargs))) > 1:
                 raise BoxTypeError(f"merge_update expected at most 1 argument, got {len(args) + int(bool(kwargs))}")
             single_arg = next(iter(args), None)
-            if single_arg:
+            if single_arg is not None:
                 if hasattr(single_arg, "keys"):
                     for k in single_arg:
                         convert_and_set(k, single_arg[k])
