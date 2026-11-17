@@ -111,7 +111,7 @@ Check out the `Quick Start <https://github.com/cdgriffith/Box/wiki/Quick-Start>`
         Box([('data', 2), ('count', 5)])
 
         # All will create
-        # <Box: {'data': 2, 'count': 5}>
+        # Box({'data': 2, 'count': 5})
 
 `Box` is a subclass of `dict` which overrides some base functionality to make
 sure everything stored in the dict can be accessed as an attribute or key value.
