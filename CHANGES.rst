@@ -23,6 +23,8 @@ These change how Box.update (and the ``|`` and ``|=`` operators, which use it) s
 
 Changes
 
+* Keep nested containers frozen when adding to a frozen Box, including reflected addition with a plain dict.
+
 * Fixing #358 BoxList + and * returning a plain list instead of a BoxList (thanks to rahul05ranjan)
 * Fixing #354 BoxList insert, pop, deletion and ``*=`` with an object with __index__ raising TypeError after changing the list when the list has item comments (thanks to parijat1222q and Anish Pentyala)
 * Fixing ConfigBox.merge_update consuming one-shot key/value pairs before merging them (thanks to alexbertho)

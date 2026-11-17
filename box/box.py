@@ -420,15 +420,19 @@ class Box(dict):
         if not isinstance(other, dict):
             raise BoxTypeError("Box can only merge two boxes or a box and a dictionary.")
 
-        new_box = other.copy() if isinstance(other, Box) else self.__new_from_plain(other)
+        new_box = (
+            other.copy()
+            if isinstance(other, Box)
+            else self.__new_from_plain(other, frozen=self._box_config["frozen_box"])
+        )
         new_box.merge_update(self, _force_unfrozen=True)  # type: ignore[attr-defined]
         new_box._box_config["frozen_box"] = self._box_config["frozen_box"]  # type: ignore[attr-defined]
         return new_box
 
-    def __new_from_plain(self, other):
-        """A Box of this box's class and options (unfrozen, top level) holding a plain dict's data"""
+    def __new_from_plain(self, other, *, frozen=False):
+        """A top-level Box of this box's class and options holding a plain dict's data."""
         config = self.__box_config()
-        config["frozen_box"] = False
+        config["frozen_box"] = frozen
         config.pop("box_namespace")
         return self._box_config["box_class"](other, **config)
 
@@ -947,7 +951,12 @@ class Box(dict):
         return state
 
     def __setitem__(self, key, value):
-        if key != "_box_config" and self._box_config["frozen_box"] and self._box_config["__created"]:
+        if (
+            key != "_box_config"
+            and self._box_config["frozen_box"]
+            and self._box_config["__created"]
+            and not self._box_config.get("__force_unfrozen")
+        ):
             raise BoxError("Box is frozen")
         if self.__process_dotted_key(key):
             first_item, children = _parse_box_dots(self, key)
@@ -1185,9 +1194,10 @@ class Box(dict):
             raise BoxValueError(f'box_merge_lists must be None, "extend", "unique" or "merge", got {merge_type!r}')
         force_unfrozen = kwargs.pop("_force_unfrozen", False)
 
-        was_frozen = self._box_config["frozen_box"]
+        was_force_unfrozen = self._box_config.get("__force_unfrozen", False)
         if force_unfrozen:
-            self._box_config["frozen_box"] = False
+            # Permit merge writes without passing mutable options to newly created children.
+            self._box_config["__force_unfrozen"] = True
 
         try:
 
@@ -1249,7 +1259,10 @@ class Box(dict):
 
         finally:
             if force_unfrozen:
-                self._box_config["frozen_box"] = was_frozen
+                if was_force_unfrozen:
+                    self._box_config["__force_unfrozen"] = was_force_unfrozen
+                else:
+                    self._box_config.pop("__force_unfrozen", None)
 
     def setdefault(self, item, default=None):
         if item in self:
