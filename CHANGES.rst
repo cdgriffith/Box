@@ -23,6 +23,7 @@ These change how Box.update (and the ``|`` and ``|=`` operators, which use it) s
 
 Changes
 
+* Fixing update() and merge_update() rejecting iterable inputs without a truth value, or skipping nonempty mappings with a false truth value (thanks to Yash Dhankhar)
 * Fixing #358 BoxList + and * returning a plain list instead of a BoxList (thanks to rahul05ranjan)
 * Fixing #354 BoxList insert, pop, deletion and ``*=`` with an object with __index__ raising TypeError after changing the list when the list has item comments (thanks to parijat1222q and Anish Pentyala)
 * Fixing ConfigBox.merge_update consuming one-shot key/value pairs before merging them (thanks to alexbertho)
