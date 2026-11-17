@@ -181,7 +181,7 @@ class ConfigBox(Box):
             raise BoxTypeError(f"update expected at most 1 argument, got {len(args)}")
         pairs = []
         single_arg = next(iter(args), None)
-        if single_arg:
+        if single_arg is not None:
             if hasattr(single_arg, "keys"):
                 pairs.extend((k, single_arg[k]) for k in single_arg)
             else:
@@ -199,7 +199,7 @@ class ConfigBox(Box):
         # Give existing keys the incoming spelling first, so the merge itself then matches exactly
         if not kwargs.get("_force_unfrozen"):
             self._ci_check_frozen()
-        if len(args) == 1 and args[0]:
+        if len(args) == 1 and args[0] is not None:
             if hasattr(args[0], "keys"):
                 incoming = list(args[0].keys())
             else:
