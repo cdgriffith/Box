@@ -389,6 +389,18 @@ class TestBoxList:
         )
         assert b2[2].Name == "Jess"
 
+    def test_from_csv_kwargs(self):
+        text = "Number;Name\r\n1;Chris\r\n2;Sam\r\n"
+        file = Path(tmp_dir, "semicolon.csv")
+        file.write_text(text)
+        for bl in (
+            BoxList.from_csv(text, delimiter=";", frozen_box=True),
+            BoxList.from_csv(filename=file, delimiter=";", frozen_box=True),
+        ):
+            assert bl[1] == {"Number": "2", "Name": "Sam"}
+            with pytest.raises(BoxError):
+                bl[1].Name = "Pat"
+
     def test_bad_csv(self):
         data = BoxList([{"test": 1}, {"bad": 2, "data": 3}])
         file = Path(tmp_dir, "csv_file.csv")

@@ -817,5 +817,12 @@ class BoxList(list):
         filename: str | PathLike | None = None,
         encoding: str = "utf-8",
         errors: str = "strict",
+        **kwargs,
     ):
-        return cls(_from_csv(csv_string=csv_string, filename=filename, encoding=encoding, errors=errors))
+        box_args = {}
+        for arg in list(kwargs.keys()):
+            if arg in BOX_PARAMETERS:
+                box_args[arg] = kwargs.pop(arg)
+
+        data = _from_csv(csv_string=csv_string, filename=filename, encoding=encoding, errors=errors, **kwargs)
+        return cls(data, **box_args)

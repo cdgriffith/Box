@@ -422,7 +422,7 @@ def _from_csv(
 ):
     if csv_string:
         with StringIO(csv_string) as cs:
-            reader = csv.DictReader(cs)
+            reader = csv.DictReader(cs, **kwargs)
             return [row for row in reader]
     _exists(filename)  # type: ignore
     with open(filename, "r", encoding=encoding, errors=errors, newline="") as f:  # type: ignore

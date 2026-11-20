@@ -1,5 +1,10 @@
 Changelog
 
+Unreleased
+----------
+
+* Fixing BoxList.from_csv and box_from_file for a csv file raising TypeError on Box options such as frozen_box and on csv reader options such as delimiter (thanks to youdie006)
+
 Version 8.0.1
 -------------
 

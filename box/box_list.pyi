@@ -103,5 +103,10 @@ class BoxList(list):
     def to_csv(self, filename: str | PathLike = ..., encoding: str = ..., errors: str = ...) -> Any: ...
     @classmethod
     def from_csv(
-        cls, csv_string: str = ..., filename: str | PathLike = ..., encoding: str = ..., errors: str = ...
+        cls,
+        csv_string: str = ...,
+        filename: str | PathLike = ...,
+        encoding: str = ...,
+        errors: str = ...,
+        **kwargs: Any,
     ) -> Any: ...
