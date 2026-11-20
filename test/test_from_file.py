@@ -22,6 +22,12 @@ class TestFromFile:
         assert isinstance(box_from_file(Path(test_root, "data", "msgpack_list.msgpack")), BoxList)
         assert isinstance(box_from_file(Path(test_root, "data", "csv_file.csv")), BoxList)
 
+    def test_from_file_box_options_csv(self):
+        bl = box_from_file(Path(test_root, "data", "csv_file.csv"), frozen_box=True)
+        assert bl[1].Name == "Sam"
+        with pytest.raises(BoxError):
+            bl[1].Name = "Pat"
+
     def test_bad_file(self):
         with pytest.raises(BoxError):
             box_from_file(Path(test_root, "data", "bad_file.txt"), file_type="json")
