@@ -37,6 +37,7 @@ Changes
 * BoxList ``+`` and ``*`` (and ``n * BoxList``) keep the item comments, also those of the added BoxList, and ``*=`` repeats them
 * Fixing #349 BoxList item comments moving to the wrong items after a box_dots deletion, e.g. del bl["[0]"] (thanks to HocVoNgThai)
 * Fixing #349 BoxList.sort() calling the key function twice when the list has comments (thanks to HocVoNgThai)
+* Fixing default_box_attr with a non-empty list returning an empty BoxList, it now returns a copy of the list (thanks to imsurya26)
 
 Version 8.0.0
 -------------

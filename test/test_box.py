@@ -2335,6 +2335,16 @@ class TestCreateOnSetWithoutCreateOnGet:
         b.tags = b.tags + [1]
         assert b.to_dict() == {"tags": [1]}
 
+    def test_list_default_keeps_its_items(self):
+        default = [1, {"a": 2}]
+        b = Box(default_box=True, default_box_attr=default)
+        assert b.tags == [1, {"a": 2}]
+        assert isinstance(b.tags, BoxList)
+        assert isinstance(b.tags[1], Box)
+        b.tags.append(3)
+        assert b.tags == [1, {"a": 2}]
+        assert default == [1, {"a": 2}]
+
     def test_pop_and_delattr_of_missing_key(self):
         b = Box(default_box=True)
         assert b.pop("missing") == Box()

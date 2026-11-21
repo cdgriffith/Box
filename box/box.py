@@ -656,7 +656,8 @@ class Box(dict):
         elif isinstance(default_value, dict):
             value = self._box_config["box_class"](**self.__box_config(extra_namespace=item), **default_value)
         elif isinstance(default_value, list) or default_value is list:
-            value = box.BoxList(**self.__box_config(extra_namespace=item))
+            items = default_value if isinstance(default_value, list) else None
+            value = box.BoxList(items, **self.__box_config(extra_namespace=item))
         elif isinstance(default_value, Callable):
             # Parameters named key / box_instance receive the missing key and this box. Any other
             # parameter must be optional, so plain factories such as int, set or a lambda work too.
