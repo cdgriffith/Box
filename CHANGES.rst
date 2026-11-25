@@ -1,5 +1,12 @@
 Changelog
 
+Version 8.0.2
+-------------
+
+Changes
+
+* Fixing #373 Box(obj), update(obj) and merge_update(obj) misreading an object that has keys() and item access but is not a Mapping, such as a sqlite3.Row: the constructor read it as an iterable of pairs (wrong data, or TypeError), and update() and merge_update() iterated it for its keys where dict.update calls keys(). All three now read it as dict() does
+
 Version 8.0.1
 -------------
 

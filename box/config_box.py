@@ -183,7 +183,9 @@ class ConfigBox(Box):
         single_arg = next(iter(args), None)
         if single_arg:
             if hasattr(single_arg, "keys"):
-                pairs.extend((k, single_arg[k]) for k in single_arg)
+                # By keys(), as dict.update does: iterating the object need not yield its keys (a sqlite3.Row
+                # yields its values)
+                pairs.extend((k, single_arg[k]) for k in single_arg.keys())
             else:
                 pairs.extend(single_arg)
         pairs.extend(kwargs.items())

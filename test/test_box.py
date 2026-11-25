@@ -8,6 +8,7 @@ import pickle
 import platform
 import shutil
 import warnings
+from collections.abc import Mapping
 from io import StringIO
 from multiprocessing import Queue
 from pathlib import Path
@@ -214,6 +215,54 @@ class TestBox:
         e = Box({"a": [{"item": 3}, {"item": []}]})
         assert e.a[1].item == []
         assert a == b == c == d
+
+    def test_box_from_keys_protocol_object(self):
+        # dict() and Box.update() read anything with keys() and item access as a mapping; so does Box()
+        import sqlite3
+
+        db = sqlite3.connect(":memory:")
+        db.row_factory = sqlite3.Row
+        db.execute("create table t (name text, code text, n integer)")
+        db.execute("insert into t values ('ab', 'cd', 3)")
+        row = db.execute("select * from t").fetchone()
+        assert not isinstance(row, Mapping)
+        assert Box(row) == dict(row) == {"name": "ab", "code": "cd", "n": 3}
+        assert Box(row).name == "ab"
+        assert Box(row, extra=1) == {"name": "ab", "code": "cd", "n": 3, "extra": 1}
+
+        # update() and merge_update() take the same objects, as dict.update does; iterating a Row yields
+        # its values, so they must go by keys()
+        updated = Box(extra=1)
+        updated.update(row)
+        assert updated == {"extra": 1, "name": "ab", "code": "cd", "n": 3}
+        merged = Box(extra=1)
+        merged.merge_update(row)
+        assert merged == updated
+        with pytest.raises(TypeError):  # as dict | row: the operator takes a dict only
+            Box(extra=1) | row  # noqa: B018
+        config = ConfigBox(extra=1)
+        config.update(row)
+        assert config == updated
+
+        class KeysOnly:
+            data = {"a": 1, "b": {"c": 2}}
+
+            def keys(self):
+                return self.data.keys()
+
+            def __getitem__(self, key):
+                return self.data[key]
+
+        bx = Box(KeysOnly())
+        assert bx == KeysOnly.data
+        assert bx.b.c == 2
+
+        class BadKeys(KeysOnly):
+            def keys(self):
+                return ["a", "missing"]
+
+        with pytest.raises(KeyError):
+            Box(BadKeys())
 
     def test_bad_inits(self):
         with pytest.raises(ValueError):
