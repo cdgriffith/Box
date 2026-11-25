@@ -383,17 +383,22 @@ class Box(dict):
         ):
             raise BoxError("camel_killer_box_keep_keys needs conversion_box, it provides the snake_case aliases")
         if len(args) == 1:
-            if isinstance(args[0], str):
+            source = args[0]
+            if isinstance(source, str):
                 raise BoxValueError("Cannot extrapolate Box from string")
-            if isinstance(args[0], Mapping):
-                for k, v in args[0].items():
+            if not isinstance(source, Mapping) and hasattr(source, "keys"):
+                # Anything with keys() and item access is a mapping to dict() and to Box.update(), a sqlite3.Row
+                # for one. Read it as one here too, not as an iterable of pairs, which a Row's values are not.
+                source = {k: source[k] for k in source.keys()}
+            if isinstance(source, Mapping):
+                for k, v in source.items():
                     if v is args[0]:
                         v = self
                     if v is None and self._box_config["default_box"] and self._box_config["default_box_none_transform"]:
                         continue
                     self.__setitem__(k, v)
-            elif isinstance(args[0], Iterable):
-                for k, v in args[0]:
+            elif isinstance(source, Iterable):
+                for k, v in source:
                     self.__setitem__(k, v)
             else:
                 raise BoxValueError("First argument must be mapping or iterable")
@@ -1137,7 +1142,9 @@ class Box(dict):
         single_arg = next(iter(args), None)
         if single_arg:
             if hasattr(single_arg, "keys"):
-                for k in single_arg:
+                # As dict.update does: by keys(), not by iterating the object, which need not yield its keys
+                # (a sqlite3.Row yields its values)
+                for k in single_arg.keys():
                     self._update_store(k, single_arg[k])
             else:
                 for k, v in single_arg:
@@ -1238,7 +1245,7 @@ class Box(dict):
             single_arg = next(iter(args), None)
             if single_arg:
                 if hasattr(single_arg, "keys"):
-                    for k in single_arg:
+                    for k in single_arg.keys():  # by keys(), as dict.update does; see update()
                         convert_and_set(k, single_arg[k])
                 else:
                     for k, v in single_arg:
